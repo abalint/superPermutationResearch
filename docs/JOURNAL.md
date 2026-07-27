@@ -6,6 +6,45 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 13) — record attempt round 1: no 5905 yet, but the formalization is proven record-capable (real 5906s parse as V₇=10 partial-ride certificates and recompile validated); 5904 closed at pen≤16; the open question reduced to concrete instances
+
+One mega-thread (the cover agent; 2.4 h). Pipeline in **`analysis/cover7/`**;
+engines were left running — check `pgrep -f "PermutationChains 7 nsk"`.
+
+**The validation that matters most.** The actual 5906 record words exist on the
+superpermutators GitHub (urdvr's tree never had them). Our
+`extract_certificate` **accepts them as partial-ride certificates at exactly
+V₇ = 10** — K=18/Σ=8, K=20/Σ=10, K=24/Σ=14 variants — precisely as the ledger
+priced the 5906 sight unseen in s10, and the pipeline **recompiles a
+cargo-validated 5906** from the extracted certificate. Positive controls also
+rebuild the standard instance byte-identically and compile a validated 5907.
+The formalization provably expresses record-class words end-to-end; nothing
+about the framework is a toy.
+
+**Census corrected and completed** (cross-validated against Egan's KernelFinder
+after a diff caught 16 missed terminal-partial-ride chains): V₇=15 cost-3-only
+= 5×K=27 / 21×K=29 / 48×K=30 / 149×K=31 (+1581 at K=32/33); **mixed-cost chains
+don't exist at penalty ≤ 16**; V₇=20 = 4 chains.
+
+**Search outcomes.** The wall is exact-cover existence, not rootedness (it
+never engaged): all 4 V₇=20 chains structurally uncoverable ⇒ **5904 closed at
+pen ≤ 16**; one K=29 chain proven UNSAT (CaDiCaL + kissat); 662 chains refuted
+by zero-candidate columns; **all 8 palindromic K≤31 chains have no
+2-fold-symmetric cover** — Egan's 2SYMM method (the only method that ever
+produced a nonstandard n=7 record) provably cannot give 5905 from pen≤16
+kernels. OPEN: the 5 K=27 chains (3 distinct up to reversal) and most K=30/31 —
+CDCL/MILP/DLX stall for hours both ways; Egan's own engine gets deepest
+(129/141 2-cycles) before a reproducible crash.
+
+**Reading.** 5905 is neither found nor excluded — it now hinges on a handful of
+named instances, and the failure mode (solvers stall, no refutation) means the
+answer is genuinely hard, not obviously empty. This is also exactly the search
+regime Track C was designed for (learned row/column ordering inside DLX at the
+570-column scale where blind heuristics stall). Next moves recorded in
+`analysis/cover7/README.md`: coverFirst crash fix, multi-day CDCL on the three
+distinct K=27s (UNSATs would close Σ=12), the 916 open K=32/33, pen≥17 census,
+cube-and-conquer on skipped-orbit columns.
+
 ## 2026-07-27 (session 12) — n=6 proof independently verified (clean-room Rust, all claims agree); n=7 campaign: V₇=15/20 kernels EXIST and are row-count-feasible — 5905/5904 now hinges on the rooted cover
 
 Two threads, both landed. Sharing decision (Andrew): hold the n=6 result until
