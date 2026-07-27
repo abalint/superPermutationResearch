@@ -1,8 +1,9 @@
 # Item 5 design — cycle-level move space: kernel-parameterized certificate search
 
-Status: design note, session 10 (2026-07-27). Inputs: (a) cycle-level trace of all
-296 known 872s (this session; script regenerable, see JOURNAL s10), (b) formal
-digest of urdvr's gain-one certificate machinery
+Status: design note opened session 10 (2026-07-27), **revised same day after the
+kernel-chain campaign settled the n=6 question** (see §3–4; proofs in
+`analysis/kernelchain/`). Inputs: (a) cycle-level trace of all 296 known 872s,
+(b) formal digest of urdvr's gain-one certificate machinery
 (`../../extraDocs/superpermutation-examples/`, JOURNAL s7/s10). Everything below is
 n=6 unless stated; the construction generalizes.
 
@@ -38,128 +39,122 @@ in exits where records pay 25 nested `w2x` detour-and-return splits.
   **detour**: leave the parent mid-sojourn by one `w2x` edge, fully ride the 4 child
   cycles, re-enter the parent by another `w2x` edge. The 25 splits above ARE the 25
   rows of the certificate; the laminar nesting IS the rooted forest.
-- **Kernel** = K orbit-disjoint marked loops chained by K−1 cost-3 hops
-  (`T3(p_j) = T2(p_{j+1})` structure); its 5K cycles are the forest's roots.
-  Standard kernel: K = n−2 = 4.
-- **Certificate** = kernel + an exact cover of the remaining 120 − 5K cycles by
-  (120 − 5K)/4 oriented rows whose ownership chains reach kernel roots (rooted
-  forest). The walk-replay exact-once condition is the one true correctness
-  invariant; everything else is class structure.
+- **Kernel** = K orbit-disjoint marked loops chained by K−1 hops (cost-3+ doors,
+  each replacing a splice of its source loop and opening the next); its ridden
+  cycles are the forest's roots. Standard kernel: K = n−2 = 4.
+- **Certificate** = kernel + an exact cover of the non-root cycles by oriented rows
+  whose ownership chains reach kernel roots (rooted forest). The walk-replay
+  exact-once condition is the one true correctness invariant; everything else is
+  class structure.
 
-## 3. The waste ledger (the quantitative heart)
+## 3. The waste ledger — final, skip-priced form (machine-verified)
 
-Hyperedge-forest counting (verified against every known data point): with m total
-loops (kernel + rows) on 120 cycles, components c = 120 − 4m, T2 = 5m − c,
-T3 = c − 1, so
+Fully general walk identity (no grammar assumption; any tight superperm):
 
 ```
-waste = T2 + 2·T3 = m + 118          (length = 725 + waste)
+waste = (S − 1) + #w3 + 2·#w4 + 3·#w5        S = number of sojourns
 ```
 
-Total loop count m is the ONLY lever; with complete rows, m = 30 − K/4, i.e.
+(872 record: 144 + 3 = 147 ✓; greedy 873: 119 + 18 + 8 + 3 = 148 ✓.)
+
+Certificate-grammar form: a chain loop arrived at entry k that exits by a hop
+replacing splice j rides forward `((j−k) mod 5)+1` entries and **skips**
+`4 − ((j−k) mod 5)` orbits, which must be bought back by extra rows. With K kernel
+loops, f4/f5 hops of cost 4/5 (over cost-3), rows R = (120 − 5K + Σskip)/4:
 
 ```
-waste = 148 − K/4,  K ≡ 0 (mod 4)
+waste = 148 − K/4 + Σskip/4 + f4 + 2·f5      (Σskip ≡ K mod 4)
+871  ⇔  V := K − Σskip − 4·f4 − 8·f5 ≥ 8
 ```
 
-| K (kernel loops) | rows | length | status |
-|---|---|---|---|
-| 4 (standard) | 25 | **872** | = Egan−1 = the record; all 296 known 872s |
-| 8 | 20 | **871** | WORLD RECORD if realizable |
-| 12 | 15 | 870 | … |
-| 24 | 0 | 867 | grammar floor = the proven lower bound (!) |
+**Campaign results (all exhaustive, gate-validated — `analysis/kernelchain/`):**
 
-Cross-checks: n=7 standard K=5 → 5907 (exactly the three urdvr words); n=7 K=20
-perfect → **5904**; the actual 5906 record has a 20-loop nonstandard kernel plus 5
-incomplete groups — i.e. it is a K=20 certificate paying 2 chars of concessions.
-Every deviation from the pure grammar (incomplete row, higher-cost hop) adds waste:
-a cost-4 hop pays +1 over a cost-3 hop; an incomplete group loses splices that must
-be bought back elsewhere.
+1. **Period-4 obstruction**: the forced (skip-0, full-ride) hop-successor map has
+   period exactly 4 from all 720 states — this is *why* the standard kernel has
+   n−2 = 4 loops; longer chains must pay skips.
+2. **Pivot confinement is absolute**: a door of any cost ends with the pivot
+   symbol, so hops never change pivot class; every chain lives inside one 24-loop
+   class (orbit-disjointness within a class is automatic).
+3. **max V = 8, proven** (B&B over hop costs 3–6, ~30 s): exactly **12
+   ledger-optimal chains** — 6 × (K=22, Σskip=14) and 6 × (K=20, Σskip=8, one
+   skip-0 cost-4 hop), one per pivot class. V = 12 (⇒ 870) is unreachable.
+4. **All 12 fail the rooted exact cover** (0 covers of their non-root orbits;
+   checker validated by re-finding the known 25-row cover under the standard
+   kernel).
+
+> **Theorem (this project, s10). In the gain-one certificate grammar (complete
+> rows, hops of any cost), length 871 is unreachable at n=6: Egan−1 = 872 is
+> optimal in the class, and the standard K=4 kernel is a proven optimum.**
+> Incomplete rows are strictly waste-positive (fewer children per split), so they
+> cannot reach 871 either — at best they tie 872 through exotic structure.
 
 Consequences:
-- **The n=6 attack is concrete**: find 8 orbit-disjoint marked loops chainable by 7
-  cost-3 hops, plus a rooted exact cover of the remaining 80 cycles by 20 rows
-  ⇒ 871. Concession budget: zero (871 has waste 146 = 148 − 8/4 exactly).
-- **The n=7 corollary is free**: the same machinery at K = 20 with ≤ 1 concession
-  beats 5906. The 5906's own kernel (extractable from the word) is a working 20-loop
-  chain — existence there is already proven.
-- The lower bound 867 coinciding with the K=24 grammar floor is suggestive but not
-  load-bearing (867 is proven independently; K=24 means zero rows, a pure 24-loop
-  chain, almost certainly nonexistent).
+- Kernel parameterization — Robin's suggested direction — is **closed at n=6**.
+- **Sub-872 at n=6 requires leaving the certificate grammar**: non-laminar
+  structure, non-`w2x` weight-2 moves, w4+ mid-walk moves, or sojourn patterns
+  outside {2,3,4,6}. The general waste identity above still governs any such walk
+  (waste 146 ⇒ e.g. S=144 with 3 w3s, or S=146 with 1 w3) — these are the shapes a
+  general search must find.
+- **The n=7 question is NOT closed** and is now the live in-grammar record attack:
+  the 5906 proves large-K chains with concessions beat standard there (n=7 ledger:
+  waste = 862 − K/5 + Σskip/5 + f4 + 2f5; 5905 ⇔ V₇ ≥ 15, 5904 ⇔ V₇ ≥ 20). The
+  same scripts scale (840 loops, 7 pivot classes); forced-map period at n=7 is
+  unknown and determines everything.
 
-## 4. Search design
+## 4. Where the effort goes now
 
-Phased; each phase has a go/no-go and reuses the item-4 tablebase + trace tooling
-as validators.
+**Track A (in-grammar, n=7): the max-V₇ campaign.** Port the kernelchain scripts
+to n=7: forced-map period, pivot structure, B&B max V₇, ledger-optimal chain
+census, rooted-cover feasibility (adapting urdvr's DLX for the cover stage — their
+compiler is already kernel-generic). Any V₇ ≥ 15 chain with a feasible cover beats
+5906. The 5906's own kernel (extractable from the word) is a known-good seed.
+Cover search at n=7 is large (thousands of eligible rows) — this is where the
+learned partial-certificate evaluator (Track C) earns its keep.
 
-**Step 1 — certificate module in Rust (`src/cert.rs`).** Objects: marked loop,
-oriented row, kernel-parameterized certificate; a *generalized* W1–W7 checker
-(kernel as data: K loops, K−1 hops of cost 3..n−1, length formula recomputed) and a
-walk compiler (certificate → string). Validate: all 296 records parse to K=4
-certificates; the three 5907s parse at n=7; compiled walks re-validate; the waste
-ledger is machine-checked. Go/no-go: 296/296 round-trip.
+**Track B (out-of-grammar, n=6): general structured search.** The grammar theorem
+plus the general waste identity turn "find 871" into: find a 720-orbit walk with
+S − 1 + #w3 + 2#w4 + 3#w5 = 146 outside the certificate class. The item-1..4
+infrastructure (stratified beam, deficit features, endgame tablebase) remains the
+tool set; the new leverage is *sojourn-level* search — plan the sojourn structure
+(how many splits, where, which transition weights) rather than perm-level moves,
+with the endgame tablebase closing the last ~20 orbits exactly. Whether 867–871 is
+nonempty at all is open; the sojourn-level formulation is also the right frame for
+ILP/SAT-style partial impossibility results (e.g. bounding S from below given w3
+counts — every such lemma shrinks the search space or extends the proven floor).
 
-**Step 2 — kernel chains (`kernels` subcommand).** Enumerate cost-3 hop-connectable
-ordered pairs of marked loops (the `T3(p) = T2(q)` relation is cheap to compute);
-search for K=8 orbit-disjoint chains at n=6 (DFS over the pair graph on the 144
-marked loops — 6 pivots × 24 necklaces; the standard kernel must appear as a K=4
-witness). Go/no-go: does ANY K=8 chain exist? If not at
-cost 3, mixed-cost chains re-price via the ledger (a single cost-4 hop still leaves
-871 if K=12-with-one-concession etc. — the ledger prices every variant).
-
-**Step 3 — rooted-cover search.** For each surviving kernel: exact cover of the
-80 nonroot cycles by 20 oriented rows with the rooted-forest constraint — DLX with
-incremental forest pruning (port of gain1.py's `_forest_push` + no-goods; their
-DLX solves the K=4 instance in seconds, and smaller row counts shrink the matrix).
-Probe first by adapting urdvr's Python (`build_instance` is the only
-standard-kernel-bound piece; the compiler is already kernel-generic); port to Rust
-only if the probe shows life. Learned ordering (item-3 ranker) plugs in as the
-column/row heuristic if plain DLX stalls. Go/no-go: any exact cover ⇒ compile,
-validate, and we have 871.
-
-**Step 4 — relaxations (only if steps 2–3 come up dry).** Partial rides /
-incomplete rows with the slack-orbit bookkeeping the urdvr compiler already
-anticipates ("nsk-style" hops, `disabled_splices`); and the n=7 K=20 attack seeded
-from the 5906's own extracted kernel. Every relaxation is priced by the ledger —
-search never leaves proof-grade waste accounting.
+**Track C (the thesis): learned evaluator over partial certificates / sojourn
+plans.** The novel configuration — proof-grade waste pruning + structural moves +
+learned ordering — applies to both tracks: at n=7 as row/column ordering inside
+the DLX cover search; at n=6 as the value function over partial sojourn plans.
+Training data exists on day one: 296 records = labeled complete certificates
+(every prefix of their construction order is a positive), DLX dead-ends are
+negatives, and the s8 anchored ranker is the baseline architecture.
 
 ## 5. Where the novel bet lives in this design (steering note)
 
 This project's thesis is a *learned* evaluator out-pruning hand-derived structure —
-not re-running the community's construction search. The division of labor in this
-design, stated explicitly so it doesn't drift:
+not re-running the community's construction search. The division of labor, stated
+explicitly so it doesn't drift:
 
-- **Steps 1–2 are scouting, not the bet.** The chain spaces are tiny (24 loops per
-  pivot class); complete search is correct there and ML would be decoration. Their
-  outputs (existence facts, the ledger) are our own new theory, but they are
-  prerequisites, not the thesis.
-- **The bet becomes load-bearing where the space explodes**: cover search under
-  relaxations (partial rides, mixed-cost hops, larger K) and the n=7 K=20 attack
-  (thousands of eligible rows). There the planned configuration is the one the
-  ROADMAP has always called unplayed: **proof-grade waste pruning (the ledger — never
-  prunes a live branch) + structural certificate moves + a learned ordering/value
-  function over partial certificates**. This is also the correct answer to item 3's
-  verdict: certificate states encode the weave *explicitly*, so an evaluator can
-  finally give credit conditional on completing it — the thing no static walk-feature
-  scorer could express. Training data exists on day one: the 296 records ARE labeled
-  complete certificates (their row sets, kernels, and nestings), and every partial
-  certificate along their construction order is a positive example; DLX dead-ends
-  are negatives.
-- If steps 2–3 solve the n=6 question outright by complete search, the learned
-  component shifts entirely to n=7 (where complete search is hopeless) — the thesis
-  gets its test either way.
+- **The s10 chain campaign was scouting, not the bet** — complete search on tiny
+  spaces (24 loops per pivot class), which is why it could end in proofs. Its
+  products (the ledger, the period-4 obstruction, the grammar-floor theorem) are
+  our own new theory, but they are prerequisites.
+- **The bet becomes load-bearing where the space explodes**: the n=7 cover search
+  (Track A) and the out-of-grammar sojourn search (Track B), both guided by the
+  partial-certificate evaluator (Track C). This is the direct answer to item 3's
+  verdict: certificate/sojourn states encode the weave *explicitly*, so an
+  evaluator can finally give credit conditional on completing it — the thing no
+  static walk-feature scorer could express.
 
 ## 6. Risks / open questions
 
-1. **Chain existence (step 2) is the whole game at n=6** — nobody has exhibited a
-   K=8 chain; the n=7 K=20 kernel proves large chains exist *somewhere* but n=6 is
-   a different (smaller) pair graph. This is a finite, fully checkable question —
-   the first genuinely new combinatorial fact this project can settle.
-2. Cover existence over 8-kernel roots (step 3): the K=4 cover count is large
-   (urdvr finds hundreds per second), but roots at 40/120 cycles constrain rows
-   (children must be nonroot); eligible-row count shrinks — may be over-constrained.
-3. The one-cut-per-component walk realization is handled by the urdvr compiler
-   (exact-once replay is enforced); we inherit it rather than re-derive.
-4. Anti-goal reminder (s8): do NOT statically reward row-like shapes in a beam —
-   this design searches the certificate space directly; the move-level searchers
-   stay as-is.
+1. n=7 forced-map period and pivot structure are unknown — if the period scales
+   badly the V₇ ≥ 15 target may be provably out of reach too (which would itself
+   be a publishable negative: Egan−1−1 = the exact in-grammar optimum at n=7,
+   given the 5906 exists at V₇ = 10-with-concessions).
+2. Track B's search space is genuinely open-ended; the sojourn-level formulation
+   needs a concrete state/move design before any search runs (next session's
+   design task).
+3. Anti-goal carried forward (s8): do NOT statically reward row-like shapes in a
+   move-level beam — Tracks A–C search structure spaces directly.

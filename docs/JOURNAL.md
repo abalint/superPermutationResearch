@@ -6,6 +6,70 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 11) — item 5 step 2 executed to a proof: Egan−1 = 872 is OPTIMAL in the gain-one grammar at n=6 (kernel door closed, any hop cost); n=7 becomes the in-grammar attack; n=6 sub-872 must leave the grammar
+
+Continuation of s10, same day. Three probe rounds (one subagent, kept alive across
+rounds) answered s10's "whole game" question — negatively, with exhaustive proofs.
+Scripts committed to **`analysis/kernelchain/`** (self-contained stdlib Python;
+gate-validated); design note revised in place (`docs/ITEM5-DESIGN.md` §3–4).
+
+**Round 1 (relation + gate + first search).** Hop relation extracted from
+certificate.py/liftcheck.py and validated: the standard kernel's three hops are
+recovered as the *unique* options per pair. Findings: every loop has cost-3
+out-degree exactly 5; **cost-3 hops preserve the pivot** (6 disjoint 24-loop
+classes, orbit-disjointness automatic in-class); the strict full-ride relation has
+**period exactly 4** from all 720 (loop, entry) states — K=8 strict is impossible,
+and this is *why* the standard kernel has n−2 = 4 loops. Liberal (nsk-style
+partial-ride) chains reach K=8..24 abundantly — but partial rides skip orbits.
+
+**Round 2 (the skip-priced ledger — correction to s10's headline).** Skipped
+kernel orbits must be bought back by rows: **waste = 148 − K/4 + Σskip/4**
+(+f4 + 2f5 for cost-4/5 hops), so liberal K=8 lands back at 872 and the 871
+target became K − Σskip − 4f4 − 8f5 ≥ 8 (minimal: K=12, Σskip=4). Exhaustive
+answer: **K=12/Σ=4 does not exist; K=16/Σ=8 does not exist; max K−Σ = 8 only at
+K=22/Σ=14** (6 chains, one per pivot class, relabelings of one) — and those die
+on rows: 24 non-root orbits need 6 row loops, only 2 exist. Standard-kernel
+sanity under the skip formula: all skips 0, waste 147 ✓.
+
+**Round 3 (mixed costs — closing the last door).** My cross-pivot hypothesis was
+*refuted*: a door of any cost ends with the pivot symbol (analytic +
+computational), so pivot confinement is absolute at every hop cost. B&B over
+costs 3–6 (complete, ~30 s): **max V = 8, exactly 12 ledger-optimal chains**
+(the 6 old K=22s plus 6 new K=20/Σ=8 with one skip-0 cost-4 hop that resets the
+period-4 cycle for free). **All 12 fail the rooted exact cover** (0 covers;
+checker validated by re-finding the known 25-row cover under the standard
+kernel, ~11 s). V=12 (⇒ 870) unreachable.
+
+**Theorem (combined): in the gain-one certificate grammar — complete rows, hops
+of any cost — length 871 is unreachable at n=6. Egan−1 = 872 is optimal in the
+class; the standard kernel is a proven optimum, not a convention.** Incomplete
+rows are strictly waste-positive (fewer children per split), so they tie 872 at
+best. This answers Robin's nonstandard-kernel suggestion at n=6 with a proof,
+and explains why the record has stood.
+
+**Also derived (general, no grammar assumption): waste = (S−1) + #w3 + 2#w4 +
+3#w5** for any tight walk with S sojourns — the bridge from the grammar theorems
+to general search (an 871 needs e.g. S=144 with three w3s).
+
+**Steering (user checkpoint this session): keep the novel bet central.** Recorded
+in the design note §5: the chain campaign was scouting (tiny spaces, complete
+search, ended in proofs — ML would have been decoration); the learned bet is
+load-bearing where spaces explode. Re-centered plan, three tracks
+(`ITEM5-DESIGN.md` §4):
+- **Track A (in-grammar, n=7)**: port kernelchain to n=7 (840 loops; period and
+  pivot structure unknown) — max V₇ campaign; V₇ ≥ 15 with a feasible cover
+  beats 5906 (5905); the 5906's own kernel is a known-good seed. Cover search is
+  large ⇒ first real deployment of Track C.
+- **Track B (out-of-grammar, n=6)**: sojourn-level search for S−1+#w3+... = 146
+  outside the certificate class; also the right frame for impossibility lemmas
+  that could extend the proven floor toward 872.
+- **Track C (the thesis)**: learned evaluator over partial certificates/sojourn
+  plans — 296 records as labeled certificates, prefixes as positives, DLX
+  dead-ends as negatives; s8 anchored ranker as baseline architecture.
+
+**Next session: Track A** (n=7 port: period, max V₇, chain census — the decisive
+computable question), and Track B's state/move design note.
+
 ## 2026-07-27 (session 10) — item 5 opened and designed: records are exactly K=4 certificates; waste = 148 − K/4 ⇒ an 8-loop kernel chain + 20-row cover = 871; design note committed
 
 Two parallel subagent threads (cycle-level trace of the record corpus; formal
