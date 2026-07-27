@@ -25,6 +25,10 @@
 //!   optima 9 / 33 / 153 for `n = 3, 4, 5`);
 //! * [`beam`] — width-limited best-first (beam) search scored by
 //!   `length + lower bound` or a learned value function;
+//! * [`beam2`] — two-ended (deque) beam search: moves append a
+//!   successor of the string's back or prepend a predecessor of its
+//!   front, scored by the admissible two-ended arc bound (phase 3's
+//!   decision-order probe);
 //! * [`model`] — learned cost-to-go models (linear / MLP) loaded from
 //!   JSON files produced by the Python training side;
 //! * [`rollout`] — epsilon-greedy rollout generator emitting JSONL
@@ -35,6 +39,7 @@
 //! * [`validate`] — a sliding-window superpermutation validator.
 
 pub mod beam;
+pub mod beam2;
 pub mod bitset;
 pub mod bound;
 pub mod graph;
