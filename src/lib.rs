@@ -32,6 +32,10 @@
 //! * [`endgame`] — exact endgame tablebase: Held–Karp DP giving the
 //!   provably optimal completion once ≤ ~25 permutations remain
 //!   (phase-3 item 4);
+//! * [`cert`] — clean-room verifier for the n = 6 gain-one kernel-chain
+//!   certificate: rebuilds marked loops, hops, chains, and covers from
+//!   the mathematical definitions alone and re-checks claims C1–C5
+//!   (`cert-verify` subcommand);
 //! * [`model`] — learned cost-to-go models (linear / MLP) loaded from
 //!   JSON files produced by the Python training side;
 //! * [`rollout`] — epsilon-greedy rollout generator emitting JSONL
@@ -45,6 +49,7 @@ pub mod beam;
 pub mod beam2;
 pub mod bitset;
 pub mod bound;
+pub mod cert;
 pub mod endgame;
 pub mod graph;
 pub mod greedy;

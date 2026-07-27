@@ -1,10 +1,13 @@
 # Computational result: Egan−1 (872) is optimal within the gain-one certificate class at n = 6
 
-Status: **draft for sharing — pending independent verification** (a second,
-clean-room implementation in Rust is planned; the current proofs are one Python
-implementation, gate-validated as described below). Date: 2026-07-27.
-Scripts: `analysis/kernelchain/` in this repository (pure stdlib Python 3;
-runtimes on a laptop are seconds to ~30 s per stage).
+Status: **independently verified** — two implementations agree on every claim:
+the original Python campaign (`analysis/kernelchain/`, stdlib, seconds to ~30 s
+per stage) and a clean-room Rust reimplementation built from the mathematical
+definitions alone, with no access to the Python or these notes (`src/cert.rs`;
+run `cargo run --release -- cert-verify -n 6`, ~1.4 s, prints a per-claim
+verdict table). The Rust pass also strengthened the cover refutation: for the
+12 ledger-optimal chains, no exact cover exists even before imposing
+rootedness. Date: 2026-07-27.
 
 ## Statement
 
