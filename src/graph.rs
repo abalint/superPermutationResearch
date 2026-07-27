@@ -195,6 +195,55 @@ impl Graph {
     }
 }
 
+/// Weight-graded predecessor lists — the mirror of [`Graph::succs`],
+/// needed by the two-ended (deque) searcher, which prepends predecessors
+/// of the string's front. Built on demand ([`Preds::new`]) so
+/// [`Graph::new`] — and every one-ended searcher — is untouched.
+pub struct Preds {
+    /// `lists[r]` lists the weight ≤ `n−1` predecessors of `perms[r]` as
+    /// `(predecessor rank, weight)`: `(p, w)` appears here iff `(r, w)`
+    /// appears in `succs[p]`. Sorted by weight ascending, then
+    /// lexicographically by the prepended `w`-character prefix (which
+    /// equals the predecessor's first `w` symbols) — the exact mirror of
+    /// the successor ordering.
+    pub lists: Vec<Vec<(u32, u8)>>,
+}
+
+impl Preds {
+    /// Build the predecessor lists for `g`.
+    ///
+    /// Mirror of the successor construction: the weight-`w` predecessors
+    /// of `Q` are exactly `A ++ Q[..n−w]` for the `w!` arrangements `A`
+    /// of `Q[n−w..]` — such a `p` satisfies `p[w..] = Q[..n−w]` (the
+    /// overlap) while `Q`'s last `w` symbols are an arrangement of
+    /// `p[..w]`, i.e. `(Q, w) ∈ succs[p]`; conversely every weight-`w`
+    /// successor relation has this shape. Enumerating the arrangements
+    /// lexicographically yields lists sorted by weight then prefix,
+    /// generated in order (never sorted), like `Graph::new`.
+    pub fn new(g: &Graph) -> Preds {
+        let n = g.n;
+        let per_perm: usize = (1..n).map(factorial).sum();
+        let mut lists = Vec::with_capacity(g.nfact);
+        for q in &g.perms {
+            let mut list = Vec::with_capacity(per_perm);
+            for w in 1..n {
+                let mut head: Vec<u8> = q[n - w..].to_vec();
+                head.sort_unstable();
+                loop {
+                    let mut p = head.clone();
+                    p.extend_from_slice(&q[..n - w]);
+                    list.push((rank(&p) as u32, w as u8));
+                    if !next_permutation(&mut head) {
+                        break;
+                    }
+                }
+            }
+            lists.push(list);
+        }
+        Preds { lists }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -281,6 +330,49 @@ mod tests {
                 let mut rot: Vec<u8> = vec![p[n - 1]];
                 rot.extend_from_slice(&p[..n - 1]);
                 assert_eq!(g.perms[g.pred1[r] as usize], rot, "n={n} r={r}");
+            }
+        }
+    }
+
+    #[test]
+    fn preds_invert_succs_exactly() {
+        for n in 3..=5 {
+            let g = Graph::new(n);
+            let preds = Preds::new(&g);
+            let expected: usize = (1..n).map(factorial).sum();
+            let mut succ_edges = std::collections::HashSet::new();
+            for (p, list) in g.succs.iter().enumerate() {
+                for &(q, w) in list {
+                    succ_edges.insert((p as u32, q, w));
+                }
+            }
+            let mut pred_edges = std::collections::HashSet::new();
+            for (q, list) in preds.lists.iter().enumerate() {
+                assert_eq!(list.len(), expected, "n={n} q={q}");
+                for &(p, w) in list {
+                    pred_edges.insert((p, q as u32, w));
+                }
+            }
+            assert_eq!(succ_edges, pred_edges, "n={n}");
+        }
+    }
+
+    #[test]
+    fn preds_sorted_by_weight_then_prefix_and_head_is_pred1() {
+        let g = Graph::new(4);
+        let preds = Preds::new(&g);
+        for (q, list) in preds.lists.iter().enumerate() {
+            // First entry is the unique weight-1 predecessor.
+            assert_eq!(list[0], (g.pred1[q], 1), "q={q}");
+            for pair in list.windows(2) {
+                let (p0, w0) = pair[0];
+                let (p1, w1) = pair[1];
+                assert!(w0 <= w1, "weights ascending for perm {q}");
+                if w0 == w1 {
+                    let a = &g.perms[p0 as usize][..w0 as usize];
+                    let b = &g.perms[p1 as usize][..w1 as usize];
+                    assert!(a < b, "prefixes lex-ascending for perm {q}");
+                }
             }
         }
     }

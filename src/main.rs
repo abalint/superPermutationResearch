@@ -16,6 +16,7 @@ use std::io::Write;
 use superperm::beam::{
     beam_search_stratified, beam_search_stratified_cutoffs, Bound, Jitter, Scorer, Stratify,
 };
+use superperm::beam2::{beam2_search, Scorer2};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
 use superperm::model::Model;
@@ -150,6 +151,33 @@ enum Cmd {
         /// does not change the search.
         #[arg(long)]
         cutoff_log: Option<PathBuf>,
+    },
+    /// Run the two-ended (deque) beam search: moves append a successor
+    /// of the string's back or prepend a predecessor of its front,
+    /// scored by the admissible two-ended arc bound (phase 3's
+    /// decision-order probe).
+    Beam2 {
+        /// Number of symbols (3..=8).
+        #[arg(short, long)]
+        n: usize,
+        /// Beam width (states kept per depth level).
+        #[arg(long, default_value_t = 1000)]
+        width: usize,
+        /// Transfer experiment: score candidates with this learned
+        /// one-ended model (features computed relative to the back end)
+        /// instead of the two-ended arc bound.
+        #[arg(long)]
+        model: Option<PathBuf>,
+        /// Blend factor for the learned score: len + alpha * prediction.
+        #[arg(long, default_value_t = 1.0)]
+        alpha: f64,
+        /// Deterministic score jitter magnitude in length units (pure
+        /// function of (front, back, visited, seed); 0 disables).
+        #[arg(long, default_value_t = 0.0)]
+        jitter: f64,
+        /// Seed for the jitter's Zobrist table (only used with --jitter).
+        #[arg(long, default_value_t = 0)]
+        jitter_seed: u64,
     },
     /// Trace an existing superpermutation string: extract its
     /// first-visit trajectory, summarize its edge weights, and
@@ -359,6 +387,44 @@ fn main() -> ExitCode {
                     path.display()
                 );
             }
+        }
+        Cmd::Beam2 {
+            n,
+            width,
+            model,
+            alpha,
+            jitter,
+            jitter_seed,
+        } => {
+            let g = Graph::new(n);
+            let loaded = model.map(|path| load_model(&path, n));
+            let (scorer, desc) = match &loaded {
+                Some(m) => (
+                    Scorer2::Learned { model: m, alpha },
+                    format!("model={} alpha={alpha}", m.kind()),
+                ),
+                None => (Scorer2::Arc2, "bound=arc2".to_string()),
+            };
+            let jit = (jitter > 0.0).then_some(Jitter {
+                eps: jitter,
+                seed: jitter_seed,
+            });
+            let jdesc = match jit {
+                Some(j) => format!(" jitter={} jitter_seed={}", j.eps, j.seed),
+                None => String::new(),
+            };
+            let t0 = Instant::now();
+            let b = beam2_search(&g, width, scorer, jit);
+            let dt = t0.elapsed();
+            let prepends = b.moves.iter().filter(|&&(_, p)| p).count();
+            println!(
+                "beam2 n={n} width={width} {desc}{jdesc}: length {} ({:.3}s, {} prepends / {} moves)",
+                b.len,
+                dt.as_secs_f64(),
+                prepends,
+                b.moves.len() - 1
+            );
+            println!("{}", b.string);
         }
         Cmd::Trace {
             n,
