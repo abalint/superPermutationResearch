@@ -33,25 +33,43 @@
       across ~15 scorers; jitter-diversified restarts (~120 runs) cannot break it
       (JOURNAL 2026-07-27 s3)
 
-**Next round (rung 1 attack — see JOURNAL s3 for rationale):**
-- [ ] Residual training targets: fit `cost_to_go − lb_arc`, keep the anchor in the label
-- [ ] Model-guided rollouts: learned score as rollout policy (close the
-      search → relabel → retrain loop properly)
-- [ ] Greedy-prefix seeding: beam from greedy prefixes of varying depth; find where the
-      learned beam diverges from 873's basin
+**Rung-1 attack round (JOURNAL s4 implementation, s6 sweeps):**
+- [x] Residual training targets (`--residual`, `"target": "residual"`): negative —
+      874 at every α/width; best-ever RMSE (21.6) changes nothing (JOURNAL s6)
+- [x] Model-guided rollouts (`rollouts --model`): negative — guided ε=0 policy is
+      exactly greedy (873) but more brittle off-path; two closed-loop rounds all beam
+      874 (JOURNAL s6)
+- [x] Greedy-prefix seeding (`beam --seed-prefix`): **rung 1 achieved — validated 873**
+      via prefix depth 350 + learned endgame; sharp cliff at 350/719, no endgame
+      deviation ever saves a character (JOURNAL s6)
+- [x] Record autopsy tooling + analysis (`trace`, `beam --cutoff-log`): 100 community
+      872s traced; all share the 575/141/3 weight signature; every record path is
+      pruned by level ~62–118 and excluded mid-walk by up to ~68 chars; k/intact
+      features actively penalize record midgames (JOURNAL s5)
 
 **Success ladder at n=6 (each rung is a milestone):**
-1. Learned-score beam matches greedy (873) — learned beam is at 874, hand-bound at 890.
-2. Beam finds 872 (matches the world record).
+1. ✅ Learned-score beam matches greedy (873) — MET 2026-07-27 (hybrid: greedy prefix
+   350 + learned beam; JOURNAL s6).
+2. Beam finds 872 (matches the world record) — out of reach of the phase-2 design
+   point (move-level beam + 8 features); requires generating record-like midgames.
 3. < 872 is a new world record; 867–871 is open territory above the proven bound.
 
 **Exit criterion (minimum): at equal wall-clock, learned-score beam beats hand-bound
 beam at n=6. — ✅ MET 2026-07-27 (874 vs 890 at width 2000; hand bound needs 4× the
-time for even 883). Rung 1 still open.**
+time for even 883). Rung 1 ✅ MET 2026-07-27 (873, seeded hybrid). PHASE 2 COMPLETE.**
 
 ## Phase 3 — scale & record attempts
 
-- [ ] Cycle-level (super-node) search representation
+Steering from the phase-2 endgame (JOURNAL s5/s6): the opening/midgame policy is the
+whole game — records leave 1-cycles early via w2 moves and weave them closed later
+(575/141/3 signature, three w3 moves at steps ≡ 0 mod 30); our features read that
+structure as *expensive*. The endgame is already solved by the phase-2 scorer.
+
+- [ ] Cycle-level (super-node) search representation that plans the 2-cycle weave
+- [ ] Deficit-distribution features (cycles with 1–2 visited members, 2-cycle
+      adjacency between partially-visited cycles) — the separator the autopsy found
+- [ ] Imitation signal from `data/records872/` (100 validated 872s → trace →
+      Features JSONL): train to rank record states above rollout states at equal level
 - [ ] Multi-core parallel beam / MCTS-style search
 - [ ] n=6: attack the 867–872 gap
 - [ ] n=7: bootstrap from n=6 net; attack the 5884–5906 gap (cloud CPU burst if bottlenecked)

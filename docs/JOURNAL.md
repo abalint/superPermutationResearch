@@ -6,6 +6,86 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 6) — rung 1 achieved: validated 873 via greedy-prefix + learned endgame; residual and guided-loop attacks plateau at 874; PHASE 2 COMPLETE
+
+Three parallel sweep campaigns over the s4 mechanisms (one subagent each), run
+concurrently with the s5 record autopsy. Two clean negatives and one breakthrough.
+
+**Attack 1 — residual targets: negative, 874 everywhere.** Residual models
+(`cost_to_go − lb_arc` labels) on the boot1 recipe: `linear_n6_res_boot1` (held-out
+RMSE 25.1 in absolute space vs lb_arc's 92.7), `mlp_n6_res_boot1` (21.6), plus a
+raw-ε-greedy-corpus control. Results: linear res_boot1 → **874** at α ∈ {0.25, 0.5}
+for every width 2000–32000; α=1 → 875, α=2 → 1104 (the residual correction is
+calibrated — pushing it harder now *degrades*); MLP → 874 (α ∈ {0.25, 0.5}); raw
+corpus → 899–1640 (still poison regardless of target formulation). Jitter portfolio
+(18 runs): 15× 874, 3× 875, never 873. n=5 gate passed by all models. Lesson-4
+reconfirmed sharply: best RMSE ever trained here (21.6), identical beam result.
+Label engineering is ruled out as the path to 873.
+
+**Attack 2 — model-guided rollouts (closed loop): negative, 874 everywhere, with a
+diagnosis.** The guided ε=0 policy scores **exactly 873 on all 50 probe rollouts** —
+the model has memorized the greedy corridor — but is *more brittle off-path* than the
+hand heuristic (ε=0.01: min 906 vs the hand policy's 873; worse at every ε > 0). Two
+full guided rounds (search → relabel → retrain, ~325k + 217k rows, incl. fresh beam
+trajectories): every retrained model (`linear_n6_guided1`, `_res`, `_mix`, `guided2`)
+beams **874 at every α ∈ {0.5, 1, 2} and width ∈ {2000, 8000, 32000}**. Notable
+non-replication: mixing guided with old boot corpora was harmless (874, vs s3's
+880–1532 catastrophes) — s3's mixing failures were across *behaviorally different*
+policies; guided-ε ≈ hand-ε here, so the mix is benign. Closing the loop cannot
+escape a basin when the policy generating the data is the basin.
+
+**Attack 3 — greedy-prefix seeding: rung 1 achieved, validated 873.**
+`beam -n 6 --width 2000 --seed-prefix 350 --model ml/models/linear_n6_boot1.json
+--alpha 1` → **873 in ~2 s**, validated complete (720/720) and independently
+reproduced; string saved to `data/result_prefix_873.txt`. Full depth→length picture
+(w2000):
+
+| depth | 0 | 60–345 | 350 | 360–718 |
+|---|---|---|---|---|
+| boot1 α=1 | 874 | 875–876 | **873** | 873 |
+| arc bound | 891 | 888–876 | — | 873 from 476 (band 476–480 non-monotone) |
+
+Key numbers: the cliff is **sharp at depth 350 of 719 (~49% of the walk)** — 345 gives
+876, 350 gives 873, no intermediate lengths, zero variance under jitter (32 runs) or
+width (8000/32000). Shallow seeding actively *hurts* (60–345 → 875–876, worse than
+unseeded 874): the model's midgame fights greedy's line rather than approximating it.
+Deep prefixes (660–718, w32000, both scorers) → all exactly 873: **no endgame
+deviation from greedy's basin ever saves a character**; the 872nd character must be
+won in the first half. The blend0.075 model shows a seeding pathology (878 at depths
+350/355 — worse than its own unseeded 874). Side-findings: the winning 873 is *not*
+greedy's string (first divergence at char 440); blend0.075 is pre-blended — its
+coefficients are already `0.075·model + 0.925·lb_arc`, so it runs with `--alpha 1`
+(s3's "blend α=0.075" describes the training mix, not a CLI flag).
+
+**Convergent picture (this session + s5 autopsy).** The seeding cliff at ~350 and the
+autopsy's prune window (every 872 record excluded from the beam's score window from
+level ~62–118 to ~601, by up to ~68 chars) agree: opening/midgame policy is the whole
+game, the endgame is already solved by our scorer. The records' fixed signature
+(575/141/3 weight profile — leave 1-cycles early via w2, weave them closed later) is
+exactly what the k/intact features penalize, because no rollout corpus ever shows it
+paying off. 874 → 873 fell to forcing the opening; 873 → 872 requires *generating*
+record-like midgame states, which no reweighting of the current 8 features will do.
+
+**Phase 2 verdict: complete.** Exit criterion met (s3), rung 1 met (this session,
+hybrid greedy-prefix + learned-endgame beats both parents from scratch). Rung 2 (872)
+is out of reach of the phase-2 design point — move to phase 3.
+
+**Next session (phase 3 opening), concretely:**
+- **Cycle-level move space**: super-node search over rotation cycles that *plans* the
+  2-cycle weave (which cycles to leave half-open, where to spend the three w3 moves —
+  records put them at steps ≡ 0 mod 30) instead of discovering it move-by-move.
+- **Deficit-distribution features**: count of cycles with exactly 1–2 visited members,
+  2-cycle adjacency between partially-visited cycles — the autopsy showed these
+  separate record midgames from rollout midgames at equal (r, level).
+- **Imitation corpus, free**: `data/records872/` (100 distinct validated 872s +
+  fetch recipe, JOURNAL s5) can be traced to `Features` JSONL — expert
+  demonstrations the rollout corpora structurally lack. A model trained to *rank
+  record states above rollout states* at equal level is the cheapest test that the
+  new features carry the signal.
+- Infrastructure is ready: `trace` (first-visit trajectory + per-step beam-exact
+  scores), `beam --cutoff-log` (prune thresholds), `--seed-prefix` (basin forcing)
+  compose for any future what-does-the-beam-lose analysis.
+
 ## 2026-07-27 (session 5) — record autopsy: traced 100 community 872s; our scorer prunes every record path by level ≈62, midgame k/intact features are the blind spot
 
 **Question answered this session: what do actual 872-length solutions do that our
