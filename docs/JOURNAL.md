@@ -6,6 +6,51 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 4) — rung-1 attack mechanisms implemented (residual targets, guided rollouts, prefix seeding); sweeps pending
+
+**Built all three mechanisms from s3's "next session" list.** Implementation only —
+no experiments run; a follow-up session/agents will do the sweeps.
+
+1. **Residual training targets.** `ml/fit_linear.py` / `ml/train_mlp.py` take
+   `--residual`: the label becomes `cost_to_go − lb_arc` and the exported JSON gains
+   `"target": "residual"` (absent/`"absolute"` = old behavior; old model files load
+   unchanged via serde default). Rust side: `Model::target()` / `is_residual()`;
+   `score_move`'s `Scorer::Learned` arm scores residual models as
+   `len + lb_arc + α·pred` — the admissible anchor is now in the label, per s3
+   lesson 1. `lb_arc` is a pure function of `(cur, visited)`, so the dedup argument
+   is untouched. Reported Python metrics stay in absolute space for comparability.
+2. **Model-guided rollouts.** `rollouts --model m.json --alpha a`
+   (`run_rollouts_guided`, `Guide`): the exploit move becomes the argmin of
+   `len + w + α·predict(child features)` (+ child `lb_arc` for residual models) over
+   unvisited successors; ties keep the sorted (weight, suffix) order. Child features
+   are computed in O(1) from the walk's counters (`child_features`, mirror of the
+   beam's `score_move`; parent intact count scanned once per step). Epsilon branch
+   and RNG stream untouched ⇒ same seed still byte-identical; JSONL schema unchanged.
+3. **Greedy-prefix seeding.** `beam --seed-prefix <depth>` (`beam_search_seeded`):
+   replays the first `depth` greedy moves through the beam's own `State` counter
+   updates (arena seeded with the prefix chain), then runs the remaining
+   `n! − 1 − depth` levels. Depth 0 is bit-identical to the plain beam; depth must be
+   `< n! − 1` (CLI errors politely). Composes with `--model/--alpha/--jitter/--bound`.
+
+**Checks.** `cargo test --release` green (23 unit + 17 integration, 6 new tests:
+residual-zero-model ≡ arc-bound beam at n=4/5; guided rollouts deterministic +
+absolute-lb_arc ≡ residual-zero move-for-move; seed-prefix 0 identity, deep prefix
+(117/119 at n=5) still valid, mid prefix (60) at n=5/w2000 still 153). Clippy/fmt
+clean. Smokes: `beam -n 5 --width 2000 --seed-prefix 50` → 153 (0.12 s);
+`rollouts -n 5 --count 5 --epsilon 0.1 --seed 0 --model ml/models/linear_n5_boot1.json`
+→ mean 195.2 / min 179; residual linear fit on `data/roll_n5_e0.05_s0.jsonl`
+(held-out RMSE 6.49 vs lb_arc's 23.40) beams 153 at n=5/w2000; ε=0 rollouts guided by
+that residual model hit 153 on all 5 rollouts. `ml/predict_check.py` now adds `lb_arc`
+back for residual models so its metrics stay absolute.
+
+**Next session (the actual rung-1 sweeps, n=6):**
+- Train residual linear/MLP on the boot corpora (`data/boot_n6_*.jsonl`); beam sweep
+  α ∈ {0.25, 0.5, 1}, widths 2000–32000 — does the residual anchor beat blend-0.075?
+- Generate a guided-rollout corpus (ε ∈ {0.01, 0.05}, boot1/blend0.075 as guide),
+  retrain, re-beam — the properly closed search → relabel → retrain loop.
+- Seed-prefix scan at n=6: depth ∈ {60, 120, …, 700} × {arc bound, boot1 model},
+  looking for where the learned beam diverges from greedy's 873 basin.
+
 ## 2026-07-27 (session 3) — learned score in beam: 874; phase-2 exit criterion met; 874 is a hard plateau
 
 **Built: learned value function wired end-to-end** (committed as `6c8140f`).

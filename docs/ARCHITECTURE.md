@@ -44,20 +44,33 @@ bitset, graph → no crate deps
 - **`src/beam.rs`** — `beam_search(&Graph, width, Scorer) -> BeamResult { string, len,
   path }`. Level-synchronous beam search; `enum Scorer` selects `Bound(Bound::Cycle |
   Bound::Arc)` (score = `len + lb`) or `Learned { model: &Model, alpha }` (score =
-  `len + α·predict(features)`; any admissible-bound anchoring lives in the model's
-  training targets, not in the scorer — see JOURNAL s3 lesson 1). `beam_search_jittered(…, Option<Jitter>)` adds deterministic score
+  `len + α·predict(features)`, or `len + lb_arc + α·predict` when the model is
+  residual-target — the anchor is added back in the scorer because the label had it
+  subtracted; see JOURNAL s3 lesson 1). `beam_search_jittered(…, Option<Jitter>)` adds deterministic score
   jitter (`Jitter { eps, seed }`): a Zobrist hash of the visited set, maintained
   incrementally in each `State`, gives every candidate a pure-function-of-
   `(cur, visited, seed)` offset in `[0, eps)` — dedup-safe, and bit-identical to the
-  plain search when off. Private: `struct State`, `struct JitterCtx`, `fn score_move`,
-  `fn child_arcs`.
+  plain search when off. `beam_search_seeded(…, Option<Jitter>, seed_prefix)` replays
+  the first `seed_prefix` greedy moves through the beam's own counter updates to build
+  the root state (`0` = bit-identical to the unseeded search; must be `< n! − 1`); the
+  reported result includes the prefix. Private: `struct State`, `struct JitterCtx`,
+  `fn score_move`, `fn child_arcs`.
 - **`src/model.rs`** — `enum Model` (`Linear` | `Mlp`), loaded from JSON via
   `Model::load(path)` / `Model::from_json(text)`; `predict(&self, x: &[f64; 8]) -> f64`
   is pure CPU inference (dot product, or 2×64 MLP with ReLU); `n()` (the n the model
-  was trained for; the CLI refuses a mismatched `-n`), `kind()`.
+  was trained for; the CLI refuses a mismatched `-n`), `kind()`; `enum Target`
+  (`Absolute` | `Residual`, from the optional `"target"` JSON field, serde-default
+  absolute so old files load unchanged), exposed as `target()` / `is_residual()` —
+  residual models predict `cost_to_go − lb_arc` and every scorer must add `lb_arc`
+  back.
 - **`src/rollout.rs`** — `run_rollouts(&Graph, count, epsilon, seed, out: &mut impl Write)
   -> io::Result<RolloutSummary { rollouts, mean_len, min_len, lines }>`. Epsilon-greedy
-  rollouts emitting JSONL `Features` lines. Also `log_trajectory(&Graph, path, out)`,
+  rollouts emitting JSONL `Features` lines. `run_rollouts_guided(…, Option<Guide>, out)`
+  with `Guide { model: &Model, alpha }` replaces the greedy exploit move by the argmin
+  of `len + weight + α·predict(child features)` (+ child `lb_arc` for residual models)
+  over unvisited successors, ties broken by the sorted successor order; the epsilon
+  branch and RNG stream are untouched, so `None` is exactly `run_rollouts` and same
+  seed ⇒ byte-identical output. Also `log_trajectory(&Graph, path, out)`,
   which replays a recorded visit-order path through a `Walk` and emits the identical
   record format (used by `greedy --log` / `beam --log`).
 - **`src/validate.rs`** — `validate(n, s: &str) -> Validation { n, length, distinct,
@@ -158,14 +171,19 @@ All subcommands take `-n <3..=8>` and start with `Graph::new(n)`.
 - **`beam`** — `beam_search_jittered(&g, width, scorer, jitter)` (default width 1000)
   → prints length, wall-clock seconds (`Instant`), and the string. Scorer selection:
   `--bound cycle|arc` (default cycle), or `--model ml/models/m.json --alpha a`
-  (learned score `len + α·predict`; the model's stored `n` must match `-n`, default
+  (learned score `len + α·predict`, or `len + lb_arc + α·predict` for residual-target
+  models; the model's stored `n` must match `-n`, default
   `--alpha 1`). `--jitter <eps> --jitter-seed <s>` enables deterministic score jitter
-  (`--jitter 0` = off = bit-identical to plain search). `--log <file>` writes the
-  best path's `Features` JSONL.
+  (`--jitter 0` = off = bit-identical to plain search). `--seed-prefix <depth>`
+  (default 0) replays that many greedy moves as the root state (rejected unless
+  `< n! − 1`); composes with `--model`/`--alpha`/`--jitter`/`--bound`. `--log <file>`
+  writes the best path's `Features` JSONL.
 - **`rollouts`** — opens `--out` as `BufWriter<File>`, calls
-  `run_rollouts(&g, count, epsilon, seed, &mut writer)` → prints count/epsilon/seed,
-  mean and min final length, lines written. Defaults: `--count 100`, `--epsilon 0.1`,
-  `--seed 0`; `--out` is required.
+  `run_rollouts_guided(&g, count, epsilon, seed, guide, &mut writer)` → prints
+  count/epsilon/seed (and model kind/alpha when guided), mean and min final length,
+  lines written. Defaults: `--count 100`, `--epsilon 0.1`, `--seed 0`; `--out` is
+  required. `--model <path> --alpha <a>` (default 1) guides the exploit move with a
+  learned model; the JSONL schema is unchanged.
 - **`validate`** — string from positional arg or `--file` (mutually exclusive; file
   content is trimmed) → `validate(n, &s)` → prints length, `distinct / total`,
   `complete`. With `--complete`, exits nonzero unless complete.
@@ -213,9 +231,12 @@ lb_cycle, lb_arc` (the two bounds are recomputed from the raw fields in
 
 - **`common.py`** — JSONL loading, feature assembly, split, RMSE/MAE/R² metrics.
 - **`fit_linear.py <data.jsonl>...`** — OLS baseline; prints held-out metrics vs. the
-  two hand bounds as point predictors; exports the Rust JSON contract.
+  two hand bounds as point predictors; exports the Rust JSON contract. `--residual`
+  trains on `cost_to_go − lb_arc` and exports `"target": "residual"` (reported
+  regressor metrics stay in absolute space for comparability).
 - **`train_mlp.py`** — numpy MLP (8 → relu hidden layers → 1), Adam, early stopping;
-  label standardization folded back into the last layer on export.
+  label standardization folded back into the last layer on export. `--residual` as in
+  `fit_linear.py`.
 - **`fit_gbt.py`** — sklearn HistGradientBoostingRegressor, *diagnostic only*: trees
   are not in the Rust model contract and cannot be exported to the beam.
 - **`predict_check.py <model.json> <data.jsonl>...`** — evaluate any exported model
@@ -224,7 +245,10 @@ lb_cycle, lb_arc` (the two bounds are recomputed from the raw fields in
 Model JSON contract (what `src/model.rs` parses):
 `{"kind": "linear"|"mlp", "n": <trained n>, "feature_order": [8 names], ...}` — linear
 adds `coef[8]` + `intercept`; mlp adds `x_mean[8]`, `x_std[8]`,
-`layers: [{w, b, act: "relu"|"identity"}, ...]`. Canonical committed models live in
+`layers: [{w, b, act: "relu"|"identity"}, ...]`. Optional
+`"target": "absolute"|"residual"` (absent = absolute, so pre-residual files load
+unchanged); residual models predict `cost_to_go − lb_arc` and scorers add the anchor
+back. Canonical committed models live in
 `ml/models/` (`linear_n6_boot1.json` and `linear_n6_blend0.075.json` are the two
 874-hitters; sweep artifacts stay untracked). `data/` corpora are gitignored but
 regenerable — every rollout seed is logged in JOURNAL entries.
@@ -232,28 +256,28 @@ regenerable — every rollout seed is logged in JOURNAL entries.
 ## Extension points
 
 Phase 2's original extension points (learned scorer in `score_move`, model loading,
-`--model/--alpha` CLI) are now **implemented** — see `src/model.rs` and
-`Scorer::Learned` above. Still-relevant places to plug in:
+`--model/--alpha` CLI) are **implemented** — see `src/model.rs` and `Scorer::Learned`
+above — as are the three rung-1 attack mechanisms: **residual targets**
+(`--residual` in `ml/fit_linear.py` / `ml/train_mlp.py`, `"target"` field in the
+model contract, anchor re-added in `score_move` and `best_guided`), **model-guided
+rollouts** (`run_rollouts_guided` / `rollouts --model --alpha`), and **greedy-prefix
+seeding** (`beam_search_seeded` / `beam --seed-prefix`). Still-relevant places to
+plug in:
 
-- **Score-shape changes** (e.g. residual targets `cost_to_go − lb_arc`): training-side
-  in `ml/` (change the label), inference-side the score expression lives in
-  `score_move`'s `Scorer::Learned` arm in `src/beam.rs`. The sort/dedup argument in
+- **Score-shape changes**: training-side in `ml/` (change the label), inference-side
+  the score expression lives in `score_move`'s `Scorer::Learned` arm in `src/beam.rs`
+  (the residual branch shows the pattern). The sort/dedup argument in
   `beam_search` requires every score be a pure function of `(cur, visited, len)` —
-  the jitter offset shows how to add variation without breaking it.
+  the jitter offset and the `lb_arc` anchor show how to add variation without
+  breaking it.
 - **Where new incremental features live**: `Walk` in `src/walk.rs` (add the field,
   update it in `advance`, expose it in `features()`), **and also** `State` +
   `score_move` in `src/beam.rs` — beam does not use `Walk`; it duplicates the counter
-  maintenance for O(1) candidate scoring. Keep the two in sync, keep everything
-  O(1)/O(n) per expansion, and extend the 8-feature contract in `ml/common.py` +
-  `Model::predict`'s input array in lockstep (serde-default the JSONL field for
-  backward compat).
-- **Model-guided rollouts** (next-round item): the rollout policy is the
-  `if options.is_empty() / rng < epsilon / else options[0]` block in `run_rollouts`
-  (`src/rollout.rs`) — swapping `options[0]` for an argmin over a loaded `Model` is
-  the planned change; `Features` + `Walk::features()` define what gets logged.
-- **Greedy-prefix seeding** (next-round item): `beam_search` hardcodes its root as
-  rank 0; a seeded variant needs the root `State` built by replaying a prefix path
-  through the same counter updates (see how `initial` is constructed).
+  maintenance for O(1) candidate scoring — **and** `child_features` in
+  `src/rollout.rs`, the `Walk`-side mirror used by guided rollouts. Keep them in
+  sync, keep everything O(1)/O(n) per expansion, and extend the 8-feature contract in
+  `ml/common.py` + `Model::predict`'s input array in lockstep (serde-default the
+  JSONL field for backward compat).
 - **Adding a CLI subcommand**: add a variant to `enum Cmd` in `src/main.rs` (clap
   derive) and a match arm in `main()`; put the logic in a library module and export it
   from `src/lib.rs`. Follow the existing pattern of printing a summary line then the
@@ -311,6 +335,16 @@ sort order, brute-force weight oracle at n=4, cycle partition; `bitset.rs`; `bou
 - `learned_lb_arc_model_reproduces_arc_bound_beam` — a linear model whose coefficients
   encode exactly `lb_arc` makes `Scorer::Learned` reproduce the arc-bound beam's
   result (pins the feature order and the score arithmetic).
+- `residual_zero_model_reproduces_arc_bound_beam` — an all-zero residual-target model
+  scores `len + lb_arc + 0`, so it must reproduce the arc-bound beam bit for bit
+  (pins the residual score arithmetic).
+- `guided_rollouts_deterministic_and_consistent` — model-guided rollouts are
+  byte-identical for a fixed seed (ε = 0 and ε > 0), labels stay consistent, and the
+  absolute lb_arc model agrees move-for-move with the residual zero model.
+- `seed_prefix_zero_is_identity` / `seed_prefix_deep_n5_still_valid` /
+  `seed_prefix_mid_depth_n5_width_2000_still_153` — depth 0 is bit-identical to the
+  plain beam; a near-full greedy prefix still yields a valid complete result whose
+  path starts with the prefix; a depth-60 prefix at n=5/width 2000 still finds 153.
 - `jittered_beam_n4_still_optimal_and_zero_jitter_is_identity` — jitter ε=0 is
   bit-identical to the plain search; small jitter still finds 33 at n=4.
 - `beam_path_replays_to_reported_length` — arena-reconstructed path really has the

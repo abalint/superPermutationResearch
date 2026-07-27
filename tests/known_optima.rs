@@ -1,11 +1,13 @@
 //! Integration tests against known minimal superpermutation lengths and
 //! the admissibility of the cycle lower bound.
 
-use superperm::beam::{beam_search, beam_search_jittered, Bound, Jitter, Scorer};
+use superperm::beam::{
+    beam_search, beam_search_jittered, beam_search_seeded, Bound, Jitter, Scorer,
+};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
-use superperm::model::Model;
-use superperm::rollout::{log_trajectory, run_rollouts};
+use superperm::model::{Model, Target};
+use superperm::rollout::{log_trajectory, run_rollouts, run_rollouts_guided, Guide};
 use superperm::validate::validate;
 use superperm::walk::Walk;
 
@@ -181,7 +183,12 @@ fn learned_lb_arc_model_reproduces_arc_bound_beam() {
     coef[7] = 1.0; // lb_arc is the last feature in FEATURE_ORDER.
     for (n, width) in [(4usize, 512usize), (5, 2000)] {
         let g = Graph::new(n);
-        let model = Model::Linear { n, coef, bias: 0.0 };
+        let model = Model::Linear {
+            n,
+            coef,
+            bias: 0.0,
+            target: Target::Absolute,
+        };
         let by_bound = beam_search(&g, width, Scorer::Bound(Bound::Arc));
         let by_model = beam_search(
             &g,
@@ -196,6 +203,140 @@ fn learned_lb_arc_model_reproduces_arc_bound_beam() {
         assert_eq!(by_model.string, by_bound.string);
         assert!(validate(n, &by_model.string).complete);
     }
+}
+
+/// A residual-target model predicting a constant 0 scores exactly
+/// len + lb_arc + 0, so the learned beam must reproduce the Bound::Arc
+/// beam bit for bit (pins the residual score arithmetic).
+#[test]
+fn residual_zero_model_reproduces_arc_bound_beam() {
+    for (n, width) in [(4usize, 512usize), (5, 2000)] {
+        let g = Graph::new(n);
+        let model = Model::Linear {
+            n,
+            coef: [0.0; 8],
+            bias: 0.0,
+            target: Target::Residual,
+        };
+        let by_bound = beam_search(&g, width, Scorer::Bound(Bound::Arc));
+        let by_model = beam_search(
+            &g,
+            width,
+            Scorer::Learned {
+                model: &model,
+                alpha: 1.0,
+            },
+        );
+        assert_eq!(by_model.len, by_bound.len, "length differs at n={n}");
+        assert_eq!(by_model.path, by_bound.path, "path differs at n={n}");
+        assert_eq!(by_model.string, by_bound.string);
+        assert!(validate(n, &by_model.string).complete);
+    }
+}
+
+/// Model-guided rollouts: deterministic for a fixed seed, valid records,
+/// and the absolute lb_arc model and the residual zero model score every
+/// option identically (len + w + lb_arc), so their outputs must agree.
+#[test]
+fn guided_rollouts_deterministic_and_consistent() {
+    let g = Graph::new(4);
+    let mut coef = [0.0f64; 8];
+    coef[7] = 1.0;
+    let abs_model = Model::Linear {
+        n: 4,
+        coef,
+        bias: 0.0,
+        target: Target::Absolute,
+    };
+    let res_model = Model::Linear {
+        n: 4,
+        coef: [0.0; 8],
+        bias: 0.0,
+        target: Target::Residual,
+    };
+
+    // Same seed => byte-identical, with and without exploration.
+    for eps in [0.0, 0.1] {
+        let guide = Guide {
+            model: &abs_model,
+            alpha: 1.0,
+        };
+        let mut a = Vec::new();
+        let sa = run_rollouts_guided(&g, 3, eps, 7, Some(guide), &mut a).unwrap();
+        let mut b = Vec::new();
+        run_rollouts_guided(&g, 3, eps, 7, Some(guide), &mut b).unwrap();
+        assert_eq!(a, b, "same seed must give identical output (eps={eps})");
+        assert_eq!(sa.lines, 3 * g.nfact);
+
+        // Every rollout completes with consistent cost_to_go labels.
+        let text = String::from_utf8(a.clone()).unwrap();
+        let records: Vec<superperm::bound::Features> = text
+            .lines()
+            .map(|l| serde_json::from_str(l).unwrap())
+            .collect();
+        for chunk in records.chunks(g.nfact) {
+            let final_len = chunk[0].len_so_far + chunk[0].cost_to_go;
+            for f in chunk {
+                assert_eq!(f.len_so_far + f.cost_to_go, final_len);
+            }
+            assert_eq!(chunk.last().unwrap().cost_to_go, 0);
+            assert_eq!(chunk.last().unwrap().r, 0);
+        }
+
+        // The residual zero model computes the same score for every
+        // option, so it must pick identical moves.
+        let mut c = Vec::new();
+        run_rollouts_guided(
+            &g,
+            3,
+            eps,
+            7,
+            Some(Guide {
+                model: &res_model,
+                alpha: 1.0,
+            }),
+            &mut c,
+        )
+        .unwrap();
+        assert_eq!(a, c, "absolute lb_arc and residual zero must agree");
+    }
+}
+
+/// Seed-prefix depth 0 must be bit-identical to the plain beam.
+#[test]
+fn seed_prefix_zero_is_identity() {
+    let g = Graph::new(4);
+    let plain = beam_search(&g, 512, Scorer::Bound(Bound::Arc));
+    let seeded = beam_search_seeded(&g, 512, Scorer::Bound(Bound::Arc), None, 0);
+    assert_eq!(seeded.len, plain.len);
+    assert_eq!(seeded.path, plain.path);
+    assert_eq!(seeded.string, plain.string);
+}
+
+/// A near-full greedy prefix leaves the beam only a few levels; the
+/// result must still be a complete, valid superpermutation whose path
+/// starts with the greedy prefix.
+#[test]
+fn seed_prefix_deep_n5_still_valid() {
+    let g = Graph::new(5);
+    let depth = g.nfact - 3; // 117 of 119 possible advances
+    let b = beam_search_seeded(&g, 64, Scorer::Bound(Bound::Arc), None, depth);
+    assert!(validate(5, &b.string).complete);
+    assert_eq!(b.len, b.string.len());
+    assert_eq!(b.path.len(), g.nfact);
+    let greedy_path = greedy(&g).path;
+    assert_eq!(b.path[..=depth], greedy_path[..=depth]);
+}
+
+/// A mid-depth greedy prefix must not cost the beam its n=5 optimum:
+/// greedy itself reaches 153 at n=5, so the prefix lies on an optimal
+/// path and width 2000 finds 153 from scratch already.
+#[test]
+fn seed_prefix_mid_depth_n5_width_2000_still_153() {
+    let g = Graph::new(5);
+    let b = beam_search_seeded(&g, 2000, Scorer::Bound(Bound::Cycle), None, 60);
+    assert_eq!(b.len, 153);
+    assert!(validate(5, &b.string).complete);
 }
 
 /// Jitter must not break correctness — it only reorders near-ties. At

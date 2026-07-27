@@ -8,10 +8,13 @@
 //!   dense layers in order (`w` is row-major `[out][in]`, activation
 //!   `"relu"` or `"identity"`); the final layer outputs a single scalar.
 //!
-//! The output is the predicted *cost-to-go* (characters still needed).
-//! Every model file must declare `feature_order` exactly equal to
-//! [`FEATURE_ORDER`]; unknown kinds, activations, mismatched feature
-//! orders, or inconsistent layer shapes are rejected with a clear error.
+//! The output is the predicted *cost-to-go* (characters still needed),
+//! or — for models exported with `"target": "residual"` — the predicted
+//! *residual* above the arc bound (`cost_to_go − lb_arc`); the scorer
+//! adds `lb_arc` back (see [`Target`]). Every model file must declare
+//! `feature_order` exactly equal to [`FEATURE_ORDER`]; unknown kinds,
+//! targets, activations, mismatched feature orders, or inconsistent
+//! layer shapes are rejected with a clear error.
 
 use std::fs;
 use std::path::Path;
@@ -30,6 +33,20 @@ pub const FEATURE_ORDER: [&str; 8] = [
     "lb_cycle",
     "lb_arc",
 ];
+
+/// What quantity the model was trained to predict (`"target"` in the
+/// file; absent means [`Target::Absolute`], so pre-residual model files
+/// load unchanged).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
+pub enum Target {
+    /// Raw `cost_to_go`.
+    #[default]
+    #[serde(rename = "absolute")]
+    Absolute,
+    /// `cost_to_go − lb_arc`; the scorer must add `lb_arc` back.
+    #[serde(rename = "residual")]
+    Residual,
+}
 
 /// Activation function of an MLP layer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -63,6 +80,8 @@ pub enum Model {
         coef: [f64; 8],
         /// Intercept.
         bias: f64,
+        /// What quantity the prediction is (see [`Target`]).
+        target: Target,
     },
     /// Standardize then apply dense layers in order.
     Mlp {
@@ -74,6 +93,8 @@ pub enum Model {
         x_std: [f64; 8],
         /// Dense layers; the last outputs a single scalar.
         layers: Vec<Layer>,
+        /// What quantity the prediction is (see [`Target`]).
+        target: Target,
     },
 }
 
@@ -87,6 +108,8 @@ enum RawModel {
         feature_order: Vec<String>,
         coef: Vec<f64>,
         bias: f64,
+        #[serde(default)]
+        target: Target,
     },
     #[serde(rename = "mlp")]
     Mlp {
@@ -95,6 +118,8 @@ enum RawModel {
         x_mean: Vec<f64>,
         x_std: Vec<f64>,
         layers: Vec<RawLayer>,
+        #[serde(default)]
+        target: Target,
     },
 }
 
@@ -131,12 +156,14 @@ impl Model {
                 feature_order,
                 coef,
                 bias,
+                target,
             } => {
                 check_feature_order(&feature_order)?;
                 Ok(Model::Linear {
                     n,
                     coef: to_array8(coef, "coef")?,
                     bias,
+                    target,
                 })
             }
             RawModel::Mlp {
@@ -145,6 +172,7 @@ impl Model {
                 x_mean,
                 x_std,
                 layers,
+                target,
             } => {
                 check_feature_order(&feature_order)?;
                 let x_mean = to_array8(x_mean, "x_mean")?;
@@ -202,6 +230,7 @@ impl Model {
                     x_mean,
                     x_std,
                     layers: out,
+                    target,
                 })
             }
         }
@@ -268,6 +297,20 @@ impl Model {
             Model::Mlp { .. } => "mlp",
         }
     }
+
+    /// What quantity the model predicts (`"target"` in the file; absent
+    /// means [`Target::Absolute`]).
+    pub fn target(&self) -> Target {
+        match self {
+            Model::Linear { target, .. } | Model::Mlp { target, .. } => *target,
+        }
+    }
+
+    /// Whether the prediction is a residual above `lb_arc` (the scorer
+    /// must add `lb_arc` back).
+    pub fn is_residual(&self) -> bool {
+        self.target() == Target::Residual
+    }
 }
 
 #[cfg(test)]
@@ -291,9 +334,31 @@ mod tests {
         fs::remove_file(&path).ok();
         assert_eq!(m.n(), 6);
         assert_eq!(m.kind(), "linear");
+        // No "target" field: old files load as absolute.
+        assert_eq!(m.target(), Target::Absolute);
+        assert!(!m.is_residual());
         // 1*3 + 2*10 + 1.5 = 24.5
         let x = [3.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 10.0];
         assert_eq!(m.predict(&x), 24.5);
+    }
+
+    #[test]
+    fn target_field_parses_and_rejects_unknown() {
+        let base = format!(r#""n":6,"feature_order":{FO},"coef":[0,0,0,0,0,0,0,0],"bias":0"#);
+        let m = Model::from_json(&format!(
+            r#"{{"kind":"linear","target":"residual",{base}}}"#
+        ))
+        .unwrap();
+        assert_eq!(m.target(), Target::Residual);
+        assert!(m.is_residual());
+        let m = Model::from_json(&format!(
+            r#"{{"kind":"linear","target":"absolute",{base}}}"#
+        ))
+        .unwrap();
+        assert!(!m.is_residual());
+        let err = Model::from_json(&format!(r#"{{"kind":"linear","target":"delta",{base}}}"#))
+            .unwrap_err();
+        assert!(err.contains("delta"), "{err}");
     }
 
     #[test]

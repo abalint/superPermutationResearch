@@ -11,11 +11,11 @@ use std::time::Instant;
 
 use clap::{Parser, Subcommand, ValueEnum};
 
-use superperm::beam::{beam_search_jittered, Bound, Jitter, Scorer};
+use superperm::beam::{beam_search_seeded, Bound, Jitter, Scorer};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
 use superperm::model::Model;
-use superperm::rollout::{log_trajectory, run_rollouts};
+use superperm::rollout::{log_trajectory, run_rollouts_guided, Guide};
 use superperm::validate::validate;
 
 /// CLI mirror of [`Bound`] (the library does not depend on clap).
@@ -34,6 +34,20 @@ impl From<BoundArg> for Bound {
             BoundArg::Arc => Bound::Arc,
         }
     }
+}
+
+/// Load a model file, exiting with a clear message on a parse failure or
+/// an `n` mismatch.
+fn load_model(path: &PathBuf, n: usize) -> Model {
+    let m = Model::load(path).unwrap_or_else(|e| {
+        eprintln!("cannot load model {}: {e}", path.display());
+        std::process::exit(1);
+    });
+    if m.n() != n {
+        eprintln!("model was trained for n={} but -n is {n}", m.n());
+        std::process::exit(1);
+    }
+    m
 }
 
 /// Write a visit-order path's feature trajectory to `path` as JSONL.
@@ -101,6 +115,11 @@ enum Cmd {
         /// Seed for the jitter's Zobrist table (only used with --jitter).
         #[arg(long, default_value_t = 0)]
         jitter_seed: u64,
+        /// Seed the beam's root state by replaying this many greedy
+        /// moves before the search starts (0 = plain beam; must be
+        /// < n! - 1). The reported result includes the prefix.
+        #[arg(long, default_value_t = 0)]
+        seed_prefix: usize,
         /// Write the best path's feature records to this JSONL file.
         #[arg(long)]
         log: Option<PathBuf>,
@@ -119,6 +138,14 @@ enum Cmd {
         /// Base RNG seed; rollout i uses seed + i.
         #[arg(long, default_value_t = 0)]
         seed: u64,
+        /// Guide the exploit move with this learned value-function model
+        /// instead of the greedy successor rule.
+        #[arg(long)]
+        model: Option<PathBuf>,
+        /// Blend factor for the guided score: len + weight + alpha *
+        /// prediction (only used with --model).
+        #[arg(long, default_value_t = 1.0)]
+        alpha: f64,
         /// Output JSONL file path.
         #[arg(long)]
         out: PathBuf,
@@ -175,20 +202,18 @@ fn main() -> ExitCode {
             alpha,
             jitter,
             jitter_seed,
+            seed_prefix,
             log,
         } => {
             let g = Graph::new(n);
-            let loaded = model.map(|path| {
-                let m = Model::load(&path).unwrap_or_else(|e| {
-                    eprintln!("cannot load model {}: {e}", path.display());
-                    std::process::exit(1);
-                });
-                if m.n() != n {
-                    eprintln!("model was trained for n={} but -n is {n}", m.n());
-                    std::process::exit(1);
-                }
-                m
-            });
+            if seed_prefix >= g.nfact - 1 {
+                eprintln!(
+                    "--seed-prefix must be less than n! - 1 = {} (got {seed_prefix})",
+                    g.nfact - 1
+                );
+                std::process::exit(1);
+            }
+            let loaded = model.map(|path| load_model(&path, n));
             let (scorer, desc) = match &loaded {
                 Some(m) => (
                     Scorer::Learned { model: m, alpha },
@@ -213,11 +238,16 @@ fn main() -> ExitCode {
                 Some(j) => format!(" jitter={} jitter_seed={}", j.eps, j.seed),
                 None => String::new(),
             };
+            let sdesc = if seed_prefix > 0 {
+                format!(" seed_prefix={seed_prefix}")
+            } else {
+                String::new()
+            };
             let t0 = Instant::now();
-            let b = beam_search_jittered(&g, width, scorer, jit);
+            let b = beam_search_seeded(&g, width, scorer, jit, seed_prefix);
             let dt = t0.elapsed();
             println!(
-                "beam n={n} width={width} {desc}{jdesc}: length {} ({:.3}s)",
+                "beam n={n} width={width} {desc}{jdesc}{sdesc}: length {} ({:.3}s)",
                 b.len,
                 dt.as_secs_f64()
             );
@@ -231,18 +261,26 @@ fn main() -> ExitCode {
             count,
             epsilon,
             seed,
+            model,
+            alpha,
             out,
         } => {
             let g = Graph::new(n);
+            let loaded = model.map(|path| load_model(&path, n));
+            let guide = loaded.as_ref().map(|m| Guide { model: m, alpha });
+            let mdesc = match &loaded {
+                Some(m) => format!(" model={} alpha={alpha}", m.kind()),
+                None => String::new(),
+            };
             let file = fs::File::create(&out).unwrap_or_else(|e| {
                 eprintln!("cannot create {}: {e}", out.display());
                 std::process::exit(1);
             });
             let mut writer = BufWriter::new(file);
-            let s =
-                run_rollouts(&g, count, epsilon, seed, &mut writer).expect("rollout write failed");
+            let s = run_rollouts_guided(&g, count, epsilon, seed, guide, &mut writer)
+                .expect("rollout write failed");
             println!(
-                "rollouts n={n} count={} epsilon={epsilon} seed={seed}",
+                "rollouts n={n} count={} epsilon={epsilon} seed={seed}{mdesc}",
                 s.rollouts
             );
             println!("mean final length = {:.2}", s.mean_len);

@@ -15,8 +15,10 @@ planned learned value function.
 Current state in one line: **phase 2 core done** — learned-score beam hits a validated
 **874** at n=6 (beats the hand bound's 890 at equal wall-clock: minimum exit criterion
 met), but 874 is a hard plateau one character above greedy's 873 (rung 1) and two above
-the record 872; the next attack is residual targets / model-guided rollouts /
-greedy-prefix seeding (JOURNAL s3), with phase 3 (cycle-level search) behind it.
+the record 872; the rung-1 attack mechanisms — residual targets (`--residual` /
+`"target"`), model-guided rollouts (`rollouts --model`), greedy-prefix seeding
+(`beam --seed-prefix`) — are implemented (JOURNAL s4) with sweeps pending, phase 3
+(cycle-level search) behind them.
 
 ## Commands
 
@@ -33,6 +35,10 @@ cargo run --release -- validate -n 5 <string>
 cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --alpha 1
 # diversified restart (deterministic jitter; ε=0 is bit-identical to no jitter):
 cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --jitter 0.03 --jitter-seed 7
+# rung-1 mechanisms (all compose):
+cargo run --release -- beam -n 6 --width 2000 --seed-prefix 120          # greedy-prefix seeding (0 = plain)
+cargo run --release -- rollouts -n 6 --count 200 --epsilon 0.05 --seed 0 --model ml/models/linear_n6_boot1.json --alpha 1 --out out.jsonl  # model-guided
+python3 ml/fit_linear.py data/roll_n6_*.jsonl --residual --export m.json # residual target (beam adds lb_arc back)
 
 # training side (numpy only; see docs/ARCHITECTURE.md "ml/" section):
 python3 ml/fit_linear.py data/roll_n6_*.jsonl

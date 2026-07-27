@@ -4,9 +4,13 @@
 //! Each rollout walks the graph from the identity permutation until all
 //! `n!` permutations are visited. At every step, with probability
 //! `epsilon` a uniformly random unvisited successor is taken, otherwise
-//! the greedy (first sorted) one; if no stored successor is unvisited
-//! the weight-`n` fallback jump to the lowest-ranked unvisited
-//! permutation is applied — exactly the greedy searcher's rule.
+//! the exploit move: the greedy (first sorted) successor, or — with a
+//! [`Guide`] — the successor minimizing the learned beam score
+//! `len + weight + alpha * predict(child features)` (plus the child's
+//! `lb_arc` for residual-target models), ties broken by the sorted
+//! successor order. If no stored successor is unvisited the weight-`n`
+//! fallback jump to the lowest-ranked unvisited permutation is applied —
+//! exactly the greedy searcher's rule.
 //!
 //! Rollout `i` uses `StdRng::seed_from_u64(seed + i)`, so output is
 //! fully reproducible. After a rollout completes, one JSONL line is
@@ -21,7 +25,17 @@ use rand::{Rng, SeedableRng};
 
 use crate::bound::Features;
 use crate::graph::Graph;
+use crate::model::Model;
 use crate::walk::Walk;
+
+/// Learned policy for the exploit branch of a rollout.
+#[derive(Clone, Copy)]
+pub struct Guide<'m> {
+    /// Learned cost-to-go (or residual) predictor.
+    pub model: &'m Model,
+    /// Blend factor multiplying the prediction.
+    pub alpha: f64,
+}
 
 /// Summary statistics for a batch of rollouts.
 pub struct RolloutSummary {
@@ -35,6 +49,79 @@ pub struct RolloutSummary {
     pub lines: usize,
 }
 
+/// The child's 8-feature vector (matching
+/// [`crate::model::FEATURE_ORDER`]) and its `lb_arc` for the move
+/// `walk.cur → q`, computed in O(1) from the walk's counters without
+/// advancing it — the [`Walk`] counterpart of the beam's `score_move`.
+/// `parent_intact` is the walk's intact-cycle count (O(cycle_count) to
+/// scan, so the caller computes it once per step).
+fn child_features(g: &Graph, walk: &Walk, parent_intact: u32, q: u32) -> ([f64; 8], u32) {
+    let r = (walk.r - 1) as u32;
+    let cid = g.cycle_id[q as usize] as usize;
+    let rem = walk.cycle_rem[cid] as u32;
+    let k = walk.k as u32 - u32::from(rem == 1);
+    let intact = parent_intact - u32::from(rem as usize == g.n);
+    let cur_rem = rem - 1;
+    let arcs = if rem as usize == g.n {
+        walk.arcs as u32 // circular component becomes one open arc
+    } else {
+        let p_unvis = !walk.visited.get(g.pred1[q as usize] as usize);
+        let s_unvis = !walk.visited.get(g.succ1(q) as usize);
+        if p_unvis && s_unvis {
+            walk.arcs as u32 + 1
+        } else if !p_unvis && !s_unvis {
+            walk.arcs as u32 - 1
+        } else {
+            walk.arcs as u32
+        }
+    };
+    let succ1_unvis = u32::from(!walk.visited.get(g.succ1(q) as usize));
+    let lb_cycle = if r == 0 {
+        0
+    } else {
+        r + k - u32::from(cur_rem > 0)
+    };
+    let lb_arc = if r == 0 { 0 } else { r + arcs - succ1_unvis };
+    let x = [
+        f64::from(r),
+        f64::from(k),
+        f64::from(intact),
+        f64::from(cur_rem),
+        f64::from(arcs),
+        f64::from(succ1_unvis),
+        f64::from(lb_cycle),
+        f64::from(lb_arc),
+    ];
+    (x, lb_arc)
+}
+
+/// The option minimizing the learned beam score, ties broken by the
+/// sorted (weight, suffix) order of `options`.
+fn best_guided(g: &Graph, walk: &Walk, options: &[(u32, u8)], guide: Guide) -> (u32, u8) {
+    let parent_intact = walk
+        .cycle_rem
+        .iter()
+        .filter(|&&c| c as usize == g.n)
+        .count() as u32;
+    let len = walk.len_chars() as u32;
+    let mut best = options[0];
+    let mut best_score = f64::INFINITY;
+    for &(q, w) in options {
+        let (x, lb_arc) = child_features(g, walk, parent_intact, q);
+        let base = if guide.model.is_residual() {
+            len + u32::from(w) + lb_arc
+        } else {
+            len + u32::from(w)
+        };
+        let score = f64::from(base) + guide.alpha * guide.model.predict(&x);
+        if score < best_score {
+            best_score = score;
+            best = (q, w);
+        }
+    }
+    best
+}
+
 /// Run `count` epsilon-greedy rollouts on `g`, writing one JSONL
 /// [`Features`] line per visited step to `out`.
 pub fn run_rollouts(
@@ -42,6 +129,20 @@ pub fn run_rollouts(
     count: usize,
     epsilon: f64,
     seed: u64,
+    out: &mut impl Write,
+) -> io::Result<RolloutSummary> {
+    run_rollouts_guided(g, count, epsilon, seed, None, out)
+}
+
+/// [`run_rollouts`] with an optional model [`Guide`] replacing the
+/// greedy exploit move (the epsilon-random exploration and the RNG
+/// stream are unchanged, so `guide = None` is exactly `run_rollouts`).
+pub fn run_rollouts_guided(
+    g: &Graph,
+    count: usize,
+    epsilon: f64,
+    seed: u64,
+    guide: Option<Guide>,
     out: &mut impl Write,
 ) -> io::Result<RolloutSummary> {
     let mut lines = 0usize;
@@ -61,7 +162,10 @@ pub fn run_rollouts(
             } else if rng.gen::<f64>() < epsilon {
                 options[rng.gen_range(0..options.len())]
             } else {
-                options[0]
+                match guide {
+                    Some(gd) => best_guided(g, &walk, &options, gd),
+                    None => options[0],
+                }
             };
             walk.advance(q, w);
             records.push(walk.features());

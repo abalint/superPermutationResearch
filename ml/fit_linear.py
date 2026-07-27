@@ -16,8 +16,13 @@ The design matrix is [8-feature contract, ones]; with --export the fitted
 model is written in the JSON contract the Rust beam loads (the ones-column
 coefficient becomes "bias", so "coef" applies to the raw 8 features).
 
+With --residual the training label is cost_to_go - lb_arc (the correction
+above the admissible anchor) and the exported JSON carries
+"target": "residual"; the Rust scorer adds lb_arc back. Reported regressor
+metrics are always in absolute cost_to_go space, so runs stay comparable.
+
 Usage:
-    python3 ml/fit_linear.py data/roll_n5_*.jsonl [--export ml/models/linear_n5.json]
+    python3 ml/fit_linear.py data/roll_n5_*.jsonl [--residual] [--export ml/models/linear_n5.json]
 """
 
 import argparse
@@ -40,6 +45,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("paths", nargs="+", help="rollout/trajectory JSONL files")
     ap.add_argument("--export", metavar="PATH", help="write fitted model JSON here")
+    ap.add_argument(
+        "--residual",
+        action="store_true",
+        help="train on cost_to_go - lb_arc; export carries target: residual",
+    )
     args = ap.parse_args()
 
     X_raw, y, rids, n = common.load(args.paths)
@@ -49,12 +59,15 @@ def main():
         print("note: no arc features in input (old-schema JSONL); lb_arc is meaningless")
 
     train, test = common.split(rids)
-    coef, bias = fit(X8, y, train)
-    pred = X8 @ coef + bias
+    y_fit = y - lb_arc if args.residual else y
+    coef, bias = fit(X8, y_fit, train)
+    # Report in absolute cost_to_go space regardless of the label.
+    pred = X8 @ coef + bias + (lb_arc if args.residual else 0.0)
 
+    target = "residual" if args.residual else "absolute"
     print(
         f"n={int(n)}  rows={len(y)}  rollouts={rids.max() + 1}  "
-        f"train_rows={int(train.sum())}  test_rows={int(test.sum())}"
+        f"train_rows={int(train.sum())}  test_rows={int(test.sum())}  target={target}"
     )
     print("held-out (every 5th rollout):")
     common.report("lb_cycle (admissible)", lb_cycle[test], y[test])
@@ -73,6 +86,7 @@ def main():
             "feature_order": common.FEATURE_ORDER,
             "coef": [float(c) for c in coef],
             "bias": float(bias),
+            "target": target,
         }
         os.makedirs(os.path.dirname(args.export) or ".", exist_ok=True)
         with open(args.export, "w") as fh:

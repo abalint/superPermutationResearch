@@ -13,8 +13,12 @@ exported net maps standardized features directly to raw cost_to_go:
 After writing, inference is re-implemented from the JSON file alone and
 checked against the trained net (max abs diff < 1e-9 on 1000 samples).
 
+With --residual the training label is cost_to_go - lb_arc and the exported
+JSON carries "target": "residual" (the Rust scorer adds lb_arc back).
+Reported metrics are always in absolute cost_to_go space.
+
 Usage:
-    python3 ml/train_mlp.py data/roll_n6_*.jsonl --export ml/models/mlp_n6.json
+    python3 ml/train_mlp.py data/roll_n6_*.jsonl [--residual] --export ml/models/mlp_n6.json
 """
 
 import argparse
@@ -101,7 +105,7 @@ def train(Xtr, ytr, Xte, yte, hidden, seed, lr=1e-3, batch=4096, max_epochs=100,
     return best
 
 
-def export(path, n, Ws, bs, x_mean, x_std):
+def export(path, n, Ws, bs, x_mean, x_std, target):
     layers = []
     for i, (W, b) in enumerate(zip(Ws, bs)):
         layers.append(
@@ -118,6 +122,7 @@ def export(path, n, Ws, bs, x_mean, x_std):
         "x_mean": [float(x) for x in x_mean],
         "x_std": [float(x) for x in x_std],
         "layers": layers,
+        "target": target,
     }
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w") as fh:
@@ -144,20 +149,32 @@ def main():
     ap.add_argument("--hidden", type=int, nargs="+", default=[64, 64])
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--max-epochs", type=int, default=100)
+    ap.add_argument(
+        "--residual",
+        action="store_true",
+        help="train on cost_to_go - lb_arc; export carries target: residual",
+    )
     args = ap.parse_args()
 
     X_raw, y, rids, n = common.load(args.paths)
     X8 = common.features8(X_raw)
     train_m, test_m = common.split(rids)
 
+    lb_arc = X8[:, 7]
+    y_fit = y - lb_arc if args.residual else y
+    target = "residual" if args.residual else "absolute"
+
     x_mean = X8[train_m].mean(axis=0)
     x_std = X8[train_m].std(axis=0)
     x_std[x_std == 0] = 1.0
-    y_mean, y_std = y[train_m].mean(), y[train_m].std()
+    y_mean, y_std = y_fit[train_m].mean(), y_fit[train_m].std()
     Z = (X8 - x_mean) / x_std
-    yz = (y - y_mean) / y_std
+    yz = (y_fit - y_mean) / y_std
 
-    print(f"n={int(n)}  rows={len(y)}  hidden={args.hidden}  seed={args.seed}")
+    print(
+        f"n={int(n)}  rows={len(y)}  hidden={args.hidden}  seed={args.seed}  "
+        f"target={target}"
+    )
     Ws, bs = train(Z[train_m], yz[train_m], Z[test_m], yz[test_m], args.hidden,
                    args.seed, max_epochs=args.max_epochs)
 
@@ -166,12 +183,14 @@ def main():
     bs[-1] = bs[-1] * y_std + y_mean
 
     pred = forward(Ws, bs, Z)
+    # Report in absolute cost_to_go space regardless of the label.
+    pred_abs = pred + lb_arc if args.residual else pred
     print("held-out (every 5th rollout):")
-    common.report("mlp", pred[test_m], y[test_m])
+    common.report("mlp", pred_abs[test_m], y[test_m])
     print("train:")
-    common.report("mlp", pred[train_m], y[train_m])
+    common.report("mlp", pred_abs[train_m], y[train_m])
 
-    export(args.export, n, Ws, bs, x_mean, x_std)
+    export(args.export, n, Ws, bs, x_mean, x_std, target)
 
     rng = np.random.default_rng(123)
     idx = rng.choice(len(y), size=1000, replace=False)

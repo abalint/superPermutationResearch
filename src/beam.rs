@@ -49,7 +49,10 @@ pub enum Bound {
 pub enum Scorer<'m> {
     /// `f = len + lb` for an admissible lower bound (phase 1).
     Bound(Bound),
-    /// `f = len + alpha * model.predict(child features)` (phase 2).
+    /// `f = len + alpha * model.predict(child features)` (phase 2), or
+    /// `f = len + lb_arc + alpha * predict` for a residual-target model
+    /// (the prediction is `cost_to_go − lb_arc`, so the anchor is added
+    /// back).
     Learned {
         /// Learned cost-to-go predictor.
         model: &'m Model,
@@ -175,7 +178,7 @@ fn child_arcs(g: &Graph, parent: &State, q: u32) -> u32 {
 /// the chosen `scorer`, and return the best complete superpermutation
 /// found.
 pub fn beam_search(g: &Graph, width: usize, scorer: Scorer) -> BeamResult {
-    beam_search_jittered(g, width, scorer, None)
+    beam_search_seeded(g, width, scorer, None, 0)
 }
 
 /// [`beam_search`] with optional deterministic score [`Jitter`]. With
@@ -187,7 +190,27 @@ pub fn beam_search_jittered(
     scorer: Scorer,
     jitter: Option<Jitter>,
 ) -> BeamResult {
+    beam_search_seeded(g, width, scorer, jitter, 0)
+}
+
+/// [`beam_search_jittered`] with the root state seeded by replaying the
+/// first `seed_prefix` moves of the deterministic greedy path, so the
+/// beam explores continuations of a known-good prefix. `seed_prefix = 0`
+/// is bit-identical to the unseeded search. The reported result covers
+/// the full string (prefix included).
+pub fn beam_search_seeded(
+    g: &Graph,
+    width: usize,
+    scorer: Scorer,
+    jitter: Option<Jitter>,
+    seed_prefix: usize,
+) -> BeamResult {
     assert!(width >= 1, "beam width must be at least 1");
+    assert!(
+        seed_prefix < g.nfact - 1,
+        "seed prefix depth must be < n! - 1 = {} (got {seed_prefix})",
+        g.nfact - 1
+    );
     let nfact = g.nfact;
     let n = g.n;
     let jctx = jitter
@@ -218,10 +241,35 @@ pub fn beam_search_jittered(
         }]
     };
 
+    // Replay the greedy prefix through the same counter updates the
+    // survivor loop applies, so the root state is exactly what the beam
+    // would hold had it followed that path.
+    if seed_prefix > 0 {
+        let prefix = crate::greedy::greedy(g).path;
+        let root = &mut beam[0];
+        for &q in &prefix[1..=seed_prefix] {
+            let w = (n - Graph::overlap(&g.perms[root.cur as usize], &g.perms[q as usize])) as u32;
+            let arcs = child_arcs(g, root, q);
+            root.visited.set(q as usize);
+            let cid = g.cycle_id[q as usize] as usize;
+            root.intact -= u32::from(root.cycle_rem[cid] as usize == n);
+            root.cycle_rem[cid] -= 1;
+            root.k -= u32::from(root.cycle_rem[cid] == 0);
+            root.r -= 1;
+            root.arcs = arcs;
+            root.len += w;
+            root.zhash = jctx.map_or(0, |j| root.zhash ^ j.zobrist[q as usize]);
+            let node = arena.len() as u32;
+            arena.push((root.node, q));
+            root.node = node;
+            root.cur = q;
+        }
+    }
+
     // Candidate = (score, len, succ, parent index in `beam`).
     let mut cands: Vec<(i64, u32, u32, u32)> = Vec::new();
 
-    for _depth in 1..nfact {
+    for _depth in (1 + seed_prefix)..nfact {
         cands.clear();
         for (pi, s) in beam.iter().enumerate() {
             let mut any = false;
@@ -330,10 +378,11 @@ pub fn beam_search_jittered(
 /// parent's state, in O(1) from the parent's counters. The score is
 /// `i64` fixed-point with 12 fractional bits: `(len + lb) << 12` for
 /// bound scoring (exactly the phase-1 ordering), or
-/// `round((len + alpha * pred) * 4096)` for a learned model, where
-/// `pred` is evaluated on the child's 8 features (matching
-/// [`crate::model::FEATURE_ORDER`]) computed here without materializing
-/// the child.
+/// `round((len + alpha * pred) * 4096)` for a learned model —
+/// `round((len + lb_arc + alpha * pred) * 4096)` if the model is
+/// residual-target — where `pred` is evaluated on the child's 8 features
+/// (matching [`crate::model::FEATURE_ORDER`]) computed here without
+/// materializing the child.
 ///
 /// Both bounds and all 8 learned features are pure functions of the
 /// child's `(cur, visited, len)`, which the keep-first dedup in
@@ -397,7 +446,15 @@ fn score_move(
                 f64::from(lb_arc),
             ];
             let pred = model.predict(&x);
-            ((f64::from(len) + alpha * pred) * 4096.0).round() as i64
+            // Residual models predict cost_to_go − lb_arc: add the
+            // admissible anchor back. lb_arc is a pure function of
+            // (cur, visited), so the dedup argument is unchanged.
+            let base = if model.is_residual() {
+                len + lb_arc
+            } else {
+                len
+            };
+            ((f64::from(base) + alpha * pred) * 4096.0).round() as i64
         }
     };
     let score = match jctx {

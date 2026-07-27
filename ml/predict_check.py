@@ -3,6 +3,8 @@
 
 Prints RMSE/MAE/R² on the held-out split (every 5th rollout, same as
 fit_linear.py) and on all rows — a quick check for bootstrap rounds.
+Residual-target models ("target": "residual") get lb_arc added back so the
+comparison is always against raw cost_to_go.
 
 Usage:
     python3 ml/predict_check.py ml/models/mlp_n6.json data/roll_n6_*.jsonl
@@ -42,10 +44,16 @@ def main():
     X_raw, y, rids, n = common.load(args.paths)
     if int(n) != model["n"]:
         print(f"warning: model n={model['n']} but data n={int(n)}")
-    pred = predict(model, common.features8(X_raw))
+    X8 = common.features8(X_raw)
+    pred = predict(model, X8)
+    if model.get("target") == "residual":
+        pred = pred + X8[:, 7]  # add the lb_arc anchor back
     _, test = common.split(rids)
 
-    print(f"model={args.model} ({model['kind']})  n={int(n)}  rows={len(y)}")
+    print(
+        f"model={args.model} ({model['kind']})  n={int(n)}  rows={len(y)}  "
+        f"target={model.get('target', 'absolute')}"
+    )
     common.report("held-out (every 5th)", pred[test], y[test])
     common.report("all rows", pred, y)
 
