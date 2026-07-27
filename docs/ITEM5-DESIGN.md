@@ -123,7 +123,33 @@ anticipates ("nsk-style" hops, `disabled_splices`); and the n=7 K=20 attack seed
 from the 5906's own extracted kernel. Every relaxation is priced by the ledger —
 search never leaves proof-grade waste accounting.
 
-## 5. Risks / open questions
+## 5. Where the novel bet lives in this design (steering note)
+
+This project's thesis is a *learned* evaluator out-pruning hand-derived structure —
+not re-running the community's construction search. The division of labor in this
+design, stated explicitly so it doesn't drift:
+
+- **Steps 1–2 are scouting, not the bet.** The chain spaces are tiny (24 loops per
+  pivot class); complete search is correct there and ML would be decoration. Their
+  outputs (existence facts, the ledger) are our own new theory, but they are
+  prerequisites, not the thesis.
+- **The bet becomes load-bearing where the space explodes**: cover search under
+  relaxations (partial rides, mixed-cost hops, larger K) and the n=7 K=20 attack
+  (thousands of eligible rows). There the planned configuration is the one the
+  ROADMAP has always called unplayed: **proof-grade waste pruning (the ledger — never
+  prunes a live branch) + structural certificate moves + a learned ordering/value
+  function over partial certificates**. This is also the correct answer to item 3's
+  verdict: certificate states encode the weave *explicitly*, so an evaluator can
+  finally give credit conditional on completing it — the thing no static walk-feature
+  scorer could express. Training data exists on day one: the 296 records ARE labeled
+  complete certificates (their row sets, kernels, and nestings), and every partial
+  certificate along their construction order is a positive example; DLX dead-ends
+  are negatives.
+- If steps 2–3 solve the n=6 question outright by complete search, the learned
+  component shifts entirely to n=7 (where complete search is hopeless) — the thesis
+  gets its test either way.
+
+## 6. Risks / open questions
 
 1. **Chain existence (step 2) is the whole game at n=6** — nobody has exhibited a
    K=8 chain; the n=7 K=20 kernel proves large chains exist *somewhere* but n=6 is
