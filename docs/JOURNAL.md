@@ -27,7 +27,10 @@ every greedy-shaped walk; `half_open` 3.3 vs 0.3.
 
 **Expert corpus tripled (prep for the campaign).** urdvr's `gain1.py search` is a
 0.09 s/word mass generator: 200 seeds → 198 distinct 872s, **196 new** vs the known
-corpus → `data/gain1_872s/` (gitignored). With records872 + the 2 urdvr words: **298
+corpus → `data/gain1_872s/` (gitignored). ("New" = byte-distinct; equivalence-class
+status under relabel/reverse symmetry unchecked — urdvr's `equiv_check.py` can
+classify if it ever matters. And to be explicit: these are *generated* by urdvr's
+construction, not found by our search — our search floor remains 873.) With records872 + the 2 urdvr words: **298
 distinct 872s**. Chaffin per-waste optimal prefixes downloaded to `data/chaffin/`
 (599 files incl. all `Chaffin_6_W_<w>` exhaustive lists; unused this session —
 `trace` requires complete strings — kept for a future prefix loader). Traced corpus:
