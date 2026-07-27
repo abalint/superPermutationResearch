@@ -23,8 +23,13 @@
 - [ ] Ablation: learned score vs. hand bound at equal wall-clock, beam width sweep, n=5
 - [ ] First n=6 runs; measure gap to 872. Bootstrap loop (search → relabel → retrain) at n=6
 
-**Exit criterion: at equal wall-clock, learned-score beam finds shorter n=6 strings than
-hand-bound beam.**
+**Success ladder at n=6 (each rung is a milestone):**
+1. Learned-score beam matches greedy (873) — hand-bound beam is currently 890.
+2. Beam finds 872 (matches the world record).
+3. < 872 is a new world record; 867–871 is open territory above the proven bound.
+
+**Exit criterion (minimum): at equal wall-clock, learned-score beam beats hand-bound
+beam at n=6, i.e. rung 1.**
 
 ## Phase 3 — scale & record attempts
 

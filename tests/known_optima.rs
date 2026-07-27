@@ -23,6 +23,18 @@ fn greedy_hits_known_optima() {
     }
 }
 
+/// n=6 is the first size where greedy is NOT optimal (best known: 872).
+/// Greedy must produce exactly the sum-of-factorials construction, 873.
+/// This pins the phase-2 baseline: any learned-score beam result at n=6
+/// is measured against this number.
+#[test]
+fn greedy_n6_is_sum_of_factorials_873() {
+    let g = Graph::new(6);
+    let r = greedy(&g);
+    assert_eq!(r.len, 873);
+    assert!(validate(6, &r.string).complete);
+}
+
 #[test]
 fn beam_n4_width_512_is_optimal() {
     let g = Graph::new(4);

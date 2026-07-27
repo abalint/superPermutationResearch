@@ -3,8 +3,18 @@
 ## What this is
 
 Research codebase hunting for short superpermutations via heuristic search, with a
-planned learned value function. **Read `docs/JOURNAL.md` first** — it is the session
-handoff log. `docs/THEORY.md` has the math framing; `docs/ROADMAP.md` the phase plan.
+planned learned value function.
+
+## Fresh-agent reading order
+
+1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
+2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
+3. `docs/ARCHITECTURE.md` — code map: modules, data structures, where phase-2 plugs in.
+4. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
+
+Current state in one line: **phase 1 done** (beam recovers proven optima 33/153); phase
+2's first rung is making a learned evaluator beat the hand bound at n=6, where beam
+(890) currently loses to greedy (873) and the record is 872.
 
 ## Commands
 
@@ -36,6 +46,12 @@ Always benchmark and search in `--release`; debug builds are ~50× slower in the
 - Ranks are lexicographic (Lehmer). Cycle = weight-1 rotation class, `(n−1)!` of them.
 - New search features must be maintainable incrementally (O(1) or O(n) per expansion) —
   anything O(n!) per node is a non-starter at n ≥ 6.
+- `beam.rs` does NOT reuse `walk.rs` — it keeps its own `State` counters so candidates
+  score in O(1) without cloning. Any new incremental feature must be maintained in BOTH
+  `Walk::advance` and the beam's `State`/`score_move` (see ARCHITECTURE.md, extension
+  points). Also note: beam dedup assumes the score is a pure function of
+  `(cur, visited, len)` — a learned evaluator must preserve that or the keep-first
+  dedup argument breaks.
 - Every working session ends by appending a dated entry to `docs/JOURNAL.md` and, if
   results changed, updating the README results table.
 

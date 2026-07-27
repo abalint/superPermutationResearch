@@ -6,6 +6,42 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 — handoff prep; gap analysis; phase-2 success ladder
+
+**Docs pass for fresh-agent handoff.** Added `docs/ARCHITECTURE.md` (code map: modules,
+data structures, CLI data flow, JSONL schema, phase-2 extension points) so nobody has
+to reverse-engineer `src/`. Reading order for a fresh agent is in CLAUDE.md.
+
+**Gap analysis — where greedy stands vs. targets.** Greedy is provably the
+sum-of-factorials construction, so:
+
+| n | greedy | best known | gap | proven lower bound | gap to LB |
+|---|---|---|---|---|---|
+| 3–5 | 9 / 33 / 153 | same | 0 | same | 0 |
+| 6 | 873 | 872 | 1 | 867 | 6 |
+| 7 | 5913 (formula; not yet run) | 5906 | 7 | 5884 | 29 |
+
+Consequences: (1) n ≤ 5 is a correctness harness only — greedy is already optimal
+there, so no learning signal about *beating* anything exists below n=6. (2) The
+phase-2 evaluator's bar is n=6.
+
+**Phase-2 success ladder** (in order; each rung is a real milestone):
+1. Learned-score beam **matches greedy (873)** at n=6 — currently hand-bound beam is
+   17 chars worse (890 at width 2000), so this is not trivial.
+2. Beam **finds 872** at n=6 (matches the record).
+3. Anything **< 872** is a world record; anything ≥ 868 disproven only by exhaustion,
+   so 867–871 is genuinely open territory.
+
+**Next session, concretely:**
+- Generate a large labeled corpus: `rollouts` at n=5 and n=6 with a few epsilons +
+  seeds; also log states along greedy and beam trajectories (needs a small code
+  addition — see ARCHITECTURE.md extension points).
+- Fit a *linear* regressor on the existing features first; compare its cost-to-go
+  RMSE against the hand bound's error on held-out rollouts. Only escalate to GBT/MLP
+  if linear shows the features carry signal.
+- Add residual-graph features next: cheap-edge connected components and residual
+  cycle-graph degree stats, maintained incrementally in the walk state.
+
 ## 2026-07-26 — project start; phase 1 built
 
 **Context.** Project born from a conversation about treating superpermutation
