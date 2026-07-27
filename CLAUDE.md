@@ -12,16 +12,17 @@ planned learned value function.
 3. `docs/ARCHITECTURE.md` — code map: modules, data structures, where phase-2 plugs in.
 4. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 
-Current state in one line: **phase 2 COMPLETE** — rung 1 met with a validated **873**
-at n=6 (`beam --seed-prefix 350 --model ml/models/linear_n6_boot1.json --alpha 1`,
-~2 s; from-scratch learned beam plateaus at 874, hand bound at 890); residual-target
-and closed-loop-retraining attacks both dead-end at 874 (JOURNAL s6), and the
-100-record autopsy (JOURNAL s5) shows every 872 is pruned in the first ~16% of the
-walk because records leave cycles half-open via w2 moves (575/141/3 signature) —
-structure our k/intact features penalize. Next: **phase 3**, in the ordered plan of
-ROADMAP.md — start with item 1 (stratified beam), then the two-ended-beam
-decision-order probe, deficit features + expert-rank training (with reverse-relabel
-augmentation), endgame tablebase, cycle-level move space with waste-budget B&B.
+Current state in one line: **phase 3 underway, items 1–2 done (JOURNAL s7)** —
+from-scratch **873** at n=6 via the stratified beam (`beam -n 6 --width 2000 --model
+ml/models/linear_n6_boot1.json --alpha 1 --stratify --strat-quota 4 --strat-bucket 1`,
+~8 s; record-state mid-walk survival 0.15% → 99.55%, yet the winner is greedy-shaped),
+and the two-ended `beam2` probe is a clean negative (learned transfer re-finds the
+874 plateau; arc2 899 > one-ended 891) — together: the 872 blocker is **evaluation**,
+not selection or decision order. New expert fuel documented in
+`../extraDocs/2026-07-27-urdvr-email-and-repo.md` (urdvr repo: 2 new 872s, three n=7
+words at 5,907, Egan−1 verified through n=12, gain-one generator). Next: **item 3**
+— deficit-distribution features + rank training on expert corpora (reverse-relabel
+augmentation), then item 4 (endgame tablebase); item 5's case is structural moves.
 
 ## Commands
 

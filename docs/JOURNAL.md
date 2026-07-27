@@ -6,6 +6,102 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 7) — phase 3 opens: stratified beam GO (from-scratch 873); two-ended beam NO-GO (evaluation, not ordering); field news: urdvr repo (Egan−1 at n=11–13, n=7 5907s)
+
+Three parallel subagent threads: roadmap items 1 and 2 (implement + sweep each), plus
+documentation of a new community email/repo. Both probes returned decisive answers,
+and they converge.
+
+**Item 1 — stratified beam: GO, both metrics met (commit `83724ac`).** New beam
+`State` counters `half_open` (cycles with 1–2 visited members — the structure records
+keep alive) and `nearly_done` (1–2 unvisited), O(1)-incremental. Frontier bucketed by
+`(intact/B, half_open/B, nearly_done/B)`; selection reserves up to `--strat-quota`
+best candidates per occupied bucket, then fills the width in global score order. Score
+function untouched (admissibility/dedup arguments unchanged); off-mode pinned
+bit-identical by test. Results (boot1 α=1; unstratified baseline 874 everywhere):
+
+- **From-scratch n=6 = 873, validated** — the first sub-874 without prefix seeding.
+  `beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --alpha 1 --stratify
+  --strat-quota 4 --strat-bucket 1` (~8 s; also quotas 1/5/6/8 at w2000; quota 4 holds
+  at w8000/32000). String saved to `data/result_stratified_873.txt`; independently
+  reproduced bit-identical. Distinct from greedy's 873 and the seeded 873.
+- **Record survival transformed**: fraction of record-trajectory states inside the
+  kept window at levels 118–601 goes **0.15% → 99.55%** (quota 4:1); 96/100 records
+  are never outside the window at any level (baseline: 100/100 pruned by level 118).
+  First-prune level for the remaining 4: 288–380 (was median 62).
+- Quota response is sharply non-monotone (2–3 catastrophic at 897–904; 1 and 4–8 give
+  873; 12–32 degrade); fine buckets beat coarse (default 32:4 stays at 874). Jitter
+  and seed-prefix both *anti-compose* with stratification; arc bound + stratification
+  is worse than plain arc (reserved width is wasted without a discriminative scorer).
+- **The surprise that matters: the winning 873 is greedy-shaped** (600/96/18/4/1
+  weight histogram, heavy moves at steps ≡ 0 mod 30), not record-shaped. Record-like
+  states now survive the whole walk yet never win — selection is fixed, and what
+  remains between 873 and 872 is *evaluation*.
+
+**Item 2 — two-ended (deque) beam: NO-GO, clean negative (commit `5fbee1c`).** New
+`beam2` subcommand: state `(front, back, visited)`, append-successor/prepend-
+predecessor moves, weight-graded predecessor lists (`Preds`, exact mirror of succs),
+mirrored features, dedup on `(front, back, visited)`, and the two-ended arc bound
+`lb_arc2 = max(r, r + arcs − [succ1(back) unvisited] − [pred1(front) unvisited])`
+with proof sketch in `src/bound.rs` and oracle-tested admissibility along arbitrary
+deque walks. Recovers 33/153 (n=5 needs width ≥ ~1000, where the winning 153 uses 44
+prepends — real two-ended optima exist). n=6 from scratch: arc2 scoring **899/898/897**
+at w2000/8000/32000 — *worse* than one-ended arc (891), because the deque squares
+state variety per level (same visited set × many (front,back) pairs) and the flat
+bound can't rank the extras. The learned model transferred into the new move space
+lands **exactly on the 874 plateau** (w2000 and w8000, a different 874 string, only 6
+prepends); jitter forcing 220–364 prepends moves arc2 only 899 → 892. Per the roadmap
+criterion: **the blindness is evaluation, not decision order** — item 5's future case
+rests on structural moves, not ordering freedom. Side-find: a width-1 beam reproduces
+greedy's 873 under both bounds (previously unrecorded).
+
+**Convergent read.** Fix selection (item 1): record states survive but never win. Fix
+ordering (item 2): nothing changes. Both point at evaluation — the scorer cannot
+recognize record-shaped midgames — which is exactly items 3 (deficit-distribution
+features + expert-rank training) and 4 (exact endgame tablebase). Item 1 also moves
+the baseline: the from-scratch bar is now 873, and stratification is the default
+harness for any future scorer test.
+
+**Field news (email from urdvr, 2026-07-27) — documented in
+`../extraDocs/2026-07-27-urdvr-email-and-repo.md`, repo cloned to
+`../extraDocs/superpermutation-examples/`.** New words + generator code
+(github.com/urdvr/superpermutation-examples). All claimed lengths are exactly
+**Egan−1** (n! + (n−1)! + (n−2)! + (n−3)! + n − 4): n=11 43,948,807; n=12
+522,910,088; n=13 6,749,568,009 (n=13 word not yet distributed — no GitHub release).
+We verified every distributed word: n=6/7 via our validator, n=8–12 via an
+independent Lehmer-rank bitset checker. n=11/12 are new records by our ledger.
+Contents relevant to us: **2 new 872s** (from-scratch DLX search, not in our 100),
+**three n=7 words at 5,907** (first known with the standard 5-loop kernel; record is
+5,906), 4–6 words each at n=8–10 (Raudvere/Echols originals + perturbed variants).
+Construction: Egan−1 ⇔ a "gain-one" certificate (T1/T2/T3-only walk, standard kernel,
+oriented complete-2-cycle exact cover forming a forest rooted in the kernel); three
+modes — exact-cover search (DLX), perturbation (destroy ~30% of rows and rebuild),
+and lifting n→n+1 (verified 9→13; **6→7 provably fails**; search-and-verify, no
+induction proof). Author caveats recorded verbatim: generator evolved without
+rigorous notes, may not reproduce exactly; lifting "usually (but not always?)" works.
+**Discrepancy to raise on the thread: the email mentions Williams words in the repo,
+but none exist in the tree, releases, or branches.**
+
+Phase-3 implications of the repo: (a) real expert fuel for item 3 — the n=7 5907s
+break our 5913 threshold, the new 872s extend the n=6 corpus, and `gain1.py search`
+is a seconds-fast mass generator of fresh n=6 records; (b) for item 5, the repo *is*
+a worked cycle-level move vocabulary (row destruction/rebuild, anchored trades,
+trap-loop bans) with `liftcheck.py`'s W1–W7 as a machine-checkable "record-shaped"
+predicate; (c) boundary fact: the 5,906 record **fails** the gain-one structure
+(nonstandard kernel), so beating 5,906 means leaving that move space — gain-one is a
+ceiling, not a ladder.
+
+**Next session (item 3, with the new fuel):**
+- Deficit-distribution features (count of cycles with exactly 1–2 visited members —
+  `half_open` is already maintained in beam State; add the 2-cycle-adjacency stat and
+  wire both into `Features`/JSONL + the model contract).
+- Rank training: expert states (100+2 records via `trace`, Chaffin optimal prefixes,
+  optionally mass-generated gain1 872s) above rollout states at equal level; reverse-
+  relabel augmentation. Metric: record states *win* the stratified window, then beam
+  length < 873.
+- Cheap parallel probe: run the phase-2 scorer + stratification at n=7 for a first
+  baseline (greedy 5913; new sub-target 5907 from the urdvr words).
+
 ## 2026-07-27 (session 6) — rung 1 achieved: validated 873 via greedy-prefix + learned endgame; residual and guided-loop attacks plateau at 874; PHASE 2 COMPLETE
 
 Three parallel sweep campaigns over the s4 mechanisms (one subagent each), run

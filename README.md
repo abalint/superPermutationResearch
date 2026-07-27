@@ -12,10 +12,12 @@ the full framing and [docs/ROADMAP.md](docs/ROADMAP.md) for the phased plan.
 
 ## Status
 
-**Phases 1–2 complete; phase 3 (cycle-level search) is next** — Rust search core:
-overlap graph, greedy baseline, beam search with selectable admissible bounds and a
-learned scorer, validator, (model-guided) rollout generator, trajectory logging,
-greedy-prefix beam seeding, and record-autopsy tooling (`trace`, `--cutoff-log`).
+**Phases 1–2 complete; phase 3 underway (items 1–2 done)** — Rust search core:
+overlap graph, greedy baseline, beam search with selectable admissible bounds, a
+learned scorer, and per-structural-class width reservation (`--stratify`), a
+two-ended deque beam (`beam2`), validator, (model-guided) rollout generator,
+trajectory logging, greedy-prefix beam seeding, and record-autopsy tooling
+(`trace`, `--cutoff-log`).
 Phase-2 outcome: the learned-score beam beats the hand-bound beam decisively at n=6
 (874 vs 890 at equal wall-clock), and a greedy-prefix + learned-endgame hybrid reaches
 a validated **873** — matching greedy via a different string, rung 1 of the success
@@ -32,7 +34,7 @@ current features actively penalize), while the endgame is already solved. See
 | 3 | 9 (proven) | 9 | 9 | — |
 | 4 | 33 (proven) | 33 | **33** (width 512, 0.007 s) | — |
 | 5 | 153 (proven) | 153 | **153** (width 2000, 0.19 s) | **153** (width 2000) |
-| 6 | 872 (best known; lower bound 867) | 873 | 890 (width 2000, 4.5 s)¹ | **873** (greedy-prefix 350 + learned beam, ~2 s; 874 from scratch)³ |
+| 6 | 872 (best known; lower bound 867) | 873 | 890 (width 2000, 4.5 s)¹ | **873 from scratch** (stratified beam, ~8 s; also via greedy-prefix 350 hybrid, ~2 s)³ |
 | 7 | 5906 (best known; lower bound 5884) | — | — | — |
 | 8 | 46204 (Raudvere, Jul 2026)² | — | — | — |
 
@@ -47,17 +49,19 @@ construction, and notably **tree-structured** (standard kernel + 833 two-cycle
 extensions). Reported same-day, independently checked: n=9 at 408,965 and n=10 at
 4,037,046 (W. Echols), each one below Egan's formula; write-up pending.
 
-³ Validated strings. From scratch: `beam -n 6 --width 2000 --model
-ml/models/linear_n6_boot1.json --alpha 1` → 874 in 6.2 s, beating the hand-bound beam
-at equal wall-clock (890; the hand bound needs 4× the time to reach even 883) — the
-phase-2 minimum exit criterion. 874 is a hard plateau from scratch: ~20 scorers
-(including residual-target and closed-loop-retrained models), widths 500–128 000, and
-~150 jitter-diversified restarts all converge on exactly 874. The 873 (rung 1) comes
-from the hybrid `beam -n 6 --width 2000 --seed-prefix 350 --model
-ml/models/linear_n6_boot1.json --alpha 1` (~2 s): force the first 350 greedy moves,
-learned endgame from there — a different string than greedy's (first divergence at
-char 440). The cliff is sharp: prefix depth 345 still gives 876; no width/jitter ever
-converts it, and no endgame deviation reaches 872 (JOURNAL sessions 3, 5, 6).
+³ Validated strings. Current best from scratch: `beam -n 6 --width 2000 --model
+ml/models/linear_n6_boot1.json --alpha 1 --stratify --strat-quota 4 --strat-bucket 1`
+→ **873** in ~8 s (phase-3 stratified beam: width reserved per deficit-profile bucket
+so record-like states aren't crowded out; JOURNAL s7). Without stratification the
+learned beam plateaus at 874 (~20 scorers, widths 500–128 000, ~150 jittered
+restarts — JOURNAL s3/s6), still beating the hand-bound beam decisively (890 at equal
+wall-clock; 4× the time for even 883) — the phase-2 exit criterion. 873 also comes
+from the hybrid `--seed-prefix 350` (~2 s, JOURNAL s6). Three distinct 873s are now
+known (greedy's, the seeded, the stratified). 872 needs evaluation, not search
+mechanics: record-like states survive the stratified beam end-to-end but never win
+the window, and a two-ended (deque) move space lands on the same 874 plateau
+(`beam2`, JOURNAL s7) — hence phase-3 items 3–4 (deficit features + expert-rank
+training, endgame tablebase).
 
 Greedy with min-weight/lexicographic tie-breaking reproduces the classic
 sum-of-factorials construction (9, 33, 153, 873, …). Beating 872 at n=6 or 5906 at n=7

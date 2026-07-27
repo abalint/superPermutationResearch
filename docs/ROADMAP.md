@@ -49,7 +49,8 @@
 
 **Success ladder at n=6 (each rung is a milestone):**
 1. ✅ Learned-score beam matches greedy (873) — MET 2026-07-27 (hybrid: greedy prefix
-   350 + learned beam; JOURNAL s6).
+   350 + learned beam; JOURNAL s6). Strengthened in s7: **from-scratch 873** with no
+   seeding via the stratified beam (phase-3 item 1).
 2. Beam finds 872 (matches the world record) — out of reach of the phase-2 design
    point (move-level beam + 8 features); requires generating record-like midgames.
 3. < 872 is a new world record; 867–871 is open territory above the proven bound.
@@ -69,12 +70,20 @@ solved by the phase-2 scorer. The proving path (waste-146 exhaustion) is a close
 compute class (~10¹⁵× the 2019 distributed effort) — everything below is the
 *finding* path. Items in execution order; each has a go/no-go metric.
 
-1. [ ] **Stratified beam** (cheap; do first): reserve width per structural class
-       (bucket frontier by deficit profile — untouched / half-open / nearly-done
-       cycle counts) so record-like states can't be crowded out by greedy-like ones.
-       Dedup + admissibility arguments unchanged. Metric: from-scratch n=6 < 874, and
-       record-state survival fraction (via `trace` + `--cutoff-log`) > 0 mid-walk.
-2. [ ] **Two-ended (deque) beam — decision-order probe** (cheap, ~a day): state
+1. [x] **Stratified beam** — ✅ **GO, both metrics met (JOURNAL s7)**: from-scratch
+       n=6 **873** validated (`--stratify --strat-quota 4 --strat-bucket 1`, w2000,
+       ~8 s; first sub-874 without seeding); record-state mid-walk survival
+       0.15% → 99.55%. But the winning 873 is greedy-shaped — record states survive
+       yet never *win*: the constraint moved from selection to evaluation. Notes:
+       quota response non-monotone (2–3 catastrophic, 1/4–8 good); fine buckets beat
+       coarse; anti-composes with jitter and seed-prefix; needs the learned scorer.
+2. [x] **Two-ended (deque) beam — decision-order probe** — ✅ ran, **NO-GO
+       (JOURNAL s7)**: arc2 scoring 897–899 (worse than one-ended 891 — deque
+       squares state variety, flat bound can't rank it); learned transfer lands
+       exactly on the 874 plateau; forced prepends don't help. The blindness is
+       evaluation, not ordering ⇒ weight items 3–4; item 5's case is structural
+       moves, not ordering freedom. (`beam2` kept in-tree: recovers 33/153, oracle-
+       tested admissible two-ended arc bound.) Original design: state
        `(front, back, visited)`; moves prepend a predecessor or append a successor,
        so the string's *front* can be built last, with near-full information —
        decoupling decision order from string position (the property LKH and the
@@ -89,10 +98,15 @@ compute class (~10¹⁵× the 2019 distributed effort) — everything below is t
        items 3–4.
 3. [ ] **Deficit-distribution features + rank training on expert corpora**: features
        = count of cycles with exactly 1–2 visited members, 2-cycle adjacency between
-       partially-visited cycles (O(1)-incremental in Walk AND beam State). Train to
-       *rank* expert states above rollout states at equal level — expert data:
-       `data/records872/` (100 validated 872s) + Chaffin per-waste-budget optimal
-       prefixes (`ChaffinMethodResults/Chaffin_6_W_<w>.txt` in the community repo —
+       partially-visited cycles (O(1)-incremental in Walk AND beam State; the
+       `half_open`/`nearly_done` counters from item 1 are already in beam State).
+       Train to *rank* expert states above rollout states at equal level — expert
+       data: `data/records872/` (100 validated 872s) + 2 new 872s in
+       `../extraDocs/superpermutation-examples/` (urdvr repo, JOURNAL s7 — its
+       `gain1.py search` also mass-generates fresh n=6 records in seconds, and its
+       three verified n=7 words at 5,907 are the first sub-5,913 expert data for the
+       n=7 rung) + Chaffin per-waste-budget optimal prefixes
+       (`ChaffinMethodResults/Chaffin_6_W_<w>.txt` in the community repo —
        provably perfect openings, machine-verified). Free 2× augmentation: every
        expert trajectory yields a second valid example by reverse-and-relabel
        (reversal symmetry; the record population is mirror-closed but individual
