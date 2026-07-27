@@ -11,9 +11,10 @@ use std::time::Instant;
 
 use clap::{Parser, Subcommand, ValueEnum};
 
-use superperm::beam::{beam_search, Bound};
+use superperm::beam::{beam_search, Bound, Scorer};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
+use superperm::model::Model;
 use superperm::rollout::{log_trajectory, run_rollouts};
 use superperm::validate::validate;
 
@@ -84,6 +85,13 @@ enum Cmd {
         /// docs/JOURNAL.md 2026-07-27).
         #[arg(long, value_enum, default_value_t = BoundArg::Cycle)]
         bound: BoundArg,
+        /// Score candidates with this learned value-function model
+        /// (JSON produced by the training side) instead of a bound.
+        #[arg(long, conflicts_with = "bound")]
+        model: Option<PathBuf>,
+        /// Blend factor for the learned score: len + alpha * prediction.
+        #[arg(long, default_value_t = 1.0)]
+        alpha: f64,
         /// Write the best path's feature records to this JSONL file.
         #[arg(long)]
         log: Option<PathBuf>,
@@ -154,18 +162,43 @@ fn main() -> ExitCode {
             n,
             width,
             bound,
+            model,
+            alpha,
             log,
         } => {
             let g = Graph::new(n);
+            let loaded = model.map(|path| {
+                let m = Model::load(&path).unwrap_or_else(|e| {
+                    eprintln!("cannot load model {}: {e}", path.display());
+                    std::process::exit(1);
+                });
+                if m.n() != n {
+                    eprintln!("model was trained for n={} but -n is {n}", m.n());
+                    std::process::exit(1);
+                }
+                m
+            });
+            let (scorer, desc) = match &loaded {
+                Some(m) => (
+                    Scorer::Learned { model: m, alpha },
+                    format!("model={} alpha={alpha}", m.kind()),
+                ),
+                None => (
+                    Scorer::Bound(bound.into()),
+                    format!(
+                        "bound={}",
+                        match bound {
+                            BoundArg::Cycle => "cycle",
+                            BoundArg::Arc => "arc",
+                        }
+                    ),
+                ),
+            };
             let t0 = Instant::now();
-            let b = beam_search(&g, width, bound.into());
+            let b = beam_search(&g, width, scorer);
             let dt = t0.elapsed();
             println!(
-                "beam n={n} width={width} bound={}: length {} ({:.3}s)",
-                match bound {
-                    BoundArg::Cycle => "cycle",
-                    BoundArg::Arc => "arc",
-                },
+                "beam n={n} width={width} {desc}: length {} ({:.3}s)",
                 b.len,
                 dt.as_secs_f64()
             );

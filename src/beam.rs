@@ -2,12 +2,16 @@
 //!
 //! All states at a level have visited the same number `d` of
 //! permutations; the search expands level by level from `d = 1` (only
-//! the identity visited) to `d = n!`. Each state is scored by
-//! `f = len + lb`, where `lb` is a selectable admissible lower bound of
-//! [`crate::bound`] ([`Bound::Cycle`] or the stronger [`Bound::Arc`]);
-//! at every level the candidate children are sorted
-//! by `(f, len)`, deduplicated by `(current permutation, visited set)`
-//! keeping the minimum length, and truncated to the beam width.
+//! the identity visited) to `d = n!`. Each state is scored by the
+//! chosen [`Scorer`]: either `f = len + lb`, where `lb` is a selectable
+//! admissible lower bound of [`crate::bound`] ([`Bound::Cycle`] or the
+//! stronger [`Bound::Arc`]), or `f = len + alpha * pred`, where `pred`
+//! is a learned [`Model`]'s cost-to-go estimate. Scores are stored as
+//! `i64` fixed-point with 12 fractional bits, so bound scoring
+//! (`(len + lb) << 12`) preserves the phase-1 ordering exactly. At
+//! every level the candidate children are sorted by `(f, len)`,
+//! deduplicated by `(current permutation, visited set)` keeping the
+//! minimum length, and truncated to the beam width.
 //!
 //! Candidate scores are computed *without* materializing child states
 //! (O(1) arithmetic on the parent's counters); visited bitsets and
@@ -19,6 +23,7 @@ use std::collections::HashSet;
 
 use crate::bitset::BitSet;
 use crate::graph::Graph;
+use crate::model::Model;
 
 /// Which admissible lower bound scores beam candidates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -28,6 +33,20 @@ pub enum Bound {
     /// Arc bound `r + arcs − [succ1(cur) unvisited]`; dominates `Cycle`
     /// (see [`crate::bound::lower_bound_arc`]).
     Arc,
+}
+
+/// How beam candidates are scored.
+#[derive(Clone, Copy)]
+pub enum Scorer<'m> {
+    /// `f = len + lb` for an admissible lower bound (phase 1).
+    Bound(Bound),
+    /// `f = len + alpha * model.predict(child features)` (phase 2).
+    Learned {
+        /// Learned cost-to-go predictor.
+        model: &'m Model,
+        /// Blend factor multiplying the prediction.
+        alpha: f64,
+    },
 }
 
 /// One beam state: a walk that has visited `popcount(visited)` perms.
@@ -46,6 +65,8 @@ struct State {
     r: u32,
     /// Weight-1 arcs among unvisited permutations.
     arcs: u32,
+    /// Cycles with all `n` members unvisited (intact).
+    intact: u32,
     /// Index of this state's node in the path arena.
     node: u32,
 }
@@ -81,9 +102,9 @@ fn child_arcs(g: &Graph, parent: &State, q: u32) -> u32 {
 }
 
 /// Run beam search of the given `width` on `g`, scoring candidates with
-/// the chosen `bound`, and return the best complete superpermutation
+/// the chosen `scorer`, and return the best complete superpermutation
 /// found.
-pub fn beam_search(g: &Graph, width: usize, bound: Bound) -> BeamResult {
+pub fn beam_search(g: &Graph, width: usize, scorer: Scorer) -> BeamResult {
     assert!(width >= 1, "beam width must be at least 1");
     let nfact = g.nfact;
     let n = g.n;
@@ -104,12 +125,14 @@ pub fn beam_search(g: &Graph, width: usize, bound: Bound) -> BeamResult {
             k: g.cycle_count as u32,
             r: (nfact - 1) as u32,
             arcs: g.cycle_count as u32,
+            // Rank 0's cycle is already broken by the initial visit.
+            intact: (g.cycle_count - 1) as u32,
             node: 0,
         }]
     };
 
     // Candidate = (score, len, succ, parent index in `beam`).
-    let mut cands: Vec<(u32, u32, u32, u32)> = Vec::new();
+    let mut cands: Vec<(i64, u32, u32, u32)> = Vec::new();
 
     for _depth in 1..nfact {
         cands.clear();
@@ -120,7 +143,7 @@ pub fn beam_search(g: &Graph, width: usize, bound: Bound) -> BeamResult {
                     continue;
                 }
                 any = true;
-                cands.push(score_move(g, s, q, w as u32, pi as u32, bound));
+                cands.push(score_move(g, s, q, w as u32, pi as u32, scorer));
             }
             if !any {
                 // Weight-n fallback: jump to the lowest unvisited rank so
@@ -130,14 +153,17 @@ pub fn beam_search(g: &Graph, width: usize, bound: Bound) -> BeamResult {
                     .first_clear(nfact)
                     .expect("state with r > 0 must have an unvisited perm")
                     as u32;
-                cands.push(score_move(g, s, q, n as u32, pi as u32, bound));
+                cands.push(score_move(g, s, q, n as u32, pi as u32, scorer));
             }
         }
 
         // Deterministic total order: (score, len, succ, parent). For
-        // duplicate (cur, visited) keys the lower bound is identical
-        // (it depends only on cur and visited), so keep-first after this
-        // sort keeps the minimum length.
+        // duplicate (cur, visited) keys the bound — and every learned
+        // feature, hence the prediction — is identical (all depend only
+        // on cur and visited), so the score differs only through len
+        // (monotonically: +1 len is +4096 fixed-point, more than any
+        // rounding) and keep-first after this sort keeps the minimum
+        // length.
         cands.sort_unstable();
 
         let mut seen: HashSet<(u32, BitSet)> = HashSet::with_capacity(width.min(cands.len()) * 2);
@@ -158,6 +184,7 @@ pub fn beam_search(g: &Graph, width: usize, bound: Bound) -> BeamResult {
             let arcs = child_arcs(g, parent, q);
             let mut cycle_rem = parent.cycle_rem.clone();
             let cid = g.cycle_id[q as usize] as usize;
+            let intact = parent.intact - u32::from(parent.cycle_rem[cid] as usize == n);
             cycle_rem[cid] -= 1;
             let k = parent.k - u32::from(cycle_rem[cid] == 0);
             let node = arena.len() as u32;
@@ -170,6 +197,7 @@ pub fn beam_search(g: &Graph, width: usize, bound: Bound) -> BeamResult {
                 k,
                 r: parent.r - 1,
                 arcs,
+                intact,
                 node,
             });
         }
@@ -210,11 +238,17 @@ pub fn beam_search(g: &Graph, width: usize, bound: Bound) -> BeamResult {
 }
 
 /// Score the move `parent → q` with edge weight `w` without cloning the
-/// parent's state: child score = child len + admissible lower bound,
-/// derived in O(1) from the parent's `(r, k, cycle_rem, arcs, visited)`.
+/// parent's state, in O(1) from the parent's counters. The score is
+/// `i64` fixed-point with 12 fractional bits: `(len + lb) << 12` for
+/// bound scoring (exactly the phase-1 ordering), or
+/// `round((len + alpha * pred) * 4096)` for a learned model, where
+/// `pred` is evaluated on the child's 8 features (matching
+/// [`crate::model::FEATURE_ORDER`]) computed here without materializing
+/// the child.
 ///
-/// Both bounds are pure functions of the child's `(cur, visited, len)`,
-/// which the keep-first dedup in `beam_search` relies on.
+/// Both bounds and all 8 learned features are pure functions of the
+/// child's `(cur, visited, len)`, which the keep-first dedup in
+/// `beam_search` relies on.
 #[inline]
 fn score_move(
     g: &Graph,
@@ -222,25 +256,56 @@ fn score_move(
     q: u32,
     w: u32,
     parent_idx: u32,
-    bound: Bound,
-) -> (u32, u32, u32, u32) {
+    scorer: Scorer,
+) -> (i64, u32, u32, u32) {
     let len = parent.len + w;
     let r = parent.r - 1;
-    let lb = if r == 0 {
-        0
-    } else {
-        match bound {
-            Bound::Cycle => {
-                let rem = parent.cycle_rem[g.cycle_id[q as usize] as usize] as u32;
-                let k = parent.k - u32::from(rem == 1);
-                r + k - u32::from(rem > 1)
-            }
-            Bound::Arc => {
-                let arcs = child_arcs(g, parent, q);
-                let succ1_unvis = !parent.visited.get(g.succ1(q) as usize);
-                r + arcs - u32::from(succ1_unvis)
-            }
+    let score = match scorer {
+        Scorer::Bound(bound) => {
+            let lb = if r == 0 {
+                0
+            } else {
+                match bound {
+                    Bound::Cycle => {
+                        let rem = parent.cycle_rem[g.cycle_id[q as usize] as usize] as u32;
+                        let k = parent.k - u32::from(rem == 1);
+                        r + k - u32::from(rem > 1)
+                    }
+                    Bound::Arc => {
+                        let arcs = child_arcs(g, parent, q);
+                        let succ1_unvis = !parent.visited.get(g.succ1(q) as usize);
+                        r + arcs - u32::from(succ1_unvis)
+                    }
+                }
+            };
+            i64::from(len + lb) << 12
+        }
+        Scorer::Learned { model, alpha } => {
+            let rem = parent.cycle_rem[g.cycle_id[q as usize] as usize] as u32;
+            let k = parent.k - u32::from(rem == 1);
+            let intact = parent.intact - u32::from(rem as usize == g.n);
+            let cur_rem = rem - 1;
+            let arcs = child_arcs(g, parent, q);
+            let succ1_unvis = u32::from(!parent.visited.get(g.succ1(q) as usize));
+            let lb_cycle = if r == 0 {
+                0
+            } else {
+                r + k - u32::from(cur_rem > 0)
+            };
+            let lb_arc = if r == 0 { 0 } else { r + arcs - succ1_unvis };
+            let x = [
+                f64::from(r),
+                f64::from(k),
+                f64::from(intact),
+                f64::from(cur_rem),
+                f64::from(arcs),
+                f64::from(succ1_unvis),
+                f64::from(lb_cycle),
+                f64::from(lb_arc),
+            ];
+            let pred = model.predict(&x);
+            ((f64::from(len) + alpha * pred) * 4096.0).round() as i64
         }
     };
-    (len + lb, len, q, parent_idx)
+    (score, len, q, parent_idx)
 }

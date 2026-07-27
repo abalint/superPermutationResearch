@@ -24,7 +24,9 @@
 //! * [`greedy`] — the deterministic greedy baseline (achieves the known
 //!   optima 9 / 33 / 153 for `n = 3, 4, 5`);
 //! * [`beam`] — width-limited best-first (beam) search scored by
-//!   `length + lower bound`;
+//!   `length + lower bound` or a learned value function;
+//! * [`model`] — learned cost-to-go models (linear / MLP) loaded from
+//!   JSON files produced by the Python training side;
 //! * [`rollout`] — epsilon-greedy rollout generator emitting JSONL
 //!   training records for a future learned value function;
 //! * [`validate`] — a sliding-window superpermutation validator.
@@ -34,6 +36,7 @@ pub mod bitset;
 pub mod bound;
 pub mod graph;
 pub mod greedy;
+pub mod model;
 pub mod rollout;
 pub mod validate;
 pub mod walk;

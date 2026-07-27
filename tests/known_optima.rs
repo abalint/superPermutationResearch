@@ -1,9 +1,10 @@
 //! Integration tests against known minimal superpermutation lengths and
 //! the admissibility of the cycle lower bound.
 
-use superperm::beam::{beam_search, Bound};
+use superperm::beam::{beam_search, Bound, Scorer};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
+use superperm::model::Model;
 use superperm::rollout::{log_trajectory, run_rollouts};
 use superperm::validate::validate;
 use superperm::walk::Walk;
@@ -39,7 +40,7 @@ fn greedy_n6_is_sum_of_factorials_873() {
 fn beam_n4_width_512_is_optimal_under_both_bounds() {
     let g = Graph::new(4);
     for bound in [Bound::Cycle, Bound::Arc] {
-        let b = beam_search(&g, 512, bound);
+        let b = beam_search(&g, 512, Scorer::Bound(bound));
         assert_eq!(b.len, 33, "{bound:?}");
         assert!(validate(4, &b.string).complete, "{bound:?}");
         assert_eq!(b.path.len(), g.nfact, "{bound:?}");
@@ -51,7 +52,7 @@ fn beam_n4_width_512_is_optimal_under_both_bounds() {
 fn beam_n5_width_2000_is_optimal_under_both_bounds() {
     let g = Graph::new(5);
     for bound in [Bound::Cycle, Bound::Arc] {
-        let b = beam_search(&g, 2000, bound);
+        let b = beam_search(&g, 2000, Scorer::Bound(bound));
         assert!(validate(5, &b.string).complete, "{bound:?}");
         assert_eq!(b.len, 153, "{bound:?}");
     }
@@ -170,11 +171,38 @@ fn log_trajectory_matches_epsilon0_rollout() {
     assert_eq!(rollout_bytes, log_bytes);
 }
 
+/// A linear model whose only nonzero coefficient is lb_arc = 1.0 (bias
+/// 0, alpha 1.0) computes exactly len + lb_arc, so the learned-scored
+/// beam must reproduce the Bound::Arc beam bit for bit — same length
+/// AND same path.
+#[test]
+fn learned_lb_arc_model_reproduces_arc_bound_beam() {
+    let mut coef = [0.0f64; 8];
+    coef[7] = 1.0; // lb_arc is the last feature in FEATURE_ORDER.
+    for (n, width) in [(4usize, 512usize), (5, 2000)] {
+        let g = Graph::new(n);
+        let model = Model::Linear { n, coef, bias: 0.0 };
+        let by_bound = beam_search(&g, width, Scorer::Bound(Bound::Arc));
+        let by_model = beam_search(
+            &g,
+            width,
+            Scorer::Learned {
+                model: &model,
+                alpha: 1.0,
+            },
+        );
+        assert_eq!(by_model.len, by_bound.len, "length differs at n={n}");
+        assert_eq!(by_model.path, by_bound.path, "path differs at n={n}");
+        assert_eq!(by_model.string, by_bound.string);
+        assert!(validate(n, &by_model.string).complete);
+    }
+}
+
 /// The beam's returned path must replay to exactly the returned string.
 #[test]
 fn beam_path_replays_to_reported_length() {
     let g = Graph::new(4);
-    let b = beam_search(&g, 512, Bound::Arc);
+    let b = beam_search(&g, 512, Scorer::Bound(Bound::Arc));
     let mut bytes = Vec::new();
     log_trajectory(&g, &b.path, &mut bytes).unwrap();
     let text = String::from_utf8(bytes).unwrap();
