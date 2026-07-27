@@ -4,10 +4,15 @@ Schema: docs/ARCHITECTURE.md, "Rollout JSONL schema". One JSON object per
 line; step == 0 starts a new rollout. The split is by *rollout* (every 5th
 held out), not by row — rows within a rollout share a label scale.
 
-The 8-feature contract (order shared with the Rust beam):
-    RAW_FIELDS + [lb_cycle, lb_arc]
+The feature contract is append-only and versioned by length (order shared
+with the Rust beam, src/model.rs):
+    v1 (8):  RAW_FIELDS + [lb_cycle, lb_arc]
+    v2 (11): v1 + DIST_FIELDS  (phase-3 deficit-distribution features)
     lb_cycle = r + cycles_remaining - [current_cycle_remaining > 0]
     lb_arc   = (r > 0) ? r + arcs - succ1_unvisited : 0
+Old JSONL without the DIST_FIELDS loads with those columns defaulting to
+0, so mixed corpora fit cleanly; models exported here declare the full v2
+order, while previously exported v1 models keep loading in Rust unchanged.
 """
 
 import json
@@ -22,11 +27,19 @@ RAW_FIELDS = [
     "arcs",
     "succ1_unvisited",
 ]
-FEATURE_ORDER = RAW_FIELDS + ["lb_cycle", "lb_arc"]
+# Phase-3 deficit-distribution features (appended after the bounds so the
+# first 8 columns keep the v1 layout).
+DIST_FIELDS = ["half_open", "nearly_done", "w2_bridges"]
+FEATURE_ORDER = RAW_FIELDS + ["lb_cycle", "lb_arc"] + DIST_FIELDS
+FEATURE_ORDER_V1 = RAW_FIELDS + ["lb_cycle", "lb_arc"]
 
 
 def load(paths):
-    """Read JSONL files -> (X_raw [rows x 6], y cost_to_go, rollout_ids, n)."""
+    """Read JSONL files -> (X_raw [rows x 9], y cost_to_go, rollout_ids, n).
+
+    X_raw columns are RAW_FIELDS + DIST_FIELDS; absent fields (old-schema
+    JSONL) read as 0.
+    """
     rows, rollout_ids = [], []
     rid = -1
     for path in paths:
@@ -36,23 +49,37 @@ def load(paths):
                 if f["step"] == 0:
                     rid += 1
                 rows.append(
-                    [f.get(k, 0) for k in RAW_FIELDS] + [f["cost_to_go"], f["n"]]
+                    [f.get(k, 0) for k in RAW_FIELDS + DIST_FIELDS]
+                    + [f["cost_to_go"], f["n"]]
                 )
                 rollout_ids.append(rid)
     data = np.asarray(rows, dtype=np.float64)
     ns = set(data[:, -1].astype(int))
     assert len(ns) == 1, f"mix of n values {ns}; fit one n at a time"
-    nraw = len(RAW_FIELDS)
+    nraw = len(RAW_FIELDS) + len(DIST_FIELDS)
     return data[:, :nraw], data[:, nraw], np.asarray(rollout_ids), ns.pop()
 
 
-def features8(X_raw):
-    """Raw 6-column matrix -> the 8-feature contract (appends lb_cycle, lb_arc)."""
+def features(X_raw):
+    """Raw 9-column matrix -> the 11-feature v2 contract.
+
+    Inserts lb_cycle and lb_arc between the raw fields and the
+    deficit-distribution fields, matching FEATURE_ORDER (the first 8
+    columns are exactly the v1 contract).
+    """
     r, k, cur_rem = X_raw[:, 0], X_raw[:, 1], X_raw[:, 3]
     arcs, succ1 = X_raw[:, 4], X_raw[:, 5]
     lb_cycle = r + k - (cur_rem > 0)
     lb_arc = np.where(r > 0, r + arcs - succ1, 0.0)
-    return np.column_stack([X_raw, lb_cycle, lb_arc])
+    nraw = len(RAW_FIELDS)
+    return np.column_stack(
+        [X_raw[:, :nraw], lb_cycle, lb_arc, X_raw[:, nraw:]]
+    )
+
+
+# Backward-compatible alias (pre-phase-3 name; now returns 11 columns
+# whose first 8 are the old matrix).
+features8 = features
 
 
 def split(rollout_ids):

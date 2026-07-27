@@ -398,6 +398,17 @@ fn main() -> ExitCode {
         } => {
             let g = Graph::new(n);
             let loaded = model.map(|path| load_model(&path, n));
+            if let Some(m) = &loaded {
+                if m.n_features() > superperm::model::FEATURE_ORDER.len() {
+                    eprintln!(
+                        "beam2's transfer scorer supports only the 8-feature contract; \
+                         this model consumes {} features (the deficit-distribution \
+                         features are not maintained in the two-ended searcher)",
+                        m.n_features()
+                    );
+                    std::process::exit(1);
+                }
+            }
             let (scorer, desc) = match &loaded {
                 Some(m) => (
                     Scorer2::Learned { model: m, alpha },

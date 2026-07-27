@@ -49,13 +49,16 @@ pub struct RolloutSummary {
     pub lines: usize,
 }
 
-/// The child's 8-feature vector (matching
-/// [`crate::model::FEATURE_ORDER`]) and its `lb_arc` for the move
-/// `walk.cur → q`, computed in O(1) from the walk's counters without
-/// advancing it — the [`Walk`] counterpart of the beam's `score_move`.
-/// `parent_intact` is the walk's intact-cycle count (O(cycle_count) to
-/// scan, so the caller computes it once per step).
-fn child_features(g: &Graph, walk: &Walk, parent_intact: u32, q: u32) -> ([f64; 8], u32) {
+/// The child's full feature vector (matching
+/// [`crate::model::FEATURE_ORDER_V2`]; models consuming only the
+/// 8-feature prefix read the same values as before) and its `lb_arc`
+/// for the move `walk.cur → q`, computed in O(1) from the walk's
+/// counters without advancing it (O(n) when `q` first touches an intact
+/// cycle — the `w2_bridges` scan) — the [`Walk`] counterpart of the
+/// beam's `score_move`. `parent_intact` is the walk's intact-cycle
+/// count (O(cycle_count) to scan, so the caller computes it once per
+/// step).
+fn child_features(g: &Graph, walk: &Walk, parent_intact: u32, q: u32) -> ([f64; 11], u32) {
     let r = (walk.r - 1) as u32;
     let cid = g.cycle_id[q as usize] as usize;
     let rem = walk.cycle_rem[cid] as u32;
@@ -82,6 +85,11 @@ fn child_features(g: &Graph, walk: &Walk, parent_intact: u32, q: u32) -> ([f64; 
         r + k - u32::from(cur_rem > 0)
     };
     let lb_arc = if r == 0 { 0 } else { r + arcs - succ1_unvis };
+    let n = g.n as u32;
+    let half_open = walk.half_open as u32 + u32::from(rem == n) - u32::from(rem == n - 2);
+    let nearly_done = walk.nearly_done as u32 + u32::from(rem == 3) - u32::from(rem == 1);
+    let w2_bridges =
+        (walk.w2_bridges as i64 + g.w2_bridges_delta(&walk.visited, &walk.cycle_rem, q)) as u32;
     let x = [
         f64::from(r),
         f64::from(k),
@@ -91,6 +99,9 @@ fn child_features(g: &Graph, walk: &Walk, parent_intact: u32, q: u32) -> ([f64; 
         f64::from(succ1_unvis),
         f64::from(lb_cycle),
         f64::from(lb_arc),
+        f64::from(half_open),
+        f64::from(nearly_done),
+        f64::from(w2_bridges),
     ];
     (x, lb_arc)
 }

@@ -186,7 +186,7 @@ fn learned_lb_arc_model_reproduces_arc_bound_beam() {
         let g = Graph::new(n);
         let model = Model::Linear {
             n,
-            coef,
+            coef: coef.to_vec(),
             bias: 0.0,
             target: Target::Absolute,
         };
@@ -215,7 +215,7 @@ fn residual_zero_model_reproduces_arc_bound_beam() {
         let g = Graph::new(n);
         let model = Model::Linear {
             n,
-            coef: [0.0; 8],
+            coef: vec![0.0; 8],
             bias: 0.0,
             target: Target::Residual,
         };
@@ -245,13 +245,13 @@ fn guided_rollouts_deterministic_and_consistent() {
     coef[7] = 1.0;
     let abs_model = Model::Linear {
         n: 4,
-        coef,
+        coef: coef.to_vec(),
         bias: 0.0,
         target: Target::Absolute,
     };
     let res_model = Model::Linear {
         n: 4,
-        coef: [0.0; 8],
+        coef: vec![0.0; 8],
         bias: 0.0,
         target: Target::Residual,
     };

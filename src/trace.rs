@@ -131,6 +131,9 @@ pub fn score_state(walk: &Walk, scorer: Scorer) -> f64 {
                 f64::from(f.succ1_unvisited),
                 f64::from(lb_cycle),
                 f64::from(lb_arc),
+                f64::from(f.half_open),
+                f64::from(f.nearly_done),
+                f64::from(f.w2_bridges),
             ];
             let pred = model.predict(&x);
             let base = if model.is_residual() {

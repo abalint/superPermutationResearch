@@ -20,7 +20,8 @@ beam2 ───→ beam (Jitter, splitmix), bitset, bound, graph (Preds), model
 model ───→ (serde_json only; pure inference)
 validate → graph (factorial, rank)
 bound ───→ (serde only; pure arithmetic + Features struct)
-bitset, graph → no crate deps
+graph ───→ bitset (w2_bridges_delta takes a visited BitSet)
+bitset ──→ no crate deps
 ```
 
 - **`src/bitset.rs`** — `BitSet`, a fixed-capacity bitset over `Box<[u64]>`.
@@ -35,7 +36,11 @@ bitset, graph → no crate deps
   weight-graded predecessor lists — the exact edge-set mirror of `succs` (`(p, w)` in
   `preds.lists[r]` iff `(r, w)` in `succs[p]`), same ordering guarantees with head =
   `pred1`. Built on demand by the two-ended searcher only; `Graph` itself stores just
-  the O(1) `pred1` map.
+  the O(1) `pred1` map. Phase-3 item 3 additions: `w2x`/`w2rev` (the unique
+  *cross-cycle* weight-2 successor per rank — `P[2..] + P[1] + P[0]` — and its
+  inverse; a bijection) and `Graph::w2_bridges_delta(visited, cycle_rem, q)`, the
+  shared incremental update for the `w2_bridges` feature used by `Walk::advance`,
+  the beam's `child_state`/`score_move`, and guided rollouts' `child_features`.
 - **`src/bound.rs`** — `lower_bound(r, k, current_cycle_has_unvisited) -> usize`, the
   admissible bound `r + k − [current cycle has unvisited]` (THEORY.md §3);
   `lower_bound_arc(r, arcs, succ1_unvisited)`, the tighter arc bound
@@ -172,6 +177,11 @@ all of these update in O(1) or O(weight):
 - `arcs: usize` — weight-1 connected components (maximal unvisited rotation runs; a
   fully-unvisited cycle is one circular component): unchanged if the cycle was intact,
   else ±1/0 by the visited status of the two ring neighbors (`pred1`/`succ1`);
+- `half_open` / `nearly_done: usize` — cycles with exactly 1–2 visited / 1–2 unvisited
+  members, O(1) from the pre-decrement `cycle_rem` (phase-3 item 3);
+- `w2_bridges: usize` — live cross-cycle weight-2 edges joining two partially-visited
+  cycles, via `Graph::w2_bridges_delta` (O(1) per move, O(n) exactly when the move
+  first touches an intact cycle — once per cycle, so O(1) amortized);
 - `cur: u32` — rank the string currently ends with;
 - `chars: Vec<u8>` — append the last `weight` symbols of the target perm (a
   `debug_assert_eq!` checks the overlap really matches);
@@ -185,12 +195,12 @@ called by the rollout generator, not in the greedy/beam hot path.
 ### Beam state, arena, dedup (`src/beam.rs`)
 
 `State { cur, len, visited: BitSet, cycle_rem, k, r, arcs, intact, half_open,
-nearly_done, zhash, node }` mirrors `Walk`'s counters but without `chars` — no state
-carries a string or path. `half_open` (cycles with exactly 1–2 *visited* members) and
-`nearly_done` (exactly 1–2 *unvisited*) are the phase-3 item-1 counters feeding the
-stratification bucket key; they exist only in the beam `State` so far, not in `Walk`
-(item 3 wires them into `Features`). `zhash` is the Zobrist hash of the visited set
-(0 when jitter is off), XOR-updated per move.
+nearly_done, w2_bridges, zhash, node }` mirrors `Walk`'s counters but without `chars`
+— no state carries a string or path. `half_open` (cycles with exactly 1–2 *visited*
+members) and `nearly_done` (exactly 1–2 *unvisited*) are the phase-3 item-1 counters
+feeding the stratification bucket key; item 3 mirrored them (plus `w2_bridges`) into
+`Walk`/`Features` and the v2 model contract. `zhash` is the Zobrist hash of the
+visited set (0 when jitter is off), XOR-updated per move.
 
 - **Scoring without materialization**: `score_move(g, parent, q, w, parent_idx)`
   computes the child's `(len + lb, len, q, parent_idx)` tuple in O(1) from the parent's
@@ -278,6 +288,9 @@ Rollout `i` uses `StdRng::seed_from_u64(seed.wrapping_add(i))` — fully reprodu
 | `current_cycle_remaining` | u32 | unvisited members of the current perm's cycle |
 | `arcs` | u32 | weight-1 components among unvisited perms (serde-default; absent pre-phase-2 files read as 0) |
 | `succ1_unvisited` | u32 | 1 if `succ1(cur)` is unvisited (serde-default) |
+| `half_open` | u32 | cycles with exactly 1–2 visited members (serde-default; phase-3 item 3) |
+| `nearly_done` | u32 | cycles with exactly 1–2 unvisited members (serde-default; phase-3 item 3) |
+| `w2_bridges` | u32 | live cross-cycle weight-2 edges joining two partially-visited cycles — both endpoints unvisited, both endpoint cycles with ≥ 1 visited member (serde-default; phase-3 item 3; see `Graph::w2_bridges_delta`) |
 | `len_so_far` | u32 | characters emitted |
 | `cost_to_go` | u32 | characters the rollout actually needed from here (the label) |
 
@@ -296,10 +309,15 @@ an explicit version marker.
 ## `ml/` — Python training side
 
 Pure numpy (sklearn only for the optional GBT diagnostic); talks to Rust only through
-files. The 8-feature contract, in order, shared with `Scorer::Learned`:
-`r, cycles_remaining, intact_cycles, current_cycle_remaining, arcs, succ1_unvisited,
-lb_cycle, lb_arc` (the two bounds are recomputed from the raw fields in
-`ml/common.py`). Held-out split is by *rollout* (every 5th), never by row.
+files. The feature contract is **append-only and length-dispatched** (phase-3 item 3):
+v1 (8 features) `r, cycles_remaining, intact_cycles, current_cycle_remaining, arcs,
+succ1_unvisited, lb_cycle, lb_arc`; v2 (11) appends `half_open, nearly_done,
+w2_bridges`. The bounds are recomputed from the raw fields in `ml/common.py`; the
+deficit-distribution columns default to 0 for old-schema JSONL, so mixed corpora fit
+cleanly. New exports declare the v2 order; a model consumes exactly the first
+`len(feature_order)` entries of the full vector the scorers compute, so committed
+8-feature models score **bit-identically** to the pre-phase-3 build (pinned by test).
+Held-out split is by *rollout* (every 5th), never by row.
 
 - **`common.py`** — JSONL loading, feature assembly, split, RMSE/MAE/R² metrics.
 - **`fit_linear.py <data.jsonl>...`** — OLS baseline; prints held-out metrics vs. the
@@ -315,9 +333,11 @@ lb_cycle, lb_arc` (the two bounds are recomputed from the raw fields in
   on any corpus (bootstrap-round sanity check).
 
 Model JSON contract (what `src/model.rs` parses):
-`{"kind": "linear"|"mlp", "n": <trained n>, "feature_order": [8 names], ...}` — linear
-adds `coef[8]` + `intercept`; mlp adds `x_mean[8]`, `x_std[8]`,
-`layers: [{w, b, act: "relu"|"identity"}, ...]`. Optional
+`{"kind": "linear"|"mlp", "n": <trained n>, "feature_order": [8 or 11 names — exactly
+`FEATURE_ORDER` or `FEATURE_ORDER_V2`], ...}` — linear
+adds `coef` + `intercept`; mlp adds `x_mean`, `x_std`,
+`layers: [{w, b, act: "relu"|"identity"}, ...]` (all sized to the declared feature
+count). Optional
 `"target": "absolute"|"residual"` (absent = absolute, so pre-residual files load
 unchanged); residual models predict `cost_to_go − lb_arc` and scorers add the anchor
 back. Canonical committed models live in
@@ -350,10 +370,12 @@ plug in:
   keeps a *third* copy (`State2`/`score_move2`); mirror a feature there only if the
   two-ended searcher should score with it, and keep it a pure function of
   `(front, back, visited)`. Keep them in sync, keep everything O(1)/O(n) per
-  expansion, and extend the 8-feature contract in `ml/common.py` + `Model::predict`'s
-  input array in lockstep (serde-default the JSONL field for backward compat).
-  Precedent: item 1's `half_open`/`nearly_done` live only in the beam `State` (they
-  feed the bucket key, not the model — yet).
+  expansion, and extend the feature contract **append-only** in `ml/common.py` +
+  `src/model.rs` (add the names to a new `FEATURE_ORDER_V<k>`, serde-default the JSONL
+  field for backward compat — old models keep consuming their prefix). Precedent:
+  item 3's deficit-distribution features (`half_open`/`nearly_done`/`w2_bridges`) are
+  maintained in `Walk` AND beam `State` (v2 contract), but deliberately NOT in beam2's
+  `State2` — the NO-GO probe rejects v2 models instead (see `Scorer2::Learned` docs).
 - **Adding a CLI subcommand**: add a variant to `enum Cmd` in `src/main.rs` (clap
   derive) and a match arm in `main()`; put the logic in a library module and export it
   from `src/lib.rs`. Follow the existing pattern of printing a summary line then the

@@ -27,6 +27,16 @@ pub struct Walk<'g> {
     /// Weight-1 connected components (arcs) among unvisited permutations.
     /// A fully-unvisited cycle counts as one (circular) component.
     pub arcs: usize,
+    /// Cycles with exactly 1 or 2 visited members
+    /// (`cycle_rem ∈ {n−1, n−2}`) — half-open (phase-3 item 3).
+    pub half_open: usize,
+    /// Cycles with exactly 1 or 2 unvisited members
+    /// (`cycle_rem ∈ {1, 2}`) — nearly done (phase-3 item 3).
+    pub nearly_done: usize,
+    /// Live cross-cycle weight-2 edges joining two partially-visited
+    /// cycles (see [`Graph::w2_bridges_delta`] for the exact
+    /// definition; phase-3 item 3).
+    pub w2_bridges: usize,
     /// Rank of the permutation the string currently ends with.
     pub cur: u32,
     /// The emitted symbols (values `1..=n`).
@@ -51,6 +61,12 @@ impl<'g> Walk<'g> {
             // Every intact cycle is one circular component; visiting rank 0
             // turned its cycle into a single open arc — still one component.
             arcs: g.cycle_count,
+            // Rank 0's cycle has exactly 1 visited member: half-open. It
+            // is also nearly done iff n − 1 ≤ 2. No second cycle is
+            // touched yet, so no w2 bridge can join two touched cycles.
+            half_open: 1,
+            nearly_done: usize::from(g.n - 1 <= 2),
+            w2_bridges: 0,
             cur: 0,
             chars: g.perms[0].clone(),
             steps: 0,
@@ -109,6 +125,10 @@ impl<'g> Walk<'g> {
         // The prefix of Q not appended must already be the string's tail.
         debug_assert_eq!(&self.chars[self.chars.len() - (n - w)..], &q[..n - w]);
         self.chars.extend_from_slice(&q[n - w..]);
+        // w2-bridge delta needs the pre-move (visited, cycle_rem) state.
+        let w2d = self
+            .g
+            .w2_bridges_delta(&self.visited, &self.cycle_rem, rank);
         self.visited.set(rank as usize);
         let cid = self.g.cycle_id[rank as usize] as usize;
         // Arc maintenance. If the cycle was fully unvisited its circular
@@ -125,6 +145,13 @@ impl<'g> Walk<'g> {
                 self.arcs -= 1;
             }
         }
+        // Half-open / nearly-done counters, from the pre-decrement
+        // per-cycle unvisited count (same case analysis as the beam's
+        // `child_state`).
+        let rem = self.cycle_rem[cid] as usize;
+        self.half_open = self.half_open + usize::from(rem == n) - usize::from(rem == n - 2);
+        self.nearly_done = self.nearly_done + usize::from(rem == 3) - usize::from(rem == 1);
+        self.w2_bridges = (self.w2_bridges as i64 + w2d) as usize;
         self.cycle_rem[cid] -= 1;
         if self.cycle_rem[cid] == 0 {
             self.k -= 1;
@@ -171,6 +198,9 @@ impl<'g> Walk<'g> {
                 as u32,
             arcs: self.arcs as u32,
             succ1_unvisited: u32::from(self.succ1_unvisited()),
+            half_open: self.half_open as u32,
+            nearly_done: self.nearly_done as u32,
+            w2_bridges: self.w2_bridges as u32,
             len_so_far: self.chars.len() as u32,
             cost_to_go: 0,
         }
@@ -201,6 +231,9 @@ mod tests {
         assert_eq!(f.current_cycle_remaining, 3);
         assert_eq!(f.arcs, 6);
         assert_eq!(f.succ1_unvisited, 1);
+        assert_eq!(f.half_open, 1);
+        assert_eq!(f.nearly_done, 0);
+        assert_eq!(f.w2_bridges, 0);
         // lb = 23 + 6 − 1 = 28 ≤ 33 − 4.
         assert_eq!(w.lb(), 28);
         // At the start arcs == cycles, so the bounds coincide.
@@ -240,6 +273,75 @@ mod tests {
             }
             assert_eq!(w.arcs, 0);
             assert_eq!(w.lb_arc(), 0);
+        }
+    }
+
+    /// From-scratch recounts of the phase-3 deficit-distribution
+    /// counters (definitions in the field docs / `w2_bridges_delta`).
+    fn deficit_scratch(w: &Walk) -> (usize, usize, usize) {
+        let g = w.graph();
+        let n = g.n;
+        let half_open = w
+            .cycle_rem
+            .iter()
+            .filter(|&&c| {
+                let visited = n - c as usize;
+                (1..=2).contains(&visited)
+            })
+            .count();
+        let nearly_done = w
+            .cycle_rem
+            .iter()
+            .filter(|&&c| (1..=2).contains(&(c as usize)))
+            .count();
+        let touched = |x: usize| (w.cycle_rem[g.cycle_id[x] as usize] as usize) < n;
+        let w2_bridges = (0..g.nfact)
+            .filter(|&p| {
+                let q = g.w2x[p] as usize;
+                !w.visited.get(p) && !w.visited.get(q) && touched(p) && touched(q)
+            })
+            .count();
+        (half_open, nearly_done, w2_bridges)
+    }
+
+    /// The incrementally maintained deficit-distribution counters must
+    /// match from-scratch recounts at every step of random ε-greedy
+    /// walks (the arcs-oracle pattern, but off the greedy path so the
+    /// cycle-status transitions are exercised in arbitrary orders).
+    #[test]
+    fn deficit_counters_match_scratch_on_random_walks() {
+        use rand::rngs::StdRng;
+        use rand::{Rng, SeedableRng};
+        for n in [4usize, 5] {
+            for seed in 0..4u64 {
+                let mut rng = StdRng::seed_from_u64(seed);
+                let g = Graph::new(n);
+                let mut w = Walk::new(&g);
+                assert_eq!(
+                    (w.half_open, w.nearly_done, w.w2_bridges),
+                    deficit_scratch(&w)
+                );
+                while !w.done() {
+                    let options = w.unvisited_succs();
+                    let (q, wt) = if options.is_empty() {
+                        (w.fallback_target(), n as u8)
+                    } else if rng.gen::<f64>() < 0.3 {
+                        options[rng.gen_range(0..options.len())]
+                    } else {
+                        options[0]
+                    };
+                    w.advance(q, wt);
+                    assert_eq!(
+                        (w.half_open, w.nearly_done, w.w2_bridges),
+                        deficit_scratch(&w),
+                        "n={n} seed={seed} step={}",
+                        w.steps
+                    );
+                }
+                assert_eq!(w.half_open, 0);
+                assert_eq!(w.nearly_done, 0);
+                assert_eq!(w.w2_bridges, 0);
+            }
         }
     }
 

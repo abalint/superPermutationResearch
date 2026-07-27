@@ -198,6 +198,22 @@ pub struct Features {
     /// Added after phase 1; defaults to 0 when reading old JSONL.
     #[serde(default)]
     pub succ1_unvisited: u32,
+    /// Cycles with exactly 1 or 2 *visited* members (half-open — the
+    /// structure record walks keep alive, JOURNAL s5). Phase-3 item 3;
+    /// defaults to 0 when reading old JSONL.
+    #[serde(default)]
+    pub half_open: u32,
+    /// Cycles with exactly 1 or 2 *unvisited* members (nearly done).
+    /// Phase-3 item 3; defaults to 0 when reading old JSONL.
+    #[serde(default)]
+    pub nearly_done: u32,
+    /// Cross-cycle weight-2 edges with both endpoints unvisited joining
+    /// two partially-visited cycles — the live "2-cycle weave" capacity
+    /// (see [`crate::graph::Graph::w2_bridges_delta`] for the exact
+    /// definition). Phase-3 item 3; defaults to 0 when reading old
+    /// JSONL.
+    #[serde(default)]
+    pub w2_bridges: u32,
     /// Characters emitted so far.
     pub len_so_far: u32,
     /// Characters the rollout actually needed from here to completion.

@@ -57,6 +57,14 @@ pub enum Scorer2<'m> {
     /// Transfer experiment: `f = len + alpha * model.predict(one-ended
     /// features relative to back)` (`+ lb_arc` for residual-target
     /// models). The model was trained on append-only trajectories.
+    ///
+    /// Only 8-feature ([`crate::model::FEATURE_ORDER`]) models are
+    /// supported: the phase-3 deficit-distribution features
+    /// (`half_open`, `nearly_done`, `w2_bridges`) are deliberately NOT
+    /// maintained in `State2` — the probe is a documented NO-GO
+    /// (JOURNAL s7) kept in-tree, so it was not worth a third copy of
+    /// the counter maintenance. [`beam2_search`] rejects v2 models with
+    /// a clear panic; the CLI refuses them up front.
     Learned {
         /// Learned cost-to-go predictor (one-ended feature contract).
         model: &'m Model,
@@ -168,6 +176,14 @@ pub fn beam2_search(
     jitter: Option<Jitter>,
 ) -> Beam2Result {
     assert!(width >= 1, "beam width must be at least 1");
+    if let Scorer2::Learned { model, .. } = scorer {
+        assert!(
+            model.n_features() <= crate::model::FEATURE_ORDER.len(),
+            "beam2's transfer scorer supports only the 8-feature contract; \
+             the v2 deficit-distribution features are not maintained in State2 \
+             (NO-GO probe, see Scorer2::Learned docs)"
+        );
+    }
     let nfact = g.nfact;
     let n = g.n;
     let preds = Preds::new(g);

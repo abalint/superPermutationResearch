@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Train a small numpy MLP on cost_to_go and export it in the Rust JSON contract.
 
-Architecture: 8 standardized inputs -> hidden relu layers -> 1 linear output.
+Architecture: 11 standardized inputs (the v2 feature contract; the three
+deficit-distribution columns default to 0 for old-schema JSONL) -> hidden
+relu layers -> 1 linear output. Previously exported 8-input models keep
+loading in Rust unchanged (append-only, length-dispatched contract).
 Trained with Adam on minibatches, early stopping on the held-out split
 (every 5th rollout, same as fit_linear.py). The label is standardized during
 training and the scale is folded back into the last layer on export, so the
 exported net maps standardized features directly to raw cost_to_go:
 
-    {"kind":"mlp","n":..,"feature_order":[8],"x_mean":[8],"x_std":[8],
+    {"kind":"mlp","n":..,"feature_order":[11],"x_mean":[11],"x_std":[11],
      "layers":[{"w":[[out x in]],"b":[out],"act":"relu"}, ..., act "identity"]}
 
 After writing, inference is re-implemented from the JSON file alone and
@@ -157,7 +160,7 @@ def main():
     args = ap.parse_args()
 
     X_raw, y, rids, n = common.load(args.paths)
-    X8 = common.features8(X_raw)
+    X8 = common.features(X_raw)
     train_m, test_m = common.split(rids)
 
     lb_arc = X8[:, 7]

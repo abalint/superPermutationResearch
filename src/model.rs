@@ -11,18 +11,30 @@
 //! The output is the predicted *cost-to-go* (characters still needed),
 //! or — for models exported with `"target": "residual"` — the predicted
 //! *residual* above the arc bound (`cost_to_go − lb_arc`); the scorer
-//! adds `lb_arc` back (see [`Target`]). Every model file must declare
-//! `feature_order` exactly equal to [`FEATURE_ORDER`]; unknown kinds,
-//! targets, activations, mismatched feature orders, or inconsistent
-//! layer shapes are rejected with a clear error.
+//! adds `lb_arc` back (see [`Target`]).
+//!
+//! # Feature-contract versioning (append-only, length-dispatched)
+//!
+//! The feature contract grows append-only: [`FEATURE_ORDER_V2`] is
+//! [`FEATURE_ORDER`] (the original 8) plus the phase-3
+//! deficit-distribution features. A model file must declare
+//! `feature_order` exactly equal to one of the two lists, and it
+//! consumes exactly the first `n_features()` entries of the full
+//! feature vector the scorers compute — so an old 8-feature model fed
+//! the 11-feature vector produces bit-identical predictions to the
+//! pre-phase-3 build (same multiplies, same accumulation order), while
+//! new models see the appended features. Unknown kinds, targets,
+//! activations, unrecognized feature orders, or inconsistent layer
+//! shapes are rejected with a clear error.
 
 use std::fs;
 use std::path::Path;
 
 use serde::Deserialize;
 
-/// The exact feature vector layout every model must declare, matching
-/// the beam's O(1) child-feature computation (see `score_move`).
+/// The original (phase-2) feature vector prefix, matching the beam's
+/// O(1) child-feature computation (see `score_move`). Models declaring
+/// exactly this order use only the first 8 features.
 pub const FEATURE_ORDER: [&str; 8] = [
     "r",
     "cycles_remaining",
@@ -32,6 +44,24 @@ pub const FEATURE_ORDER: [&str; 8] = [
     "succ1_unvisited",
     "lb_cycle",
     "lb_arc",
+];
+
+/// The full (phase-3 item 3) feature vector: [`FEATURE_ORDER`] plus the
+/// deficit-distribution features, in this exact order. Append-only —
+/// never reorder or insert in the middle, only push to the end (and add
+/// the next version constant).
+pub const FEATURE_ORDER_V2: [&str; 11] = [
+    "r",
+    "cycles_remaining",
+    "intact_cycles",
+    "current_cycle_remaining",
+    "arcs",
+    "succ1_unvisited",
+    "lb_cycle",
+    "lb_arc",
+    "half_open",
+    "nearly_done",
+    "w2_bridges",
 ];
 
 /// What quantity the model was trained to predict (`"target"` in the
@@ -68,16 +98,19 @@ pub struct Layer {
     pub act: Act,
 }
 
-/// A learned cost-to-go predictor over the 8 features of
-/// [`FEATURE_ORDER`].
+/// A learned cost-to-go predictor over a prefix of the append-only
+/// feature contract ([`FEATURE_ORDER`] or [`FEATURE_ORDER_V2`]); the
+/// prefix length is `coef.len()` / `x_mean.len()` (see
+/// [`Model::n_features`]).
 #[derive(Debug, Clone, PartialEq)]
 pub enum Model {
-    /// `coef · x + bias`.
+    /// `coef · x[..coef.len()] + bias`.
     Linear {
         /// Symbol count the model was trained for.
         n: usize,
-        /// One coefficient per feature, in [`FEATURE_ORDER`] order.
-        coef: [f64; 8],
+        /// One coefficient per feature, in declared feature order
+        /// (a prefix of [`FEATURE_ORDER_V2`]; 8 or 11 entries).
+        coef: Vec<f64>,
         /// Intercept.
         bias: f64,
         /// What quantity the prediction is (see [`Target`]).
@@ -87,10 +120,11 @@ pub enum Model {
     Mlp {
         /// Symbol count the model was trained for.
         n: usize,
-        /// Per-feature mean subtracted before the first layer.
-        x_mean: [f64; 8],
+        /// Per-feature mean subtracted before the first layer (one per
+        /// consumed feature; 8 or 11 entries).
+        x_mean: Vec<f64>,
         /// Per-feature scale divided out before the first layer.
-        x_std: [f64; 8],
+        x_std: Vec<f64>,
         /// Dense layers; the last outputs a single scalar.
         layers: Vec<Layer>,
         /// What quantity the prediction is (see [`Target`]).
@@ -130,19 +164,30 @@ struct RawLayer {
     act: String,
 }
 
-fn check_feature_order(fo: &[String]) -> Result<(), String> {
-    if fo.len() != FEATURE_ORDER.len() || fo.iter().zip(FEATURE_ORDER).any(|(a, b)| a != b) {
-        return Err(format!(
-            "feature_order must be exactly {FEATURE_ORDER:?}, got {fo:?}"
-        ));
+/// Validate the declared feature order against the append-only contract
+/// and return the number of consumed features (8 for [`FEATURE_ORDER`],
+/// 11 for [`FEATURE_ORDER_V2`]).
+fn check_feature_order(fo: &[String]) -> Result<usize, String> {
+    let matches =
+        |names: &[&str]| fo.len() == names.len() && fo.iter().zip(names).all(|(a, b)| a == b);
+    if matches(&FEATURE_ORDER) || matches(&FEATURE_ORDER_V2) {
+        Ok(fo.len())
+    } else {
+        Err(format!(
+            "feature_order must be exactly {FEATURE_ORDER:?} (v1) or {FEATURE_ORDER_V2:?} (v2), got {fo:?}"
+        ))
     }
-    Ok(())
 }
 
-fn to_array8(v: Vec<f64>, name: &str) -> Result<[f64; 8], String> {
-    let len = v.len();
-    v.try_into()
-        .map_err(|_| format!("{name} must have exactly 8 entries, got {len}"))
+fn check_len(v: Vec<f64>, dim: usize, name: &str) -> Result<Vec<f64>, String> {
+    if v.len() == dim {
+        Ok(v)
+    } else {
+        Err(format!(
+            "{name} must have exactly {dim} entries (one per declared feature), got {}",
+            v.len()
+        ))
+    }
 }
 
 impl Model {
@@ -158,10 +203,10 @@ impl Model {
                 bias,
                 target,
             } => {
-                check_feature_order(&feature_order)?;
+                let dim = check_feature_order(&feature_order)?;
                 Ok(Model::Linear {
                     n,
-                    coef: to_array8(coef, "coef")?,
+                    coef: check_len(coef, dim, "coef")?,
                     bias,
                     target,
                 })
@@ -174,16 +219,16 @@ impl Model {
                 layers,
                 target,
             } => {
-                check_feature_order(&feature_order)?;
-                let x_mean = to_array8(x_mean, "x_mean")?;
-                let x_std = to_array8(x_std, "x_std")?;
+                let nfeat = check_feature_order(&feature_order)?;
+                let x_mean = check_len(x_mean, nfeat, "x_mean")?;
+                let x_std = check_len(x_std, nfeat, "x_std")?;
                 if x_std.contains(&0.0) {
                     return Err("x_std entries must be nonzero".to_string());
                 }
                 if layers.is_empty() {
                     return Err("mlp must have at least one layer".to_string());
                 }
-                let mut dim = 8usize;
+                let mut dim = nfeat;
                 let mut out = Vec::with_capacity(layers.len());
                 for (i, l) in layers.into_iter().enumerate() {
                     let act = match l.act.as_str() {
@@ -244,9 +289,29 @@ impl Model {
         Model::from_json(&text)
     }
 
-    /// Predicted cost-to-go for a feature vector in [`FEATURE_ORDER`]
-    /// order.
-    pub fn predict(&self, x: &[f64; 8]) -> f64 {
+    /// Number of features the model consumes — the length of its
+    /// declared `feature_order` (8 for a [`FEATURE_ORDER`] model, 11
+    /// for [`FEATURE_ORDER_V2`]). Scorers pass the full current feature
+    /// vector; the model reads only this prefix.
+    pub fn n_features(&self) -> usize {
+        match self {
+            Model::Linear { coef, .. } => coef.len(),
+            Model::Mlp { x_mean, .. } => x_mean.len(),
+        }
+    }
+
+    /// Predicted cost-to-go for a feature vector whose prefix follows
+    /// the append-only contract ([`FEATURE_ORDER_V2`]); only the first
+    /// [`Model::n_features`] entries are read, in declaration order, so
+    /// an 8-feature model scores bit-identically to the pre-phase-3
+    /// build. `x.len()` must be at least [`Model::n_features`].
+    pub fn predict(&self, x: &[f64]) -> f64 {
+        assert!(
+            x.len() >= self.n_features(),
+            "feature vector has {} entries but the model consumes {}",
+            x.len(),
+            self.n_features()
+        );
         match self {
             Model::Linear { coef, bias, .. } => {
                 coef.iter().zip(x).map(|(c, v)| c * v).sum::<f64>() + bias
@@ -393,6 +458,97 @@ mod tests {
         //   y = 1.0 + 6.75 + 0.125 = 7.875.
         let x = [1.0, -2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
         assert_eq!(m.predict(&x), 7.875);
+    }
+
+    const FO_V2: &str = r#"["r","cycles_remaining","intact_cycles","current_cycle_remaining","arcs","succ1_unvisited","lb_cycle","lb_arc","half_open","nearly_done","w2_bridges"]"#;
+
+    #[test]
+    fn v2_linear_parses_and_uses_all_11_features() {
+        let json = format!(
+            r#"{{"kind":"linear","n":6,"feature_order":{FO_V2},
+                "coef":[0,0,0,0,0,0,0,0,1.0,10.0,100.0],"bias":0.5}}"#
+        );
+        let m = Model::from_json(&json).unwrap();
+        assert_eq!(m.n_features(), 11);
+        let x = [9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 2.0, 3.0, 4.0];
+        // 1*2 + 10*3 + 100*4 + 0.5 = 432.5
+        assert_eq!(m.predict(&x), 432.5);
+    }
+
+    #[test]
+    fn v1_model_ignores_appended_features() {
+        let json = format!(
+            r#"{{"kind":"linear","n":6,"feature_order":{FO},
+                "coef":[1.0,0.0,0.0,0.0,0.0,0.0,0.0,2.0],"bias":1.5}}"#
+        );
+        let m = Model::from_json(&json).unwrap();
+        assert_eq!(m.n_features(), 8);
+        let x8 = [3.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 10.0];
+        let x11 = [3.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 10.0, 7.0, 7.0, 7.0];
+        assert_eq!(m.predict(&x8), 24.5);
+        assert_eq!(m.predict(&x11), 24.5);
+    }
+
+    #[test]
+    fn rejects_coef_length_mismatched_with_feature_order() {
+        // 11 coefficients under the v1 order.
+        let json = format!(
+            r#"{{"kind":"linear","n":6,"feature_order":{FO},
+                "coef":[0,0,0,0,0,0,0,0,0,0,0],"bias":0}}"#
+        );
+        assert!(Model::from_json(&json).unwrap_err().contains("coef"));
+        // 8 coefficients under the v2 order.
+        let json = format!(
+            r#"{{"kind":"linear","n":6,"feature_order":{FO_V2},
+                "coef":[0,0,0,0,0,0,0,0],"bias":0}}"#
+        );
+        assert!(Model::from_json(&json).unwrap_err().contains("coef"));
+    }
+
+    #[test]
+    fn rejects_partial_or_reordered_v2_feature_order() {
+        // 9 features (a strict prefix between v1 and v2) is not a
+        // recognized contract version.
+        let fo9 = FO_V2.replace(r#","nearly_done","w2_bridges""#, "");
+        let json = format!(
+            r#"{{"kind":"linear","n":6,"feature_order":{fo9},
+                "coef":[0,0,0,0,0,0,0,0,0],"bias":0}}"#
+        );
+        assert!(Model::from_json(&json)
+            .unwrap_err()
+            .contains("feature_order"));
+        // v2 names in the wrong order.
+        let swapped = FO_V2.replace(
+            r#""nearly_done","w2_bridges""#,
+            r#""w2_bridges","nearly_done""#,
+        );
+        let json = format!(
+            r#"{{"kind":"linear","n":6,"feature_order":{swapped},
+                "coef":[0,0,0,0,0,0,0,0,0,0,0],"bias":0}}"#
+        );
+        assert!(Model::from_json(&json)
+            .unwrap_err()
+            .contains("feature_order"));
+    }
+
+    #[test]
+    fn v2_mlp_parses_and_first_layer_width_must_match() {
+        let json = format!(
+            r#"{{"kind":"mlp","n":6,"feature_order":{FO_V2},
+                "x_mean":[0,0,0,0,0,0,0,0,0,0,0],"x_std":[1,1,1,1,1,1,1,1,1,1,1],
+                "layers":[{{"w":[[0,0,0,0,0,0,0,0,0,0,2.0]],"b":[0.25],"act":"identity"}}]}}"#
+        );
+        let m = Model::from_json(&json).unwrap();
+        assert_eq!(m.n_features(), 11);
+        let x = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0];
+        assert_eq!(m.predict(&x), 6.25);
+        // An 8-wide first layer under the v2 order must be rejected.
+        let json = format!(
+            r#"{{"kind":"mlp","n":6,"feature_order":{FO_V2},
+                "x_mean":[0,0,0,0,0,0,0,0,0,0,0],"x_std":[1,1,1,1,1,1,1,1,1,1,1],
+                "layers":[{{"w":[[0,0,0,0,0,0,0,0]],"b":[0],"act":"identity"}}]}}"#
+        );
+        assert!(Model::from_json(&json).unwrap_err().contains("row"));
     }
 
     #[test]

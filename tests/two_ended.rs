@@ -224,3 +224,27 @@ fn beam2_visits_every_perm_once_n4() {
     }
     assert!(seen.iter().all(|&v| v));
 }
+
+/// beam2's transfer scorer deliberately does not maintain the phase-3
+/// deficit-distribution features (NO-GO probe); feeding it an
+/// 11-feature (v2) model must be rejected up front.
+#[test]
+#[should_panic(expected = "8-feature contract")]
+fn beam2_rejects_v2_feature_models() {
+    let g = Graph::new(4);
+    let model = superperm::model::Model::Linear {
+        n: 4,
+        coef: vec![0.0; 11],
+        bias: 0.0,
+        target: superperm::model::Target::Absolute,
+    };
+    beam2_search(
+        &g,
+        8,
+        Scorer2::Learned {
+            model: &model,
+            alpha: 1.0,
+        },
+        None,
+    );
+}

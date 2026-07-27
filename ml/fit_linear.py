@@ -12,9 +12,12 @@ bounds used as point predictors:
 The split is by *rollout* (every 5th rollout is held out), not by row —
 rows within a rollout share a label scale, so a row-level split leaks.
 
-The design matrix is [8-feature contract, ones]; with --export the fitted
-model is written in the JSON contract the Rust beam loads (the ones-column
-coefficient becomes "bias", so "coef" applies to the raw 8 features).
+The design matrix is [11-feature contract (v2: the 8 phase-2 features plus
+half_open, nearly_done, w2_bridges — absent in old JSONL, defaulting to 0),
+ones]; with --export the fitted model is written in the JSON contract the
+Rust beam loads (the ones-column coefficient becomes "bias", so "coef"
+applies to the 11 features). Previously exported 8-feature models keep
+loading in Rust unchanged (append-only, length-dispatched contract).
 
 With --residual the training label is cost_to_go - lb_arc (the correction
 above the admissible anchor) and the exported JSON carries
@@ -34,9 +37,9 @@ import numpy as np
 import common
 
 
-def fit(X8, y, train):
-    """OLS on [8 features, ones]. Returns (coef[8], bias)."""
-    D = np.column_stack([X8, np.ones(len(y))])
+def fit(X, y, train):
+    """OLS on [features, ones]. Returns (coef, bias)."""
+    D = np.column_stack([X, np.ones(len(y))])
     beta, *_ = np.linalg.lstsq(D[train], y[train], rcond=None)
     return beta[:-1], beta[-1]
 
@@ -53,16 +56,21 @@ def main():
     args = ap.parse_args()
 
     X_raw, y, rids, n = common.load(args.paths)
-    X8 = common.features8(X_raw)
-    lb_cycle, lb_arc = X8[:, 6], X8[:, 7]
+    X = common.features(X_raw)
+    lb_cycle, lb_arc = X[:, 6], X[:, 7]
     if not np.any(X_raw[:, 4]):
         print("note: no arc features in input (old-schema JSONL); lb_arc is meaningless")
+    if not np.any(X_raw[:, 6:9]):
+        print(
+            "note: no deficit-distribution features in input (old-schema JSONL); "
+            "half_open/nearly_done/w2_bridges columns are all 0"
+        )
 
     train, test = common.split(rids)
     y_fit = y - lb_arc if args.residual else y
-    coef, bias = fit(X8, y_fit, train)
+    coef, bias = fit(X, y_fit, train)
     # Report in absolute cost_to_go space regardless of the label.
-    pred = X8 @ coef + bias + (lb_arc if args.residual else 0.0)
+    pred = X @ coef + bias + (lb_arc if args.residual else 0.0)
 
     target = "residual" if args.residual else "absolute"
     print(

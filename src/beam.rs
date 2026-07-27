@@ -172,6 +172,11 @@ struct State {
     /// Cycles with exactly 1 or 2 unvisited members
     /// (`cycle_rem ∈ {1, 2}`) — nearly done.
     nearly_done: u32,
+    /// Live cross-cycle weight-2 edges joining two partially-visited
+    /// cycles (see [`crate::graph::Graph::w2_bridges_delta`] for the
+    /// exact definition; phase-3 item 3). Pure function of the visited
+    /// set.
+    w2_bridges: u32,
     /// Zobrist hash of the visited set (0 when jitter is off).
     zhash: u64,
     /// Index of this state's node in the path arena.
@@ -242,6 +247,8 @@ fn child_state(
     jctx: Option<&JitterCtx>,
 ) -> State {
     let arcs = child_arcs(g, parent, q);
+    let w2_bridges = (parent.w2_bridges as i64
+        + g.w2_bridges_delta(&parent.visited, &parent.cycle_rem, q)) as u32;
     let mut cycle_rem = parent.cycle_rem.clone();
     let cid = g.cycle_id[q as usize] as usize;
     let rem = cycle_rem[cid] as usize;
@@ -261,6 +268,7 @@ fn child_state(
         intact,
         half_open,
         nearly_done,
+        w2_bridges,
         zhash: jctx.map_or(0, |j| parent.zhash ^ j.zobrist[q as usize]),
         node,
     }
@@ -415,9 +423,11 @@ fn beam_search_impl(
             // Rank 0's cycle is already broken by the initial visit.
             intact: (g.cycle_count - 1) as u32,
             // ... and has exactly 1 visited member: half-open. It is
-            // also nearly done iff n − 1 ≤ 2.
+            // also nearly done iff n − 1 ≤ 2. Only one cycle is touched,
+            // so no w2 bridge joins two touched cycles yet.
             half_open: 1,
             nearly_done: u32::from(n - 1 <= 2),
+            w2_bridges: 0,
             zhash: jctx.map_or(0, |j| j.zobrist[0]),
             node: 0,
         }]
@@ -432,12 +442,14 @@ fn beam_search_impl(
         for &q in &prefix[1..=seed_prefix] {
             let w = (n - Graph::overlap(&g.perms[root.cur as usize], &g.perms[q as usize])) as u32;
             let arcs = child_arcs(g, root, q);
+            let w2d = g.w2_bridges_delta(&root.visited, &root.cycle_rem, q);
             root.visited.set(q as usize);
             let cid = g.cycle_id[q as usize] as usize;
             let rem = root.cycle_rem[cid] as usize;
             root.intact -= u32::from(rem == n);
             root.half_open = root.half_open + u32::from(rem == n) - u32::from(rem == n - 2);
             root.nearly_done = root.nearly_done + u32::from(rem == 3) - u32::from(rem == 1);
+            root.w2_bridges = (root.w2_bridges as i64 + w2d) as u32;
             root.cycle_rem[cid] -= 1;
             root.k -= u32::from(root.cycle_rem[cid] == 0);
             root.r -= 1;
@@ -634,17 +646,22 @@ fn beam_search_impl(
 }
 
 /// Score the move `parent → q` with edge weight `w` without cloning the
-/// parent's state, in O(1) from the parent's counters. The score is
+/// parent's state, in O(1) from the parent's counters (O(n) when `q`
+/// first touches an intact cycle — the `w2_bridges` scan). The score is
 /// `i64` fixed-point with 12 fractional bits: `(len + lb) << 12` for
 /// bound scoring (exactly the phase-1 ordering), or
 /// `round((len + alpha * pred) * 4096)` for a learned model —
 /// `round((len + lb_arc + alpha * pred) * 4096)` if the model is
-/// residual-target — where `pred` is evaluated on the child's 8 features
-/// (matching [`crate::model::FEATURE_ORDER`]) computed here without
-/// materializing the child.
+/// residual-target — where `pred` is evaluated on the child's feature
+/// vector (matching [`crate::model::FEATURE_ORDER_V2`]; an 8-feature
+/// model reads only the [`crate::model::FEATURE_ORDER`] prefix, and the
+/// appended deficit-distribution features are then not even computed,
+/// so old models score bit-identically to the pre-phase-3 build)
+/// computed here without materializing the child.
 ///
-/// Both bounds and all 8 learned features are pure functions of the
-/// child's `(cur, visited, len)`, which the keep-first dedup in
+/// Both bounds and all learned features are pure functions of the
+/// child's `(cur, visited, len)` (the three deficit-distribution
+/// features depend on `visited` alone), which the keep-first dedup in
 /// `beam_search` relies on. The optional jitter offset is likewise a
 /// pure function of the child's `(cur, visited)` (via the parent's
 /// incrementally maintained Zobrist hash), so it preserves that
@@ -694,6 +711,23 @@ fn score_move(
                 r + k - u32::from(cur_rem > 0)
             };
             let lb_arc = if r == 0 { 0 } else { r + arcs - succ1_unvis };
+            // The appended deficit-distribution features (v2 contract)
+            // are only computed when the model consumes them: an
+            // 8-feature model must stay bit-identical to (and as fast
+            // as) the pre-phase-3 build.
+            let (half_open, nearly_done, w2_bridges) =
+                if model.n_features() > crate::model::FEATURE_ORDER.len() {
+                    let rem_n = rem as usize;
+                    (
+                        parent.half_open + u32::from(rem_n == g.n) - u32::from(rem_n == g.n - 2),
+                        parent.nearly_done + u32::from(rem == 3) - u32::from(rem == 1),
+                        (parent.w2_bridges as i64
+                            + g.w2_bridges_delta(&parent.visited, &parent.cycle_rem, q))
+                            as u32,
+                    )
+                } else {
+                    (0, 0, 0)
+                };
             let x = [
                 f64::from(r),
                 f64::from(k),
@@ -703,6 +737,9 @@ fn score_move(
                 f64::from(succ1_unvis),
                 f64::from(lb_cycle),
                 f64::from(lb_arc),
+                f64::from(half_open),
+                f64::from(nearly_done),
+                f64::from(w2_bridges),
             ];
             let pred = model.predict(&x);
             // Residual models predict cost_to_go − lb_arc: add the

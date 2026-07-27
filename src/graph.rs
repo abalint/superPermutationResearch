@@ -21,6 +21,8 @@
 //! each permutation with its cycle. Cycle structure drives the admissible
 //! lower bound in [`crate::bound`].
 
+use crate::bitset::BitSet;
+
 /// `n!` as `usize` (exact for the small `n` used here; `8! = 40320`).
 pub fn factorial(n: usize) -> usize {
     (1..=n).product()
@@ -103,6 +105,17 @@ pub struct Graph {
     /// `pred1[r]` is the unique weight-1 predecessor of rank `r` — the
     /// right rotation `P[n−1] + P[..n−1]`, in the same cycle.
     pub pred1: Vec<u32>,
+    /// `w2x[r]` is the unique *cross-cycle* weight-2 successor of rank
+    /// `r`: `P[2..] + P[1] + P[0]` (swap the first two symbols, then
+    /// rotate twice). Of a permutation's two weight-2 successors the
+    /// other one is the in-cycle double rotation; this one always lands
+    /// in a different rotation cycle (swapping an adjacent pair of a
+    /// cyclic sequence of ≥ 3 distinct symbols never yields a rotation
+    /// of it). These are the edges the record walks' "2-cycle weave" is
+    /// built from (JOURNAL s5). The map is a bijection on ranks.
+    pub w2x: Vec<u32>,
+    /// Inverse of [`Graph::w2x`]: `w2rev[w2x[r]] == r`.
+    pub w2rev: Vec<u32>,
 }
 
 impl Graph {
@@ -164,6 +177,24 @@ impl Graph {
             pred1[succs[r][0].0 as usize] = r as u32;
         }
 
+        // Cross-cycle weight-2 successors: of the two weight-2 entries
+        // in each successor list, exactly one leaves the rotation cycle.
+        let mut w2x = vec![u32::MAX; nfact];
+        for r in 0..nfact {
+            for &(q, w) in &succs[r] {
+                if w == 2 && cycle_id[q as usize] != cycle_id[r] {
+                    debug_assert_eq!(w2x[r], u32::MAX, "two cross-cycle w2 successors of {r}");
+                    w2x[r] = q;
+                }
+            }
+            debug_assert_ne!(w2x[r], u32::MAX, "no cross-cycle w2 successor of {r}");
+        }
+        let mut w2rev = vec![u32::MAX; nfact];
+        for (r, &q) in w2x.iter().enumerate() {
+            debug_assert_eq!(w2rev[q as usize], u32::MAX, "w2x is not injective at {q}");
+            w2rev[q as usize] = r as u32;
+        }
+
         Graph {
             n,
             nfact,
@@ -172,6 +203,8 @@ impl Graph {
             cycle_id,
             cycle_count,
             pred1,
+            w2x,
+            w2rev,
         }
     }
 
@@ -179,6 +212,82 @@ impl Graph {
     #[inline]
     pub fn succ1(&self, r: u32) -> u32 {
         self.succs[r as usize][0].0
+    }
+
+    /// Change in the `w2_bridges` feature caused by visiting `q` from
+    /// the state `(visited, cycle_rem)`, where
+    ///
+    /// ```text
+    /// w2_bridges = #{ ranks P : P unvisited, w2x(P) unvisited,
+    ///                 cycle(P) has ≥ 1 visited member,
+    ///                 cycle(w2x(P)) has ≥ 1 visited member }
+    /// ```
+    ///
+    /// — the number of still-traversable cross-cycle weight-2 edges
+    /// joining two *partially visited* cycles (each endpoint cycle has
+    /// deficit ≥ 1, witnessed by its unvisited endpoint, and ≥ 1 visited
+    /// member). This is the "2-cycle weave capacity" between touched
+    /// cycles that separates record midgames from rollout midgames at
+    /// equal `(r, level)` (JOURNAL s5 §4): record walks keep many cycles
+    /// partially open and rejoin them later through exactly these edges,
+    /// while greedy-shaped walks finish cycles and leave few live
+    /// bridges. A pure function of the visited set alone (not of `cur`),
+    /// so beam dedup and bucket-key arguments are untouched.
+    ///
+    /// Caller contract: `visited`/`cycle_rem` describe the state
+    /// *before* the move, and `cycle_rem` has not yet been decremented.
+    /// The delta never reads `q`'s own visited bit, so it is safe to
+    /// call just before or just after `visited.set(q)`.
+    ///
+    /// Cost: O(1) when `q`'s cycle is already touched (only `q`'s two
+    /// incident edges can change — every other edge keeps both endpoint
+    /// statuses and both cycle flags); O(n) when `q`'s cycle was intact
+    /// (its `2(n−1)` other incident edges may all start counting — the
+    /// cycle's "≥ 1 visited" flag flips, which happens once per cycle,
+    /// so a full walk pays O(1) amortized). A cycle emptying out
+    /// (`cycle_rem` 1 → 0) needs no scan: its flag stays true and every
+    /// incident edge already has a visited endpoint on the `q` side.
+    pub fn w2_bridges_delta(&self, visited: &BitSet, cycle_rem: &[u8], q: u32) -> i64 {
+        let n = self.n;
+        let touched = |cid: u32| (cycle_rem[cid as usize] as usize) < n;
+        let cid_q = self.cycle_id[q as usize];
+        if touched(cid_q) {
+            // q's cycle stays touched; only q's own two edges die.
+            let mut d = 0i64;
+            let out = self.w2x[q as usize];
+            if !visited.get(out as usize) && touched(self.cycle_id[out as usize]) {
+                d -= 1; // edge q -> w2x(q) was counted, q is now visited
+            }
+            let inp = self.w2rev[q as usize];
+            if !visited.get(inp as usize) && touched(self.cycle_id[inp as usize]) {
+                d -= 1; // edge w2rev(q) -> q was counted, q is now visited
+            }
+            d
+        } else {
+            // q's cycle becomes touched: its other members' incident
+            // edges may start counting (q's own contribute 0 both
+            // before — untouched cycle — and after — q visited). Every
+            // scanned rank is either a member m != q or a w2 partner of
+            // one, which lies outside the cycle and hence is also != q,
+            // so the pre-move visited bits and the other cycles' flags
+            // equal the post-move ones.
+            let mut d = 0i64;
+            let mut m = self.succ1(q);
+            while m != q {
+                if !visited.get(m as usize) {
+                    let out = self.w2x[m as usize];
+                    if !visited.get(out as usize) && touched(self.cycle_id[out as usize]) {
+                        d += 1;
+                    }
+                    let inp = self.w2rev[m as usize];
+                    if !visited.get(inp as usize) && touched(self.cycle_id[inp as usize]) {
+                        d += 1;
+                    }
+                }
+                m = self.succ1(m);
+            }
+            d
+        }
     }
 
     /// Length of the maximal overlap of a suffix of `a` with a prefix of
@@ -373,6 +482,34 @@ mod tests {
                     let b = &g.perms[p1 as usize][..w1 as usize];
                     assert!(a < b, "prefixes lex-ascending for perm {q}");
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn w2x_is_the_cross_cycle_swap_and_a_bijection() {
+        for n in 3..=6 {
+            let g = Graph::new(n);
+            let mut seen = vec![false; g.nfact];
+            for r in 0..g.nfact {
+                let q = g.w2x[r];
+                // It is a stored weight-2 successor...
+                assert!(
+                    g.succs[r].contains(&(q, 2)),
+                    "n={n} r={r}: w2x not a w2 successor"
+                );
+                // ... in a different cycle ...
+                assert_ne!(g.cycle_id[r], g.cycle_id[q as usize], "n={n} r={r}");
+                // ... equal to P[2..] + P[1] + P[0] ...
+                let p = &g.perms[r];
+                let mut expect: Vec<u8> = p[2..].to_vec();
+                expect.push(p[1]);
+                expect.push(p[0]);
+                assert_eq!(g.perms[q as usize], expect, "n={n} r={r}");
+                // ... and the inverse map agrees.
+                assert_eq!(g.w2rev[q as usize], r as u32, "n={n} r={r}");
+                assert!(!seen[q as usize], "n={n}: w2x not injective");
+                seen[q as usize] = true;
             }
         }
     }
