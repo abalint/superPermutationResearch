@@ -6,7 +6,7 @@
 //! bound of [`crate::bound`] in O(1) per move.
 
 use crate::bitset::BitSet;
-use crate::bound::{lower_bound, Features};
+use crate::bound::{lower_bound, lower_bound_arc, Features};
 use crate::graph::Graph;
 
 /// A partial superpermutation under construction.
@@ -24,6 +24,9 @@ pub struct Walk<'g> {
     pub k: usize,
     /// Number of unvisited permutations.
     pub r: usize,
+    /// Weight-1 connected components (arcs) among unvisited permutations.
+    /// A fully-unvisited cycle counts as one (circular) component.
+    pub arcs: usize,
     /// Rank of the permutation the string currently ends with.
     pub cur: u32,
     /// The emitted symbols (values `1..=n`).
@@ -45,6 +48,9 @@ impl<'g> Walk<'g> {
             cycle_rem,
             k: g.cycle_count, // n ≥ 3 ⇒ every cycle still has unvisited members
             r: g.nfact - 1,
+            // Every intact cycle is one circular component; visiting rank 0
+            // turned its cycle into a single open arc — still one component.
+            arcs: g.cycle_count,
             cur: 0,
             chars: g.perms[0].clone(),
             steps: 0,
@@ -105,6 +111,20 @@ impl<'g> Walk<'g> {
         self.chars.extend_from_slice(&q[n - w..]);
         self.visited.set(rank as usize);
         let cid = self.g.cycle_id[rank as usize] as usize;
+        // Arc maintenance. If the cycle was fully unvisited its circular
+        // component becomes one open arc (no change); otherwise the count
+        // changes by the visited status of the two ring neighbors:
+        // both unvisited → the arc splits (+1); both visited → a
+        // singleton arc disappears (−1); mixed → an endpoint shrinks (0).
+        if (self.cycle_rem[cid] as usize) < n {
+            let p_unvis = !self.visited.get(self.g.pred1[rank as usize] as usize);
+            let s_unvis = !self.visited.get(self.g.succ1(rank) as usize);
+            if p_unvis && s_unvis {
+                self.arcs += 1;
+            } else if !p_unvis && !s_unvis {
+                self.arcs -= 1;
+            }
+        }
         self.cycle_rem[cid] -= 1;
         if self.cycle_rem[cid] == 0 {
             self.k -= 1;
@@ -119,6 +139,17 @@ impl<'g> Walk<'g> {
     pub fn lb(&self) -> usize {
         let cur_rem = self.cycle_rem[self.g.cycle_id[self.cur as usize] as usize];
         lower_bound(self.r, self.k, cur_rem > 0)
+    }
+
+    /// Whether the current permutation's weight-1 successor is unvisited.
+    pub fn succ1_unvisited(&self) -> bool {
+        !self.visited.get(self.g.succ1(self.cur) as usize)
+    }
+
+    /// Arc-refined admissible lower bound; dominates [`Walk::lb`]
+    /// pointwise (see [`crate::bound::lower_bound_arc`]).
+    pub fn lb_arc(&self) -> usize {
+        lower_bound_arc(self.r, self.arcs, self.succ1_unvisited())
     }
 
     /// Snapshot the state as a [`Features`] record (`cost_to_go` is left
@@ -138,6 +169,8 @@ impl<'g> Walk<'g> {
             intact_cycles: intact as u32,
             current_cycle_remaining: self.cycle_rem[self.g.cycle_id[self.cur as usize] as usize]
                 as u32,
+            arcs: self.arcs as u32,
+            succ1_unvisited: u32::from(self.succ1_unvisited()),
             len_so_far: self.chars.len() as u32,
             cost_to_go: 0,
         }
@@ -166,8 +199,48 @@ mod tests {
         assert_eq!(f.cycles_remaining, 6);
         assert_eq!(f.intact_cycles, 5);
         assert_eq!(f.current_cycle_remaining, 3);
+        assert_eq!(f.arcs, 6);
+        assert_eq!(f.succ1_unvisited, 1);
         // lb = 23 + 6 − 1 = 28 ≤ 33 − 4.
         assert_eq!(w.lb(), 28);
+        // At the start arcs == cycles, so the bounds coincide.
+        assert_eq!(w.lb_arc(), 28);
+    }
+
+    /// From-scratch arc recount: every arc has exactly one head (an
+    /// unvisited rank whose weight-1 predecessor is visited), except a
+    /// fully-unvisited cycle, which is circular and has none.
+    fn arcs_scratch(w: &Walk) -> usize {
+        let g = w.graph();
+        let heads = (0..g.nfact)
+            .filter(|&x| !w.visited.get(x) && w.visited.get(g.pred1[x] as usize))
+            .count();
+        let intact = w.cycle_rem.iter().filter(|&&c| c as usize == g.n).count();
+        heads + intact
+    }
+
+    #[test]
+    fn arcs_incremental_matches_scratch_and_bound_dominates() {
+        for n in [4usize, 5] {
+            let g = Graph::new(n);
+            let path = crate::greedy::greedy(&g).path;
+            let mut w = Walk::new(&g);
+            assert_eq!(w.arcs, arcs_scratch(&w));
+            for &rank in &path[1..] {
+                let weight = match w.first_unvisited_succ() {
+                    Some((q, wt)) if q == rank => wt,
+                    _ => {
+                        let p = &g.perms[w.cur as usize];
+                        (n - Graph::overlap(p, &g.perms[rank as usize])) as u8
+                    }
+                };
+                w.advance(rank, weight);
+                assert_eq!(w.arcs, arcs_scratch(&w), "n={n} step={}", w.steps);
+                assert!(w.lb_arc() >= w.lb(), "n={n} step={}", w.steps);
+            }
+            assert_eq!(w.arcs, 0);
+            assert_eq!(w.lb_arc(), 0);
+        }
     }
 
     #[test]

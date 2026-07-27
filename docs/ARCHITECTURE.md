@@ -28,7 +28,9 @@ bitset, graph → no crate deps
   `Graph::overlap(a, b) -> usize` (brute-force suffix/prefix overlap, used for path
   reconstruction and as the test oracle).
 - **`src/bound.rs`** — `lower_bound(r, k, current_cycle_has_unvisited) -> usize`, the
-  admissible bound `r + k − [current cycle has unvisited]` (THEORY.md §3), and
+  admissible bound `r + k − [current cycle has unvisited]` (THEORY.md §3);
+  `lower_bound_arc(r, arcs, succ1_unvisited)`, the tighter arc bound
+  `r + arcs − [succ1(cur) unvisited]` (admissibility proof in the module docs); and
   `struct Features` (serde `Serialize`/`Deserialize`), the rollout JSONL record.
 - **`src/walk.rs`** — `struct Walk<'g>`, the incremental search state shared by greedy
   and rollouts. `Walk::new(&Graph)`, `advance(rank, weight)`, `first_unvisited_succ()`,
@@ -36,12 +38,15 @@ bitset, graph → no crate deps
   `len_chars()`, `string()`, `graph()`.
 - **`src/greedy.rs`** — `greedy(&Graph) -> GreedyResult { string, len, path: Vec<u32> }`.
   Deterministic baseline; hits 9/33/153 for n=3,4,5 (hard invariant) and 873 for n=6.
-- **`src/beam.rs`** — `beam_search(&Graph, width) -> BeamResult { string, len }`.
-  Level-synchronous beam search scored by `len + lb`; private `struct State` and
-  `fn score_move`.
+- **`src/beam.rs`** — `beam_search(&Graph, width, Bound) -> BeamResult { string, len,
+  path }`. Level-synchronous beam search scored by `len + lb` under a selectable
+  admissible bound (`Bound::Cycle` or `Bound::Arc`); private `struct State`,
+  `fn score_move`, `fn child_arcs`.
 - **`src/rollout.rs`** — `run_rollouts(&Graph, count, epsilon, seed, out: &mut impl Write)
   -> io::Result<RolloutSummary { rollouts, mean_len, min_len, lines }>`. Epsilon-greedy
-  rollouts emitting JSONL `Features` lines.
+  rollouts emitting JSONL `Features` lines. Also `log_trajectory(&Graph, path, out)`,
+  which replays a recorded visit-order path through a `Walk` and emits the identical
+  record format (used by `greedy --log` / `beam --log`).
 - **`src/validate.rs`** — `validate(n, s: &str) -> Validation { n, length, distinct,
   total, complete }`. Sliding-window checker; the only accepted proof that a string is
   a superpermutation.
@@ -60,6 +65,9 @@ bitset, graph → no crate deps
 | `succs: Vec<Vec<(u32, u8)>>` | `succs[r]` = `(successor rank, weight)` pairs, weight `1..=n−1` |
 | `cycle_id: Vec<u32>` | rotation-cycle (1-cycle) label per rank, in `0..cycle_count` |
 | `cycle_count: usize` | `(n−1)!` |
+| `pred1: Vec<u32>` | weight-1 predecessor (right rotation) per rank; inverts `succ1` |
+
+Helper: `Graph::succ1(r)` = `succs[r][0].0`, the unique weight-1 successor.
 
 Ordering guarantees on `succs[r]` (pinned by unit test
 `successor_lists_sorted_by_weight_then_suffix`):
@@ -87,19 +95,23 @@ all of these update in O(1) or O(weight):
 - `cycle_rem: Box<[u8]>` — unvisited count per cycle; decrement `cycle_rem[cycle_id[rank]]`;
 - `k: usize` — cycles with ≥1 unvisited perm; decrement when a `cycle_rem` entry hits 0;
 - `r: usize` — total unvisited perms; decrement;
+- `arcs: usize` — weight-1 connected components (maximal unvisited rotation runs; a
+  fully-unvisited cycle is one circular component): unchanged if the cycle was intact,
+  else ±1/0 by the visited status of the two ring neighbors (`pred1`/`succ1`);
 - `cur: u32` — rank the string currently ends with;
 - `chars: Vec<u8>` — append the last `weight` symbols of the target perm (a
   `debug_assert_eq!` checks the overlap really matches);
 - `steps: u32` — advances taken.
 
-`lb()` = `lower_bound(r, k, cycle_rem[cycle_id[cur]] > 0)` — O(1).
+`lb()` = `lower_bound(r, k, cycle_rem[cycle_id[cur]] > 0)` — O(1); `lb_arc()` =
+`lower_bound_arc(r, arcs, succ1_unvisited())` — O(1), dominates `lb()`.
 `features()` is O(cycle_count) (scans `cycle_rem` for `intact_cycles`); it is only
 called by the rollout generator, not in the greedy/beam hot path.
 
 ### Beam state, arena, dedup (`src/beam.rs`)
 
-`State { cur, len, visited: BitSet, cycle_rem, k, r, node }` mirrors `Walk`'s counters
-but without `chars` — no state carries a string or path.
+`State { cur, len, visited: BitSet, cycle_rem, k, r, arcs, node }` mirrors `Walk`'s
+counters but without `chars` — no state carries a string or path.
 
 - **Scoring without materialization**: `score_move(g, parent, q, w, parent_idx)`
   computes the child's `(len + lb, len, q, parent_idx)` tuple in O(1) from the parent's
@@ -127,8 +139,10 @@ All subcommands take `-n <3..=8>` and start with `Graph::new(n)`.
   weight computed by scanning `g.succs`, and successors per perm. No search.
 - **`greedy`** — `greedy(&g)` → prints `length` and the string. (Loop: `Walk::new` →
   `first_unvisited_succ()` else `(fallback_target(), n)` → `advance` until `done()`.)
-- **`beam`** — `beam_search(&g, width)` (default width 1000) → prints length,
-  wall-clock seconds (`Instant`), and the string.
+  `--log <file>` writes the trajectory's `Features` JSONL via `log_trajectory`.
+- **`beam`** — `beam_search(&g, width, bound)` (default width 1000, `--bound
+  cycle|arc`, default cycle) → prints length, wall-clock seconds (`Instant`), and the
+  string. `--log <file>` writes the best path's `Features` JSONL.
 - **`rollouts`** — opens `--out` as `BufWriter<File>`, calls
   `run_rollouts(&g, count, epsilon, seed, &mut writer)` → prints count/epsilon/seed,
   mean and min final length, lines written. Defaults: `--count 100`, `--epsilon 0.1`,
@@ -153,6 +167,8 @@ Rollout `i` uses `StdRng::seed_from_u64(seed.wrapping_add(i))` — fully reprodu
 | `cycles_remaining` | u32 | cycles with ≥1 unvisited perm (`k`) |
 | `intact_cycles` | u32 | cycles with all `n` members unvisited |
 | `current_cycle_remaining` | u32 | unvisited members of the current perm's cycle |
+| `arcs` | u32 | weight-1 components among unvisited perms (serde-default; absent pre-phase-2 files read as 0) |
+| `succ1_unvisited` | u32 | 1 if `succ1(cur)` is unvisited (serde-default) |
 | `len_so_far` | u32 | characters emitted |
 | `cost_to_go` | u32 | characters the rollout actually needed from here (the label) |
 

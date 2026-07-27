@@ -100,6 +100,9 @@ pub struct Graph {
     pub cycle_id: Vec<u32>,
     /// `(n−1)!`, the number of rotation cycles.
     pub cycle_count: usize,
+    /// `pred1[r]` is the unique weight-1 predecessor of rank `r` — the
+    /// right rotation `P[n−1] + P[..n−1]`, in the same cycle.
+    pub pred1: Vec<u32>,
 }
 
 impl Graph {
@@ -155,6 +158,12 @@ impl Graph {
         }
         debug_assert_eq!(cycle_count, factorial(n - 1));
 
+        // Weight-1 predecessors: invert the weight-1 successor map.
+        let mut pred1 = vec![0u32; nfact];
+        for r in 0..nfact {
+            pred1[succs[r][0].0 as usize] = r as u32;
+        }
+
         Graph {
             n,
             nfact,
@@ -162,7 +171,14 @@ impl Graph {
             succs,
             cycle_id,
             cycle_count,
+            pred1,
         }
+    }
+
+    /// The unique weight-1 successor of rank `r` (its left rotation).
+    #[inline]
+    pub fn succ1(&self, r: u32) -> u32 {
+        self.succs[r as usize][0].0
     }
 
     /// Length of the maximal overlap of a suffix of `a` with a prefix of
@@ -249,6 +265,22 @@ mod tests {
                         "{a}->{b} weight n listed"
                     );
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn pred1_inverts_succ1_and_is_right_rotation() {
+        for n in 3..=6 {
+            let g = Graph::new(n);
+            for r in 0..g.nfact {
+                let s = g.succ1(r as u32);
+                assert_eq!(g.pred1[s as usize], r as u32, "n={n} r={r}");
+                // pred1 of P is the right rotation P[n−1] + P[..n−1].
+                let p = &g.perms[r];
+                let mut rot: Vec<u8> = vec![p[n - 1]];
+                rot.extend_from_slice(&p[..n - 1]);
+                assert_eq!(g.perms[g.pred1[r] as usize], rot, "n={n} r={r}");
             }
         }
     }

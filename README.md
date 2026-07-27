@@ -12,9 +12,15 @@ the full framing and [docs/ROADMAP.md](docs/ROADMAP.md) for the phased plan.
 
 ## Status
 
-**Phase 1 complete** — Rust search core: overlap graph, greedy baseline, beam search with
-an admissible cycle-counting lower bound, validator, and an epsilon-greedy rollout
-generator that emits JSONL training data for the phase-2 value net.
+**Phase 1 complete; phase 2 underway** — Rust search core: overlap graph, greedy
+baseline, beam search with selectable admissible bounds (cycle, and the tighter
+arc/weight-1-component bound), validator, epsilon-greedy rollout generator and
+greedy/beam trajectory logging emitting JSONL training data. First phase-2 result: on
+held-out rollouts a *linear* regressor over the six cheap state features predicts
+cost-to-go with R² 0.92 (n=5) / 0.91 (n=6), while the admissible hand bounds manage
+0.36 / 0.05 — the n=6 number being a quantitative restatement of why bound-guided beam
+search goes blind exactly where the open territory starts (see
+[docs/JOURNAL.md](docs/JOURNAL.md)).
 
 ### Known targets vs. this repo's results
 
@@ -29,7 +35,9 @@ generator that emits JSONL training data for the phase-2 value net.
 
 ¹ Honest data point: at n=6 the hand-bound beam is currently *worse* than greedy — the
 admissible cycle bound stops discriminating between states at this size. This is
-precisely the gap the phase-2 learned evaluator is meant to close.
+precisely the gap the phase-2 learned evaluator is meant to close. A provably tighter
+admissible bound (the arc bound, `--bound arc`) does **not** help: 891 at width 2000,
+888 at width 8000 — tighter bounding ≠ better frontier ranking.
 
 ² Verified by the Superpermutators group on 2026-07-26 — one shorter than Egan's
 construction, and notably **tree-structured** (standard kernel + 833 two-cycle
@@ -47,14 +55,18 @@ cargo test --release          # includes hard assertions: greedy == 9 / 33 / 153
 cargo run --release -- info -n 5
 cargo run --release -- greedy -n 5
 cargo run --release -- beam -n 5 --width 2000
+cargo run --release -- beam -n 6 --width 2000 --bound arc --log traj.jsonl
 cargo run --release -- rollouts -n 5 --count 200 --epsilon 0.15 --seed 0 --out rollouts_n5.jsonl
 cargo run --release -- validate -n 5 <string>
+python3 ml/fit_linear.py data/roll_n5_*.jsonl   # linear cost-to-go baseline vs hand bounds
 ```
 
 ## Repo layout
 
 ```
 src/            Rust search core (graph, bitset, bounds/features, greedy, beam, rollouts, validator, CLI)
+ml/             Python model side (numpy): linear cost-to-go baseline
+data/           generated JSONL corpora (gitignored)
 tests/          acceptance tests pinned to the proven optima
 docs/THEORY.md  problem formulation, cycle structure, lower bound, value-net plan
 docs/ROADMAP.md phased plan with checkboxes

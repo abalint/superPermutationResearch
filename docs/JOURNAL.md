@@ -6,6 +6,76 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 2) — arc features + arc bound; corpus; linear baseline beats hand bounds
+
+**Built: weight-1 arc features, incrementally maintained.** Arcs = connected components
+of the *unvisited* perms under weight-1 (rotation) edges — the refinement of cycles into
+maximal unvisited runs. O(1) maintenance per move in both `Walk::advance` and the beam's
+`State` (new `Graph::pred1` inverse-rotation table). `Features` gained `arcs` and
+`succ1_unvisited` (`#[serde(default)]`, so old JSONL still parses). A from-scratch
+recount oracle test pins the incremental update.
+
+**Built: the arc bound — provably tighter, admissible.** Every arc must be first-entered
+by a weight ≥ 2 edge except the one headed by `succ1(cur)`, so
+`lb_arc = r + arcs − [succ1(cur) unvisited]` is admissible and dominates the cycle bound
+pointwise (proof sketch in `src/bound.rs` docs; admissibility + dominance asserted along
+greedy trajectories in tests). Beam takes `--bound cycle|arc`.
+
+**Negative result worth keeping: the tighter bound does NOT help beam.** n=6:
+
+| width | cycle | arc |
+|---|---|---|
+| 500 | 894 | 894 |
+| 2000 | 890 | 891 |
+| 8000 | 883 | 888 |
+
+Beam is not A*: a pointwise-tighter admissible bound reorders the frontier but still
+doesn't *predict*, and empirically ranks slightly worse. This kills the "just tighten
+the hand bound" alternative and sharpens the phase-2 thesis — the evaluator must be a
+predictor, not a bound. (`--bound` default stays `cycle`.)
+
+**Built: trajectory logging.** `greedy --log f.jsonl` and `beam --log f.jsonl` replay
+the final path through a `Walk` and emit the same JSONL records as rollouts
+(`rollout::log_trajectory`; `BeamResult` now carries `path`). Test pins ε=0 rollout ≡
+logged greedy trajectory, byte-identical.
+
+**Corpus generated** (`data/`, gitignored): n=5 ε ∈ {.05,.15,.30} × seeds {0,1000} ×
+400 = 2400 rollouts (288k records; ε=.05 hit the optimum 153); n=6 same ε, seed 0,
+150 each = 450 rollouts (324k records); plus greedy/beam trajectory logs for both n.
+
+**Linear baseline: the features carry real signal.** `ml/fit_linear.py` (numpy OLS,
+held-out split by rollout, features + both hand bounds + bias):
+
+| n | predictor | held-out RMSE | MAE | R² |
+|---|---|---|---|---|
+| 5 | lb_cycle | 51.7 | 42.3 | 0.36 |
+| 5 | lb_arc | 51.5 | 42.1 | 0.36 |
+| 5 | linear | **17.8** | 13.2 | **0.92** |
+| 6 | lb_cycle | 428.1 | 352.5 | **0.05** |
+| 6 | lb_arc | 426.3 | 350.5 | 0.06 |
+| 6 | linear | **133.0** | 95.6 | **0.91** |
+
+The n=6 row is the money quote: the hand bounds explain ~5% of cost-to-go variance —
+a quantitative restatement of "beam prunes blind at n=6" — while a *linear* model over
+six cheap features explains 91%. Escalation to GBT/MLP is justified per plan.
+
+**Caveats to carry forward.** (1) Labels are behavior-policy returns (ε-greedy), not
+optimal cost-to-go — mixed-ε corpora inflate variance-explained; the bootstrap loop
+(search → relabel → retrain) is what fixes label quality. (2) RMSE 133 at n=6 is far
+too coarse to steer 872-vs-890 endgames yet; what matters first is *ranking* frontier
+states better than the bounds do.
+
+**Next session, concretely:**
+- Wire a learned score into beam: `score = len + α·predict(features)` with batch
+  evaluation per level; keep the score a pure function of `(cur, visited, len)` so the
+  dedup argument survives. Start with the linear model (its coefficients are just a dot
+  product — no Python in the loop), sweep α and width at n=5 (must still find 153), then
+  first learned-score n=6 runs vs the 873/890 baselines (success ladder rung 1).
+- GBT baseline on the same corpus (sklearn if available) to see how much nonlinearity
+  buys over linear before committing to an MLP.
+- Remaining feature from the plan: residual cycle-graph degree stats (2-cycle adjacency
+  between rotation cycles) — needs a cheap incremental formulation.
+
 ## 2026-07-27 — handoff prep; gap analysis; phase-2 success ladder
 
 **Docs pass for fresh-agent handoff.** Added `docs/ARCHITECTURE.md` (code map: modules,

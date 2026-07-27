@@ -89,3 +89,29 @@ pub fn run_rollouts(
         lines,
     })
 }
+
+/// Replay a completed visit-order `path` (ranks, starting at 0) through a
+/// [`Walk`] and write one JSONL [`Features`] line per state with
+/// `cost_to_go` backfilled — the trajectory-logging counterpart of
+/// [`run_rollouts`] for greedy and beam paths. Returns lines written.
+pub fn log_trajectory(g: &Graph, path: &[u32], out: &mut impl Write) -> io::Result<usize> {
+    assert_eq!(path.first(), Some(&0), "paths must start at the identity");
+    let mut walk = Walk::new(g);
+    let mut records: Vec<Features> = Vec::with_capacity(path.len());
+    records.push(walk.features());
+    for &rank in &path[1..] {
+        let p = &g.perms[walk.cur as usize];
+        let w = (g.n - Graph::overlap(p, &g.perms[rank as usize])) as u8;
+        walk.advance(rank, w);
+        records.push(walk.features());
+    }
+    let final_len = walk.len_chars() as u32;
+    let mut lines = 0usize;
+    for mut f in records {
+        f.cost_to_go = final_len - f.len_so_far;
+        serde_json::to_writer(&mut *out, &f)?;
+        out.write_all(b"\n")?;
+        lines += 1;
+    }
+    Ok(lines)
+}

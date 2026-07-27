@@ -9,13 +9,42 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Instant;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
-use superperm::beam::beam_search;
+use superperm::beam::{beam_search, Bound};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
-use superperm::rollout::run_rollouts;
+use superperm::rollout::{log_trajectory, run_rollouts};
 use superperm::validate::validate;
+
+/// CLI mirror of [`Bound`] (the library does not depend on clap).
+#[derive(Clone, Copy, ValueEnum)]
+enum BoundArg {
+    /// Cycle bound `r + k − [current cycle live]` (phase 1).
+    Cycle,
+    /// Arc bound `r + arcs − [succ1(cur) unvisited]`; dominates cycle.
+    Arc,
+}
+
+impl From<BoundArg> for Bound {
+    fn from(b: BoundArg) -> Bound {
+        match b {
+            BoundArg::Cycle => Bound::Cycle,
+            BoundArg::Arc => Bound::Arc,
+        }
+    }
+}
+
+/// Write a visit-order path's feature trajectory to `path` as JSONL.
+fn write_log(g: &Graph, ranks: &[u32], path: &PathBuf) {
+    let file = fs::File::create(path).unwrap_or_else(|e| {
+        eprintln!("cannot create {}: {e}", path.display());
+        std::process::exit(1);
+    });
+    let mut writer = BufWriter::new(file);
+    let lines = log_trajectory(g, ranks, &mut writer).expect("trajectory write failed");
+    println!("trajectory log    = {} lines -> {}", lines, path.display());
+}
 
 /// Superpermutation search research toolkit (phase 1).
 #[derive(Parser)]
@@ -38,6 +67,9 @@ enum Cmd {
         /// Number of symbols (3..=8).
         #[arg(short, long)]
         n: usize,
+        /// Write the trajectory's feature records to this JSONL file.
+        #[arg(long)]
+        log: Option<PathBuf>,
     },
     /// Run beam search and print the best result plus wall-clock time.
     Beam {
@@ -47,6 +79,14 @@ enum Cmd {
         /// Beam width (states kept per depth level).
         #[arg(long, default_value_t = 1000)]
         width: usize,
+        /// Admissible lower bound used for scoring. The arc bound is
+        /// tighter but empirically no better as a beam ranker (see
+        /// docs/JOURNAL.md 2026-07-27).
+        #[arg(long, value_enum, default_value_t = BoundArg::Cycle)]
+        bound: BoundArg,
+        /// Write the best path's feature records to this JSONL file.
+        #[arg(long)]
+        log: Option<PathBuf>,
     },
     /// Generate epsilon-greedy rollouts and write JSONL feature records.
     Rollouts {
@@ -101,23 +141,38 @@ fn main() -> ExitCode {
             }
             println!("successors per perm = {}", g.succs[0].len());
         }
-        Cmd::Greedy { n } => {
+        Cmd::Greedy { n, log } => {
             let g = Graph::new(n);
             let r = greedy(&g);
             println!("greedy n={n}: length {}", r.len);
             println!("{}", r.string);
+            if let Some(path) = log {
+                write_log(&g, &r.path, &path);
+            }
         }
-        Cmd::Beam { n, width } => {
+        Cmd::Beam {
+            n,
+            width,
+            bound,
+            log,
+        } => {
             let g = Graph::new(n);
             let t0 = Instant::now();
-            let b = beam_search(&g, width);
+            let b = beam_search(&g, width, bound.into());
             let dt = t0.elapsed();
             println!(
-                "beam n={n} width={width}: length {} ({:.3}s)",
+                "beam n={n} width={width} bound={}: length {} ({:.3}s)",
+                match bound {
+                    BoundArg::Cycle => "cycle",
+                    BoundArg::Arc => "arc",
+                },
                 b.len,
                 dt.as_secs_f64()
             );
             println!("{}", b.string);
+            if let Some(path) = log {
+                write_log(&g, &b.path, &path);
+            }
         }
         Cmd::Rollouts {
             n,

@@ -3,8 +3,9 @@
 //! All states at a level have visited the same number `d` of
 //! permutations; the search expands level by level from `d = 1` (only
 //! the identity visited) to `d = n!`. Each state is scored by
-//! `f = len + lb`, where `lb` is the admissible cycle-based lower bound
-//! of [`crate::bound`]; at every level the candidate children are sorted
+//! `f = len + lb`, where `lb` is a selectable admissible lower bound of
+//! [`crate::bound`] ([`Bound::Cycle`] or the stronger [`Bound::Arc`]);
+//! at every level the candidate children are sorted
 //! by `(f, len)`, deduplicated by `(current permutation, visited set)`
 //! keeping the minimum length, and truncated to the beam width.
 //!
@@ -18,6 +19,16 @@ use std::collections::HashSet;
 
 use crate::bitset::BitSet;
 use crate::graph::Graph;
+
+/// Which admissible lower bound scores beam candidates.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Bound {
+    /// Cycle bound `r + k − [current cycle has unvisited]` (phase 1).
+    Cycle,
+    /// Arc bound `r + arcs − [succ1(cur) unvisited]`; dominates `Cycle`
+    /// (see [`crate::bound::lower_bound_arc`]).
+    Arc,
+}
 
 /// One beam state: a walk that has visited `popcount(visited)` perms.
 struct State {
@@ -33,6 +44,8 @@ struct State {
     k: u32,
     /// Unvisited permutations.
     r: u32,
+    /// Weight-1 arcs among unvisited permutations.
+    arcs: u32,
     /// Index of this state's node in the path arena.
     node: u32,
 }
@@ -43,11 +56,34 @@ pub struct BeamResult {
     pub string: String,
     /// Its length in characters.
     pub len: usize,
+    /// Ranks of the permutations in visit order (starts with 0).
+    pub path: Vec<u32>,
 }
 
-/// Run beam search of the given `width` on `g` and return the best
-/// complete superpermutation found.
-pub fn beam_search(g: &Graph, width: usize) -> BeamResult {
+/// Number of weight-1 arcs in the child state after `parent` visits `q`,
+/// in O(1) from the parent's counters (see `Walk::advance` for the case
+/// analysis; `parent.visited` does not yet contain `q`).
+#[inline]
+fn child_arcs(g: &Graph, parent: &State, q: u32) -> u32 {
+    let cid = g.cycle_id[q as usize] as usize;
+    if parent.cycle_rem[cid] as usize == g.n {
+        return parent.arcs; // circular component becomes one open arc
+    }
+    let p_unvis = !parent.visited.get(g.pred1[q as usize] as usize);
+    let s_unvis = !parent.visited.get(g.succ1(q) as usize);
+    if p_unvis && s_unvis {
+        parent.arcs + 1
+    } else if !p_unvis && !s_unvis {
+        parent.arcs - 1
+    } else {
+        parent.arcs
+    }
+}
+
+/// Run beam search of the given `width` on `g`, scoring candidates with
+/// the chosen `bound`, and return the best complete superpermutation
+/// found.
+pub fn beam_search(g: &Graph, width: usize, bound: Bound) -> BeamResult {
     assert!(width >= 1, "beam width must be at least 1");
     let nfact = g.nfact;
     let n = g.n;
@@ -67,6 +103,7 @@ pub fn beam_search(g: &Graph, width: usize) -> BeamResult {
             cycle_rem,
             k: g.cycle_count as u32,
             r: (nfact - 1) as u32,
+            arcs: g.cycle_count as u32,
             node: 0,
         }]
     };
@@ -83,7 +120,7 @@ pub fn beam_search(g: &Graph, width: usize) -> BeamResult {
                     continue;
                 }
                 any = true;
-                cands.push(score_move(g, s, q, w as u32, pi as u32));
+                cands.push(score_move(g, s, q, w as u32, pi as u32, bound));
             }
             if !any {
                 // Weight-n fallback: jump to the lowest unvisited rank so
@@ -93,7 +130,7 @@ pub fn beam_search(g: &Graph, width: usize) -> BeamResult {
                     .first_clear(nfact)
                     .expect("state with r > 0 must have an unvisited perm")
                     as u32;
-                cands.push(score_move(g, s, q, n as u32, pi as u32));
+                cands.push(score_move(g, s, q, n as u32, pi as u32, bound));
             }
         }
 
@@ -118,6 +155,7 @@ pub fn beam_search(g: &Graph, width: usize) -> BeamResult {
             }
             let visited = key.1.clone();
             seen.insert(key);
+            let arcs = child_arcs(g, parent, q);
             let mut cycle_rem = parent.cycle_rem.clone();
             let cid = g.cycle_id[q as usize] as usize;
             cycle_rem[cid] -= 1;
@@ -131,6 +169,7 @@ pub fn beam_search(g: &Graph, width: usize) -> BeamResult {
                 cycle_rem,
                 k,
                 r: parent.r - 1,
+                arcs,
                 node,
             });
         }
@@ -166,22 +205,42 @@ pub fn beam_search(g: &Graph, width: usize) -> BeamResult {
     BeamResult {
         string: chars.iter().map(|&v| (b'0' + v) as char).collect(),
         len: chars.len(),
+        path: ranks,
     }
 }
 
 /// Score the move `parent → q` with edge weight `w` without cloning the
 /// parent's state: child score = child len + admissible lower bound,
-/// derived in O(1) from the parent's `(r, k, cycle_rem)`.
+/// derived in O(1) from the parent's `(r, k, cycle_rem, arcs, visited)`.
+///
+/// Both bounds are pure functions of the child's `(cur, visited, len)`,
+/// which the keep-first dedup in `beam_search` relies on.
 #[inline]
-fn score_move(g: &Graph, parent: &State, q: u32, w: u32, parent_idx: u32) -> (u32, u32, u32, u32) {
+fn score_move(
+    g: &Graph,
+    parent: &State,
+    q: u32,
+    w: u32,
+    parent_idx: u32,
+    bound: Bound,
+) -> (u32, u32, u32, u32) {
     let len = parent.len + w;
-    let rem = parent.cycle_rem[g.cycle_id[q as usize] as usize] as u32;
     let r = parent.r - 1;
-    let k = parent.k - u32::from(rem == 1);
     let lb = if r == 0 {
         0
     } else {
-        r + k - u32::from(rem > 1)
+        match bound {
+            Bound::Cycle => {
+                let rem = parent.cycle_rem[g.cycle_id[q as usize] as usize] as u32;
+                let k = parent.k - u32::from(rem == 1);
+                r + k - u32::from(rem > 1)
+            }
+            Bound::Arc => {
+                let arcs = child_arcs(g, parent, q);
+                let succ1_unvis = !parent.visited.get(g.succ1(q) as usize);
+                r + arcs - u32::from(succ1_unvis)
+            }
+        }
     };
     (len + lb, len, q, parent_idx)
 }

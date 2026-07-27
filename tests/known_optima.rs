@@ -1,10 +1,10 @@
 //! Integration tests against known minimal superpermutation lengths and
 //! the admissibility of the cycle lower bound.
 
-use superperm::beam::beam_search;
+use superperm::beam::{beam_search, Bound};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
-use superperm::rollout::run_rollouts;
+use superperm::rollout::{log_trajectory, run_rollouts};
 use superperm::validate::validate;
 use superperm::walk::Walk;
 
@@ -36,19 +36,25 @@ fn greedy_n6_is_sum_of_factorials_873() {
 }
 
 #[test]
-fn beam_n4_width_512_is_optimal() {
+fn beam_n4_width_512_is_optimal_under_both_bounds() {
     let g = Graph::new(4);
-    let b = beam_search(&g, 512);
-    assert_eq!(b.len, 33);
-    assert!(validate(4, &b.string).complete);
+    for bound in [Bound::Cycle, Bound::Arc] {
+        let b = beam_search(&g, 512, bound);
+        assert_eq!(b.len, 33, "{bound:?}");
+        assert!(validate(4, &b.string).complete, "{bound:?}");
+        assert_eq!(b.path.len(), g.nfact, "{bound:?}");
+        assert_eq!(b.path[0], 0, "{bound:?}");
+    }
 }
 
 #[test]
-fn beam_n5_width_2000_is_optimal() {
+fn beam_n5_width_2000_is_optimal_under_both_bounds() {
     let g = Graph::new(5);
-    let b = beam_search(&g, 2000);
-    assert!(validate(5, &b.string).complete);
-    assert_eq!(b.len, 153);
+    for bound in [Bound::Cycle, Bound::Arc] {
+        let b = beam_search(&g, 2000, bound);
+        assert!(validate(5, &b.string).complete, "{bound:?}");
+        assert_eq!(b.len, 153, "{bound:?}");
+    }
 }
 
 /// At the fresh n=4 start state the bound must not exceed the true
@@ -77,6 +83,10 @@ fn lower_bound_never_exceeds_cost_to_go_on_greedy_trajectory_n4() {
             res.len - w.len_chars(),
             w.len_chars()
         );
+        // The arc bound must also be admissible, and dominate the
+        // cycle bound.
+        assert!(w.lb_arc() <= res.len - w.len_chars());
+        assert!(w.lb_arc() >= w.lb());
         // Recover the edge weight: either a stored successor, or the
         // weight-n fallback (only taken when no successor was unvisited,
         // so the target is never in the successor list in that case).
@@ -143,4 +153,34 @@ fn rollouts_deterministic_and_consistent() {
     let mut c = Vec::new();
     let sc = run_rollouts(&g, 1, 0.0, 0, &mut c).unwrap();
     assert_eq!(sc.min_len, greedy(&g).len);
+}
+
+/// Trajectory logging replays a recorded path into the same records the
+/// rollout generator would emit: an epsilon-0 rollout and a logged
+/// greedy path must produce byte-identical JSONL.
+#[test]
+fn log_trajectory_matches_epsilon0_rollout() {
+    let g = Graph::new(4);
+    let mut rollout_bytes = Vec::new();
+    run_rollouts(&g, 1, 0.0, 0, &mut rollout_bytes).unwrap();
+    let res = greedy(&g);
+    let mut log_bytes = Vec::new();
+    let lines = log_trajectory(&g, &res.path, &mut log_bytes).unwrap();
+    assert_eq!(lines, g.nfact);
+    assert_eq!(rollout_bytes, log_bytes);
+}
+
+/// The beam's returned path must replay to exactly the returned string.
+#[test]
+fn beam_path_replays_to_reported_length() {
+    let g = Graph::new(4);
+    let b = beam_search(&g, 512, Bound::Arc);
+    let mut bytes = Vec::new();
+    log_trajectory(&g, &b.path, &mut bytes).unwrap();
+    let text = String::from_utf8(bytes).unwrap();
+    let last: superperm::bound::Features =
+        serde_json::from_str(text.lines().last().unwrap()).unwrap();
+    assert_eq!(last.len_so_far as usize, b.len);
+    assert_eq!(last.cost_to_go, 0);
+    assert_eq!(last.r, 0);
 }

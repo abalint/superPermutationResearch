@@ -13,12 +13,17 @@
 
 ## Phase 2 — learned value function (n=5 → n=6 transfer)
 
-- [ ] Feature engineering pass: residual-graph features beyond the phase-1 set
-      (residual cycle-graph degree stats, cheap-edge connected components, distance to
-      untouched regions), all maintained incrementally
-- [ ] Generate large labeled corpus at n=4/5 (mix of greedy, epsilon-greedy, beam-path rollouts)
-- [ ] Baseline regressors (linear, GBT) before any neural net — measure R² on cost-to-go
-      vs. the hand bound's error
+- [x] Cheap-edge (weight-1) connected components — `arcs` + `succ1_unvisited` features,
+      O(1) incremental in walk and beam; also yields the tighter admissible arc bound
+      (`--bound arc`), which empirically does *not* improve beam ranking (JOURNAL
+      2026-07-27 s2)
+- [ ] Remaining residual-graph features: residual cycle-graph degree stats, distance to
+      untouched regions — incrementally maintained
+- [x] Generate large labeled corpus (n=5: 288k records, n=6: 324k; ε-greedy mix + greedy
+      and beam trajectory logs via `--log`)
+- [x] Linear baseline regressor: held-out R² 0.92 (n=5) / 0.91 (n=6) vs 0.36 / 0.05 for
+      the hand bounds (`ml/fit_linear.py`)
+- [ ] GBT baseline on the same corpus before any neural net
 - [ ] Small MLP; batch CPU inference wired into beam scoring as `length + α·prediction`
 - [ ] Ablation: learned score vs. hand bound at equal wall-clock, beam width sweep, n=5
 - [ ] First n=6 runs; measure gap to 872. Bootstrap loop (search → relabel → retrain) at n=6
