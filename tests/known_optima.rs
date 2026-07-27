@@ -2,7 +2,8 @@
 //! the admissibility of the cycle lower bound.
 
 use superperm::beam::{
-    beam_search, beam_search_jittered, beam_search_seeded, Bound, Jitter, Scorer,
+    beam_search, beam_search_cutoffs, beam_search_jittered, beam_search_seeded, Bound, Jitter,
+    Scorer,
 };
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
@@ -378,4 +379,107 @@ fn beam_path_replays_to_reported_length() {
     assert_eq!(last.len_so_far as usize, b.len);
     assert_eq!(last.cost_to_go, 0);
     assert_eq!(last.r, 0);
+}
+
+/// Tracing greedy's own output must reproduce greedy's path exactly:
+/// same visit order (120 visits at n=5), a replay of the same length,
+/// and a feature log byte-identical to the ε=0 rollout records.
+#[test]
+fn trace_of_greedy_n5_reproduces_greedy_path() {
+    let g = Graph::new(5);
+    let r = greedy(&g);
+    let t = superperm::trace::trace_string(&g, &r.string).unwrap();
+    assert_eq!(t.path, r.path);
+    assert_eq!(t.path.len(), g.nfact);
+    assert_eq!(t.input_len, 153);
+    assert_eq!(t.replay_len, 153);
+    // n + Σ w·hist[w] must reproduce the length.
+    let weighted: usize = t.hist.iter().enumerate().map(|(w, c)| w * c).sum();
+    assert_eq!(5 + weighted, 153);
+    assert_eq!(t.hist.iter().sum::<usize>(), g.nfact - 1);
+
+    let mut traced = Vec::new();
+    log_trajectory(&g, &t.path, &mut traced).unwrap();
+    let mut rolled = Vec::new();
+    run_rollouts(&g, 1, 0.0, 0, &mut rolled).unwrap();
+    assert_eq!(traced, rolled);
+}
+
+/// Trace must round-trip a downloaded community 872 record: complete,
+/// 720 visits, replay length exactly 872 (no wasted characters), and
+/// the identity start. Skips silently if the gitignored corpus is not
+/// present.
+#[test]
+fn trace_roundtrips_downloaded_872_record() {
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("data/records872");
+    let Ok(entries) = std::fs::read_dir(&dir) else {
+        eprintln!("skipping: {} not present", dir.display());
+        return;
+    };
+    let mut files: Vec<_> = entries
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| {
+            p.extension().is_some_and(|x| x == "txt")
+                && p.file_name()
+                    .is_some_and(|f| f.to_string_lossy().starts_with("872."))
+        })
+        .collect();
+    files.sort();
+    let Some(file) = files.first() else {
+        eprintln!("skipping: no 872.*.txt files in {}", dir.display());
+        return;
+    };
+    let s = std::fs::read_to_string(file).unwrap().trim().to_string();
+    let g = Graph::new(6);
+    let v = validate(6, &s);
+    assert!(v.complete, "{} does not validate", file.display());
+    assert_eq!(v.length, 872);
+    let t = superperm::trace::trace_string(&g, &s).unwrap();
+    assert_eq!(t.path.len(), 720);
+    assert_eq!(t.input_len, 872);
+    assert_eq!(t.replay_len, 872);
+    assert_eq!(t.path[0], 0);
+    assert_eq!(t.hist.iter().sum::<usize>(), 719);
+}
+
+/// Cutoff instrumentation must not change the search: same result as
+/// the plain API, one record per level, kept ≤ width, and
+/// best ≤ worst per level. Scores here are (len + lb) exactly, so the
+/// last level's best score equals the final length.
+#[test]
+fn beam_cutoffs_are_pure_instrumentation() {
+    let g = Graph::new(4);
+    let plain = beam_search_seeded(&g, 64, Scorer::Bound(Bound::Arc), None, 0);
+    let (instr, cuts) = beam_search_cutoffs(&g, 64, Scorer::Bound(Bound::Arc), None, 0);
+    assert_eq!(instr.len, plain.len);
+    assert_eq!(instr.path, plain.path);
+    assert_eq!(instr.string, plain.string);
+    assert_eq!(cuts.len(), g.nfact - 1);
+    for (i, c) in cuts.iter().enumerate() {
+        assert_eq!(c.level as usize, i + 1);
+        assert!(c.kept >= 1 && c.kept <= 64);
+        assert!(c.best_score <= c.worst_kept_score, "level {}", c.level);
+    }
+    // Final level: r = 0 ⇒ lb = 0 ⇒ best score = best final length.
+    assert_eq!(cuts.last().unwrap().best_score, plain.len as f64);
+}
+
+/// score_trajectory along greedy must mirror the beam's score
+/// arithmetic: with the arc bound it is len + lb_arc at every step.
+#[test]
+fn score_trajectory_matches_walk_bounds_on_greedy_n4() {
+    let g = Graph::new(4);
+    let r = greedy(&g);
+    let scores = superperm::trace::score_trajectory(&g, &r.path, Scorer::Bound(Bound::Arc));
+    assert_eq!(scores.len(), g.nfact);
+    let mut w = Walk::new(&g);
+    assert_eq!(scores[0], (0, 4, (4 + w.lb_arc()) as f64));
+    for (i, &rank) in r.path[1..].iter().enumerate() {
+        let p = &g.perms[w.cur as usize];
+        let wt = (g.n - Graph::overlap(p, &g.perms[rank as usize])) as u8;
+        w.advance(rank, wt);
+        let expect = (w.len_chars() + w.lb_arc()) as f64;
+        assert_eq!(scores[i + 1], (w.steps, w.len_chars() as u32, expect));
+    }
 }

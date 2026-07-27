@@ -11,11 +11,14 @@ use std::time::Instant;
 
 use clap::{Parser, Subcommand, ValueEnum};
 
-use superperm::beam::{beam_search_seeded, Bound, Jitter, Scorer};
+use std::io::Write;
+
+use superperm::beam::{beam_search_cutoffs, beam_search_seeded, Bound, Jitter, Scorer};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
 use superperm::model::Model;
 use superperm::rollout::{log_trajectory, run_rollouts_guided, Guide};
+use superperm::trace::{score_trajectory, trace_string};
 use superperm::validate::validate;
 
 /// CLI mirror of [`Bound`] (the library does not depend on clap).
@@ -123,6 +126,41 @@ enum Cmd {
         /// Write the best path's feature records to this JSONL file.
         #[arg(long)]
         log: Option<PathBuf>,
+        /// Write one TSV line per level (level, kept, best_score,
+        /// worst_kept_score — the pruning threshold) to this file.
+        /// Pure instrumentation; does not change the search.
+        #[arg(long)]
+        cutoff_log: Option<PathBuf>,
+    },
+    /// Trace an existing superpermutation string: extract its
+    /// first-visit trajectory, summarize its edge weights, and
+    /// optionally score every trajectory state with a bound or model.
+    Trace {
+        /// Number of symbols (3..=8).
+        #[arg(short, long)]
+        n: usize,
+        /// File holding the superpermutation string (trimmed).
+        #[arg(long)]
+        file: PathBuf,
+        /// Score trajectory states with this admissible bound
+        /// (score = len + lb).
+        #[arg(long, value_enum)]
+        bound: Option<BoundArg>,
+        /// Score trajectory states with this learned model instead
+        /// (score = len + alpha * pred, + lb_arc for residual models —
+        /// exactly the beam's arithmetic).
+        #[arg(long, conflicts_with = "bound")]
+        model: Option<PathBuf>,
+        /// Blend factor for the learned score (only used with --model).
+        #[arg(long, default_value_t = 1.0)]
+        alpha: f64,
+        /// Write the trajectory's feature records to this JSONL file.
+        #[arg(long)]
+        log: Option<PathBuf>,
+        /// Write per-step scores as TSV (step, len, score) to this file
+        /// instead of stdout (requires --bound or --model).
+        #[arg(long)]
+        score_log: Option<PathBuf>,
     },
     /// Generate epsilon-greedy rollouts and write JSONL feature records.
     Rollouts {
@@ -204,6 +242,7 @@ fn main() -> ExitCode {
             jitter_seed,
             seed_prefix,
             log,
+            cutoff_log,
         } => {
             let g = Graph::new(n);
             if seed_prefix >= g.nfact - 1 {
@@ -244,7 +283,16 @@ fn main() -> ExitCode {
                 String::new()
             };
             let t0 = Instant::now();
-            let b = beam_search_seeded(&g, width, scorer, jit, seed_prefix);
+            let (b, cuts) = match &cutoff_log {
+                Some(_) => {
+                    let (b, c) = beam_search_cutoffs(&g, width, scorer, jit, seed_prefix);
+                    (b, Some(c))
+                }
+                None => (
+                    beam_search_seeded(&g, width, scorer, jit, seed_prefix),
+                    None,
+                ),
+            };
             let dt = t0.elapsed();
             println!(
                 "beam n={n} width={width} {desc}{jdesc}{sdesc}: length {} ({:.3}s)",
@@ -254,6 +302,132 @@ fn main() -> ExitCode {
             println!("{}", b.string);
             if let Some(path) = log {
                 write_log(&g, &b.path, &path);
+            }
+            if let (Some(path), Some(cuts)) = (cutoff_log, cuts) {
+                let file = fs::File::create(&path).unwrap_or_else(|e| {
+                    eprintln!("cannot create {}: {e}", path.display());
+                    std::process::exit(1);
+                });
+                let mut w = BufWriter::new(file);
+                writeln!(w, "level\tkept\tbest_score\tworst_kept_score").unwrap();
+                for c in &cuts {
+                    writeln!(
+                        w,
+                        "{}\t{}\t{}\t{}",
+                        c.level, c.kept, c.best_score, c.worst_kept_score
+                    )
+                    .unwrap();
+                }
+                println!(
+                    "cutoff log        = {} levels -> {}",
+                    cuts.len(),
+                    path.display()
+                );
+            }
+        }
+        Cmd::Trace {
+            n,
+            file,
+            bound,
+            model,
+            alpha,
+            log,
+            score_log,
+        } => {
+            let g = Graph::new(n);
+            let s = fs::read_to_string(&file)
+                .unwrap_or_else(|e| {
+                    eprintln!("cannot read {}: {e}", file.display());
+                    std::process::exit(1);
+                })
+                .trim()
+                .to_string();
+            let v = validate(n, &s);
+            if !v.complete {
+                eprintln!(
+                    "not a complete superpermutation: {} / {} perms covered",
+                    v.distinct, v.total
+                );
+                std::process::exit(1);
+            }
+            let t = trace_string(&g, &s).unwrap_or_else(|e| {
+                eprintln!("cannot trace {}: {e}", file.display());
+                std::process::exit(1);
+            });
+            println!(
+                "trace n={n} {}: length {} (replay {}), visits {}",
+                file.display(),
+                t.input_len,
+                t.replay_len,
+                t.path.len()
+            );
+            if t.replay_len != t.input_len {
+                println!(
+                    "warning: replay is {} chars shorter — the string does not \
+                     realize every maximal overlap",
+                    t.input_len - t.replay_len
+                );
+            }
+            print!("moves by weight  :");
+            for (w, count) in t.hist.iter().enumerate().skip(1) {
+                print!(" w{w}={count}");
+            }
+            println!();
+            let heavy: Vec<String> = t
+                .weights
+                .iter()
+                .enumerate()
+                .filter(|&(_, &w)| w >= 3)
+                .map(|(i, &w)| format!("{}(w{})", i + 1, w))
+                .collect();
+            println!(
+                "weight>=3 moves  : {}{}",
+                heavy.len(),
+                if heavy.is_empty() {
+                    String::new()
+                } else {
+                    format!(" at steps {}", heavy.join(" "))
+                }
+            );
+            if let Some(path) = log {
+                write_log(&g, &t.path, &path);
+            }
+            let loaded = model.map(|path| load_model(&path, n));
+            let scorer = match (&loaded, bound) {
+                (Some(m), _) => Some(Scorer::Learned { model: m, alpha }),
+                (None, Some(b)) => Some(Scorer::Bound(b.into())),
+                (None, None) => None,
+            };
+            if scorer.is_none() && score_log.is_some() {
+                eprintln!("--score-log requires --bound or --model");
+                std::process::exit(1);
+            }
+            if let Some(scorer) = scorer {
+                let scores = score_trajectory(&g, &t.path, scorer);
+                match score_log {
+                    Some(path) => {
+                        let file = fs::File::create(&path).unwrap_or_else(|e| {
+                            eprintln!("cannot create {}: {e}", path.display());
+                            std::process::exit(1);
+                        });
+                        let mut w = BufWriter::new(file);
+                        writeln!(w, "step\tlen\tscore").unwrap();
+                        for (step, len, score) in &scores {
+                            writeln!(w, "{step}\t{len}\t{score}").unwrap();
+                        }
+                        println!(
+                            "score log        = {} steps -> {}",
+                            scores.len(),
+                            path.display()
+                        );
+                    }
+                    None => {
+                        println!("step\tlen\tscore");
+                        for (step, len, score) in &scores {
+                            println!("{step}\t{len}\t{score}");
+                        }
+                    }
+                }
             }
         }
         Cmd::Rollouts {

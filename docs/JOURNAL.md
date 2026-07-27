@@ -6,6 +6,100 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 5) — record autopsy: traced 100 community 872s; our scorer prunes every record path by level ≈62, midgame k/intact features are the blind spot
+
+**Question answered this session: what do actual 872-length solutions do that our
+searches prune, and at what depth / by what margin does the beam discard them?**
+
+**Built.** (1) `trace` subcommand (`src/trace.rs`): `trace -n 6 --file s.txt
+[--model m.json --alpha a | --bound cycle|arc] [--log f.jsonl] [--score-log f.tsv]` —
+extracts a string's first-visit rank trajectory (sliding window), replays it through a
+`Walk` (replay_len == input_len certifies tightness), prints the move-weight histogram
+and weight ≥ 3 positions, optionally emits the `Features` JSONL and per-step
+beam-exact scores (`score_state` mirrors `score_move`'s fixed-point arithmetic, so
+scores compare exactly with cutoff logs). (2) `beam --cutoff-log f.tsv`
+(`beam_search_cutoffs`): one TSV line per level — `level, kept, best_score,
+worst_kept_score` (the pruning threshold); pure instrumentation, bit-identical search
+(pinned by test). 5 new tests (26 total green), clippy/fmt clean. Corpus: 100 community
+872 records + 873-tight/-egan downloaded to `data/records872/` (gitignored; all 100
+validate complete and trace tight: replay 872, 720 visits, identity start).
+
+**1 — Structure.** Move-weight histograms (719 moves each):
+
+| walk | w1 | w2 | w3 | w4 | w5 |
+|---|---|---|---|---|---|
+| greedy 873 | 600 | 96 | 18 | 4 | 1 |
+| our beam 874 (boot1 α=1, w2000) | 600 | 89 | 30 | 0 | 0 |
+| **every one of the 100 records** | **575** | **141** | **3** | 0 | 0 |
+| 873-egan | 571 | 148 | 0 | 0 | 0 |
+
+All 100 records share the identical histogram: 25 fewer w1 and ~50 more w2 than
+greedy/beam, exactly three w3 moves, never w4+. The 3 w3 moves sit at multiples of 30:
+{630,660,690} (29 records), {30,60,90} (26), {30,60,690} (25), {30,660,690} (20).
+Weight spend is uniform across the walk (~24–25 extra chars per 120-step bucket) —
+records pay w2 steadily instead of finishing cycles and paying w3+ resets.
+
+**2 — Divergence.** First visit-index where a record's rank sequence leaves greedy's
+path: min 2, p25 28, median 62, p75 92, max 118 (only 8 distinct values:
+{2,28,32,58,62,88,92,118}); 16 records leave the very first cycle after just one w1
+move (weight pattern 1,2,… vs greedy's 1,1,1,1,1,2). Our beam-874 path shares greedy's
+first 78 visits, so divergence vs beam874 is the same distribution capped at 78.
+
+**3 — Prune depth (headline).** Scoring each record trajectory with the canonical
+scorer (linear_n6_boot1, α=1) against `beam -n 6 --width 2000 --cutoff-log` per-level
+thresholds: **all 100 records are pruned; first-prune level min 4 / p25 28 / median 62
+/ p75 92 / max 118** — the beam discards every record branch inside the first ~16% of
+the walk. Margin at first prune: 0.2–7.1 chars (median 5.5). Mid-walk the exclusion is
+enormous: from level 118 to 601 **zero** record states score within the kept window
+(per-record worst margin: median 68, max 114 chars). Records re-enter the window at
+level ≥ 602 and by level 700 they'd *win* it (record score 863.9 vs cutoff 872.5) —
+the endgame ranking is fine; the beam just can't generate those states. Width 32000
+barely moves anything (median first-prune 62 → 62; the same 874). Under the arc bound
+(w2000): median first-prune 90, margin always exactly 1 char — the bound is flat, not
+wrong. Anchors: our own 874 path is never pruned (sanity, frac-within 1.0); greedy's
+873 path survives to level 243 with worst margin 1.47. Caveat: this is a
+necessary-condition analysis — the beam must also *generate* a state (parent must
+survive), so true prune depth ≤ measured.
+
+**4 — Feature gap.** Model residual (pred − actual cost-to-go) along trajectories:
+the model overestimates record states by ~+129 chars in the opening vs +115 on its own
+beam path (+9 delta), and the gap *widens* through the midgame — delta peaks at
+**+52 chars around steps 290–430** — closing to +6 by the end. Feature-level cause (at
+step 300, records mean vs beam874): intact 65.9 vs 69, k 73.8 vs 70, lb_arc 492 vs 488
+— records look "worse" on every feature the model has, yet their actual cost-to-go is
+*lower* (504.8 vs 506). With coefficients k +3.92 and intact −9.30, those two features
+alone account for ~+44 of the +49 midgame prediction gap. The model reads "many
+touched-but-unfinished cycles" as expensive; records deliberately keep ~4 more cycles
+half-open (the 2-cycle weave) and close them later at cost ≈ the greedy-style walk —
+structure the 8 features cannot see.
+
+**Synthesis (steers phase 3).**
+1. The 874 plateau is a *policy* gap, not a tie-break gap: every 872 lies outside the
+   beam's score window from level ~62–118 onward by up to ~68 chars mid-walk. No
+   width/jitter/restart tweak of the current scorer can recover them (32000 ≈ 2000).
+2. The records' signature is fixed and known: 575/141/3 weight profile, w2 moves
+   spread uniformly, exactly three w3 "super-moves" at steps ≡ 0 (mod 30). Our
+   searches' signature (600 w1) means "always finish the current cycle" — the single
+   biggest behavioral difference is leaving 1-cycles early via w2.
+3. The learned model *actively* penalizes record-like states (k up, intact down ⇒
+   pred up), because its training corpus (greedy-flavored rollouts) never shows that
+   half-open-cycle structure paying off — label bias, not model capacity.
+4. Concrete feature gap: at equal (r, level), records differ in *how* the unvisited
+   mass is arranged across cycles (many cycles at small deficit vs few at large). A
+   feature capturing the deficit distribution (e.g. count of cycles with exactly 1–2
+   visited members, or 2-cycle adjacency stats between partially-visited cycles)
+   would separate record midgames from rollout midgames.
+5. Endgame is already solved by our scorer (records would top the beam from level
+   ~640 on) — effort should go to opening/midgame policy, e.g. phase-3 cycle-level
+   search that *plans* the 2-cycle weave instead of discovering it move by move.
+
+Artifacts (scratchpad, regenerable): per-record trace logs/score TSVs, cutoff logs
+for w2000/w32000 (model) and w2000 (arc), analysis scripts. Data in `data/records872/`
+(gitignored), fetch commands in this entry's session transcript; re-download via
+raw.githubusercontent.com from superpermutators/superperm `superpermutations/6/872/`.
+Note: `data/873-tight.txt` is a multi-string file (comment + several 873s), not a
+single superperm; `873-egan.txt` is a single string.
+
 ## 2026-07-27 (session 4) — rung-1 attack mechanisms implemented (residual targets, guided rollouts, prefix seeding); sweeps pending
 
 **Built all three mechanisms from s3's "next session" list.** Implementation only —

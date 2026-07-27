@@ -154,6 +154,25 @@ pub struct BeamResult {
     pub path: Vec<u32>,
 }
 
+/// Per-level pruning summary recorded by [`beam_search_cutoffs`].
+/// Scores are the beam's fixed-point scores divided by 4096, so they
+/// compare exactly with [`crate::trace::score_state`].
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct LevelCutoff {
+    /// Level = number of moves the surviving states have taken (their
+    /// trajectory step); runs `1 + seed_prefix ..= n! − 1`.
+    pub level: u32,
+    /// States kept (≤ width; can be smaller after dedup).
+    pub kept: u32,
+    /// Score of the best surviving state.
+    pub best_score: f64,
+    /// Score of the worst surviving state — the pruning threshold: a
+    /// generated candidate scoring above this was discarded (candidates
+    /// at exactly this score may survive or not depending on the
+    /// `(len, succ, parent)` tie-break).
+    pub worst_kept_score: f64,
+}
+
 /// Number of weight-1 arcs in the child state after `parent` visits `q`,
 /// in O(1) from the parent's counters (see `Walk::advance` for the case
 /// analysis; `parent.visited` does not yet contain `q`).
@@ -204,6 +223,32 @@ pub fn beam_search_seeded(
     scorer: Scorer,
     jitter: Option<Jitter>,
     seed_prefix: usize,
+) -> BeamResult {
+    beam_search_impl(g, width, scorer, jitter, seed_prefix, None)
+}
+
+/// [`beam_search_seeded`] that additionally records one [`LevelCutoff`]
+/// per level. Pure instrumentation: the search itself is bit-identical
+/// to the uninstrumented run.
+pub fn beam_search_cutoffs(
+    g: &Graph,
+    width: usize,
+    scorer: Scorer,
+    jitter: Option<Jitter>,
+    seed_prefix: usize,
+) -> (BeamResult, Vec<LevelCutoff>) {
+    let mut cutoffs = Vec::new();
+    let r = beam_search_impl(g, width, scorer, jitter, seed_prefix, Some(&mut cutoffs));
+    (r, cutoffs)
+}
+
+fn beam_search_impl(
+    g: &Graph,
+    width: usize,
+    scorer: Scorer,
+    jitter: Option<Jitter>,
+    seed_prefix: usize,
+    mut cutoffs: Option<&mut Vec<LevelCutoff>>,
 ) -> BeamResult {
     assert!(width >= 1, "beam width must be at least 1");
     assert!(
@@ -269,7 +314,7 @@ pub fn beam_search_seeded(
     // Candidate = (score, len, succ, parent index in `beam`).
     let mut cands: Vec<(i64, u32, u32, u32)> = Vec::new();
 
-    for _depth in (1 + seed_prefix)..nfact {
+    for depth in (1 + seed_prefix)..nfact {
         cands.clear();
         for (pi, s) in beam.iter().enumerate() {
             let mut any = false;
@@ -304,7 +349,9 @@ pub fn beam_search_seeded(
 
         let mut seen: HashSet<(u32, BitSet)> = HashSet::with_capacity(width.min(cands.len()) * 2);
         let mut next: Vec<State> = Vec::with_capacity(width.min(cands.len()));
-        for &(_score, len, q, pi) in cands.iter() {
+        let mut best_kept: i64 = 0;
+        let mut worst_kept: i64 = 0;
+        for &(score, len, q, pi) in cands.iter() {
             if next.len() >= width {
                 break;
             }
@@ -325,6 +372,10 @@ pub fn beam_search_seeded(
             let k = parent.k - u32::from(cycle_rem[cid] == 0);
             let node = arena.len() as u32;
             arena.push((parent.node, q));
+            if next.is_empty() {
+                best_kept = score;
+            }
+            worst_kept = score;
             next.push(State {
                 cur: q,
                 len,
@@ -336,6 +387,14 @@ pub fn beam_search_seeded(
                 intact,
                 zhash: jctx.map_or(0, |j| parent.zhash ^ j.zobrist[q as usize]),
                 node,
+            });
+        }
+        if let Some(out) = cutoffs.as_deref_mut() {
+            out.push(LevelCutoff {
+                level: depth as u32,
+                kept: next.len() as u32,
+                best_score: best_kept as f64 / 4096.0,
+                worst_kept_score: worst_kept as f64 / 4096.0,
             });
         }
         beam = next;

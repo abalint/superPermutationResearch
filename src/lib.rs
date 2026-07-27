@@ -29,6 +29,9 @@
 //!   JSON files produced by the Python training side;
 //! * [`rollout`] — epsilon-greedy rollout generator emitting JSONL
 //!   training records for a future learned value function;
+//! * [`trace`] — first-visit trajectory extraction from existing
+//!   superpermutation strings (e.g. community records) plus beam-exact
+//!   state scoring for prune-depth analysis;
 //! * [`validate`] — a sliding-window superpermutation validator.
 
 pub mod beam;
@@ -38,5 +41,6 @@ pub mod graph;
 pub mod greedy;
 pub mod model;
 pub mod rollout;
+pub mod trace;
 pub mod validate;
 pub mod walk;

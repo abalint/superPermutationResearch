@@ -11,7 +11,8 @@ only through rollout JSONL (Rust → Python) and model JSON (Python → Rust).
 Dependency sketch (arrows point at dependencies):
 
 ```
-main.rs ─→ graph, greedy, beam, model, rollout, validate
+main.rs ─→ graph, greedy, beam, model, rollout, trace, validate
+trace ───→ beam (Scorer), graph, walk
 greedy ──→ walk ──→ bitset, bound, graph
 rollout ─→ walk, bound, graph        (+ rand, serde_json)
 beam ────→ bitset, bound, graph, model   (does NOT use walk — see Extension points)
@@ -73,11 +74,18 @@ bitset, graph → no crate deps
   seed ⇒ byte-identical output. Also `log_trajectory(&Graph, path, out)`,
   which replays a recorded visit-order path through a `Walk` and emits the identical
   record format (used by `greedy --log` / `beam --log`).
+- **`src/trace.rs`** — trajectory extraction from existing superpermutation strings
+  (e.g. community records): `extract_path(n, s)` (first-visit rank order via a sliding
+  window), `trace_string(&Graph, s) -> Trace { path, weights, input_len, replay_len,
+  hist }` (maximal-overlap replay through a `Walk`; `replay_len == input_len` certifies
+  a tight string), `score_state(&Walk, Scorer)` (beam-exact fixed-point score of a
+  state, comparable with `LevelCutoff` thresholds), and `score_trajectory(&Graph,
+  path, Scorer) -> Vec<(step, len, score)>`.
 - **`src/validate.rs`** — `validate(n, s: &str) -> Validation { n, length, distinct,
   total, complete }`. Sliding-window checker; the only accepted proof that a string is
   a superpermutation.
 - **`src/main.rs`** — clap CLI (`struct Cli`, `enum Cmd`): subcommands `info`, `greedy`,
-  `beam`, `rollouts`, `validate`.
+  `beam`, `trace`, `rollouts`, `validate`.
 
 ## Core data structures
 
@@ -177,13 +185,23 @@ All subcommands take `-n <3..=8>` and start with `Graph::new(n)`.
   (`--jitter 0` = off = bit-identical to plain search). `--seed-prefix <depth>`
   (default 0) replays that many greedy moves as the root state (rejected unless
   `< n! − 1`); composes with `--model`/`--alpha`/`--jitter`/`--bound`. `--log <file>`
-  writes the best path's `Features` JSONL.
+  writes the best path's `Features` JSONL. `--cutoff-log <file>` records one TSV line
+  per level (`level, kept, best_score, worst_kept_score` — the pruning threshold, in
+  length units = fixed-point/4096) via `beam_search_cutoffs`; pure instrumentation,
+  bit-identical search.
 - **`rollouts`** — opens `--out` as `BufWriter<File>`, calls
   `run_rollouts_guided(&g, count, epsilon, seed, guide, &mut writer)` → prints
   count/epsilon/seed (and model kind/alpha when guided), mean and min final length,
   lines written. Defaults: `--count 100`, `--epsilon 0.1`, `--seed 0`; `--out` is
   required. `--model <path> --alpha <a>` (default 1) guides the exploit move with a
   learned model; the JSONL schema is unchanged.
+- **`trace`** — reads `--file`, requires it to validate as complete, then
+  `trace_string` → prints length/replay length/visits, the move-weight histogram, and
+  the positions of weight ≥ 3 moves. `--log <file>` writes the trajectory's `Features`
+  JSONL (via `log_trajectory`). With `--bound cycle|arc` or `--model <path> --alpha
+  <a>` (mutually exclusive), `score_trajectory` scores every state exactly as the
+  beam's `score_move` would; `--score-log <file>` writes them as TSV
+  (`step, len, score`), otherwise they print to stdout.
 - **`validate`** — string from positional arg or `--file` (mutually exclusive; file
   content is trimmed) → `validate(n, &s)` → prints length, `distinct / total`,
   `complete`. With `--complete`, exits nonzero unless complete.
