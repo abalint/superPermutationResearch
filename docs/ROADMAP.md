@@ -111,9 +111,10 @@ compute class (~10¹⁵× the 2019 distributed effort) — everything below is t
        expert trajectory yields a second valid example by reverse-and-relabel
        (reversal symmetry; the record population is mirror-closed but individual
        872s are not palindromes — 0/100 in our sample, so a palindrome-constrained
-       search likely caps at 873 and is not pursued). Metric: record-trajectory
-       states inside the beam's kept window (currently 0% for levels 118–601)
-       rises; then beam length.
+       search likely caps at 873 and is not pursued). Metric: item 1 already fixed
+       *survival* (record-trajectory states in the kept window: 0.15% → 99.55%), so
+       the bar moves to *winning* — record-shaped states must outrank greedy-shaped
+       ones inside the stratified window; then beam length < 873.
 4. [ ] **Exact endgame tablebase**: DP over (remaining subset, cur) once ≤ ~25–30
        perms remain (m·2^m states; ~30 is the RAM ceiling). Bolts onto any searcher:
        frontier states get true completion cost, and empirical claims ("nothing beats

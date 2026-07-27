@@ -22,7 +22,8 @@ Phase-2 outcome: the learned-score beam beats the hand-bound beam decisively at 
 (874 vs 890 at equal wall-clock), and a greedy-prefix + learned-endgame hybrid reaches
 a validated **873** — matching greedy via a different string, rung 1 of the success
 ladder. An autopsy of 100 community 872-length records shows why 872 needs more: every
-record path is pruned by our scorers within the first ~16% of the walk (records leave
+record path was pruned by the unstratified scorers within the first ~16% of the walk
+(the phase-3 stratified beam fixes survival, not winning — see footnote 3; records leave
 rotation cycles early via weight-2 moves and weave them closed later — structure the
 current features actively penalize), while the endgame is already solved. See
 [docs/JOURNAL.md](docs/JOURNAL.md) sessions 5–6.

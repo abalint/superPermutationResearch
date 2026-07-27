@@ -1,6 +1,6 @@
 # Architecture
 
-Code map for the `superperm` crate (phases 1–2). Math background lives in
+Code map for the `superperm` crate (phases 1–3). Math background lives in
 `docs/THEORY.md` — this file only covers what the code does and where to change it.
 Binary + library crate: `src/lib.rs` exports the modules, `src/main.rs` is the CLI.
 The Python training side lives in `ml/` (see its section below); the two halves talk
@@ -11,11 +11,12 @@ only through rollout JSONL (Rust → Python) and model JSON (Python → Rust).
 Dependency sketch (arrows point at dependencies):
 
 ```
-main.rs ─→ graph, greedy, beam, model, rollout, trace, validate
+main.rs ─→ graph, greedy, beam, beam2, model, rollout, trace, validate
 trace ───→ beam (Scorer), graph, walk
 greedy ──→ walk ──→ bitset, bound, graph
 rollout ─→ walk, bound, graph        (+ rand, serde_json)
 beam ────→ bitset, bound, graph, model   (does NOT use walk — see Extension points)
+beam2 ───→ beam (Jitter, splitmix), bitset, bound, graph (Preds), model
 model ───→ (serde_json only; pure inference)
 validate → graph (factorial, rank)
 bound ───→ (serde only; pure arithmetic + Features struct)
@@ -30,12 +31,21 @@ bitset, graph → no crate deps
   `factorial(n)`, `rank(perm: &[u8]) -> usize` (Lehmer rank), `unrank(n, rank) -> Vec<u8>`;
   `struct Graph` with `Graph::new(n)` (asserts `3..=8`) and the static helper
   `Graph::overlap(a, b) -> usize` (brute-force suffix/prefix overlap, used for path
-  reconstruction and as the test oracle).
+  reconstruction and as the test oracle). Also `struct Preds` (`Preds::new(&Graph)`),
+  weight-graded predecessor lists — the exact edge-set mirror of `succs` (`(p, w)` in
+  `preds.lists[r]` iff `(r, w)` in `succs[p]`), same ordering guarantees with head =
+  `pred1`. Built on demand by the two-ended searcher only; `Graph` itself stores just
+  the O(1) `pred1` map.
 - **`src/bound.rs`** — `lower_bound(r, k, current_cycle_has_unvisited) -> usize`, the
   admissible bound `r + k − [current cycle has unvisited]` (THEORY.md §3);
   `lower_bound_arc(r, arcs, succ1_unvisited)`, the tighter arc bound
-  `r + arcs − [succ1(cur) unvisited]` (admissibility proof in the module docs); and
-  `struct Features` (serde `Serialize`/`Deserialize`), the rollout JSONL record.
+  `r + arcs − [succ1(cur) unvisited]` (admissibility proof in the module docs);
+  `lower_bound_arc2(r, arcs, succ1_back_unvisited, pred1_front_unvisited)`, the
+  two-ended arc bound `max(r, r + arcs − [succ1(back) unvisited] − [pred1(front)
+  unvisited])` — admissible for the deque move set, proof sketch in the module docs
+  (the `max` floor covers both free ends landing on the same arc; with the prepend
+  side dead it reduces exactly to `lb_arc`); and `struct Features` (serde
+  `Serialize`/`Deserialize`), the rollout JSONL record.
 - **`src/walk.rs`** — `struct Walk<'g>`, the incremental search state shared by greedy
   and rollouts. `Walk::new(&Graph)`, `advance(rank, weight)`, `first_unvisited_succ()`,
   `unvisited_succs()`, `fallback_target()`, `lb()`, `features()`, `done()`,
@@ -69,6 +79,23 @@ bitset, graph → no crate deps
   test against pre-stratification output strings; CLI: `beam --stratify
   [--strat-quota Q --strat-bucket B]`). Private: `struct State`, `struct JitterCtx`,
   `fn score_move`, `fn child_arcs`, `fn child_state`, `fn bucket_key`.
+- **`src/beam2.rs`** — two-ended (deque) beam search, phase-3 item 2's decision-order
+  probe (NO-GO at n=6 but kept in-tree; recovers 33/153 — n=5 needs width ≥ ~1000).
+  `beam2_search(&Graph, width, Scorer2, Option<Jitter>) -> Beam2Result { string, len,
+  path, moves }` (`moves` = decision order as `(rank, prepended?)`; `path` = string
+  order front→back). A state is a deque `(front, back, visited, len)`; a move appends
+  an unvisited successor of `back` or prepends an unvisited predecessor of `front`
+  (via `graph::Preds`, built once per search). `enum Scorer2`: `Arc2` (score =
+  `len + lb_arc2`) or `Learned { model, alpha }` — a *transfer* scorer feeding the
+  one-ended 8-feature contract computed relative to `back`. Structure mirrors
+  `beam.rs` (level-synchronous, O(1) candidate scoring from parent counters, sort +
+  keep-first dedup + width truncation, path arena) with two differences: the dedup
+  key is `(front, back, visited)` — equal visited sets with different ends are
+  genuinely distinct states — and every score must be a pure function of
+  `(front, back, visited, len)`; the weight-`n` fallback fires only when *both* ends
+  are stuck. Jitter reuses `beam::Jitter` with a `(front, back, visited)`-pure
+  offset; ε=0 is bit-identical. Private: `struct State2` (the beam `State` counters
+  plus `front`/`back` instead of `cur`), `Jitter2Ctx`, `score_move2`, `child_arcs2`.
 - **`src/model.rs`** — `enum Model` (`Linear` | `Mlp`), loaded from JSON via
   `Model::load(path)` / `Model::from_json(text)`; `predict(&self, x: &[f64; 8]) -> f64`
   is pure CPU inference (dot product, or 2×64 MLP with ReLU); `n()` (the n the model
@@ -98,7 +125,7 @@ bitset, graph → no crate deps
   total, complete }`. Sliding-window checker; the only accepted proof that a string is
   a superpermutation.
 - **`src/main.rs`** — clap CLI (`struct Cli`, `enum Cmd`): subcommands `info`, `greedy`,
-  `beam`, `trace`, `rollouts`, `validate`.
+  `beam`, `beam2`, `trace`, `rollouts`, `validate`.
 
 ## Core data structures
 
@@ -157,10 +184,13 @@ called by the rollout generator, not in the greedy/beam hot path.
 
 ### Beam state, arena, dedup (`src/beam.rs`)
 
-`State { cur, len, visited: BitSet, cycle_rem, k, r, arcs, intact, zhash, node }`
-mirrors `Walk`'s counters but without `chars` — no state carries a string or path.
-`zhash` is the Zobrist hash of the visited set (0 when jitter is off), XOR-updated
-per move.
+`State { cur, len, visited: BitSet, cycle_rem, k, r, arcs, intact, half_open,
+nearly_done, zhash, node }` mirrors `Walk`'s counters but without `chars` — no state
+carries a string or path. `half_open` (cycles with exactly 1–2 *visited* members) and
+`nearly_done` (exactly 1–2 *unvisited*) are the phase-3 item-1 counters feeding the
+stratification bucket key; they exist only in the beam `State` so far, not in `Walk`
+(item 3 wires them into `Features`). `zhash` is the Zobrist hash of the visited set
+(0 when jitter is off), XOR-updated per move.
 
 - **Scoring without materialization**: `score_move(g, parent, q, w, parent_idx)`
   computes the child's `(len + lb, len, q, parent_idx)` tuple in O(1) from the parent's
@@ -197,11 +227,22 @@ All subcommands take `-n <3..=8>` and start with `Graph::new(n)`.
   `--alpha 1`). `--jitter <eps> --jitter-seed <s>` enables deterministic score jitter
   (`--jitter 0` = off = bit-identical to plain search). `--seed-prefix <depth>`
   (default 0) replays that many greedy moves as the root state (rejected unless
-  `< n! − 1`); composes with `--model`/`--alpha`/`--jitter`/`--bound`. `--log <file>`
+  `< n! − 1`); composes with `--model`/`--alpha`/`--jitter`/`--bound`. `--stratify
+  [--strat-quota Q --strat-bucket B]` (defaults 32 / 4) enables per-bucket width
+  reservation (see `beam_search_stratified` above; off = bit-identical; the canonical
+  from-scratch 873 uses `--strat-quota 4 --strat-bucket 1` with the learned scorer —
+  empirically it *anti-composes* with `--jitter` and `--seed-prefix`, JOURNAL s7).
+  `--log <file>`
   writes the best path's `Features` JSONL. `--cutoff-log <file>` records one TSV line
   per level (`level, kept, best_score, worst_kept_score` — the pruning threshold, in
   length units = fixed-point/4096) via `beam_search_cutoffs`; pure instrumentation,
   bit-identical search.
+- **`beam2`** — `beam2_search(&g, width, scorer, jitter)` (default width 1000) →
+  prints length, wall-clock seconds, prepend/move counts, and the string. Scorer:
+  two-ended arc bound by default, or `--model <path> --alpha <a>` for the one-ended
+  learned-transfer scorer (stored `n` must match `-n`). `--jitter <eps>
+  --jitter-seed <s>` as in `beam`. No `--bound`, `--seed-prefix`, `--stratify`, or
+  logging flags — the probe stayed minimal.
 - **`rollouts`** — opens `--out` as `BufWriter<File>`, calls
   `run_rollouts_guided(&g, count, epsilon, seed, guide, &mut writer)` → prints
   count/epsilon/seed (and model kind/alpha when guided), mean and min final length,
@@ -305,15 +346,21 @@ plug in:
   update it in `advance`, expose it in `features()`), **and also** `State` +
   `score_move` in `src/beam.rs` — beam does not use `Walk`; it duplicates the counter
   maintenance for O(1) candidate scoring — **and** `child_features` in
-  `src/rollout.rs`, the `Walk`-side mirror used by guided rollouts. Keep them in
-  sync, keep everything O(1)/O(n) per expansion, and extend the 8-feature contract in
-  `ml/common.py` + `Model::predict`'s input array in lockstep (serde-default the
-  JSONL field for backward compat).
+  `src/rollout.rs`, the `Walk`-side mirror used by guided rollouts. `src/beam2.rs`
+  keeps a *third* copy (`State2`/`score_move2`); mirror a feature there only if the
+  two-ended searcher should score with it, and keep it a pure function of
+  `(front, back, visited)`. Keep them in sync, keep everything O(1)/O(n) per
+  expansion, and extend the 8-feature contract in `ml/common.py` + `Model::predict`'s
+  input array in lockstep (serde-default the JSONL field for backward compat).
+  Precedent: item 1's `half_open`/`nearly_done` live only in the beam `State` (they
+  feed the bucket key, not the model — yet).
 - **Adding a CLI subcommand**: add a variant to `enum Cmd` in `src/main.rs` (clap
   derive) and a match arm in `main()`; put the logic in a library module and export it
   from `src/lib.rs`. Follow the existing pattern of printing a summary line then the
   payload.
-- **Phase 3 (cycle-level search)**: nothing is built yet. The cycle machinery to build
+- **Phase 3 status**: item 1 (stratified beam, `beam_search_stratified`) and item 2
+  (two-ended beam, `src/beam2.rs` + `Preds` + `lb_arc2`) are built — see above. For
+  item 5 (cycle-level search) nothing is built yet. The cycle machinery to build
   on: `Graph::cycle_id`/`cycle_count`, the arc-component maintenance in
   `Walk::advance`/`child_arcs`, and THEORY.md's 2-cycle/tree background. This is a new
   search representation (super-node graph over rotation cycles), not a patch to
@@ -380,6 +427,16 @@ sort order, brute-force weight oracle at n=4, cycle partition; `bitset.rs`; `bou
   bit-identical to the plain search; small jitter still finds 33 at n=4.
 - `beam_path_replays_to_reported_length` — arena-reconstructed path really has the
   reported length.
+- Stratification (phase-3 item 1):
+  `stratify_off_is_bit_identical_to_pre_stratification_beam` — `stratify = None` and
+  `quota = 0` reproduce the pre-stratification output strings byte for byte (pinned
+  against commit 9b03761); `stratified_beam_gates_still_optimal` — 33/153 still found
+  with stratification on; `stratified_selection_reserves_beyond_plain_cutoff` — the
+  quota pass really keeps states the plain cutoff would prune.
+- `tests/two_ended.rs` (phase-3 item 2, 7 tests) — `beam2` recovers 9/33/153
+  (n=5 at width 2000, where the winner genuinely uses prepends); `lb_arc2`
+  admissibility oracle-tested along random deque walks at n=4; deque reconstruction
+  matches tracked lengths; jitter ε=0 identity; every perm visited exactly once.
 
 **Hard invariants** (CLAUDE.md): greedy must keep producing 9/33/153 — if a
 graph/ordering refactor changes those numbers, the refactor is wrong, not the test;

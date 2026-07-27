@@ -35,12 +35,16 @@ cargo run --release -- beam -n 5 --width 2000
 cargo run --release -- rollouts -n 5 --count 200 --epsilon 0.15 --seed 0 --out out.jsonl
 cargo run --release -- validate -n 5 <string>
 
-# learned-score beam (phase 2); canonical 874 model:
+# CURRENT BEST FROM SCRATCH — stratified learned beam, validated 873 (n=6), ~8 s (phase-3 item 1, JOURNAL s7):
+cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --alpha 1 --stratify --strat-quota 4 --strat-bucket 1
+# learned-score beam without stratification (phase 2) plateaus at 874 with the canonical boot1 model:
 cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --alpha 1
-# diversified restart (deterministic jitter; ε=0 is bit-identical to no jitter):
+# diversified restart (deterministic jitter; ε=0 is bit-identical to no jitter; anti-composes with --stratify):
 cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --jitter 0.03 --jitter-seed 7
-# rung-1 result — validated 873 (n=6), ~2 s:
+# rung-1 seeded hybrid — a second, distinct 873 (n=6), ~2 s (three 873s known: greedy's, this, the stratified):
 cargo run --release -- beam -n 6 --width 2000 --seed-prefix 350 --model ml/models/linear_n6_boot1.json --alpha 1
+# two-ended (deque) beam, phase-3 item 2 probe (NO-GO but kept in-tree; arc2 bound by default, --model for transfer):
+cargo run --release -- beam2 -n 5 --width 2000
 # rung-1 mechanisms (all compose):
 cargo run --release -- beam -n 6 --width 2000 --seed-prefix 120          # greedy-prefix seeding (0 = plain)
 cargo run --release -- rollouts -n 6 --count 200 --epsilon 0.05 --seed 0 --model ml/models/linear_n6_boot1.json --alpha 1 --out out.jsonl  # model-guided
@@ -74,11 +78,12 @@ Always benchmark and search in `--release`; debug builds are ~50× slower in the
 - New search features must be maintainable incrementally (O(1) or O(n) per expansion) —
   anything O(n!) per node is a non-starter at n ≥ 6.
 - `beam.rs` does NOT reuse `walk.rs` — it keeps its own `State` counters so candidates
-  score in O(1) without cloning. Any new incremental feature must be maintained in BOTH
-  `Walk::advance` and the beam's `State`/`score_move` (see ARCHITECTURE.md, extension
-  points). Also note: beam dedup assumes the score is a pure function of
-  `(cur, visited, len)` — a learned evaluator must preserve that or the keep-first
-  dedup argument breaks.
+  score in O(1) without cloning, and `beam2.rs` keeps a third copy (`State2`, the deque
+  searcher). Any new incremental feature must be maintained in `Walk::advance` AND the
+  beam's `State`/`score_move` — and in beam2's `State2` if beam2 should score with it
+  (see ARCHITECTURE.md, extension points). Also note: beam dedup assumes the score is a
+  pure function of `(cur, visited, len)` (`(front, back, visited, len)` in beam2) — a
+  learned evaluator must preserve that or the keep-first dedup argument breaks.
 - Every working session ends by appending a dated entry to `docs/JOURNAL.md` and, if
   results changed, updating the README results table.
 
