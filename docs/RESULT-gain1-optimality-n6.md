@@ -42,7 +42,9 @@ mid-walk weight ≥ 4 moves).
 
 Everything reduces to a waste ledger plus three finite computations.
 
-**1. General identity** (any tight superpermutation walk, no grammar assumption):
+**1. General identity** (any tight superpermutation walk whose intra-orbit moves
+are all weight 1 — true of every known record and of greedy; an intra-orbit
+weight-2 move adds 1 further waste per occurrence without ending a sojourn):
 `waste = (S − 1) + #w3 + 2·#w4 + 3·#w5`, where S is the number of sojourns
 (maximal single-orbit runs) and #wk counts weight-k moves. For n = 6:
 length = 725 + waste; the records have S = 145, #w3 = 3, waste 147.

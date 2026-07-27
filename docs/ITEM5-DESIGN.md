@@ -49,7 +49,10 @@ in exits where records pay 25 nested `w2x` detour-and-return splits.
 
 ## 3. The waste ledger — final, skip-priced form (machine-verified)
 
-Fully general walk identity (no grammar assumption; any tight superperm):
+Fully general walk identity (any tight superperm whose intra-orbit moves are all
+weight 1 — true of every known record and of greedy; each intra-orbit w2 adds 1
+extra waste without ending a sojourn, so Track B must either exclude such moves
+or price them):
 
 ```
 waste = (S − 1) + #w3 + 2·#w4 + 3·#w5        S = number of sojourns
