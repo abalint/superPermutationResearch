@@ -12,7 +12,12 @@ planned learned value function.
 3. `docs/ARCHITECTURE.md` — code map: modules, data structures, where phase-2 plugs in.
 4. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 
-Current state in one line: **phase 3 underway, items 1–4 done (JOURNAL s9)** —
+Current state in one line: **phase 3 underway, items 1–4 done, item 5 designed
+(JOURNAL s10, `docs/ITEM5-DESIGN.md`)** — item 5 in one breath: every known 872
+is a K=4 gain-one certificate; waste = 148 − K/4, so an 8-loop kernel chain +
+20-row rooted cover = **871 = world record** (n=7 corollary: K=20 beats 5906);
+next session builds `src/cert.rs` (step 1) and answers the K=8 chain-existence
+question (step 2). Prior state: —
 from-scratch bests: n=6 **873** (stratified beam, ~8 s), n=7 **5913** (same config
 + `--allow-n-mismatch`, ties greedy, ~5.5 min; bar 5907). Item 3 verdict (s8): the
 deficit features (`half_open`/`nearly_done`/`w2_bridges`, v2 11-feature contract)

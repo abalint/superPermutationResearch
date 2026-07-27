@@ -6,6 +6,72 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 10) — item 5 opened and designed: records are exactly K=4 certificates; waste = 148 − K/4 ⇒ an 8-loop kernel chain + 20-row cover = 871; design note committed
+
+Two parallel subagent threads (cycle-level trace of the record corpus; formal
+digest of the urdvr certificate machinery), then synthesis. The outputs interlock
+so cleanly that item 5's design collapsed from "big open-ended build" to a
+three-step attack on one finite combinatorial question. Full design:
+**`docs/ITEM5-DESIGN.md`** (the session's product — this entry is the summary).
+
+**Thread A — cycle-level trace of all 296 872s (script in scratchpad,
+`cycletrace/cycletrace.py`, regenerable).** The record grammar is *exact*, zero
+exceptions across 296 walks: 145 sojourns each; the transition alphabet is two
+letters — 141 × `w2x` (every single w2 in every record is the cross-cycle
+P[2:]+P[1]+P[0] edge; in-cycle w2 never occurs) + 3 × w3 (always to fresh cycles,
+always at sojourn index ≡ 0 mod 5); sojourn lengths ∈ {2,3,4,6} only; splits only
+2+4 / 3+3 / 4+2 / 2+2+2 with doubles + 2·triples = 25 always; interruption nesting
+is laminar in 296/296 (depth up to 16 — the "tree-like" lore is true but deep, not
+shallow); interruption gaps have ≡ 4 mod 5 sojourns with every gap cycle fully
+completed. Contrast: greedy's 873 and our stratified 873 are cycle-level
+*identical* (120 clean length-6 sojourns, no nesting) — the record trick is
+swapping 15 w3 + 4 w4 + 1 w5 exits for 25 nested w2x detour-and-returns.
+
+**Thread B — urdvr machinery digest (file:line-pinned).** Marked loop = pivot +
+5-necklace, its 5 splices are w2x edges linking 5 cycles; oriented row = loop +
+parent choice = exactly our detour (enter from parent, ride 4 children fully,
+return); kernel = K orbit-disjoint loops chained by K−1 cost-3 hops
+(T3(p)=T2(q)); certificate = kernel + rooted exact cover by rows; the walk-replay
+exact-once condition is the only true correctness invariant. Load-bearing
+discoveries: the certificate *compiler* is already kernel-generic (only
+`build_instance`/`ladder`/`gain1c` hard-code K = n−2), it even anticipates
+"nsk-style partial rides"; the n=7 5906 census (20 loops, 19 T3, 822 T2, 5
+incomplete groups) identifies it as a K=20 certificate with concessions; and
+rootedness/exact-cover are correctness conditions (rootless rows are never opened
+by the walk), while {kernel size, row completeness, hop cost} are the class
+restrictions — the doors to sub-Egan−1.
+
+**Synthesis — the waste ledger (verified against every known data point).**
+Hyperedge-forest counting gives waste = m + 118 (m = total loops, n=6), and with
+complete rows m = 30 − K/4, so **waste = 148 − K/4, K ≡ 0 mod 4**: K=4 → 872
+(= Egan−1, the 141/3 census of all 296 records), K=8 → **871 = world record**,
+K=24 → 867 (the grammar floor lands exactly on the proven lower bound). Cross-n:
+K=5 at n=7 → 5907 (exactly the urdvr words); perfect K=20 → 5904, and the actual
+5906 is that certificate paying 2 chars of concessions — so **large kernel chains
+provably exist at n=7**, and even repairing the 5906's five incomplete groups
+would beat the record. Every relaxation (mixed-cost hop, partial ride) is priced
+in the ledger; search never leaves proof-grade waste accounting.
+
+**Execution plan (in the design note, each step with go/no-go):**
+1. `src/cert.rs`: marked loop / oriented row / kernel-parameterized certificate +
+   generalized W1–W7 checker + walk compiler. Gate: 296/296 records round-trip as
+   K=4 certificates; the three 5907s parse at n=7; ledger machine-verified.
+2. Kernel-chain search: enumerate the T3(p)=T2(q) pair relation on the 144 marked
+   loops; DFS for K=8 orbit-disjoint chains. **This is the whole game at n=6** — a
+   finite, fully checkable existence question nobody has answered.
+3. Rooted-cover DLX over surviving kernels (adapt urdvr's Python `build_instance`
+   first — the compiler is already generic; Rust port only if the probe lives).
+   Any cover ⇒ compile ⇒ validate ⇒ 871.
+4. Only if dry: priced relaxations (partial rides, mixed-cost hops), and the n=7
+   K=20 attack seeded from the 5906's own extracted kernel.
+
+Anti-goal carried forward (s8): no static rewarding of row-like shapes in
+move-level beams — this searches the certificate space directly.
+
+**Next session: step 1 (`src/cert.rs`) and step 2 (the K=8 chain question).** If
+step 2 answers "no chain exists at cost 3", the ledger immediately prices the
+fallbacks; if "yes", step 3 is a bounded DLX run from a known-good codebase.
+
 ## 2026-07-27 (session 9) — item 4 executed: exact endgame tablebase built; metric met, but the endgame door is proven shut (873/874/5913 all locked before the last 25 perms; every known record's tail is optimal)
 
 Single thread this session: build ROADMAP item 4 end-to-end, then use it to convert

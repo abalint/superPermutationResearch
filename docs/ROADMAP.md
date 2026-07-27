@@ -151,8 +151,20 @@ compute class (~10¹⁵× the 2019 distributed effort) — everything below is t
        completion prover could push theorem depth past m=25 without 2^m RAM if ever
        needed. The 872-vs-873 game is over before r=25 ⇒ all steering weight on
        item 5.
-5. [ ] **Cycle-level (super-node) move space + waste-budget branch-and-bound with
-       learned move ordering** (the big build): play on the 120 rotation cycles —
+5. [ ] **Cycle-level (super-node) move space — kernel-parameterized certificate
+       search** (the big build; **design complete, see `docs/ITEM5-DESIGN.md`,
+       JOURNAL s10**). The s10 trace of all 296 known 872s + the urdvr formal
+       digest collapse the design to a sharp target: every record is a K=4
+       certificate (kernel of 4 chained loops + 25 oriented rows, waste =
+       148 − K/4), so **K=8 chainable kernel + 20-row rooted cover = 871 = world
+       record**, with the n=7 K=20 corollary beating 5906. Execution steps (each
+       with go/no-go, in the design note): (1) Rust certificate module +
+       generalized W-checker, 296/296 round-trip; (2) K=8 kernel-chain existence
+       at n=6 — the whole game, a finite checkable question; (3) rooted-cover DLX
+       over the surviving kernels (adapt urdvr's Python first); (4) priced
+       relaxations (partial rides, mixed-cost hops) only if 2–3 come up dry.
+       Original framing below, superseded where it conflicts: play on the 120
+       rotation cycles —
        entry/exit points and weave order as moves, so the record structure is a move,
        not an accident. Design constraints sharpened by s8 + Robin's thread reply:
        (a) the weave must be a *move*, not a statically-rewarded feature — s8 proved
