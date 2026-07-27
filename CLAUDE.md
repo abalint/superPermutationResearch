@@ -18,8 +18,9 @@ at n=6 (`beam --seed-prefix 350 --model ml/models/linear_n6_boot1.json --alpha 1
 and closed-loop-retraining attacks both dead-end at 874 (JOURNAL s6), and the
 100-record autopsy (JOURNAL s5) shows every 872 is pruned in the first ~16% of the
 walk because records leave cycles half-open via w2 moves (575/141/3 signature) —
-structure our k/intact features penalize. Next: **phase 3** — cycle-level search,
-deficit-distribution features, imitation from `data/records872/`.
+structure our k/intact features penalize. Next: **phase 3**, in the ordered plan of
+ROADMAP.md — start with item 1 (stratified beam), then deficit features + expert-rank
+training, endgame tablebase, cycle-level move space with waste-budget B&B.
 
 ## Commands
 
