@@ -12,17 +12,20 @@ planned learned value function.
 3. `docs/ARCHITECTURE.md` — code map: modules, data structures, where phase-2 plugs in.
 4. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 
-Current state in one line: **phase 3 underway, items 1–2 done (JOURNAL s7)** —
-from-scratch **873** at n=6 via the stratified beam (`beam -n 6 --width 2000 --model
-ml/models/linear_n6_boot1.json --alpha 1 --stratify --strat-quota 4 --strat-bucket 1`,
-~8 s; record-state mid-walk survival 0.15% → 99.55%, yet the winner is greedy-shaped),
-and the two-ended `beam2` probe is a clean negative (learned transfer re-finds the
-874 plateau; arc2 899 > one-ended 891) — together: the 872 blocker is **evaluation**,
-not selection or decision order. New expert fuel documented in
-`../extraDocs/2026-07-27-urdvr-email-and-repo.md` (urdvr repo: 2 new 872s, three n=7
-words at 5,907, Egan−1 verified through n=12, gain-one generator). Next: **item 3**
-— deficit-distribution features + rank training on expert corpora (reverse-relabel
-augmentation), then item 4 (endgame tablebase); item 5's case is structural moves.
+Current state in one line: **phase 3 underway, items 1–3 done (JOURNAL s8)** —
+from-scratch bests: n=6 **873** (stratified beam, ~8 s), n=7 **5913** (same config
++ `--allow-n-mismatch`, ties greedy, ~5.5 min; bar 5907). Item 3 verdict: the new
+deficit features (`half_open`/`nearly_done`/`w2_bridges`, v2 11-feature contract)
+demonstrably carry the expert signal (`w2_bridges` midgame: records 1.9 vs 0 on
+greedy-shaped walks; anchored ranker: first nonzero midgame rank-wins), but **no
+linear/MLP evaluator over them converts it** — 186 runs, every ≤873 string
+byte-identical to the known stratified 873, and population-contrast scorers are
+exploitable (beam manufactures bridge-rich junk). The 872 structure needs credit
+*conditional on completing the weave* ⇒ next: **item 4** (exact endgame tablebase),
+then item 5 (cycle-level moves; must parameterize the kernel — Robin's thread reply
++ 5906 boundary fact). Expert corpus: 298 distinct 872s (`data/records872/` +
+`data/gain1_872s/`), Chaffin prefixes in `data/chaffin/`, field news in
+`../extraDocs/2026-07-27-urdvr-email-and-repo.md`.
 
 ## Commands
 

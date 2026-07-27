@@ -96,7 +96,23 @@ compute class (~10¹⁵× the 2019 distributed effort) — everything below is t
        < 874 ⇒ the decision-order hypothesis is real, fund item 5's insertion moves
        generously; ≥ 874 ⇒ the blindness is evaluation, not ordering — weight
        items 3–4.
-3. [ ] **Deficit-distribution features + rank training on expert corpora**: features
+3. [x] **Deficit-distribution features + rank training on expert corpora** — ✅ ran,
+       **partial: features GO, evaluator NO-GO (JOURNAL s8)**. `half_open`/
+       `nearly_done`/`w2_bridges` landed end-to-end (v2 11-feature contract, old
+       models bit-identical; `w2_bridges` separates record midgames perfectly:
+       1.9 mean vs identically 0 on greedy-shaped walks). Expert corpus tripled to
+       298 distinct 872s (gain1 mass generation) + 596 traced trajectories
+       (reverse-and-relabel augmentation). But across 10 models × 186 validated n=6
+       runs: best = 873, only from boot1⊕rank blends, every string byte-identical
+       to the existing stratified 873 — the rank direction never flips a boot1
+       decision. Population-contrast scorers are *exploitable* (beam manufactures
+       bridge-rich junk: 1765-length blowups; pure rankers fail the n=5 gate).
+       Anchored residual ranker = best standalone (888 < arc's 891; first nonzero
+       midgame rank-wins, 10/484 levels; pair acc 89.8%, w2_bridges the strongest
+       discriminator). Verdict: the 872 structure is not expressible as a static
+       linear preference over these counts — credit for the weave must be
+       conditional on completing it ⇒ items 4–5. n=7 baseline set: stratified
+       transfer = 5913 from scratch (ties greedy; bar 5907). Original spec: features
        = count of cycles with exactly 1–2 visited members, 2-cycle adjacency between
        partially-visited cycles (O(1)-incremental in Walk AND beam State; the
        `half_open`/`nearly_done` counters from item 1 are already in beam State).
@@ -123,7 +139,13 @@ compute class (~10¹⁵× the 2019 distributed effort) — everything below is t
 5. [ ] **Cycle-level (super-node) move space + waste-budget branch-and-bound with
        learned move ordering** (the big build): play on the 120 rotation cycles —
        entry/exit points and weave order as moves, so the record structure is a move,
-       not an accident. Search = anytime DFS with the admissible waste-budget test
+       not an accident. Design constraints sharpened by s8 + Robin's thread reply:
+       (a) the weave must be a *move*, not a statically-rewarded feature — s8 proved
+       population-contrast scoring of the shape is exploitable; (b) the kernel must
+       be a *parameter* of the move space, not hard-coded — the n=7 record (5906)
+       came from a nonstandard kernel, and sub-Egan−1 provably lives outside the
+       standard-kernel gain-one census. The urdvr certificate machinery (W1–W7,
+       trade vocabulary, DLX exact cover) is the starting formalization. Search = anytime DFS with the admissible waste-budget test
        (budget 147, never prunes a live branch — immune to the "looks wasteful early,
        converges later" deception) ordered by the learned evaluator instead of
        width-pruned. This proof-grade-pruning + learned-guidance + structural-moves

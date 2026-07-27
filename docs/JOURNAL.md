@@ -6,6 +6,102 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 8) — item 3 executed: deficit features carry the expert signal, but no linear/MLP evaluator converts it (873 stands); n=7 from-scratch baseline 5913; field news (Robin: kernels; Theo: paint-waste)
+
+Three threads again: n=7 probe, feature implementation, training/evaluation campaign.
+Item 3's verdict is a clean partial: **the features work, the evaluator class is the
+ceiling.** No sub-873; steering weight moves to items 4–5.
+
+**Features landed (commit `ead4c8a`).** `half_open` (cycles with 1–2 visited) and
+`nearly_done` (1–2 unvisited) now in `Walk` + JSONL; new **`w2_bridges`** = count of
+unvisited cross-cycle weight-2 edges joining two partially-visited cycles (each perm
+has exactly one cross-cycle w2 successor `P[2..]+P[1]+P[0]` — a bijection — so the
+count is O(1)-amortized incremental via `Graph::w2_bridges_delta`, shared by Walk,
+beam, and guided rollouts). Model contract is append-only length-dispatched:
+`FEATURE_ORDER` (8) vs `FEATURE_ORDER_V2` (11); old models score bit-identically
+(pinned to the exact bit pattern; stratified 873 reproduces byte-identical). beam2
+skips the new features by design (documented NO-GO probe). 76 tests green. **The
+feature does what the s5 autopsy demanded**: tracing a record vs our stratified 873,
+midgame (steps 250–450) mean `w2_bridges` is 1.9 (max 7) vs **identically 0.0** on
+every greedy-shaped walk; `half_open` 3.3 vs 0.3.
+
+**Expert corpus tripled (prep for the campaign).** urdvr's `gain1.py search` is a
+0.09 s/word mass generator: 200 seeds → 198 distinct 872s, **196 new** vs the known
+corpus → `data/gain1_872s/` (gitignored). With records872 + the 2 urdvr words: **298
+distinct 872s**. Chaffin per-waste optimal prefixes downloaded to `data/chaffin/`
+(599 files incl. all `Chaffin_6_W_<w>` exhaustive lists; unused this session —
+`trace` requires complete strings — kept for a future prefix loader). Traced corpus:
+596 expert trajectories (298 + 298 reverse-**and-relabel**; plain reversal doesn't
+start at identity, so relabeling is mandatory), 429k rows, plus fresh v2 rollout/
+trajectory corpora. **Trap documented: all pre-`ead4c8a` JSONL (including the
+misleadingly named `boot_n6_elite925_v2.jsonl`) has the new fields zero-defaulted —
+never train the new features on it.**
+
+**Campaign (commit `a68d068`: `ml/fit_rank.py` + `beam --allow-n-mismatch`): NO-GO
+on sub-873, with sharp structure.** 10 models × α × quota × width, 186 validated n=6
+runs:
+
+- **Best overall: 873, only from boot1 ⊕ β·rank pre-blends (β 0.05–1) — and every
+  one is byte-identical to `data/result_stratified_873.txt`.** The rank direction
+  never flips a single boot1 decision at any surviving β, any width to 32000: the
+  873→872 gap is unreachable by *any reweighting in this feature basis* (extends
+  s6's conclusion from 8 features to 11).
+- **Population-contrast training is exploitable** — the session's most important
+  negative mechanism: scorers trained to separate expert from background states turn
+  `w2_bridges`/`half_open` into a classifier, and the beam then *manufactures*
+  bridge-rich junk with no record future (expert+rollout OLS mix: 1765; pure
+  rankers: fail the n=5 gate at every α, and their beams collapse record survival
+  719→264 because junk out-ranks records on the ranker's own scale). Credit for
+  structure must be conditional on being able to use it — a static linear map can't
+  express that.
+- **The anchored (residual) ranker is the honest signal-carrier**: pairwise ranker
+  on `cost_to_go − lb_arc` (RankNet-style logistic loss, 89.8% held-out pair
+  accuracy; standardized `w2_bridges` coef −3.33 = strongest expert discriminator)
+  is the best standalone expert-informed scorer (888 @ w2000, beats arc's 891) and
+  produces the **first-ever nonzero midgame rank-wins** (records winning the
+  stratified window at 10/484 levels 118–601, vs 0 for boot1 and all blends). The
+  features are real; linear/MLP over them is the ceiling.
+- n=5 gate lesson: it screens *breakage*, not *poison* (expmix passed the gate at
+  all α, then beamed 1765 at n=6).
+
+**n=7 from-scratch baseline established: 5913, stratified learned beam — the n=6
+story reproduces one size up.** Hand bounds are terrible (cycle 6180, arc 6130 @
+w2000 — far worse than greedy, unlike n=6); the n=6-trained boot1 model transfers
+with zero retraining (5970); stratification (quota 4 or 8) closes exactly to
+**5913** at w2000 (~5.5 min) and w8000 (~21 min, same string) — a distinct string
+from greedy's with the *identical* weight histogram (4320/600/96/18/4/1). Quota
+response shifts (quota 1, a winner at n=6, gives 5961). The rank-blend transfers no
+improvement (5913). Bar to beat: **5907** (urdvr words). `--allow-n-mismatch` now
+enables cross-n model runs.
+
+**Field news (documented in `../extraDocs/2026-07-27-urdvr-email-and-repo.md`).**
+(1) **Robin's reply**: proving indefinite lifting would give the long-conjectured
+Egan−1 upper bound; and — the actionable half — the gain-one machinery should be
+adapted to **nonstandard kernels**, "as we were able to do for n=7" (the 5906).
+Independent confirmation of our s7 boundary note: sub-Egan−1 means leaving the
+standard-kernel move space, and item 5's cycle-level design must *parameterize the
+kernel*. At n=6, Egan−1 = 872 IS the record, so any closing nonstandard-kernel word
+there is a world record. (2) **Theo H.**: claims (opinion, no mechanism) that even
+the 5906's nonstandard-kernel savings lift indefinitely — filed as
+conjecture-on-conjecture; posted `paint_waste.cpp` (archived + compiled at
+`../extraDocs/theo-paint-waste/`, copyleft): an analyzer emitting
+`[clean_run_length:source_index]` pairs per waste symbol — his dirty-window counts
+match our waste accounting exactly (record 872: 147 waste, max dirty run 2).
+
+**Next session (item 4, with item 5's design brief sharpened):**
+- **Exact endgame tablebase** (ROADMAP item 4): DP over (remaining subset, cur) for
+  ≤ ~25–30 remaining perms; bolt onto beam/stratified frontier states. Metric: any
+  frontier state whose exact endgame beats the heuristic one by ≥ 1 char. Also turns
+  "nothing beats 873 from greedy's basin" claims into theorems.
+- **Item 5 design note (from this session + Robin)**: cycle-level move space must
+  (a) make the 2-cycle weave a *move*, not a feature to reward — the campaign proved
+  rewarding the shape statically is exploitable; (b) parameterize the kernel. The
+  urdvr certificate machinery (W1–W7 checks, trade vocabulary) is the starting
+  formalization; its DLX search + our learned ordering is the unplayed combination.
+- Cheap follow-ups: rank-corpus prefix loader for Chaffin positives (if item 4/5
+  need an opening prior); n=7 expert trace (the three 5907s) once any n=7-aware
+  scorer exists.
+
 ## 2026-07-27 (session 7) — phase 3 opens: stratified beam GO (from-scratch 873); two-ended beam NO-GO (evaluation, not ordering); field news: urdvr repo (Egan−1 at n=11–13, n=7 5907s)
 
 Three parallel subagent threads: roadmap items 1 and 2 (implement + sweep each), plus

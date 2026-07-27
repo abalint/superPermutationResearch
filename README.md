@@ -12,7 +12,7 @@ the full framing and [docs/ROADMAP.md](docs/ROADMAP.md) for the phased plan.
 
 ## Status
 
-**Phases 1–2 complete; phase 3 underway (items 1–2 done)** — Rust search core:
+**Phases 1–2 complete; phase 3 underway (items 1–3 done)** — Rust search core:
 overlap graph, greedy baseline, beam search with selectable admissible bounds, a
 learned scorer, and per-structural-class width reservation (`--stratify`), a
 two-ended deque beam (`beam2`), validator, (model-guided) rollout generator,
@@ -36,7 +36,7 @@ current features actively penalize), while the endgame is already solved. See
 | 4 | 33 (proven) | 33 | **33** (width 512, 0.007 s) | — |
 | 5 | 153 (proven) | 153 | **153** (width 2000, 0.19 s) | **153** (width 2000) |
 | 6 | 872 (best known; lower bound 867) | 873 | 890 (width 2000, 4.5 s)¹ | **873 from scratch** (stratified beam, ~8 s; also via greedy-prefix 350 hybrid, ~2 s)³ |
-| 7 | 5906 (best known; lower bound 5884) | — | — | — |
+| 7 | 5906 (best known; lower bound 5884) | 5913 | 6130 (arc, width 2000)⁴ | **5913 from scratch** (stratified beam + n=6 model transfer, ~5.5 min)⁴ |
 | 8 | 46204 (Raudvere, Jul 2026)² | — | — | — |
 
 ¹ Honest data point: at n=6 the hand-bound beam is currently *worse* than greedy — the
@@ -62,7 +62,18 @@ known (greedy's, the seeded, the stratified). 872 needs evaluation, not search
 mechanics: record-like states survive the stratified beam end-to-end but never win
 the window, and a two-ended (deque) move space lands on the same 874 plateau
 (`beam2`, JOURNAL s7) — hence phase-3 items 3–4 (deficit features + expert-rank
-training, endgame tablebase).
+training, endgame tablebase). Item 3's verdict (JOURNAL s8): the deficit features
+(`w2_bridges` et al.) provably carry the record signal, but no linear/MLP scorer over
+them converts it — statically rewarding the record shape is exploitable by the beam —
+so the effort moves to the exact endgame tablebase (item 4) and cycle-level moves
+(item 5).
+
+⁴ n=7, JOURNAL s8: hand bounds collapse (cycle 6180, arc 6130 at width 2000 — far
+worse than greedy's 5913); the n=6-trained linear model transfers with zero
+retraining (5970), and stratification closes exactly to **5913** (validated; a
+distinct string from greedy's with the identical move-weight histogram — the n=6
+"winner is greedy-shaped" phenomenon, one size up). Run via `--allow-n-mismatch`.
+Bar to beat: 5907 (three community words, urdvr 2026-07-27); record 5906.
 
 Greedy with min-weight/lexicographic tie-breaking reproduces the classic
 sum-of-factorials construction (9, 33, 153, 873, …). Beating 872 at n=6 or 5906 at n=7
