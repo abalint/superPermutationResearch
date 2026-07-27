@@ -13,7 +13,9 @@ use clap::{Parser, Subcommand, ValueEnum};
 
 use std::io::Write;
 
-use superperm::beam::{beam_search_cutoffs, beam_search_seeded, Bound, Jitter, Scorer};
+use superperm::beam::{
+    beam_search_stratified, beam_search_stratified_cutoffs, Bound, Jitter, Scorer, Stratify,
+};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
 use superperm::model::Model;
@@ -123,12 +125,29 @@ enum Cmd {
         /// < n! - 1). The reported result includes the prefix.
         #[arg(long, default_value_t = 0)]
         seed_prefix: usize,
+        /// Stratified selection: bucket candidates by deficit profile
+        /// (quantized intact / half-open / nearly-done cycle counts)
+        /// and reserve part of the width per occupied bucket, so
+        /// record-like states can't be crowded out by globally
+        /// better-scoring greedy-like ones. Off = bit-identical to the
+        /// plain beam.
+        #[arg(long)]
+        stratify: bool,
+        /// Kept slots reserved per occupied bucket (only with
+        /// --stratify; 0 behaves like the plain beam).
+        #[arg(long, default_value_t = 32, requires = "stratify")]
+        strat_quota: usize,
+        /// Bucket granularity: each deficit count is divided by this
+        /// before forming the bucket key (only with --stratify; >= 1).
+        #[arg(long, default_value_t = 4, requires = "stratify")]
+        strat_bucket: usize,
         /// Write the best path's feature records to this JSONL file.
         #[arg(long)]
         log: Option<PathBuf>,
         /// Write one TSV line per level (level, kept, best_score,
-        /// worst_kept_score — the pruning threshold) to this file.
-        /// Pure instrumentation; does not change the search.
+        /// worst_kept_score — the pruning threshold; with --stratify
+        /// the max kept score) to this file. Pure instrumentation;
+        /// does not change the search.
         #[arg(long)]
         cutoff_log: Option<PathBuf>,
     },
@@ -241,6 +260,9 @@ fn main() -> ExitCode {
             jitter,
             jitter_seed,
             seed_prefix,
+            stratify,
+            strat_quota,
+            strat_bucket,
             log,
             cutoff_log,
         } => {
@@ -282,20 +304,33 @@ fn main() -> ExitCode {
             } else {
                 String::new()
             };
+            if stratify && strat_bucket == 0 {
+                eprintln!("--strat-bucket must be >= 1");
+                std::process::exit(1);
+            }
+            let strat = stratify.then_some(Stratify {
+                quota: strat_quota,
+                bucket: strat_bucket,
+            });
+            let stdesc = match strat {
+                Some(s) => format!(" stratify quota={} bucket={}", s.quota, s.bucket),
+                None => String::new(),
+            };
             let t0 = Instant::now();
             let (b, cuts) = match &cutoff_log {
                 Some(_) => {
-                    let (b, c) = beam_search_cutoffs(&g, width, scorer, jit, seed_prefix);
+                    let (b, c) =
+                        beam_search_stratified_cutoffs(&g, width, scorer, jit, seed_prefix, strat);
                     (b, Some(c))
                 }
                 None => (
-                    beam_search_seeded(&g, width, scorer, jit, seed_prefix),
+                    beam_search_stratified(&g, width, scorer, jit, seed_prefix, strat),
                     None,
                 ),
             };
             let dt = t0.elapsed();
             println!(
-                "beam n={n} width={width} {desc}{jdesc}{sdesc}: length {} ({:.3}s)",
+                "beam n={n} width={width} {desc}{jdesc}{sdesc}{stdesc}: length {} ({:.3}s)",
                 b.len,
                 dt.as_secs_f64()
             );

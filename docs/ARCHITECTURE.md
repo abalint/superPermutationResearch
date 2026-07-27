@@ -54,8 +54,21 @@ bitset, graph → no crate deps
   plain search when off. `beam_search_seeded(…, Option<Jitter>, seed_prefix)` replays
   the first `seed_prefix` greedy moves through the beam's own counter updates to build
   the root state (`0` = bit-identical to the unseeded search; must be `< n! − 1`); the
-  reported result includes the prefix. Private: `struct State`, `struct JitterCtx`,
-  `fn score_move`, `fn child_arcs`.
+  reported result includes the prefix. `beam_search_stratified(…, Option<Stratify>)`
+  (+ `beam_search_stratified_cutoffs`) adds width reservation per structural class
+  (phase-3 item 1): candidates are bucketed by the quantized deficit profile
+  `(intact, half_open, nearly_done)` — `half_open` = cycles with exactly 1–2 visited
+  members, `nearly_done` = cycles with exactly 1–2 unvisited members, both new
+  O(1)-incremental `State` counters — and selection runs two passes over the globally
+  sorted candidates: pass 1 keeps up to `Stratify::quota` best candidates per occupied
+  bucket (counts divided by `Stratify::bucket` to form the key), pass 2 fills the rest
+  of the width in global score order; kept states are re-sorted into global order.
+  The dedup set spans both passes and the bucket key is a pure function of
+  `(cur, visited)`, so the keep-first minimum-length argument is unchanged.
+  `stratify = None` (and `quota = 0`) is bit-identical to the plain beam (pinned by
+  test against pre-stratification output strings; CLI: `beam --stratify
+  [--strat-quota Q --strat-bucket B]`). Private: `struct State`, `struct JitterCtx`,
+  `fn score_move`, `fn child_arcs`, `fn child_state`, `fn bucket_key`.
 - **`src/model.rs`** — `enum Model` (`Linear` | `Mlp`), loaded from JSON via
   `Model::load(path)` / `Model::from_json(text)`; `predict(&self, x: &[f64; 8]) -> f64`
   is pure CPU inference (dot product, or 2×64 MLP with ReLU); `n()` (the n the model

@@ -28,7 +28,7 @@
 //! differently per seed. With jitter disabled the score path is
 //! bit-identical to the unjittered search.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::bitset::BitSet;
 use crate::graph::Graph;
@@ -59,6 +59,33 @@ pub enum Scorer<'m> {
         /// Blend factor multiplying the prediction.
         alpha: f64,
     },
+}
+
+/// Width reservation per structural class (stratified beam, phase 3
+/// item 1). Frontier candidates are bucketed by a deficit-profile key —
+/// the quantized triple `(intact, half_open, nearly_done)` counting how
+/// the unvisited mass is arranged across rotation cycles (untouched
+/// cycles / cycles with exactly 1–2 visited members / cycles with
+/// exactly 1–2 unvisited members) — and each occupied bucket is
+/// guaranteed up to `quota` of its best candidates before the remaining
+/// width is filled in global score order. Record-like states (many
+/// half-open cycles, penalized by the learned features — JOURNAL s5)
+/// therefore cannot be crowded out of the beam by greedy-like ones.
+///
+/// Within buckets candidates are still taken in the global
+/// `(score, len, succ, parent)` order and dedup is unchanged, so the
+/// keep-first minimum-length argument is preserved. `quota = 0` keeps
+/// nothing in the reservation pass and is bit-identical to the plain
+/// beam.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Stratify {
+    /// Kept slots reserved per occupied bucket (its best candidates by
+    /// global score order). 0 = reservation off (plain beam).
+    pub quota: usize,
+    /// Quantization granularity: each of the three counts is divided by
+    /// this (≥ 1) before forming the bucket key. Larger = coarser =
+    /// fewer buckets.
+    pub bucket: usize,
 }
 
 /// Deterministic score jitter for diversified restarts.
@@ -138,6 +165,13 @@ struct State {
     arcs: u32,
     /// Cycles with all `n` members unvisited (intact).
     intact: u32,
+    /// Cycles with exactly 1 or 2 visited members
+    /// (`cycle_rem ∈ {n−1, n−2}`) — the "half-open" cycles the record
+    /// walks keep alive via w2 moves (JOURNAL s5).
+    half_open: u32,
+    /// Cycles with exactly 1 or 2 unvisited members
+    /// (`cycle_rem ∈ {1, 2}`) — nearly done.
+    nearly_done: u32,
     /// Zobrist hash of the visited set (0 when jitter is off).
     zhash: u64,
     /// Index of this state's node in the path arena.
@@ -193,6 +227,61 @@ fn child_arcs(g: &Graph, parent: &State, q: u32) -> u32 {
     }
 }
 
+/// Materialize the child state reached by visiting `q` from `parent`.
+/// `visited` is the already-cloned parent set with bit `q` set, `len`
+/// the child's length, `node` its already-pushed arena node. All
+/// counters update in O(1) from the parent's (`parent.visited` itself
+/// still excludes `q`, as `child_arcs` requires).
+fn child_state(
+    g: &Graph,
+    parent: &State,
+    q: u32,
+    len: u32,
+    visited: BitSet,
+    node: u32,
+    jctx: Option<&JitterCtx>,
+) -> State {
+    let arcs = child_arcs(g, parent, q);
+    let mut cycle_rem = parent.cycle_rem.clone();
+    let cid = g.cycle_id[q as usize] as usize;
+    let rem = cycle_rem[cid] as usize;
+    let intact = parent.intact - u32::from(rem == g.n);
+    let half_open = parent.half_open + u32::from(rem == g.n) - u32::from(rem == g.n - 2);
+    let nearly_done = parent.nearly_done + u32::from(rem == 3) - u32::from(rem == 1);
+    cycle_rem[cid] -= 1;
+    let k = parent.k - u32::from(cycle_rem[cid] == 0);
+    State {
+        cur: q,
+        len,
+        visited,
+        cycle_rem,
+        k,
+        r: parent.r - 1,
+        arcs,
+        intact,
+        half_open,
+        nearly_done,
+        zhash: jctx.map_or(0, |j| parent.zhash ^ j.zobrist[q as usize]),
+        node,
+    }
+}
+
+/// Deficit-profile bucket key of the child reached by visiting `q` from
+/// `parent`, in O(1) from the parent's counters: the triple
+/// `(intact, half_open, nearly_done)` each divided by the granularity
+/// `b`, packed into a `u64`. The three counts are pure functions of the
+/// visited set alone, so duplicate `(cur, visited)` dedup keys always
+/// land in the same bucket (the keep-first argument needs this).
+#[inline]
+fn bucket_key(g: &Graph, parent: &State, q: u32, b: u32) -> u64 {
+    let n = g.n;
+    let rem = parent.cycle_rem[g.cycle_id[q as usize] as usize] as usize;
+    let intact = parent.intact - u32::from(rem == n);
+    let half_open = parent.half_open + u32::from(rem == n) - u32::from(rem == n - 2);
+    let nearly_done = parent.nearly_done + u32::from(rem == 3) - u32::from(rem == 1);
+    (u64::from(intact / b) << 42) | (u64::from(half_open / b) << 21) | u64::from(nearly_done / b)
+}
+
 /// Run beam search of the given `width` on `g`, scoring candidates with
 /// the chosen `scorer`, and return the best complete superpermutation
 /// found.
@@ -224,7 +313,22 @@ pub fn beam_search_seeded(
     jitter: Option<Jitter>,
     seed_prefix: usize,
 ) -> BeamResult {
-    beam_search_impl(g, width, scorer, jitter, seed_prefix, None)
+    beam_search_impl(g, width, scorer, jitter, seed_prefix, None, None)
+}
+
+/// [`beam_search_seeded`] with optional width reservation per
+/// structural class (see [`Stratify`]). `stratify = None` is
+/// bit-identical to `beam_search_seeded` (same code path, no
+/// reservation logic touched), as is `Some` with `quota = 0`.
+pub fn beam_search_stratified(
+    g: &Graph,
+    width: usize,
+    scorer: Scorer,
+    jitter: Option<Jitter>,
+    seed_prefix: usize,
+    stratify: Option<Stratify>,
+) -> BeamResult {
+    beam_search_impl(g, width, scorer, jitter, seed_prefix, stratify, None)
 }
 
 /// [`beam_search_seeded`] that additionally records one [`LevelCutoff`]
@@ -237,8 +341,33 @@ pub fn beam_search_cutoffs(
     jitter: Option<Jitter>,
     seed_prefix: usize,
 ) -> (BeamResult, Vec<LevelCutoff>) {
+    beam_search_stratified_cutoffs(g, width, scorer, jitter, seed_prefix, None)
+}
+
+/// [`beam_search_stratified`] that additionally records one
+/// [`LevelCutoff`] per level. Pure instrumentation: the search itself
+/// is bit-identical to the uninstrumented run. Under stratification the
+/// kept set is no longer a score-prefix of the candidate list, so
+/// `worst_kept_score` is the maximum kept score (the window an outside
+/// state would have to enter), not a sharp threshold.
+pub fn beam_search_stratified_cutoffs(
+    g: &Graph,
+    width: usize,
+    scorer: Scorer,
+    jitter: Option<Jitter>,
+    seed_prefix: usize,
+    stratify: Option<Stratify>,
+) -> (BeamResult, Vec<LevelCutoff>) {
     let mut cutoffs = Vec::new();
-    let r = beam_search_impl(g, width, scorer, jitter, seed_prefix, Some(&mut cutoffs));
+    let r = beam_search_impl(
+        g,
+        width,
+        scorer,
+        jitter,
+        seed_prefix,
+        stratify,
+        Some(&mut cutoffs),
+    );
     (r, cutoffs)
 }
 
@@ -248,9 +377,13 @@ fn beam_search_impl(
     scorer: Scorer,
     jitter: Option<Jitter>,
     seed_prefix: usize,
+    stratify: Option<Stratify>,
     mut cutoffs: Option<&mut Vec<LevelCutoff>>,
 ) -> BeamResult {
     assert!(width >= 1, "beam width must be at least 1");
+    if let Some(st) = stratify {
+        assert!(st.bucket >= 1, "stratify bucket granularity must be >= 1");
+    }
     assert!(
         seed_prefix < g.nfact - 1,
         "seed prefix depth must be < n! - 1 = {} (got {seed_prefix})",
@@ -281,6 +414,10 @@ fn beam_search_impl(
             arcs: g.cycle_count as u32,
             // Rank 0's cycle is already broken by the initial visit.
             intact: (g.cycle_count - 1) as u32,
+            // ... and has exactly 1 visited member: half-open. It is
+            // also nearly done iff n − 1 ≤ 2.
+            half_open: 1,
+            nearly_done: u32::from(n - 1 <= 2),
             zhash: jctx.map_or(0, |j| j.zobrist[0]),
             node: 0,
         }]
@@ -297,7 +434,10 @@ fn beam_search_impl(
             let arcs = child_arcs(g, root, q);
             root.visited.set(q as usize);
             let cid = g.cycle_id[q as usize] as usize;
-            root.intact -= u32::from(root.cycle_rem[cid] as usize == n);
+            let rem = root.cycle_rem[cid] as usize;
+            root.intact -= u32::from(rem == n);
+            root.half_open = root.half_open + u32::from(rem == n) - u32::from(rem == n - 2);
+            root.nearly_done = root.nearly_done + u32::from(rem == 3) - u32::from(rem == 1);
             root.cycle_rem[cid] -= 1;
             root.k -= u32::from(root.cycle_rem[cid] == 0);
             root.r -= 1;
@@ -351,43 +491,103 @@ fn beam_search_impl(
         let mut next: Vec<State> = Vec::with_capacity(width.min(cands.len()));
         let mut best_kept: i64 = 0;
         let mut worst_kept: i64 = 0;
-        for &(score, len, q, pi) in cands.iter() {
-            if next.len() >= width {
-                break;
+        match stratify {
+            None | Some(Stratify { quota: 0, .. }) => {
+                // Plain selection: global (score, len, succ, parent)
+                // order, keep-first dedup, truncate to width.
+                for &(score, len, q, pi) in cands.iter() {
+                    if next.len() >= width {
+                        break;
+                    }
+                    let parent = &beam[pi as usize];
+                    let mut visited = parent.visited.clone();
+                    visited.set(q as usize);
+                    let key = (q, visited);
+                    if seen.contains(&key) {
+                        continue;
+                    }
+                    let visited = key.1.clone();
+                    seen.insert(key);
+                    let node = arena.len() as u32;
+                    arena.push((parent.node, q));
+                    if next.is_empty() {
+                        best_kept = score;
+                    }
+                    worst_kept = score;
+                    next.push(child_state(g, parent, q, len, visited, node, jctx));
+                }
             }
-            let parent = &beam[pi as usize];
-            let mut visited = parent.visited.clone();
-            visited.set(q as usize);
-            let key = (q, visited);
-            if seen.contains(&key) {
-                continue;
+            Some(st) => {
+                // Stratified selection. Pass 1 (reservation): walk the
+                // globally sorted candidates once, keeping up to
+                // `quota` per occupied deficit-profile bucket — so a
+                // bucket whose members all score badly still gets its
+                // best `quota` states. Pass 2 (fill): walk again,
+                // keeping everything not yet kept, until `width`. The
+                // dedup set spans both passes, and within each pass
+                // candidates arrive in global order, so the first kept
+                // occurrence of any (cur, visited) key is still its
+                // minimum-length one.
+                let mut kept: Vec<(usize, State)> = Vec::with_capacity(width.min(cands.len()));
+                let mut bucket_kept: HashMap<u64, usize> = HashMap::new();
+                for (i, &(_score, len, q, pi)) in cands.iter().enumerate() {
+                    if kept.len() >= width {
+                        break;
+                    }
+                    let parent = &beam[pi as usize];
+                    let bkey = bucket_key(g, parent, q, st.bucket as u32);
+                    let count = bucket_kept.entry(bkey).or_insert(0);
+                    if *count >= st.quota {
+                        continue;
+                    }
+                    let mut visited = parent.visited.clone();
+                    visited.set(q as usize);
+                    let key = (q, visited);
+                    if seen.contains(&key) {
+                        continue;
+                    }
+                    let visited = key.1.clone();
+                    seen.insert(key);
+                    *count += 1;
+                    let node = arena.len() as u32;
+                    arena.push((parent.node, q));
+                    kept.push((i, child_state(g, parent, q, len, visited, node, jctx)));
+                }
+                let pass1 = kept.len(); // entries 0..pass1 ascend by index
+                let mut ki = 0;
+                for (i, &(_score, len, q, pi)) in cands.iter().enumerate() {
+                    if kept.len() >= width {
+                        break;
+                    }
+                    if ki < pass1 && kept[ki].0 == i {
+                        ki += 1; // already kept by the reservation pass
+                        continue;
+                    }
+                    let parent = &beam[pi as usize];
+                    let mut visited = parent.visited.clone();
+                    visited.set(q as usize);
+                    let key = (q, visited);
+                    if seen.contains(&key) {
+                        continue;
+                    }
+                    let visited = key.1.clone();
+                    seen.insert(key);
+                    let node = arena.len() as u32;
+                    arena.push((parent.node, q));
+                    kept.push((i, child_state(g, parent, q, len, visited, node, jctx)));
+                }
+                // Restore global score order so the next level's
+                // parent-index tie-break behaves exactly as if the beam
+                // had been selected in one sorted pass.
+                kept.sort_unstable_by_key(|&(i, _)| i);
+                if let Some(&(i0, _)) = kept.first() {
+                    best_kept = cands[i0].0;
+                }
+                if let Some(&(il, _)) = kept.last() {
+                    worst_kept = cands[il].0;
+                }
+                next = kept.into_iter().map(|(_, s)| s).collect();
             }
-            let visited = key.1.clone();
-            seen.insert(key);
-            let arcs = child_arcs(g, parent, q);
-            let mut cycle_rem = parent.cycle_rem.clone();
-            let cid = g.cycle_id[q as usize] as usize;
-            let intact = parent.intact - u32::from(parent.cycle_rem[cid] as usize == n);
-            cycle_rem[cid] -= 1;
-            let k = parent.k - u32::from(cycle_rem[cid] == 0);
-            let node = arena.len() as u32;
-            arena.push((parent.node, q));
-            if next.is_empty() {
-                best_kept = score;
-            }
-            worst_kept = score;
-            next.push(State {
-                cur: q,
-                len,
-                visited,
-                cycle_rem,
-                k,
-                r: parent.r - 1,
-                arcs,
-                intact,
-                zhash: jctx.map_or(0, |j| parent.zhash ^ j.zobrist[q as usize]),
-                node,
-            });
         }
         if let Some(out) = cutoffs.as_deref_mut() {
             out.push(LevelCutoff {

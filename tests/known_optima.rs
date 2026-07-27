@@ -2,8 +2,8 @@
 //! the admissibility of the cycle lower bound.
 
 use superperm::beam::{
-    beam_search, beam_search_cutoffs, beam_search_jittered, beam_search_seeded, Bound, Jitter,
-    Scorer,
+    beam_search, beam_search_cutoffs, beam_search_jittered, beam_search_seeded,
+    beam_search_stratified, beam_search_stratified_cutoffs, Bound, Jitter, Scorer, Stratify,
 };
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
@@ -482,4 +482,97 @@ fn score_trajectory_matches_walk_bounds_on_greedy_n4() {
         let expect = (w.len_chars() + w.lb_arc()) as f64;
         assert_eq!(scores[i + 1], (w.steps, w.len_chars() as u32, expect));
     }
+}
+
+/// The stratify-off beam is pinned bit-identical to the pre-stratification
+/// beam: these exact output strings were captured from the build at commit
+/// 9b03761 (before the stratified selection landed). If a refactor changes
+/// them, the refactor broke bit-identity, not the test.
+#[test]
+fn stratify_off_is_bit_identical_to_pre_stratification_beam() {
+    const N4_CYCLE: &str = "123412314231243121342132413214321";
+    const N5_ARC: &str = "123451324513425134521354213524135214352134512341523412534123541231452\
+                          314253142351423154231245312435124315243125432153421532415321453215432\
+                          514325413254312";
+    let n4_cycle: String = N4_CYCLE.into();
+    let n5_arc: String = N5_ARC.split_whitespace().collect();
+    let g4 = Graph::new(4);
+    let b4 = beam_search(&g4, 512, Scorer::Bound(Bound::Cycle));
+    assert_eq!(b4.string, n4_cycle);
+    let g5 = Graph::new(5);
+    let b5 = beam_search(&g5, 2000, Scorer::Bound(Bound::Arc));
+    assert_eq!(b5.string, n5_arc);
+    // stratify = None and quota = 0 take the same selection path.
+    for strat in [
+        None,
+        Some(Stratify {
+            quota: 0,
+            bucket: 4,
+        }),
+    ] {
+        let s4 = beam_search_stratified(&g4, 512, Scorer::Bound(Bound::Cycle), None, 0, strat);
+        assert_eq!(s4.string, n4_cycle, "{strat:?}");
+        assert_eq!(s4.path, b4.path, "{strat:?}");
+        let s5 = beam_search_stratified(&g5, 2000, Scorer::Bound(Bound::Arc), None, 0, strat);
+        assert_eq!(s5.string, n5_arc, "{strat:?}");
+        assert_eq!(s5.path, b5.path, "{strat:?}");
+    }
+}
+
+/// With stratification ON (default CLI parameterization: quota 32,
+/// bucket 4) the beam gates still hold: n=4 width 512 → 33 and
+/// n=5 width 2000 → 153 under both bounds, all outputs complete.
+#[test]
+fn stratified_beam_gates_still_optimal() {
+    let strat = Some(Stratify {
+        quota: 32,
+        bucket: 4,
+    });
+    let g4 = Graph::new(4);
+    for bound in [Bound::Cycle, Bound::Arc] {
+        let b = beam_search_stratified(&g4, 512, Scorer::Bound(bound), None, 0, strat);
+        assert_eq!(b.len, 33, "{bound:?}");
+        assert!(validate(4, &b.string).complete, "{bound:?}");
+    }
+    let g5 = Graph::new(5);
+    for bound in [Bound::Cycle, Bound::Arc] {
+        let b = beam_search_stratified(&g5, 2000, Scorer::Bound(bound), None, 0, strat);
+        assert_eq!(b.len, 153, "{bound:?}");
+        assert!(validate(5, &b.string).complete, "{bound:?}");
+    }
+}
+
+/// Stratified cutoff logging is pure instrumentation (same search), the
+/// kept window covers the whole kept set (best ≤ worst), and the
+/// reservation really keeps states a plain truncation would discard:
+/// with a tiny width and a fine bucket key the stratified beam's kept
+/// window at some level must extend beyond the plain beam's threshold.
+#[test]
+fn stratified_selection_reserves_beyond_plain_cutoff() {
+    let g = Graph::new(5);
+    let strat = Some(Stratify {
+        quota: 4,
+        bucket: 1,
+    });
+    let (b1, cuts) =
+        beam_search_stratified_cutoffs(&g, 200, Scorer::Bound(Bound::Arc), None, 0, strat);
+    let b2 = beam_search_stratified(&g, 200, Scorer::Bound(Bound::Arc), None, 0, strat);
+    assert_eq!(b1.string, b2.string);
+    assert_eq!(b1.path, b2.path);
+    assert!(validate(5, &b1.string).complete);
+    let (_, plain_cuts) = beam_search_cutoffs(&g, 200, Scorer::Bound(Bound::Arc), None, 0);
+    assert_eq!(cuts.len(), plain_cuts.len());
+    let mut widened = 0usize;
+    for (c, p) in cuts.iter().zip(plain_cuts.iter()) {
+        assert_eq!(c.level, p.level);
+        assert!(c.best_score <= c.worst_kept_score, "level {}", c.level);
+        assert!(c.kept <= 200);
+        if c.worst_kept_score > p.worst_kept_score {
+            widened += 1;
+        }
+    }
+    assert!(
+        widened > 0,
+        "stratified selection never kept anything beyond the plain cutoff"
+    );
 }
