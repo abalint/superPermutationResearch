@@ -74,21 +74,38 @@ compute class (~10¹⁵× the 2019 distributed effort) — everything below is t
        cycle counts) so record-like states can't be crowded out by greedy-like ones.
        Dedup + admissibility arguments unchanged. Metric: from-scratch n=6 < 874, and
        record-state survival fraction (via `trace` + `--cutoff-log`) > 0 mid-walk.
-2. [ ] **Deficit-distribution features + rank training on expert corpora**: features
+2. [ ] **Two-ended (deque) beam — decision-order probe** (cheap, ~a day): state
+       `(front, back, visited)`; moves prepend a predecessor or append a successor,
+       so the string's *front* can be built last, with near-full information —
+       decoupling decision order from string position (the property LKH and the
+       kernel+2-cycle constructions have maximally, and append-only search lacks
+       entirely; reversal symmetry cannot simulate it). Needs predecessor lists by
+       weight, mirrored features (`pred1_unvisited`), and the two-ended arc bound
+       `r + arcs − [succ1(back) unvisited] − [pred1(front) unvisited]`. Caveats:
+       blind decisions are relocated to the string's middle, not eliminated, and the
+       records' weave spans the middle 70% of the walk. Go/no-go: from-scratch n=6
+       < 874 ⇒ the decision-order hypothesis is real, fund item 5's insertion moves
+       generously; ≥ 874 ⇒ the blindness is evaluation, not ordering — weight
+       items 3–4.
+3. [ ] **Deficit-distribution features + rank training on expert corpora**: features
        = count of cycles with exactly 1–2 visited members, 2-cycle adjacency between
        partially-visited cycles (O(1)-incremental in Walk AND beam State). Train to
        *rank* expert states above rollout states at equal level — expert data:
        `data/records872/` (100 validated 872s) + Chaffin per-waste-budget optimal
        prefixes (`ChaffinMethodResults/Chaffin_6_W_<w>.txt` in the community repo —
-       provably perfect openings, machine-verified). Metric: record-trajectory states
-       inside the beam's kept window (currently 0% for levels 118–601) rises; then
-       beam length.
-3. [ ] **Exact endgame tablebase**: DP over (remaining subset, cur) once ≤ ~25–30
+       provably perfect openings, machine-verified). Free 2× augmentation: every
+       expert trajectory yields a second valid example by reverse-and-relabel
+       (reversal symmetry; the record population is mirror-closed but individual
+       872s are not palindromes — 0/100 in our sample, so a palindrome-constrained
+       search likely caps at 873 and is not pursued). Metric: record-trajectory
+       states inside the beam's kept window (currently 0% for levels 118–601)
+       rises; then beam length.
+4. [ ] **Exact endgame tablebase**: DP over (remaining subset, cur) once ≤ ~25–30
        perms remain (m·2^m states; ~30 is the RAM ceiling). Bolts onto any searcher:
        frontier states get true completion cost, and empirical claims ("nothing beats
        873 from greedy's basin") become theorems. Metric: any frontier state whose
        exact endgame beats the heuristic one by ≥ 1 char.
-4. [ ] **Cycle-level (super-node) move space + waste-budget branch-and-bound with
+5. [ ] **Cycle-level (super-node) move space + waste-budget branch-and-bound with
        learned move ordering** (the big build): play on the 120 rotation cycles —
        entry/exit points and weave order as moves, so the record structure is a move,
        not an accident. Search = anytime DFS with the admissible waste-budget test
@@ -96,9 +113,9 @@ compute class (~10¹⁵× the 2019 distributed effort) — everything below is t
        converges later" deception) ordered by the learned evaluator instead of
        width-pruned. This proof-grade-pruning + learned-guidance + structural-moves
        combination is the configuration nobody has run.
-5. [ ] Multi-core parallel search once 1–4 fix *what* is searched
-6. [ ] n=6: attack the 867–872 gap with the above
-7. [ ] n=7: bootstrap from n=6 net; attack the 5884–5906 gap (cloud CPU burst if
+6. [ ] Multi-core parallel search once 1–5 fix *what* is searched
+7. [ ] n=6: attack the 867–872 gap with the above
+8. [ ] n=7: bootstrap from n=6 net; attack the 5884–5906 gap (cloud CPU burst if
        bottlenecked)
 
 Anti-goals within phase 3: no more re-tuning of the 8-feature move-level scorer
