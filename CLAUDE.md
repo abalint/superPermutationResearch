@@ -12,20 +12,21 @@ planned learned value function.
 3. `docs/ARCHITECTURE.md` — code map: modules, data structures, where phase-2 plugs in.
 4. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 
-Current state in one line: **phase 3 underway, items 1–3 done (JOURNAL s8)** —
+Current state in one line: **phase 3 underway, items 1–4 done (JOURNAL s9)** —
 from-scratch bests: n=6 **873** (stratified beam, ~8 s), n=7 **5913** (same config
-+ `--allow-n-mismatch`, ties greedy, ~5.5 min; bar 5907). Item 3 verdict: the new
++ `--allow-n-mismatch`, ties greedy, ~5.5 min; bar 5907). Item 3 verdict (s8): the
 deficit features (`half_open`/`nearly_done`/`w2_bridges`, v2 11-feature contract)
-demonstrably carry the expert signal (`w2_bridges` midgame: records 1.9 vs 0 on
-greedy-shaped walks; anchored ranker: first nonzero midgame rank-wins), but **no
-linear/MLP evaluator over them converts it** — 186 runs, every ≤873 string
-byte-identical to the known stratified 873, and population-contrast scorers are
-exploitable (beam manufactures bridge-rich junk). The 872 structure needs credit
-*conditional on completing the weave* ⇒ next: **item 4** (exact endgame tablebase),
-then item 5 (cycle-level moves; must parameterize the kernel — Robin's thread reply
-+ 5906 boundary fact). Expert corpus: 298 distinct 872s (`data/records872/` +
-`data/gain1_872s/`), Chaffin prefixes in `data/chaffin/`, field news in
-`../extraDocs/2026-07-27-urdvr-email-and-repo.md`.
+carry the expert signal but no linear/MLP evaluator converts it — the 872 structure
+needs credit *conditional on completing the weave*. Item 4 verdict (s9): the exact
+endgame tablebase (`src/endgame.rs`, Held–Karp, theorem-grade, m ≤ 25) proves the
+endgame door shut — the stratified config's entire w2000 frontier at r=20 completes
+to ≥ 873 (unstratified ≥ 874; n=7 ≥ 5913), and every known record (296 × 872s,
+3 × 5907s) plus all our 873s have provably optimal tails. The missing character is
+won strictly before the last ~25 perms ⇒ all weight on **item 5** (cycle-level
+moves; weave as a move, kernel as a parameter — Robin's thread reply + 5906
+boundary fact; tablebase becomes the terminal solver). Expert corpus: 298 distinct
+872s (`data/records872/` + `data/gain1_872s/`), Chaffin prefixes in
+`data/chaffin/`, field news in `../extraDocs/2026-07-27-urdvr-email-and-repo.md`.
 
 ## Commands
 
@@ -52,6 +53,10 @@ cargo run --release -- beam2 -n 5 --width 2000
 cargo run --release -- beam -n 6 --width 2000 --seed-prefix 120          # greedy-prefix seeding (0 = plain)
 cargo run --release -- rollouts -n 6 --count 200 --epsilon 0.05 --seed 0 --model ml/models/linear_n6_boot1.json --alpha 1 --out out.jsonl  # model-guided
 python3 ml/fit_linear.py data/roll_n6_*.jsonl --residual --export m.json # residual target (beam adds lb_arc back)
+
+# exact endgame tablebase (phase-3 item 4, JOURNAL s9) — verdicts are theorems:
+cargo run --release -- endgame -n 6 --greedy --remaining 24            # optimal completion of a prefix (also --file <s.txt>; m <= 25, RAM ~2^m)
+cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --alpha 1 --stratify --strat-quota 4 --strat-bucket 1 --endgame 20 --endgame-top 200  # exact-solve top frontier states at r=20
 
 # record autopsy tooling (JOURNAL s5):
 cargo run --release -- trace -n 6 --file data/records872/872.0053cad.txt --model ml/models/linear_n6_boot1.json --alpha 1 --score-log scores.tsv

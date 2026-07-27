@@ -12,12 +12,13 @@ the full framing and [docs/ROADMAP.md](docs/ROADMAP.md) for the phased plan.
 
 ## Status
 
-**Phases 1–2 complete; phase 3 underway (items 1–3 done)** — Rust search core:
+**Phases 1–2 complete; phase 3 underway (items 1–4 done)** — Rust search core:
 overlap graph, greedy baseline, beam search with selectable admissible bounds, a
 learned scorer, and per-structural-class width reservation (`--stratify`), a
 two-ended deque beam (`beam2`), validator, (model-guided) rollout generator,
-trajectory logging, greedy-prefix beam seeding, and record-autopsy tooling
-(`trace`, `--cutoff-log`).
+trajectory logging, greedy-prefix beam seeding, record-autopsy tooling
+(`trace`, `--cutoff-log`), and an exact endgame tablebase (`endgame`,
+`beam --endgame`: provably optimal completions once ≤ 25 perms remain).
 Phase-2 outcome: the learned-score beam beats the hand-bound beam decisively at n=6
 (874 vs 890 at equal wall-clock), and a greedy-prefix + learned-endgame hybrid reaches
 a validated **873** — matching greedy via a different string, rung 1 of the success
@@ -66,7 +67,11 @@ training, endgame tablebase). Item 3's verdict (JOURNAL s8): the deficit feature
 (`w2_bridges` et al.) provably carry the record signal, but no linear/MLP scorer over
 them converts it — statically rewarding the record shape is exploitable by the beam —
 so the effort moves to the exact endgame tablebase (item 4) and cycle-level moves
-(item 5).
+(item 5). Item 4's verdict (JOURNAL s9): the tablebase proves the endgame door is
+closed — the stratified config's *entire* width-2000 frontier at 20-remaining
+completes to ≥ 873 (unstratified: ≥ 874), and every known 872 has a provably
+optimal last-20 tail — so the missing character must be won before the last ~25
+perms, squarely in item 5's territory.
 
 ⁴ n=7, JOURNAL s8: hand bounds collapse (cycle 6180, arc 6130 at width 2000 — far
 worse than greedy's 5913); the n=6-trained linear model transfers with zero

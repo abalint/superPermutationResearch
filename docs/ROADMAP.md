@@ -131,11 +131,26 @@ compute class (~10¹⁵× the 2019 distributed effort) — everything below is t
        *survival* (record-trajectory states in the kept window: 0.15% → 99.55%), so
        the bar moves to *winning* — record-shaped states must outrank greedy-shaped
        ones inside the stratified window; then beam length < 873.
-4. [ ] **Exact endgame tablebase**: DP over (remaining subset, cur) once ≤ ~25–30
-       perms remain (m·2^m states; ~30 is the RAM ceiling). Bolts onto any searcher:
-       frontier states get true completion cost, and empirical claims ("nothing beats
-       873 from greedy's basin") become theorems. Metric: any frontier state whose
-       exact endgame beats the heuristic one by ≥ 1 char.
+4. [x] **Exact endgame tablebase** — ✅ built and ran (JOURNAL s9); **metric MET,
+       but the verdict closes the endgame door entirely**. Held–Karp DP over
+       (remaining subset, cur), exact by the triangle-inequality argument
+       (`src/endgame.rs`; practical ceiling m = 25 at ~1.7 GB / ~7 s per state).
+       Bolted onto the beam (`--endgame m --endgame-top K`, bit-identical search,
+       per-state exact-vs-own-descendant accounting) and onto arbitrary prefixes
+       (`endgame` subcommand). Metric: 7–11 per 2000 frontier states' exact endgames
+       beat their own beam completions (max gain 4) — nonzero, but *never at the
+       top*: the score-rank-0 state's completion was already optimal in every
+       config, and no frontier state completes below the beam's own result.
+       Theorems established: the stratified-873 config's **entire** w2000 frontier
+       at r=20 completes to ≥ 873; the unstratified boot1 frontier to ≥ 874 (the
+       873/874 difference is decided before level 700); greedy's/stratified's/
+       seeded's 873s and the record 872 all have provably optimal last-25 tails;
+       all 296 known 872s have optimal last-20 tails (no hidden sub-872). Use going
+       forward: item 5's searcher should call the tablebase as its terminal solver
+       (once ≤ ~20 remain, finish optimally, no search); a DFS branch-and-bound
+       completion prover could push theorem depth past m=25 without 2^m RAM if ever
+       needed. The 872-vs-873 game is over before r=25 ⇒ all steering weight on
+       item 5.
 5. [ ] **Cycle-level (super-node) move space + waste-budget branch-and-bound with
        learned move ordering** (the big build): play on the 120 rotation cycles —
        entry/exit points and weave order as moves, so the record structure is a move,

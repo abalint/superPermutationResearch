@@ -6,6 +6,86 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 9) — item 4 executed: exact endgame tablebase built; metric met, but the endgame door is proven shut (873/874/5913 all locked before the last 25 perms; every known record's tail is optimal)
+
+Single thread this session: build ROADMAP item 4 end-to-end, then use it to convert
+the standing "endgame is already solved" belief into theorems.
+
+**Built (commit `cf257b9`).** `src/endgame.rs`: Held–Karp DP over
+`(subset of remaining, last perm)` — `solve_endgame(g, cur, remaining)` returns the
+provably minimal completion cost plus a witness order. Exactness is not heuristic:
+the overlap distance satisfies the triangle inequality, so passing through visited
+perms never helps and the optimal completion is exactly the optimal Hamiltonian path
+on the remaining set (proof sketch in the module docs — every verdict below is a
+theorem). `u16` table, `2^m·m` entries; practical ceiling `MAX_REMAINING = 25`
+(~1.7 GB, ~7 s); m=20 is 40 MB / ~0.12 s. Two integrations: (1) `beam --endgame m
+--endgame-top K` snapshots the top-K frontier states at r=m (pure instrumentation —
+search bit-identical, pinned by test), exact-solves each post-hoc, and maps final
+beam states back to their snapshot ancestors so each state's exact total is compared
+against *its own* beam completion (the ROADMAP metric, measured per state); prints
+the improved validated string if any exact total beats the beam. (2) `endgame`
+subcommand: exact-complete a prefix of greedy or any traced string. Tests: brute-force
+oracle (suffix + arbitrary sets), full n=4 solve from identity **= 33 exactly** (the
+proven optimum, now an internal consistency theorem), greedy-n=5-prefix + exact
+endgame = 153 with validation, snapshot purity + dominance (exact ≤ own descendant,
+≥ global optimum). 81 tests green, clippy/fmt clean.
+
+**Frontier experiments — metric MET, top never moves.** Config = the canonical
+stratified 873 (boot1 α=1, w2000, quota 4, bucket 1) unless noted:
+
+| run | best exact total | exact beats own descendant | beats beam result |
+|---|---|---|---|
+| n=6 strat, m=20, top=2000 (full frontier) | **873** (rank #0) | 7/2000 (max gain 3) | 0 |
+| n=6 strat, m=24, top=64 | 873 (rank #0) | 4/64 (max 3) | 0 |
+| n=6 unstrat boot1 (874 plateau), m=20, top=2000 | **874** (rank #0) | 11/2000 (max 4) | 0 |
+| n=7 strat transfer (5913), m=20, top=200 | **5913** (rank #0) | 8/200 (max 4) | 0 |
+| n=5 cycle-bound w2000, m=15, top=50 | 154* | 4/50 (max 4) | 0 |
+
+(*n=5: the eventual 153-winner's ancestor sat below score-rank 64 at r=15 — top-64
+missed it; top=width captures it, integration test pins this.) The go/no-go metric
+("any frontier state whose exact endgame beats the heuristic one by ≥ 1 char") is
+formally met at every n — but the gains live mid-frontier on states with no winning
+future; the score-rank-0 state's heuristic completion was *already optimal* in every
+single configuration.
+
+**Theorems (the session's real product).**
+1. **The stratified config's entire width-2000 frontier at r=20 completes to
+   ≥ 873** — no endgame play of any kind reaches 872 from this beam; the record is
+   lost before level 700.
+2. **The unstratified boot1 frontier at r=20 completes to ≥ 874** — the
+   873-vs-874 stratification difference is decided strictly before r=20.
+3. **Optimal tails everywhere**: greedy's 873, the stratified 873, the seeded 873,
+   and the record 872 all have provably optimal last-**25** tails (m=25 at the RAM
+   ceiling; exact saves 0). s6's "no endgame deviation from greedy's basin ever
+   saves a character" is now theorem-grade at 25-from-end.
+4. **All 296 known 872s** (100 community + 196 gain1) have optimal last-20 tails —
+   no known record hides a sub-872 completion (the free-world-record lottery ticket
+   came up empty, exhaustively).
+5. **All three urdvr n=7 5907s** have optimal last-22 tails — same story one size up.
+
+**Reading.** Item 4 is done as a *finding* mechanism and the answer is a clean
+negative-with-teeth: s5's "the endgame is already solved" is now proven, uniformly,
+at n=5/6/7, for our walks and for every known record. Everything that separates 873
+from 872 happens in the opening/midgame — exactly where s8 put it. The tablebase's
+lasting value is as **infrastructure**: item 5's cycle-level searcher should call it
+as a terminal solver (once ≤ ~20 perms remain, finish provably optimally — the last
+~20 plies of any future search are free and exact), and any "nothing beats X from
+this state" claim below m=25 is now one CLI call. If theorem depth beyond 25 is ever
+needed, a DFS branch-and-bound completion prover (arc bound, no 2^m table) is the
+natural extension — noted, not built.
+
+**Next session (item 5, the big build — all steering weight now here):**
+- Cycle-level (super-node) move space over the 120 rotation cycles; the 2-cycle
+  weave as a *move* (s8: statically rewarding the shape is exploitable), kernel as a
+  *parameter* (Robin: sub-Egan−1 lives outside the standard kernel; at n=6, Egan−1 =
+  872 IS the record, so a closing nonstandard-kernel word is a world record).
+- Start from the urdvr certificate machinery (W1–W7 checks, trade vocabulary, DLX
+  exact cover) + our learned ordering; anytime DFS with the admissible waste-budget
+  test (budget 147), endgame tablebase as terminal solver.
+- Cheap first step: formalize the cycle-graph state (which cycles entered/left where,
+  live w2 bridges) and enumerate legal weave-moves from a mid-walk record state — the
+  move vocabulary falls out of tracing the 298 872s at the cycle level.
+
 ## 2026-07-27 (session 8) — item 3 executed: deficit features carry the expert signal, but no linear/MLP evaluator converts it (873 stands); n=7 from-scratch baseline 5913; field news (Robin: kernels; Theo: paint-waste)
 
 Three threads again: n=7 probe, feature implementation, training/evaluation campaign.

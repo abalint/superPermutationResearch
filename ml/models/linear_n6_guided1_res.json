@@ -1,0 +1,26 @@
+{
+ "kind": "linear",
+ "n": 6,
+ "feature_order": [
+  "r",
+  "cycles_remaining",
+  "intact_cycles",
+  "current_cycle_remaining",
+  "arcs",
+  "succ1_unvisited",
+  "lb_cycle",
+  "lb_arc"
+ ],
+ "coef": [
+  -3.21819237203494,
+  11.145071803051398,
+  -25.162595736629676,
+  -1.5968784466955774,
+  -2.4283363303299663,
+  -10.109010436226743,
+  0.9011379159727896,
+  4.462481733861931
+ ],
+ "bias": 3.4580520962520387,
+ "target": "residual"
+}
