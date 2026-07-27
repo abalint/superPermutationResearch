@@ -24,14 +24,14 @@ search goes blind exactly where the open territory starts (see
 
 ### Known targets vs. this repo's results
 
-| n | proven/best known | greedy (this repo) | beam (this repo) |
-|---|---|---|---|
-| 3 | 9 (proven) | 9 | 9 |
-| 4 | 33 (proven) | 33 | **33** (width 512, 0.007 s) |
-| 5 | 153 (proven) | 153 | **153** (width 2000, 0.19 s) |
-| 6 | 872 (best known; lower bound 867) | 873 | 890 (width 2000, 4.5 s)¹ |
-| 7 | 5906 (best known; lower bound 5884) | — | — |
-| 8 | 46204 (Raudvere, Jul 2026)² | — | — |
+| n | proven/best known | greedy (this repo) | beam, hand bound | beam, learned score |
+|---|---|---|---|---|
+| 3 | 9 (proven) | 9 | 9 | — |
+| 4 | 33 (proven) | 33 | **33** (width 512, 0.007 s) | — |
+| 5 | 153 (proven) | 153 | **153** (width 2000, 0.19 s) | **153** (width 2000) |
+| 6 | 872 (best known; lower bound 867) | 873 | 890 (width 2000, 4.5 s)¹ | **874** (width 2000, 6.2 s)³ |
+| 7 | 5906 (best known; lower bound 5884) | — | — | — |
+| 8 | 46204 (Raudvere, Jul 2026)² | — | — | — |
 
 ¹ Honest data point: at n=6 the hand-bound beam is currently *worse* than greedy — the
 admissible cycle bound stops discriminating between states at this size. This is
@@ -43,6 +43,13 @@ admissible bound (the arc bound, `--bound arc`) does **not** help: 891 at width 
 construction, and notably **tree-structured** (standard kernel + 833 two-cycle
 extensions). Reported same-day, independently checked: n=9 at 408,965 and n=10 at
 4,037,046 (W. Echols), each one below Egan's formula; write-up pending.
+
+³ Validated string, `beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json
+--alpha 1`. The learned score beats the hand-bound beam at equal wall-clock (874 in
+6.2 s vs 890; the hand bound needs 4× the time to reach even 883) — the phase-2
+minimum exit criterion. 874 is a hard plateau: ~15 scorers, widths 500–128 000, two
+bootstrap rounds, and ~120 jitter-diversified restarts all converge on exactly 874
+(see JOURNAL 2026-07-27 session 3).
 
 Greedy with min-weight/lexicographic tie-breaking reproduces the classic
 sum-of-factorials construction (9, 33, 153, 873, …). Beating 872 at n=6 or 5906 at n=7

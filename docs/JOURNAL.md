@@ -6,6 +6,74 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 3) — learned score in beam: 874; phase-2 exit criterion met; 874 is a hard plateau
+
+**Built: learned value function wired end-to-end** (committed as `6c8140f`).
+`ml/` trains linear (numpy OLS) and MLP (2×64, numpy, Adam) predictors and exports
+JSON; `src/model.rs` loads them; beam scores candidates `len + α·predict(features)`
+in O(1) per expansion via `--model m.json --alpha a`. Score stays a pure function of
+`(cur, visited, len)`, so keep-first dedup survives. n=5 gate: every model config
+still finds 153.
+
+**Headline: n=6 = 874, validated — minimum phase-2 exit criterion met.** First hit by
+a bound-blended linear model (blend α=0.075) at width 2000 in 6.2 s; also hit by
+`linear_n6_boot1` (α anywhere in [0.5, 2]). Beats the hand-bound beam at equal
+wall-clock *and* at 4× its wall-clock (890 @ w2000; 883 @ w8000/18 s). One character
+from rung 1 (greedy's 873), two from the record (872).
+
+**874 is a hard plateau.** ~60-run sweep (two subagents): ~15 scorers — linear/MLP ×
+{raw, bound-blend, bootstrap round 1/2, elite-only, trajectory-only, corpus mixes} —
+widths 500–128 000, all converge on exactly 874. Ledger lessons, in order of value:
+
+1. **The admissible anchor is non-negotiable.** Pure learned score (no bound term)
+   cliffs to 1600+. Blending or bootstrapping *on top of* `lb_arc` is what works.
+2. **Label quality beats model capacity.** Strong-policy bootstrap data (ε ≤ 0.05
+   rollouts + beam trajectory relabels) lets even the linear model learn the 874
+   floor; the MLP on the same data does no better (and much slower: ~220 s/run).
+3. **Corpus mixing is catastrophic in both directions** (mixed-ε or round-1+round-2
+   blends: 880–1532). Second-round elite corpora are too narrow and hurt.
+4. **Held-out RMSE is uncorrelated with beam quality** once the floor is in — the
+   best-RMSE model ever trained here beams at 887–1532. Models must be selected by
+   beam result, full stop.
+
+**Built: deterministic score jitter** (uncommitted until this session's commit).
+`--jitter <eps> --jitter-seed <s>`: Zobrist hash of the visited set, maintained
+incrementally, gives every candidate a pure-function-of-`(cur, visited)` offset in
+`[0, eps)` — dedup argument intact, bit-identical to plain beam when off. Purpose:
+diversified restart portfolios to shake the last character loose.
+
+**Negative result, and a clean one: jitter cannot break 874.** Five portfolios,
+~120 runs (session was cut by an accidental close after portfolio B; C re-run and
+harvested this session):
+
+| portfolio | model | jitter ε | runs | best |
+|---|---|---|---|---|
+| A | blend0.075 | 0.25–2.0 | 48 | 877 (most 884–891) |
+| A2 | blend0.075 | 0.01–0.12 | 48 | 874 (never 873) |
+| W4000 | boot1 @ w4000 | 2.0 | 5 | 874 (jittered: 877+) |
+| B | boot1, elite1 blends | 0.01/0.06 | 48 | 874 (boot1 only) |
+| C | mlp_boot1_blend0.25 | 0.01–0.06 | 3 | 874 |
+
+Small jitter reproduces 874 repeatedly; larger jitter only degrades. Read: the
+models all steer into the same basin and the remaining character is *structural* —
+874 is not a tie-breaking accident we can restart our way out of.
+
+**Status vs. the ladder:** exit criterion ✅; rung 1 (873) open — needs a new idea,
+not more restarts; rungs 2–3 likely need phase 3's cycle-level move space (LKH-style
+local improvement / tree-like constructions are what actually set records).
+
+**Next session, concretely:**
+- **Residual targets:** train on `cost_to_go − lb_arc` instead of raw cost-to-go —
+  the model then only has to learn the *correction*, and the anchor is built into
+  the label, not just the score blend.
+- **Model-guided rollouts:** generate the next corpus with the learned score as the
+  rollout policy (current corpora are ε-greedy on *hand* heuristics), closing the
+  search → relabel → retrain loop properly.
+- **Greedy-prefix seeding:** start beams from greedy prefixes of varying depth —
+  873's basin provably exists; find where the learned beam diverges from it.
+- Housekeeping: `ml/models/` sweep artifacts are untracked by design (only canonical
+  models committed); `data/` corpora regenerable from logged seeds.
+
 ## 2026-07-27 (session 2) — arc features + arc bound; corpus; linear baseline beats hand bounds
 
 **Built: weight-1 arc features, incrementally maintained.** Arcs = connected components

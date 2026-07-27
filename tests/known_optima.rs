@@ -1,7 +1,7 @@
 //! Integration tests against known minimal superpermutation lengths and
 //! the admissibility of the cycle lower bound.
 
-use superperm::beam::{beam_search, Bound, Scorer};
+use superperm::beam::{beam_search, beam_search_jittered, Bound, Jitter, Scorer};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
 use superperm::model::Model;
@@ -195,6 +195,32 @@ fn learned_lb_arc_model_reproduces_arc_bound_beam() {
         assert_eq!(by_model.path, by_bound.path, "path differs at n={n}");
         assert_eq!(by_model.string, by_bound.string);
         assert!(validate(n, &by_model.string).complete);
+    }
+}
+
+/// Jitter must not break correctness — it only reorders near-ties. At
+/// n=4 the tie structure is loose enough that width 512 with a modest
+/// jitter still finds the optimum, and the result must validate. With
+/// jitter disabled (None, or eps = 0) the search must be bit-identical
+/// to the unjittered API.
+#[test]
+fn jittered_beam_n4_still_optimal_and_zero_jitter_is_identity() {
+    let g = Graph::new(4);
+    let jittered = beam_search_jittered(
+        &g,
+        512,
+        Scorer::Bound(Bound::Arc),
+        Some(Jitter { eps: 0.5, seed: 1 }),
+    );
+    assert_eq!(jittered.len, 33);
+    assert!(validate(4, &jittered.string).complete);
+
+    let plain = beam_search(&g, 512, Scorer::Bound(Bound::Arc));
+    for jit in [None, Some(Jitter { eps: 0.0, seed: 7 })] {
+        let same = beam_search_jittered(&g, 512, Scorer::Bound(Bound::Arc), jit);
+        assert_eq!(same.len, plain.len, "{jit:?}");
+        assert_eq!(same.path, plain.path, "{jit:?}");
+        assert_eq!(same.string, plain.string, "{jit:?}");
     }
 }
 

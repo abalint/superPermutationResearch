@@ -11,7 +11,7 @@ use std::time::Instant;
 
 use clap::{Parser, Subcommand, ValueEnum};
 
-use superperm::beam::{beam_search, Bound, Scorer};
+use superperm::beam::{beam_search_jittered, Bound, Jitter, Scorer};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
 use superperm::model::Model;
@@ -92,6 +92,15 @@ enum Cmd {
         /// Blend factor for the learned score: len + alpha * prediction.
         #[arg(long, default_value_t = 1.0)]
         alpha: f64,
+        /// Deterministic score jitter magnitude in length units: each
+        /// candidate's score gets a pseudo-random offset in [0, eps)
+        /// that is a pure function of (cur, visited, seed). 0 disables
+        /// jitter (bit-identical to the unjittered search).
+        #[arg(long, default_value_t = 0.0)]
+        jitter: f64,
+        /// Seed for the jitter's Zobrist table (only used with --jitter).
+        #[arg(long, default_value_t = 0)]
+        jitter_seed: u64,
         /// Write the best path's feature records to this JSONL file.
         #[arg(long)]
         log: Option<PathBuf>,
@@ -164,6 +173,8 @@ fn main() -> ExitCode {
             bound,
             model,
             alpha,
+            jitter,
+            jitter_seed,
             log,
         } => {
             let g = Graph::new(n);
@@ -194,11 +205,19 @@ fn main() -> ExitCode {
                     ),
                 ),
             };
+            let jit = (jitter > 0.0).then_some(Jitter {
+                eps: jitter,
+                seed: jitter_seed,
+            });
+            let jdesc = match jit {
+                Some(j) => format!(" jitter={} jitter_seed={}", j.eps, j.seed),
+                None => String::new(),
+            };
             let t0 = Instant::now();
-            let b = beam_search(&g, width, scorer);
+            let b = beam_search_jittered(&g, width, scorer, jit);
             let dt = t0.elapsed();
             println!(
-                "beam n={n} width={width} {desc}: length {} ({:.3}s)",
+                "beam n={n} width={width} {desc}{jdesc}: length {} ({:.3}s)",
                 b.len,
                 dt.as_secs_f64()
             );

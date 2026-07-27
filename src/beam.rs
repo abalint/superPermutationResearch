@@ -18,6 +18,15 @@
 //! per-cycle counters are cloned only for the ≤ width states that
 //! survive selection. Paths are reconstructed from an arena of
 //! `(parent, rank)` nodes so states never carry full paths.
+//!
+//! Optional deterministic score [`Jitter`] adds a pseudo-random offset
+//! in `[0, eps)` length units to every candidate's fixed-point score,
+//! computed as a pure function of the child's `(cur, visited)` via an
+//! incrementally maintained Zobrist hash of the visited set — so the
+//! keep-first dedup argument (score varies only through `len` for
+//! duplicate keys) is preserved, while near-ties are reordered
+//! differently per seed. With jitter disabled the score path is
+//! bit-identical to the unjittered search.
 
 use std::collections::HashSet;
 
@@ -49,6 +58,65 @@ pub enum Scorer<'m> {
     },
 }
 
+/// Deterministic score jitter for diversified restarts.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Jitter {
+    /// Offset magnitude in length units; each candidate gets a
+    /// pseudo-random offset in `[0, eps)` added to its score.
+    pub eps: f64,
+    /// Seed of the Zobrist table; different seeds give independent
+    /// tie-break orderings.
+    pub seed: u64,
+}
+
+/// SplitMix64 step: advances `state` and returns the next output.
+#[inline]
+fn splitmix64(state: &mut u64) -> u64 {
+    *state = state.wrapping_add(0x9E37_79B9_7F4A_7C15);
+    splitmix64_mix(*state)
+}
+
+/// SplitMix64 finalizer: bijective 64-bit mix.
+#[inline]
+fn splitmix64_mix(z: u64) -> u64 {
+    let z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    let z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    z ^ (z >> 31)
+}
+
+/// Precomputed jitter context: one Zobrist random word per rank plus
+/// the offset magnitude prescaled to fixed-point units.
+struct JitterCtx {
+    /// Per-rank random words; XOR of the visited ranks' words is a pure
+    /// function of the visited set (maintained incrementally).
+    zobrist: Vec<u64>,
+    /// `eps * 4096.0`: offset range in fixed-point score units.
+    eps_fixed: f64,
+}
+
+impl JitterCtx {
+    fn new(j: Jitter, nfact: usize) -> JitterCtx {
+        let mut s = j.seed;
+        let zobrist = (0..nfact).map(|_| splitmix64(&mut s)).collect();
+        JitterCtx {
+            zobrist,
+            eps_fixed: j.eps * 4096.0,
+        }
+    }
+
+    /// Fixed-point offset in `[0, eps * 4096)` for the child reached by
+    /// visiting `q` from a parent whose visited-set hash is `zhash`.
+    /// Pure function of the child's `(cur, visited)` (and the seed).
+    #[inline]
+    fn offset(&self, zhash: u64, q: u32) -> i64 {
+        let child = zhash ^ self.zobrist[q as usize];
+        let h = splitmix64_mix(child ^ u64::from(q).wrapping_mul(0x9E37_79B9_7F4A_7C15));
+        // Top 53 bits -> uniform f64 in [0, 1).
+        let u = (h >> 11) as f64 / (1u64 << 53) as f64;
+        (u * self.eps_fixed) as i64
+    }
+}
+
 /// One beam state: a walk that has visited `popcount(visited)` perms.
 struct State {
     /// Rank of the permutation the walk currently ends with.
@@ -67,6 +135,8 @@ struct State {
     arcs: u32,
     /// Cycles with all `n` members unvisited (intact).
     intact: u32,
+    /// Zobrist hash of the visited set (0 when jitter is off).
+    zhash: u64,
     /// Index of this state's node in the path arena.
     node: u32,
 }
@@ -105,9 +175,25 @@ fn child_arcs(g: &Graph, parent: &State, q: u32) -> u32 {
 /// the chosen `scorer`, and return the best complete superpermutation
 /// found.
 pub fn beam_search(g: &Graph, width: usize, scorer: Scorer) -> BeamResult {
+    beam_search_jittered(g, width, scorer, None)
+}
+
+/// [`beam_search`] with optional deterministic score [`Jitter`]. With
+/// `jitter = None` (or `eps == 0`) this is exactly `beam_search`: the
+/// same code path, with no offset applied.
+pub fn beam_search_jittered(
+    g: &Graph,
+    width: usize,
+    scorer: Scorer,
+    jitter: Option<Jitter>,
+) -> BeamResult {
     assert!(width >= 1, "beam width must be at least 1");
     let nfact = g.nfact;
     let n = g.n;
+    let jctx = jitter
+        .filter(|j| j.eps > 0.0)
+        .map(|j| JitterCtx::new(j, nfact));
+    let jctx = jctx.as_ref();
 
     // Arena node 0 is the root (identity permutation, no parent).
     let mut arena: Vec<(u32, u32)> = vec![(u32::MAX, 0)];
@@ -127,6 +213,7 @@ pub fn beam_search(g: &Graph, width: usize, scorer: Scorer) -> BeamResult {
             arcs: g.cycle_count as u32,
             // Rank 0's cycle is already broken by the initial visit.
             intact: (g.cycle_count - 1) as u32,
+            zhash: jctx.map_or(0, |j| j.zobrist[0]),
             node: 0,
         }]
     };
@@ -143,7 +230,7 @@ pub fn beam_search(g: &Graph, width: usize, scorer: Scorer) -> BeamResult {
                     continue;
                 }
                 any = true;
-                cands.push(score_move(g, s, q, w as u32, pi as u32, scorer));
+                cands.push(score_move(g, s, q, w as u32, pi as u32, scorer, jctx));
             }
             if !any {
                 // Weight-n fallback: jump to the lowest unvisited rank so
@@ -153,17 +240,18 @@ pub fn beam_search(g: &Graph, width: usize, scorer: Scorer) -> BeamResult {
                     .first_clear(nfact)
                     .expect("state with r > 0 must have an unvisited perm")
                     as u32;
-                cands.push(score_move(g, s, q, n as u32, pi as u32, scorer));
+                cands.push(score_move(g, s, q, n as u32, pi as u32, scorer, jctx));
             }
         }
 
         // Deterministic total order: (score, len, succ, parent). For
         // duplicate (cur, visited) keys the bound — and every learned
-        // feature, hence the prediction — is identical (all depend only
-        // on cur and visited), so the score differs only through len
-        // (monotonically: +1 len is +4096 fixed-point, more than any
-        // rounding) and keep-first after this sort keeps the minimum
-        // length.
+        // feature, hence the prediction, and the jitter offset (a hash
+        // of exactly (cur, visited, seed)) — is identical (all depend
+        // only on cur and visited), so the score differs only through
+        // len (monotonically: +1 len is +4096 fixed-point, more than
+        // any rounding) and keep-first after this sort keeps the
+        // minimum length.
         cands.sort_unstable();
 
         let mut seen: HashSet<(u32, BitSet)> = HashSet::with_capacity(width.min(cands.len()) * 2);
@@ -198,6 +286,7 @@ pub fn beam_search(g: &Graph, width: usize, scorer: Scorer) -> BeamResult {
                 r: parent.r - 1,
                 arcs,
                 intact,
+                zhash: jctx.map_or(0, |j| parent.zhash ^ j.zobrist[q as usize]),
                 node,
             });
         }
@@ -248,7 +337,10 @@ pub fn beam_search(g: &Graph, width: usize, scorer: Scorer) -> BeamResult {
 ///
 /// Both bounds and all 8 learned features are pure functions of the
 /// child's `(cur, visited, len)`, which the keep-first dedup in
-/// `beam_search` relies on.
+/// `beam_search` relies on. The optional jitter offset is likewise a
+/// pure function of the child's `(cur, visited)` (via the parent's
+/// incrementally maintained Zobrist hash), so it preserves that
+/// invariant.
 #[inline]
 fn score_move(
     g: &Graph,
@@ -257,6 +349,7 @@ fn score_move(
     w: u32,
     parent_idx: u32,
     scorer: Scorer,
+    jctx: Option<&JitterCtx>,
 ) -> (i64, u32, u32, u32) {
     let len = parent.len + w;
     let r = parent.r - 1;
@@ -306,6 +399,10 @@ fn score_move(
             let pred = model.predict(&x);
             ((f64::from(len) + alpha * pred) * 4096.0).round() as i64
         }
+    };
+    let score = match jctx {
+        Some(j) => score + j.offset(parent.zhash, q),
+        None => score,
     };
     (score, len, q, parent_idx)
 }
