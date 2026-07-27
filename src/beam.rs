@@ -88,6 +88,41 @@ pub struct Stratify {
     pub bucket: usize,
 }
 
+/// Endgame-snapshot request (phase-3 item 4): capture the top frontier
+/// states at the level where exactly `remaining` permutations are left,
+/// so the caller can solve their endgames exactly with
+/// [`crate::endgame::solve_endgame`]. Pure instrumentation: the search
+/// is bit-identical to the un-snapshotted run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SnapshotCfg {
+    /// Snapshot when exactly this many permutations are unvisited
+    /// (`1 ..= n! − 1 − seed_prefix`).
+    pub remaining: usize,
+    /// How many frontier states to capture, in score order from the
+    /// best (capped by the frontier size).
+    pub top: usize,
+}
+
+/// One captured frontier state (see [`SnapshotCfg`]).
+pub struct SnapState {
+    /// Characters emitted so far.
+    pub len: u32,
+    /// Rank of the permutation the walk currently ends with.
+    pub cur: u32,
+    /// First-visit rank path from the root (starts with rank 0).
+    pub path: Vec<u32>,
+    /// Unvisited ranks, ascending (`remaining.len() == cfg.remaining`).
+    pub remaining: Vec<u32>,
+    /// Position of this state in the frontier's score order (0 = best).
+    pub score_rank: usize,
+    /// Shortest final length among the beam's own descendants of this
+    /// state (`None` if no descendant survived to the end) — the
+    /// heuristic completion the exact endgame is compared against.
+    pub best_descendant_len: Option<u32>,
+    /// Arena node, for the descendant mapping.
+    node: u32,
+}
+
 /// Deterministic score jitter for diversified restarts.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Jitter {
@@ -321,7 +356,7 @@ pub fn beam_search_seeded(
     jitter: Option<Jitter>,
     seed_prefix: usize,
 ) -> BeamResult {
-    beam_search_impl(g, width, scorer, jitter, seed_prefix, None, None)
+    beam_search_impl(g, width, scorer, jitter, seed_prefix, None, None, None)
 }
 
 /// [`beam_search_seeded`] with optional width reservation per
@@ -336,7 +371,42 @@ pub fn beam_search_stratified(
     seed_prefix: usize,
     stratify: Option<Stratify>,
 ) -> BeamResult {
-    beam_search_impl(g, width, scorer, jitter, seed_prefix, stratify, None)
+    beam_search_impl(g, width, scorer, jitter, seed_prefix, stratify, None, None)
+}
+
+/// [`beam_search_stratified`] that additionally captures the top
+/// `cfg.top` frontier states at the level where exactly `cfg.remaining`
+/// permutations are unvisited (see [`SnapshotCfg`]). Pure
+/// instrumentation: the returned [`BeamResult`] is bit-identical to the
+/// un-snapshotted run; the snapshot is what the exact endgame tablebase
+/// (phase-3 item 4) is solved from.
+pub fn beam_search_endgame_snapshot(
+    g: &Graph,
+    width: usize,
+    scorer: Scorer,
+    jitter: Option<Jitter>,
+    seed_prefix: usize,
+    stratify: Option<Stratify>,
+    cfg: SnapshotCfg,
+) -> (BeamResult, Vec<SnapState>) {
+    assert!(
+        (1..g.nfact - seed_prefix).contains(&cfg.remaining),
+        "snapshot remaining must be in 1..={} (got {})",
+        g.nfact - 1 - seed_prefix,
+        cfg.remaining
+    );
+    let mut snaps = Vec::new();
+    let r = beam_search_impl(
+        g,
+        width,
+        scorer,
+        jitter,
+        seed_prefix,
+        stratify,
+        None,
+        Some((cfg, &mut snaps)),
+    );
+    (r, snaps)
 }
 
 /// [`beam_search_seeded`] that additionally records one [`LevelCutoff`]
@@ -375,10 +445,12 @@ pub fn beam_search_stratified_cutoffs(
         seed_prefix,
         stratify,
         Some(&mut cutoffs),
+        None,
     );
     (r, cutoffs)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn beam_search_impl(
     g: &Graph,
     width: usize,
@@ -387,6 +459,7 @@ fn beam_search_impl(
     seed_prefix: usize,
     stratify: Option<Stratify>,
     mut cutoffs: Option<&mut Vec<LevelCutoff>>,
+    mut snapshot: Option<(SnapshotCfg, &mut Vec<SnapState>)>,
 ) -> BeamResult {
     assert!(width >= 1, "beam width must be at least 1");
     if let Some(st) = stratify {
@@ -467,6 +540,38 @@ fn beam_search_impl(
     let mut cands: Vec<(i64, u32, u32, u32)> = Vec::new();
 
     for depth in (1 + seed_prefix)..nfact {
+        // Endgame snapshot: states at this point have visited `depth`
+        // perms, so `nfact − depth` remain. Read-only capture — the
+        // search below is untouched. The frontier is in global score
+        // order (plain selection keeps the sorted candidate order;
+        // stratified selection restores it), so `take(top)` is the top
+        // of the score ranking.
+        if let Some((cfg, out)) = snapshot.as_mut() {
+            if nfact - depth == cfg.remaining {
+                for (score_rank, s) in beam.iter().take(cfg.top).enumerate() {
+                    let mut path = Vec::with_capacity(depth);
+                    let mut node = s.node;
+                    while node != u32::MAX {
+                        let (parent, rank) = arena[node as usize];
+                        path.push(rank);
+                        node = parent;
+                    }
+                    path.reverse();
+                    let remaining: Vec<u32> = (0..nfact as u32)
+                        .filter(|&q| !s.visited.get(q as usize))
+                        .collect();
+                    out.push(SnapState {
+                        len: s.len,
+                        cur: s.cur,
+                        path,
+                        remaining,
+                        score_rank,
+                        best_descendant_len: None,
+                        node: s.node,
+                    });
+                }
+            }
+        }
         cands.clear();
         for (pi, s) in beam.iter().enumerate() {
             let mut any = false;
@@ -610,6 +715,26 @@ fn beam_search_impl(
             });
         }
         beam = next;
+    }
+
+    // Map each snapshotted state to the shortest final length among its
+    // own beam descendants: every final state's ancestor at the
+    // snapshot level is found by walking `remaining` arena steps up.
+    if let Some((cfg, out)) = snapshot.as_mut() {
+        if !out.is_empty() {
+            let mut best_by_node: HashMap<u32, u32> = HashMap::new();
+            for s in &beam {
+                let mut node = s.node;
+                for _ in 0..cfg.remaining {
+                    node = arena[node as usize].0;
+                }
+                let e = best_by_node.entry(node).or_insert(u32::MAX);
+                *e = (*e).min(s.len);
+            }
+            for st in out.iter_mut() {
+                st.best_descendant_len = best_by_node.get(&st.node).copied();
+            }
+        }
     }
 
     let best = beam

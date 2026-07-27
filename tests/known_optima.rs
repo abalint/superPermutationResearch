@@ -2,9 +2,11 @@
 //! the admissibility of the cycle lower bound.
 
 use superperm::beam::{
-    beam_search, beam_search_cutoffs, beam_search_jittered, beam_search_seeded,
-    beam_search_stratified, beam_search_stratified_cutoffs, Bound, Jitter, Scorer, Stratify,
+    beam_search, beam_search_cutoffs, beam_search_endgame_snapshot, beam_search_jittered,
+    beam_search_seeded, beam_search_stratified, beam_search_stratified_cutoffs, Bound, Jitter,
+    Scorer, SnapshotCfg, Stratify,
 };
+use superperm::endgame::{solve_endgame, spell_path};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
 use superperm::model::{Model, Target};
@@ -575,4 +577,54 @@ fn stratified_selection_reserves_beyond_plain_cutoff() {
         widened > 0,
         "stratified selection never kept anything beyond the plain cutoff"
     );
+}
+
+/// The endgame snapshot must be pure instrumentation (bit-identical
+/// beam result), and every snapshotted state's exact completion must
+/// (a) dominate its own beam descendant (the exact endgame is optimal
+/// from that state) and (b) respect the global optimum 153.
+#[test]
+fn endgame_snapshot_pure_and_exact_dominates_descendants_n5() {
+    let g = Graph::new(5);
+    let scorer = Scorer::Bound(Bound::Cycle);
+    let plain = beam_search_stratified(&g, 2000, scorer, None, 0, None);
+    // top = width captures the whole frontier, so the final winner's
+    // ancestor is guaranteed to be among the snapshots.
+    let cfg = SnapshotCfg {
+        remaining: 15,
+        top: 2000,
+    };
+    let (instr, snaps) = beam_search_endgame_snapshot(&g, 2000, scorer, None, 0, None, cfg);
+    assert_eq!(instr.len, plain.len);
+    assert_eq!(instr.path, plain.path);
+    assert_eq!(instr.string, plain.string);
+    assert_eq!(plain.len, 153);
+    assert!(!snaps.is_empty() && snaps.len() <= 2000);
+    let mut totals = Vec::with_capacity(snaps.len());
+    for (i, s) in snaps.iter().enumerate() {
+        assert_eq!(s.score_rank, i);
+        assert_eq!(s.path.len(), g.nfact - 15);
+        assert_eq!(s.remaining.len(), 15);
+        // The stored path spells to exactly `len` chars.
+        assert_eq!(spell_path(&g, &s.path).len(), s.len as usize);
+        let e = solve_endgame(&g, s.cur, &s.remaining);
+        let exact = s.len + e.cost;
+        assert!(exact >= 153, "rank {i}: exact {exact} < optimum");
+        if let Some(h) = s.best_descendant_len {
+            assert!(
+                exact <= h,
+                "rank {i}: exact {exact} worse than heuristic descendant {h}"
+            );
+        }
+        // Recomposed exact string is a valid complete superpermutation.
+        let mut path = s.path.clone();
+        path.extend_from_slice(&e.order);
+        let full = spell_path(&g, &path);
+        assert_eq!(full.len(), exact as usize);
+        assert!(validate(5, &full).complete, "rank {i}");
+        totals.push(exact);
+    }
+    // The beam finds 153, and its winner's ancestor is snapshotted, so
+    // the best exact completion over the frontier is exactly 153.
+    assert_eq!(totals.iter().min().copied().unwrap(), 153);
 }

@@ -14,9 +14,11 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::io::Write;
 
 use superperm::beam::{
-    beam_search_stratified, beam_search_stratified_cutoffs, Bound, Jitter, Scorer, Stratify,
+    beam_search_endgame_snapshot, beam_search_stratified, beam_search_stratified_cutoffs, Bound,
+    Jitter, Scorer, SnapshotCfg, Stratify,
 };
 use superperm::beam2::{beam2_search, Scorer2};
+use superperm::endgame::{solve_endgame, spell_path, MAX_REMAINING};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
 use superperm::model::Model;
@@ -160,6 +162,20 @@ enum Cmd {
         /// before forming the bucket key (only with --stratify; >= 1).
         #[arg(long, default_value_t = 4, requires = "stratify")]
         strat_bucket: usize,
+        /// Exact endgame tablebase (phase-3 item 4): when exactly this
+        /// many perms remain, snapshot the frontier and solve the top
+        /// --endgame-top states' completions exactly (Held-Karp DP;
+        /// provably optimal). The beam itself is unchanged; the summary
+        /// reports whether any exact endgame beats the heuristic one,
+        /// and the best exact string is printed if it beats the beam's.
+        /// 0 = off; RAM/time grow as 2^m (20 is cheap, 24 is seconds
+        /// and ~800 MB per state).
+        #[arg(long, default_value_t = 0)]
+        endgame: usize,
+        /// Frontier states (in score order) to solve exactly (with
+        /// --endgame).
+        #[arg(long, default_value_t = 100)]
+        endgame_top: usize,
         /// Write the best path's feature records to this JSONL file.
         #[arg(long)]
         log: Option<PathBuf>,
@@ -226,6 +242,26 @@ enum Cmd {
         /// instead of stdout (requires --bound or --model).
         #[arg(long)]
         score_log: Option<PathBuf>,
+    },
+    /// Exactly complete a prefix of an existing walk: truncate its
+    /// first-visit path to n! − m visits and solve the last m perms
+    /// optimally (Held-Karp exact endgame). The verdict is a theorem:
+    /// no completion of that prefix can beat the reported total.
+    Endgame {
+        /// Number of symbols (3..=8).
+        #[arg(short, long)]
+        n: usize,
+        /// File holding the superpermutation string whose prefix to
+        /// complete (trimmed).
+        #[arg(long, conflicts_with = "greedy", required_unless_present = "greedy")]
+        file: Option<PathBuf>,
+        /// Use the deterministic greedy walk as the source instead.
+        #[arg(long)]
+        greedy: bool,
+        /// How many trailing perms to solve exactly (1..=25; RAM/time
+        /// grow as 2^m — 20 is cheap, 24 is seconds and ~800 MB).
+        #[arg(long)]
+        remaining: usize,
     },
     /// Generate epsilon-greedy rollouts and write JSONL feature records.
     Rollouts {
@@ -310,6 +346,8 @@ fn main() -> ExitCode {
             stratify,
             strat_quota,
             strat_bucket,
+            endgame,
+            endgame_top,
             log,
             cutoff_log,
         } => {
@@ -363,17 +401,51 @@ fn main() -> ExitCode {
                 Some(s) => format!(" stratify quota={} bucket={}", s.quota, s.bucket),
                 None => String::new(),
             };
-            let t0 = Instant::now();
-            let (b, cuts) = match &cutoff_log {
-                Some(_) => {
-                    let (b, c) =
-                        beam_search_stratified_cutoffs(&g, width, scorer, jit, seed_prefix, strat);
-                    (b, Some(c))
+            if endgame > 0 {
+                let max_m = MAX_REMAINING.min(g.nfact - 1 - seed_prefix);
+                if !(1..=max_m).contains(&endgame) {
+                    eprintln!("--endgame must be in 1..={max_m} (got {endgame})");
+                    std::process::exit(1);
                 }
-                None => (
-                    beam_search_stratified(&g, width, scorer, jit, seed_prefix, strat),
-                    None,
-                ),
+                if cutoff_log.is_some() {
+                    eprintln!("--endgame cannot be combined with --cutoff-log");
+                    std::process::exit(1);
+                }
+            }
+            let t0 = Instant::now();
+            let (b, cuts, snaps) = if endgame > 0 {
+                let (b, s) = beam_search_endgame_snapshot(
+                    &g,
+                    width,
+                    scorer,
+                    jit,
+                    seed_prefix,
+                    strat,
+                    SnapshotCfg {
+                        remaining: endgame,
+                        top: endgame_top,
+                    },
+                );
+                (b, None, Some(s))
+            } else {
+                match &cutoff_log {
+                    Some(_) => {
+                        let (b, c) = beam_search_stratified_cutoffs(
+                            &g,
+                            width,
+                            scorer,
+                            jit,
+                            seed_prefix,
+                            strat,
+                        );
+                        (b, Some(c), None)
+                    }
+                    None => (
+                        beam_search_stratified(&g, width, scorer, jit, seed_prefix, strat),
+                        None,
+                        None,
+                    ),
+                }
             };
             let dt = t0.elapsed();
             println!(
@@ -382,6 +454,65 @@ fn main() -> ExitCode {
                 dt.as_secs_f64()
             );
             println!("{}", b.string);
+            if let Some(snaps) = snaps {
+                let t1 = Instant::now();
+                let mut best: Option<(u32, usize, Vec<u32>)> = None; // (total, idx, order)
+                let mut beats_own = 0usize; // exact < its own beam descendant
+                let mut max_gain = 0i64;
+                let mut beats_beam = 0usize; // exact total < beam final result
+                for (i, s) in snaps.iter().enumerate() {
+                    let e = solve_endgame(&g, s.cur, &s.remaining);
+                    let total = s.len + e.cost;
+                    if let Some(h) = s.best_descendant_len {
+                        let gain = i64::from(h) - i64::from(total);
+                        if gain >= 1 {
+                            beats_own += 1;
+                        }
+                        max_gain = max_gain.max(gain);
+                    }
+                    if (total as usize) < b.len {
+                        beats_beam += 1;
+                    }
+                    if best.as_ref().is_none_or(|(t, _, _)| total < *t) {
+                        best = Some((total, i, e.order));
+                    }
+                }
+                let (best_total, best_idx, best_order) = best.expect("endgame top >= 1");
+                let snap = &snaps[best_idx];
+                println!(
+                    "endgame m={endgame} top={}: solved {} frontier states ({:.3}s)",
+                    endgame_top,
+                    snaps.len(),
+                    t1.elapsed().as_secs_f64()
+                );
+                println!(
+                    "  best exact total = {best_total} (score-rank #{}, len {} + exact {})",
+                    snap.score_rank,
+                    snap.len,
+                    best_total - snap.len
+                );
+                println!(
+                    "  exact beats own beam descendant by >=1 char: {beats_own} / {} states (max gain {max_gain})",
+                    snaps.len()
+                );
+                println!(
+                    "  exact total beats beam result ({}): {beats_beam} / {} states",
+                    b.len,
+                    snaps.len()
+                );
+                if (best_total as usize) < b.len {
+                    let mut path = snap.path.clone();
+                    path.extend_from_slice(&best_order);
+                    let s = spell_path(&g, &path);
+                    assert_eq!(s.len(), best_total as usize);
+                    let v = superperm::validate::validate(n, &s);
+                    println!(
+                        "  IMPROVED result: length {best_total} (validated complete = {})",
+                        v.complete
+                    );
+                    println!("{s}");
+                }
+            }
             if let Some(path) = log {
                 write_log(&g, &b.path, &path);
             }
@@ -560,6 +691,75 @@ fn main() -> ExitCode {
                     }
                 }
             }
+        }
+        Cmd::Endgame {
+            n,
+            file,
+            greedy: use_greedy,
+            remaining,
+        } => {
+            let g = Graph::new(n);
+            if !(1..=MAX_REMAINING.min(g.nfact - 1)).contains(&remaining) {
+                eprintln!(
+                    "--remaining must be in 1..={} (got {remaining})",
+                    MAX_REMAINING.min(g.nfact - 1)
+                );
+                std::process::exit(1);
+            }
+            let (path, src_len, src_desc) = if use_greedy {
+                let r = greedy(&g);
+                (r.path, r.len, "greedy".to_string())
+            } else {
+                let file = file.expect("clap enforces --file or --greedy");
+                let s = fs::read_to_string(&file)
+                    .unwrap_or_else(|e| {
+                        eprintln!("cannot read {}: {e}", file.display());
+                        std::process::exit(1);
+                    })
+                    .trim()
+                    .to_string();
+                let v = validate(n, &s);
+                if !v.complete {
+                    eprintln!(
+                        "not a complete superpermutation: {} / {} perms covered",
+                        v.distinct, v.total
+                    );
+                    std::process::exit(1);
+                }
+                let t = trace_string(&g, &s).unwrap_or_else(|e| {
+                    eprintln!("cannot trace {}: {e}", file.display());
+                    std::process::exit(1);
+                });
+                (t.path, t.replay_len, file.display().to_string())
+            };
+            let keep = g.nfact - remaining;
+            let prefix = &path[..keep];
+            let prefix_len = spell_path(&g, prefix).len();
+            let mut rem: Vec<u32> = path[keep..].to_vec();
+            rem.sort_unstable();
+            let t0 = Instant::now();
+            let e = solve_endgame(&g, *prefix.last().unwrap(), &rem);
+            let dt = t0.elapsed();
+            let total = prefix_len + e.cost as usize;
+            let own = src_len - prefix_len;
+            println!("endgame n={n} source={src_desc} (length {src_len})");
+            println!(
+                "prefix = {keep} visits, {prefix_len} chars; last {remaining} perms solved exactly ({:.3}s)",
+                dt.as_secs_f64()
+            );
+            println!(
+                "exact completion = {} chars -> total {total}; source's own completion = {own} chars (exact saves {})",
+                e.cost,
+                own - e.cost as usize
+            );
+            println!("THEOREM: no completion of this {keep}-visit prefix yields length < {total}");
+            let mut full = prefix.to_vec();
+            full.extend_from_slice(&e.order);
+            let s = spell_path(&g, &full);
+            assert_eq!(s.len(), total);
+            let v = validate(n, &s);
+            assert!(v.complete, "recomposed endgame string failed validation");
+            println!("{s}");
         }
         Cmd::Rollouts {
             n,

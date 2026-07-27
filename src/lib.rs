@@ -29,6 +29,9 @@
 //!   successor of the string's back or prepend a predecessor of its
 //!   front, scored by the admissible two-ended arc bound (phase 3's
 //!   decision-order probe);
+//! * [`endgame`] — exact endgame tablebase: Held–Karp DP giving the
+//!   provably optimal completion once ≤ ~25 permutations remain
+//!   (phase-3 item 4);
 //! * [`model`] — learned cost-to-go models (linear / MLP) loaded from
 //!   JSON files produced by the Python training side;
 //! * [`rollout`] — epsilon-greedy rollout generator emitting JSONL
@@ -42,6 +45,7 @@ pub mod beam;
 pub mod beam2;
 pub mod bitset;
 pub mod bound;
+pub mod endgame;
 pub mod graph;
 pub mod greedy;
 pub mod model;
