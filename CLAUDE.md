@@ -12,9 +12,11 @@ planned learned value function.
 3. `docs/ARCHITECTURE.md` — code map: modules, data structures, where phase-2 plugs in.
 4. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 
-Current state in one line: **phase 1 done** (beam recovers proven optima 33/153); phase
-2's first rung is making a learned evaluator beat the hand bound at n=6, where beam
-(890) currently loses to greedy (873) and the record is 872.
+Current state in one line: **phase 2 core done** — learned-score beam hits a validated
+**874** at n=6 (beats the hand bound's 890 at equal wall-clock: minimum exit criterion
+met), but 874 is a hard plateau one character above greedy's 873 (rung 1) and two above
+the record 872; the next attack is residual targets / model-guided rollouts /
+greedy-prefix seeding (JOURNAL s3), with phase 3 (cycle-level search) behind it.
 
 ## Commands
 
@@ -26,6 +28,15 @@ cargo run --release -- greedy -n 5
 cargo run --release -- beam -n 5 --width 2000
 cargo run --release -- rollouts -n 5 --count 200 --epsilon 0.15 --seed 0 --out out.jsonl
 cargo run --release -- validate -n 5 <string>
+
+# learned-score beam (phase 2); canonical 874 model:
+cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --alpha 1
+# diversified restart (deterministic jitter; ε=0 is bit-identical to no jitter):
+cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --jitter 0.03 --jitter-seed 7
+
+# training side (numpy only; see docs/ARCHITECTURE.md "ml/" section):
+python3 ml/fit_linear.py data/roll_n6_*.jsonl
+python3 ml/predict_check.py ml/models/linear_n6_boot1.json data/roll_n6_*.jsonl
 ```
 
 Always benchmark and search in `--release`; debug builds are ~50× slower in the hot loop.

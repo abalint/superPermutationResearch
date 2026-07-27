@@ -1,18 +1,21 @@
 # Architecture
 
-Code map for the `superperm` crate (phase 1). Math background lives in
+Code map for the `superperm` crate (phases 1–2). Math background lives in
 `docs/THEORY.md` — this file only covers what the code does and where to change it.
 Binary + library crate: `src/lib.rs` exports the modules, `src/main.rs` is the CLI.
+The Python training side lives in `ml/` (see its section below); the two halves talk
+only through rollout JSONL (Rust → Python) and model JSON (Python → Rust).
 
 ## Module map
 
 Dependency sketch (arrows point at dependencies):
 
 ```
-main.rs ─→ graph, greedy, beam, rollout, validate
+main.rs ─→ graph, greedy, beam, model, rollout, validate
 greedy ──→ walk ──→ bitset, bound, graph
 rollout ─→ walk, bound, graph        (+ rand, serde_json)
-beam ────→ bitset, graph             (does NOT use walk — see Extension points)
+beam ────→ bitset, bound, graph, model   (does NOT use walk — see Extension points)
+model ───→ (serde_json only; pure inference)
 validate → graph (factorial, rank)
 bound ───→ (serde only; pure arithmetic + Features struct)
 bitset, graph → no crate deps
@@ -38,10 +41,20 @@ bitset, graph → no crate deps
   `len_chars()`, `string()`, `graph()`.
 - **`src/greedy.rs`** — `greedy(&Graph) -> GreedyResult { string, len, path: Vec<u32> }`.
   Deterministic baseline; hits 9/33/153 for n=3,4,5 (hard invariant) and 873 for n=6.
-- **`src/beam.rs`** — `beam_search(&Graph, width, Bound) -> BeamResult { string, len,
-  path }`. Level-synchronous beam search scored by `len + lb` under a selectable
-  admissible bound (`Bound::Cycle` or `Bound::Arc`); private `struct State`,
-  `fn score_move`, `fn child_arcs`.
+- **`src/beam.rs`** — `beam_search(&Graph, width, Scorer) -> BeamResult { string, len,
+  path }`. Level-synchronous beam search; `enum Scorer` selects `Bound(Bound::Cycle |
+  Bound::Arc)` (score = `len + lb`) or `Learned { model: &Model, alpha }` (score =
+  `len + α·predict(features)`; any admissible-bound anchoring lives in the model's
+  training targets, not in the scorer — see JOURNAL s3 lesson 1). `beam_search_jittered(…, Option<Jitter>)` adds deterministic score
+  jitter (`Jitter { eps, seed }`): a Zobrist hash of the visited set, maintained
+  incrementally in each `State`, gives every candidate a pure-function-of-
+  `(cur, visited, seed)` offset in `[0, eps)` — dedup-safe, and bit-identical to the
+  plain search when off. Private: `struct State`, `struct JitterCtx`, `fn score_move`,
+  `fn child_arcs`.
+- **`src/model.rs`** — `enum Model` (`Linear` | `Mlp`), loaded from JSON via
+  `Model::load(path)` / `Model::from_json(text)`; `predict(&self, x: &[f64; 8]) -> f64`
+  is pure CPU inference (dot product, or 2×64 MLP with ReLU); `n()` (the n the model
+  was trained for; the CLI refuses a mismatched `-n`), `kind()`.
 - **`src/rollout.rs`** — `run_rollouts(&Graph, count, epsilon, seed, out: &mut impl Write)
   -> io::Result<RolloutSummary { rollouts, mean_len, min_len, lines }>`. Epsilon-greedy
   rollouts emitting JSONL `Features` lines. Also `log_trajectory(&Graph, path, out)`,
@@ -110,8 +123,10 @@ called by the rollout generator, not in the greedy/beam hot path.
 
 ### Beam state, arena, dedup (`src/beam.rs`)
 
-`State { cur, len, visited: BitSet, cycle_rem, k, r, arcs, node }` mirrors `Walk`'s
-counters but without `chars` — no state carries a string or path.
+`State { cur, len, visited: BitSet, cycle_rem, k, r, arcs, intact, zhash, node }`
+mirrors `Walk`'s counters but without `chars` — no state carries a string or path.
+`zhash` is the Zobrist hash of the visited set (0 when jitter is off), XOR-updated
+per move.
 
 - **Scoring without materialization**: `score_move(g, parent, q, w, parent_idx)`
   computes the child's `(len + lb, len, q, parent_idx)` tuple in O(1) from the parent's
@@ -140,9 +155,13 @@ All subcommands take `-n <3..=8>` and start with `Graph::new(n)`.
 - **`greedy`** — `greedy(&g)` → prints `length` and the string. (Loop: `Walk::new` →
   `first_unvisited_succ()` else `(fallback_target(), n)` → `advance` until `done()`.)
   `--log <file>` writes the trajectory's `Features` JSONL via `log_trajectory`.
-- **`beam`** — `beam_search(&g, width, bound)` (default width 1000, `--bound
-  cycle|arc`, default cycle) → prints length, wall-clock seconds (`Instant`), and the
-  string. `--log <file>` writes the best path's `Features` JSONL.
+- **`beam`** — `beam_search_jittered(&g, width, scorer, jitter)` (default width 1000)
+  → prints length, wall-clock seconds (`Instant`), and the string. Scorer selection:
+  `--bound cycle|arc` (default cycle), or `--model ml/models/m.json --alpha a`
+  (learned score `len + α·predict`; the model's stored `n` must match `-n`, default
+  `--alpha 1`). `--jitter <eps> --jitter-seed <s>` enables deterministic score jitter
+  (`--jitter 0` = off = bit-identical to plain search). `--log <file>` writes the
+  best path's `Features` JSONL.
 - **`rollouts`** — opens `--out` as `BufWriter<File>`, calls
   `run_rollouts(&g, count, epsilon, seed, &mut writer)` → prints count/epsilon/seed,
   mean and min final length, lines written. Defaults: `--count 100`, `--epsilon 0.1`,
@@ -184,28 +203,66 @@ field is fine (old readers using serde ignore unknown fields only if configured;
 error on missing fields, so removals/renames break `Deserialize`); anything else needs
 an explicit version marker.
 
-## Extension points for phase 2 (learned evaluator)
+## `ml/` — Python training side
 
-- **Where beam scoring happens**: `score_move` in `src/beam.rs` — the tuple's first
-  element is `len + lb`. That single expression is the evaluator; a learned value
-  function replaces (or blends with) the `lb` term there. Its only call sites are the
-  two `cands.push(score_move(...))` calls inside the level loop of `beam_search`
-  (normal successors and the weight-`n` fallback). Note the sort/dedup comment in
-  `beam_search` assumes the score is a pure function of `(cur, visited, len)` — a
-  learned score that breaks the "identical for duplicate keys" property invalidates the
-  keep-first-min-length argument and the dedup logic must be revisited.
+Pure numpy (sklearn only for the optional GBT diagnostic); talks to Rust only through
+files. The 8-feature contract, in order, shared with `Scorer::Learned`:
+`r, cycles_remaining, intact_cycles, current_cycle_remaining, arcs, succ1_unvisited,
+lb_cycle, lb_arc` (the two bounds are recomputed from the raw fields in
+`ml/common.py`). Held-out split is by *rollout* (every 5th), never by row.
+
+- **`common.py`** — JSONL loading, feature assembly, split, RMSE/MAE/R² metrics.
+- **`fit_linear.py <data.jsonl>...`** — OLS baseline; prints held-out metrics vs. the
+  two hand bounds as point predictors; exports the Rust JSON contract.
+- **`train_mlp.py`** — numpy MLP (8 → relu hidden layers → 1), Adam, early stopping;
+  label standardization folded back into the last layer on export.
+- **`fit_gbt.py`** — sklearn HistGradientBoostingRegressor, *diagnostic only*: trees
+  are not in the Rust model contract and cannot be exported to the beam.
+- **`predict_check.py <model.json> <data.jsonl>...`** — evaluate any exported model
+  on any corpus (bootstrap-round sanity check).
+
+Model JSON contract (what `src/model.rs` parses):
+`{"kind": "linear"|"mlp", "n": <trained n>, "feature_order": [8 names], ...}` — linear
+adds `coef[8]` + `intercept`; mlp adds `x_mean[8]`, `x_std[8]`,
+`layers: [{w, b, act: "relu"|"identity"}, ...]`. Canonical committed models live in
+`ml/models/` (`linear_n6_boot1.json` and `linear_n6_blend0.075.json` are the two
+874-hitters; sweep artifacts stay untracked). `data/` corpora are gitignored but
+regenerable — every rollout seed is logged in JOURNAL entries.
+
+## Extension points
+
+Phase 2's original extension points (learned scorer in `score_move`, model loading,
+`--model/--alpha` CLI) are now **implemented** — see `src/model.rs` and
+`Scorer::Learned` above. Still-relevant places to plug in:
+
+- **Score-shape changes** (e.g. residual targets `cost_to_go − lb_arc`): training-side
+  in `ml/` (change the label), inference-side the score expression lives in
+  `score_move`'s `Scorer::Learned` arm in `src/beam.rs`. The sort/dedup argument in
+  `beam_search` requires every score be a pure function of `(cur, visited, len)` —
+  the jitter offset shows how to add variation without breaking it.
 - **Where new incremental features live**: `Walk` in `src/walk.rs` (add the field,
   update it in `advance`, expose it in `features()`), **and also** `State` +
-  `score_move` in `src/beam.rs` if the beam needs it — beam does not use `Walk`; it
-  duplicates the counter maintenance for O(1) candidate scoring. Keep the two in sync,
-  and keep everything O(1)/O(n) per expansion (CLAUDE.md convention).
+  `score_move` in `src/beam.rs` — beam does not use `Walk`; it duplicates the counter
+  maintenance for O(1) candidate scoring. Keep the two in sync, keep everything
+  O(1)/O(n) per expansion, and extend the 8-feature contract in `ml/common.py` +
+  `Model::predict`'s input array in lockstep (serde-default the JSONL field for
+  backward compat).
+- **Model-guided rollouts** (next-round item): the rollout policy is the
+  `if options.is_empty() / rng < epsilon / else options[0]` block in `run_rollouts`
+  (`src/rollout.rs`) — swapping `options[0]` for an argmin over a loaded `Model` is
+  the planned change; `Features` + `Walk::features()` define what gets logged.
+- **Greedy-prefix seeding** (next-round item): `beam_search` hardcodes its root as
+  rank 0; a seeded variant needs the root `State` built by replaying a prefix path
+  through the same counter updates (see how `initial` is constructed).
 - **Adding a CLI subcommand**: add a variant to `enum Cmd` in `src/main.rs` (clap
   derive) and a match arm in `main()`; put the logic in a library module and export it
   from `src/lib.rs`. Follow the existing pattern of printing a summary line then the
   payload.
-- **Training-data knobs**: `run_rollouts` in `src/rollout.rs` — the policy is the
-  `if options.is_empty() / rng < epsilon / else options[0]` block; `Features` +
-  `Walk::features()` define what gets logged.
+- **Phase 3 (cycle-level search)**: nothing is built yet. The cycle machinery to build
+  on: `Graph::cycle_id`/`cycle_count`, the arc-component maintenance in
+  `Walk::advance`/`child_arcs`, and THEORY.md's 2-cycle/tree background. This is a new
+  search representation (super-node graph over rotation cycles), not a patch to
+  `beam_search`.
 
 ## Performance notes
 
@@ -236,8 +293,10 @@ sort order, brute-force weight oracle at n=4, cycle partition; `bitset.rs`; `bou
 
 - `greedy_hits_known_optima` — greedy length is exactly 9/33/153 for n=3/4/5, the
   output validates as complete, and `path.len() == nfact`.
-- `beam_n4_width_512_is_optimal` — beam(width 512) reaches 33 at n=4, validated.
-- `beam_n5_width_2000_is_optimal` — beam(width 2000) reaches 153 at n=5, validated.
+- `greedy_n6_is_sum_of_factorials_873` — greedy at n=6 is exactly 873, validated.
+- `beam_n4_width_512_is_optimal_under_both_bounds` / 
+  `beam_n5_width_2000_is_optimal_under_both_bounds` — beam reaches 33 (n=4) and
+  153 (n=5) under both the cycle and arc bounds, validated.
 - `lower_bound_admissible_at_start_n4` — fresh-state `lb ≤ 33 − 4`.
 - `lower_bound_never_exceeds_cost_to_go_on_greedy_trajectory_n4` — replays the greedy
   n=4 path through a `Walk`, asserting `lb ≤ actual remaining cost` at every step and
@@ -247,6 +306,15 @@ sort order, brute-force weight oracle at n=4, cycle partition; `bitset.rs`; `bou
   lines per rollout; every line round-trips through `Features`; `len_so_far +
   cost_to_go` is constant within a rollout with final `cost_to_go == 0`; epsilon=0
   reproduces the greedy length.
+- `log_trajectory_matches_epsilon0_rollout` — `--log` replay is byte-identical to the
+  ε=0 rollout records.
+- `learned_lb_arc_model_reproduces_arc_bound_beam` — a linear model whose coefficients
+  encode exactly `lb_arc` makes `Scorer::Learned` reproduce the arc-bound beam's
+  result (pins the feature order and the score arithmetic).
+- `jittered_beam_n4_still_optimal_and_zero_jitter_is_identity` — jitter ε=0 is
+  bit-identical to the plain search; small jitter still finds 33 at n=4.
+- `beam_path_replays_to_reported_length` — arena-reconstructed path really has the
+  reported length.
 
 **Hard invariants** (CLAUDE.md): greedy must keep producing 9/33/153 — if a
 graph/ordering refactor changes those numbers, the refactor is wrong, not the test;
