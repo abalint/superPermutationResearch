@@ -6,6 +6,60 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 12) — n=6 proof independently verified (clean-room Rust, all claims agree); n=7 campaign: V₇=15/20 kernels EXIST and are row-count-feasible — 5905/5904 now hinges on the rooted cover
+
+Two threads, both landed. Sharing decision (Andrew): hold the n=6 result until
+stronger confirmation (✅ this session) AND a positive finding to lead with —
+the n=7 cover attempt (launched at session end) and Track B's 871 hunt are the
+candidates.
+
+**Thread 1 — clean-room verification: every claim AGREES (commit `f8603d3`).**
+`src/cert.rs` (~900 lines + 8 tests) reimplements the n=6 kernel-chain proof
+from the mathematical definitions alone — the agent was barred from reading the
+Python campaign, extraDocs, and the result docs. `cert-verify -n 6` (1.4 s)
+prints a per-claim verdict table: C1 forced map = permutation with 180 cycles
+all length 4 ✓; C2 pivot confinement, entry-landing automatic ✓; C3 max V = 8
+via exhaustive B&B (0.98 s, 15.8M nodes), exactly 12 chains, same (K,Σ,f4)
+census ✓; C4 zero covers for all 12 — strengthened: no exact cover exists even
+before rootedness — with the standard-kernel positive control finding a rooted
+25-row cover ✓; C5 ledger ✓. `docs/RESULT-gain1-optimality-n6.md` upgraded to
+"independently verified". Conventions worth remembering: door(s,5) = door(s,6)
+identically at n=6; cost-6 strictly dominated.
+
+**Thread 2 — n=7 max-V₇ campaign (`analysis/kernelchain7/`).** Gates: the three
+known 5907s trace to standard-kernel certificates from raw strings (census
+4182/853/4 — the kernel really is the K=5 standard chain, all three, up to
+relabeling); the 5906 census prices to V₇=10 exactly. Structure: forced-map
+period **5 = n−2** on all 5040 states (mirrors 4 = n−2 at n=6 — conjecture: the
+forced period is n−2 generally, which would make the standard kernel the
+skip-free maximum at every n); pivot confinement at all costs; **skip-1 lemma**
+(720/720): skip-1 hops land on the preceding loop of their own forced 5-cycle,
+so net-positive deviations cost ≥ 2 skip ⇒ **proven V₇ ≤ 74**, and the naive
+signatures (K=18,Σ=3)/(K=24,Σ=4) are empty. Search (complete B&B infeasible at
+n=7): **V₇ = 15 chains are plentiful** (100 enumerated; sample: K=27, Σ=12 =
+standard-kernel prefix + six skip-2 deviations, R=114, 2662 eligible rows —
+count-feasible); **V₇ = 20 exists** (4 found; K=46, Σ=26, R=94, 1545 eligible);
+best heuristic V₇ = 36 (beam; would be waste 855 if coverable — but high-K
+optima are already count-infeasible, echoing n=6). Ledger: V₇=15 ⇒ **5905**,
+V₇=20 ⇒ **5904**. The 5906 word itself is not distributed anywhere in the urdvr
+tree (kernel extraction impossible for now).
+
+**The decisive open question is now singular: does any V₇ ≥ 15 chain admit a
+rooted exact cover?** A yes, compiled and validated, is a world record. Odds
+look materially better than n=6's refutation: the V₇=15 chains are low-K
+(structure close to the standard kernel, which IS coverable), with 20×+ more
+eligible rows than needed, whereas n=6's fatal chains rode 20–22 of a 24-loop
+class. Next: kernel-parameterized DLX (urdvr's compiler is kernel-generic;
+`build_instance` is the only standard-bound piece) over the 100 V₇=15 chains +
+the 4 V₇=20s, forest pruning on, compile any solution via their certificate.py,
+validate with our validator, price via the ledger.
+
+**Also next: Track B design** (the n=6 871 hunt — sojourn-level out-of-grammar
+search; sharpened fact from this session: every inter-orbit w2 is necessarily a
+w2x edge, so Track B's freedom is purely structural: non-laminar nesting,
+sojourn patterns outside {2,3,4,6}, w3/w4 placement — budget X + #w3 + 2#w4 +
+3#w5 = 27 vs the records' 28).
+
 ## 2026-07-27 (session 11) — item 5 step 2 executed to a proof: Egan−1 = 872 is OPTIMAL in the gain-one grammar at n=6 (kernel door closed, any hop cost); n=7 becomes the in-grammar attack; n=6 sub-872 must leave the grammar
 
 Continuation of s10, same day. Three probe rounds (one subagent, kept alive across
