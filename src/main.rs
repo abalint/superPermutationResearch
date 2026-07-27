@@ -43,15 +43,28 @@ impl From<BoundArg> for Bound {
 }
 
 /// Load a model file, exiting with a clear message on a parse failure or
-/// an `n` mismatch.
-fn load_model(path: &PathBuf, n: usize) -> Model {
+/// an `n` mismatch. With `allow_n_mismatch` the mismatch is downgraded to
+/// a warning (cross-n transfer: the features are generic counts, so an
+/// n=6-trained linear map is well-defined — if uncalibrated — at n=7).
+fn load_model(path: &PathBuf, n: usize, allow_n_mismatch: bool) -> Model {
     let m = Model::load(path).unwrap_or_else(|e| {
         eprintln!("cannot load model {}: {e}", path.display());
         std::process::exit(1);
     });
     if m.n() != n {
-        eprintln!("model was trained for n={} but -n is {n}", m.n());
-        std::process::exit(1);
+        if allow_n_mismatch {
+            eprintln!(
+                "warning: model was trained for n={} but -n is {n} (cross-n transfer)",
+                m.n()
+            );
+        } else {
+            eprintln!(
+                "model was trained for n={} but -n is {n} \
+                 (pass --allow-n-mismatch to transfer anyway)",
+                m.n()
+            );
+            std::process::exit(1);
+        }
     }
     m
 }
@@ -112,6 +125,11 @@ enum Cmd {
         /// Blend factor for the learned score: len + alpha * prediction.
         #[arg(long, default_value_t = 1.0)]
         alpha: f64,
+        /// Allow --model files trained for a different n (cross-n
+        /// transfer; the mismatch is reported as a warning instead of
+        /// an error).
+        #[arg(long, requires = "model")]
+        allow_n_mismatch: bool,
         /// Deterministic score jitter magnitude in length units: each
         /// candidate's score gets a pseudo-random offset in [0, eps)
         /// that is a pure function of (cur, visited, seed). 0 disables
@@ -285,6 +303,7 @@ fn main() -> ExitCode {
             bound,
             model,
             alpha,
+            allow_n_mismatch,
             jitter,
             jitter_seed,
             seed_prefix,
@@ -302,7 +321,7 @@ fn main() -> ExitCode {
                 );
                 std::process::exit(1);
             }
-            let loaded = model.map(|path| load_model(&path, n));
+            let loaded = model.map(|path| load_model(&path, n, allow_n_mismatch));
             let (scorer, desc) = match &loaded {
                 Some(m) => (
                     Scorer::Learned { model: m, alpha },
@@ -397,7 +416,7 @@ fn main() -> ExitCode {
             jitter_seed,
         } => {
             let g = Graph::new(n);
-            let loaded = model.map(|path| load_model(&path, n));
+            let loaded = model.map(|path| load_model(&path, n, false));
             if let Some(m) = &loaded {
                 if m.n_features() > superperm::model::FEATURE_ORDER.len() {
                     eprintln!(
@@ -504,7 +523,7 @@ fn main() -> ExitCode {
             if let Some(path) = log {
                 write_log(&g, &t.path, &path);
             }
-            let loaded = model.map(|path| load_model(&path, n));
+            let loaded = model.map(|path| load_model(&path, n, false));
             let scorer = match (&loaded, bound) {
                 (Some(m), _) => Some(Scorer::Learned { model: m, alpha }),
                 (None, Some(b)) => Some(Scorer::Bound(b.into())),
@@ -552,7 +571,7 @@ fn main() -> ExitCode {
             out,
         } => {
             let g = Graph::new(n);
-            let loaded = model.map(|path| load_model(&path, n));
+            let loaded = model.map(|path| load_model(&path, n, false));
             let guide = loaded.as_ref().map(|m| Guide { model: m, alpha });
             let mdesc = match &loaded {
                 Some(m) => format!(" model={} alpha={alpha}", m.kind()),
