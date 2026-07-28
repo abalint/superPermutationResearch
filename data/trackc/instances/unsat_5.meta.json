@@ -1,0 +1,14 @@
+{
+ "K": 29,
+ "R": 112,
+ "Sigma": 14,
+ "V": 15,
+ "n": 7,
+ "name": "unsat_5",
+ "nchild": 5,
+ "ncols": 560,
+ "nrows": 2522,
+ "roots": 160,
+ "source": "farm_chains.jsonl[5] pattern=66466466646664664666466646666 UNSAT(CaDiCaL+Egan)",
+ "tag": "unsat_5_K29"
+}
