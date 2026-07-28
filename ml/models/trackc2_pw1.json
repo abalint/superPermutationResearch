@@ -1,0 +1,166 @@
+{
+ "feature_order": [
+  "sz_log",
+  "sz_rel",
+  "static_sz_log",
+  "is_root",
+  "grounded_c",
+  "pending_log",
+  "mean_child_load",
+  "min_child_load",
+  "frac_parents_grounded",
+  "active_cols_log"
+ ],
+ "coef": [
+  6.520209560802331,
+  -0.8648167490256661,
+  -0.08462672996797889,
+  0.0,
+  0.0,
+  -0.9191351311130845,
+  -0.17756279727664617,
+  -0.5202502145100241,
+  0.19307479084827403,
+  0.0
+ ],
+ "bias": 0.0,
+ "target": "ranknet(within-state pair, score = effort, lower wins)",
+ "mode": "pairwise",
+ "holdout": [
+  "chain160",
+  "chain7"
+ ],
+ "n_records": 2075271,
+ "n_train": 1775271,
+ "n_holdout": 300000,
+ "instances": [
+  "chain106",
+  "chain131",
+  "chain160",
+  "chain189",
+  "chain221",
+  "chain222",
+  "chain27",
+  "chain28",
+  "chain6",
+  "chain7",
+  "chain75",
+  "chain79",
+  "chain8",
+  "chain82",
+  "chain84",
+  "chain85"
+ ],
+ "l2": 1000.0,
+ "train_pair_acc": 0.7363377197058928,
+ "held_out_pair_acc": 0.7366166666666667,
+ "std_coef": [
+  1.5718573250326047,
+  -0.4286202586200679,
+  -0.029040260612635746,
+  0.0,
+  0.0,
+  -0.11507729430514553,
+  -0.05251154035881263,
+  -0.12319097987263156,
+  0.06767254369445012,
+  0.0
+ ],
+ "std_bias": 0.0,
+ "by_src": {
+  "probe": 2070284,
+  "transpo": 4987
+ },
+ "per_inst": {
+  "chain106": {
+   "n": 150000,
+   "held_out": false,
+   "pair_acc": 0.7340266666666667
+  },
+  "chain131": {
+   "n": 150000,
+   "held_out": false,
+   "pair_acc": 0.7330933333333334
+  },
+  "chain160": {
+   "n": 150000,
+   "held_out": true,
+   "pair_acc": 0.7396866666666667
+  },
+  "chain189": {
+   "n": 150000,
+   "held_out": false,
+   "pair_acc": 0.7356133333333333
+  },
+  "chain221": {
+   "n": 18694,
+   "held_out": false,
+   "pair_acc": 0.7370279233978817
+  },
+  "chain222": {
+   "n": 100552,
+   "held_out": false,
+   "pair_acc": 0.7377575781685098
+  },
+  "chain27": {
+   "n": 150000,
+   "held_out": false,
+   "pair_acc": 0.73826
+  },
+  "chain28": {
+   "n": 150000,
+   "held_out": false,
+   "pair_acc": 0.7375466666666667
+  },
+  "chain6": {
+   "n": 150000,
+   "held_out": false,
+   "pair_acc": 0.7349533333333333
+  },
+  "chain7": {
+   "n": 150000,
+   "held_out": true,
+   "pair_acc": 0.7335466666666667
+  },
+  "chain75": {
+   "n": 150000,
+   "held_out": false,
+   "pair_acc": 0.7365733333333333
+  },
+  "chain79": {
+   "n": 150000,
+   "held_out": false,
+   "pair_acc": 0.7356533333333334
+  },
+  "chain8": {
+   "n": 150000,
+   "held_out": false,
+   "pair_acc": 0.7350133333333333
+  },
+  "chain82": {
+   "n": 6025,
+   "held_out": false,
+   "pair_acc": 0.7409128630705394
+  },
+  "chain84": {
+   "n": 150000,
+   "held_out": false,
+   "pair_acc": 0.7366133333333333
+  },
+  "chain85": {
+   "n": 150000,
+   "held_out": false,
+   "pair_acc": 0.7411466666666666
+  }
+ },
+ "per_src_held": {
+  "probe": {
+   "n": 298740,
+   "pair_acc": 0.737407109861418
+  },
+  "transpo": {
+   "n": 1260,
+   "pair_acc": 0.5492063492063493
+  }
+ }
+}

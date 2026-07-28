@@ -6,6 +6,72 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-28 (session 19) — Track C v2 BUILT AND GATED in one session: learned COLUMN choice, v2.1 within-state pairwise training, **G2v2 formal GO (median 1.50×, Δ=0)** with the real finding being K-CLASS CANONICALIZATION; farm PC OOM-wedged mid-sweep (recoverable); two urdvr Lean results landed (LB 869/5888; lift theorem S(n)≤Egan(n)−1 ∀n≥8)
+
+Full results ledger: `analysis/trackc/RESULTS-s19.md`. Spec (with every
+deviation recorded): `docs/TRACKC2-DESIGN.md`. Ops conventions born of this
+session's failures: `docs/OPERATIONS.md`. Pipeline runbook:
+`analysis/trackc/WORKFLOW-V2.md`.
+
+**Built (all committed):** dlx7g grew `--col-weights/--col-delta` (learned
+column choice inside the MRV band C*_Δ), `--col-epsilon`, `--log-subtrees`
+(dead-end mining: every backtracked subtree is an exact effort label, even in
+TIMEOUT runs), `--dump-col-features`, `--mrv-stats`; v2.1 added `shash`
+(placed-row-set Zobrist) and `--probe-rate/--probe-cap` (counterfactual
+same-state column probes — the strong-branching analog). Python: colfeat.py
+(10-feature extractor, parity **byte-clean** vs C, 1300 lines), mine_subtrees
+(+`--pairs`), mine_stream.py (O(1)-memory miner, byte-identical output),
+fit_col_effort.py (ridge + pairwise IRLS RankNet). Flagless engine bit-exact
+vs v1 (21,627 / 8,548,527 pins), Windows build reproduces exactly.
+
+**Measured:** M0: MRV ties at 62–74% of decision nodes (Δ=0 is live); zero-
+weight Δ=1 alone finds the n6std cover 10.6× faster. Smoke regression model =
+honest negative (chain 26 2.7× WORSE — effort regression conflates state
+hardness with choice quality) → v2.1 pairwise redesign. M1: within-run
+transpositions structurally impossible (DLX never revisits a state); probes
+yield 150–177k pairs/min at 1.4–1.6× overhead. G2v2 blind baselines complete
+on the farm (8/8 EXHAUSTED, chain 25 cross-platform bit-repro).
+
+**G2v2 (local corpus, 16 train chains, eval never trained on): pw1 Δ=0 GO on
+the letter — median 1.501×, worst 1.61×.** But the mechanism is K-class
+canonicalization, not per-instance insight: guided counts collapse to
+K-determined values (5/25 both K=29 → 96.4M±0.03%; 26/73 both K=30 →
+10.88M±0.004%) while blind differs 2.7–3.3× within those pairs; equal-size
+pair acc is .52 (no within-band signal). Wins = expensive K-members pulled
+down to typical; losses = lucky-blind pulled up. Deployment answer:
+**portfolio (blind ∥ guided-Δ0, first exhaust wins)** — median 1.50×, worst
+1.0× by construction. G0 side note: pw1 Δ=1 finds the n6std cover in **77
+nodes** (vs 21,627) and Rust-validates to 872 — the SAT-side effect at n=6 is
+large; G1 (n7std) untested this session.
+
+**Farm incident:** sweep-1 (162 gen runs) died at 65/162 when the PC lost
+process creation (CLR 80004005) — root cause: worker bookkeeping slurped
+~200MB logs into PowerShell arrays ×20 workers. Everything is on-disk and
+resumable; gen2 (pairwise probe sweep, fixed workers) fully staged. NEEDS
+MANUAL REBOOT, then: clean ERROR- ledger rows → `tc2scale.ps1` → `tc2scale2.ps1`
+(runbook in OPERATIONS.md + REMOTE-FARM.md).
+
+**Field news (big day — both documented in ../extraDocs/ with our artifact
+reads):** (1) urdvr/Hunter Lean LB: **S(6)≥869, S(7)≥5888** — our windows are
+now {869..872} and [5888,5906]; their lem:tau3 PROVES our "forced period=n−2"
+conjecture for all k, lem:closure derives our f4≥4 penalty; their closure
+lemma permits 5 consecutive full-ride loops at n=7 vs our census patterns'
+max 4 → **audit kernelchain7's enumeration** (correctness-relevant). Best
+transferable: Bound-1 on the residual graph ⇒ admissible lb ~r(1+1/k+…) ≈ 869
+vs our ~840 at the n=6 root. (2) urdvr lift theorem: **S(n) ≤ Egan(n)−1 for
+all n≥8** (certificate-level induction; 6→7 provably fails; the 5906 record is
+OUTSIDE his liftable grammar — upper-bound mirror of our n=6 result). No E−3
+target exists in his program: **5905 remains ours alone.** Candidate DLX
+pruning rule: `StandardKernelHighMissingObstruction.lean`.
+
+**Next session:** (1) reboot PC → resume sweep-1 → gen2 pairwise sweep →
+retrain pw at 55-chain diversity (does within-band signal appear, or is
+canonicalization all there is?); (2) bounded G3 trial in PORTFOLIO mode on a
+slice of the 138 open chains (any exhaust = census closure); (3) G1: pw1 Δ=1
+on n7std given the 77-node n=6 SAT-side result; (4) kernelchain7 5-full-ride
+audit; (5) residual-graph Bound-1 admissible lb (search-side prize from the
+LB paper); (6) s16 Egan patch still unsent.
+
 ## 2026-07-28 (session 17b, overnight continuation) — census jumps 41 → **85/223 closed**: 52 chains are STRUCTURALLY uncoverable (zero-candidate column) and the farm's SAT pass missed 44 of them; merged multi-engine ledger committed; DLX sweep re-aimed at the 138 survivors
 
 Overnight continuation of s17's Track C session, after s18's pass-1 census

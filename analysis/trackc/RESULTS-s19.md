@@ -59,20 +59,52 @@ v2.1 within-state pairwise data (§3b of the design).
 
 ## G2v2 — blind baselines (farm, complete) and gate
 
-| chain | K | blind nodes | guided Δ=0 | guided Δ=1 |
-|---|---|---|---|---|
-| 5 | 29 | 60,037,516 | TBD | TBD |
-| 25 | 29 | 199,733,787 | TBD | TBD |
-| 26 | 30 | 8,548,527 | TBD | TBD |
-| 43 | 30 | 4 (trivial) | — | — |
-| 72 | 30 | 5 (trivial) | — | — |
-| 73 | 30 | 23,257,326 | TBD | TBD |
-| 74 | 30 | 1,450,087 | TBD | TBD |
-| 76 | 31 | 12,030,955 | TBD | TBD |
+Corpus (local Mac, farm down): 16 train chains × 2 ε-seeds, probes 0.02/20k —
+2.92G main nodes, 105.4M records, 40.1M pairs mined, capped to 2.08M pairs /
+2.0M records. Training (holdout chain160 + chain7, 300k held-out pairs):
+**pw1** pairwise acc .7366 held-out — but **.5217 on equal-size pairs**
+(n=78k; the Δ=0-relevant number — the within-band signal is ~nil at
+16-instance scale); **reg1** regression R² +.614, ρ +.653. Both dominated by
+`sz_log` (+1.57σ): the models mostly rediscover MRV.
 
-**[PLACEHOLDER — local pipeline in flight: survey → probe generation (~16
-train chains × 2 ε-seeds) → pairwise + regression training → guided eval.
-GO = median ≥1.3× over the six non-trivial chains, no >2× blowup.]**
+G0 with pw1: n6std Rust-validated **872** at Δ=0 (20,433 nodes) and Δ=1
+(**77 nodes** vs 21,627 blind — the band + learning is dramatic on the SAT
+side at n=6). All 19 eval runs EXHAUSTED, zero SAT, zero caps:
+
+| chain | K | blind nodes | pw1 Δ=0 | pw1 Δ=1 | reg1 Δ=0 |
+|---|---|---|---|---|---|
+| 5 | 29 | 60,037,516 | 96,418,644 (0.62×) | 103,133,961 (0.58×) | — |
+| 25 | 29 | 199,733,787 | 96,478,318 (2.07×) | 103,115,674 (1.94×) | — |
+| 26 | 30 | 8,548,527 | 10,882,825 (0.79×) | 12,385,270 (0.69×) | 12,382,372 (0.69×) |
+| 43 | 30 | 4 | 4 | 4 | — |
+| 72 | 30 | 5 | 4 | 4 | — |
+| 73 | 30 | 23,257,326 | 10,883,265 (2.14×) | 12,385,772 (1.88×) | — |
+| 74 | 30 | 1,450,087 | 1,557,546 (0.93×) | 1,871,908 (0.77×) | 1,858,686 (0.78×) |
+| 76 | 31 | 12,030,955 | 5,479,218 (2.20×) | 5,289,245 (2.27×) | 6,089,472 (1.98×) |
+
+**Verdict: pw1 Δ=0 GO on the letter of the gate** — median 1.501× over the
+six non-trivial chains, worst blowup 1.61× (chain 5) < 2×. Δ=1: median
+1.326×, worst 1.72× — strictly dominated by Δ=0, not deployed. reg1 weaker
+on all three spot checks, as the smoke run predicted.
+
+**The finding that matters more than the median — K-class collapse.** Under
+the learned policy, node counts converge to K-determined values: 5 and 25
+(both K=29) exhaust at 96,418,644 / 96,478,318 (Δ=0); 26 and 73 (both K=30)
+at 10,882,825 / 10,883,265 — while blind those pairs differ 3.3× and 2.7×.
+The learned column order is near-instance-independent: it CANONICALIZES the
+DFS per K-class rather than exploiting per-instance structure. The 2.1× wins
+are the expensive member of each K-pair being pulled down to the K-typical
+size; the losses are lucky-blind instances pulled up to it. Consistent with
+equal-size pair acc ≈ .52: there is (as yet) no within-band per-instance
+signal, but there IS a stable, variance-collapsing canonical order.
+
+**Deployment implication:** the honest mode is a PORTFOLIO — run blind and
+guided-Δ0 side by side per chain, take the first EXHAUSTED. On the eval set
+that portfolio yields min(blind, guided) everywhere: median 1.50×, worst
+case exactly 1.0×, blowup impossible by construction. G3/pass-2 should be a
+bounded trial in this mode (the 138 open chains all have unknown blind tree
+sizes — precisely the population where variance collapse to K-typical size
+could convert TIMEOUTs into census closures).
 
 ## Infrastructure incident (documented for the record)
 

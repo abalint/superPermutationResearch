@@ -22,6 +22,14 @@ absolute pivot confinement; max V = 8, all 12 optimal chains fail the cover —
 exhaustive proofs). Sub-872 must leave the grammar. Next: **Track A** (n=7 max-V₇
 campaign — V₇ ≥ 15 + cover beats 5906), **Track B** (sojourn-level out-of-grammar
 search at n=6), **Track C** (learned partial-certificate evaluator — the thesis).
+**Track C v2 GATED s19** (`docs/TRACKC2-DESIGN.md`, `analysis/trackc/RESULTS-s19.md`,
+`analysis/trackc/WORKFLOW-V2.md`, `docs/OPERATIONS.md`): learned COLUMN choice built,
+parity byte-clean, **G2v2 formal GO (median 1.50× at Δ=0, no >2× blowup)** — but the
+mechanism is K-class canonicalization (guided node counts collapse to K-typical
+values), so deployment is PORTFOLIO mode (blind ∥ guided-Δ0, first exhaust wins;
+worst case 1.0× by construction); pw1 Δ=1 finds the n6std cover in **77 nodes** vs
+21,627 blind (SAT-side lead for G1, untested at n=7); farm PC needs manual reboot
+(sweep-1 65/162, resumable; gen2 pairwise sweep fully staged — see JOURNAL s19).
 **Track C v1 landed s17** (`docs/TRACKC-DESIGN.md`, `analysis/trackc/RESULTS-s17.md`):
 guided DLX row ordering works in principle (22× on n=6, real cross-n transfer) but
 NO-GO on the n=7 cover gates at 60 min; v2 lever = learned column choice. Side
