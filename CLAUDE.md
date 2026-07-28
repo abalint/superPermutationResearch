@@ -13,7 +13,8 @@ planned learned value function.
 4. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 
 Current state in one line: **phase 3 underway, items 1–4 done, item 5 step 2
-proven out at n=6; n=7 record hunt running on a remote farm (JOURNAL s14) (JOURNAL s11, `docs/ITEM5-DESIGN.md`, `analysis/kernelchain/`)**
+proven out at n=6; n=7 record hunt running on a remote farm (JOURNAL s11 + s14,
+`docs/ITEM5-DESIGN.md`, `analysis/kernelchain/`, `analysis/cover7/REMOTE-FARM.md`)**
 — headline: **Egan−1 = 872 is optimal in the gain-one certificate grammar at n=6**
 (skip-priced ledger waste = 148 − K/4 + Σskip/4 + f4 + 2f5; forced-map period 4;
 absolute pivot confinement; max V = 8, all 12 optimal chains fail the cover —
