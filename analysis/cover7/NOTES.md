@@ -46,6 +46,12 @@
 - All 8 palindromic V=15 chains (K<=31): NO 2-fold symmetric cover
   (sym_sat.py UNSAT; cross-validated by PermutationChains symmPairs
   'unviable' on chain 2). Egan's 2SYMM method cannot reach 5905 from these.
+- SCOPE OF THE s15/s16 BUG (read before discarding anything): the two
+  PermutationChains defects are fatal only under the MSVC/UCRT build. macOS
+  (clang) output is byte-identical before and after the patch, so
+  PermutationChains results obtained ON THE MAC — including the symmPairs
+  cross-validation above — REMAIN VALID. Only the pre-fix Windows farm output
+  is void (it wrote zero solution files by construction).
 - [RETRACTED s16 — see docs/JOURNAL.md] "PermutationChains asym coverFirst on
   chain 0: DXL reached minColsLeft=0 — EXACT COVERS OF CHAIN 0 EXIST; process
   then died silently." BOTH claims are false: coverFirst does not crash (chain 0
