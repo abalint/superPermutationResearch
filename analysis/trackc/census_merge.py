@@ -40,6 +40,8 @@ def main():
     dlx = {}
     if os.path.exists(DLX):
         for r in csv.DictReader(open(DLX)):
+            if not (r["index"] or "").isdigit():  # trailing SWEEP COMPLETE marker
+                continue
             dlx[int(r["index"])] = r["verdict"]
 
     sat_alerts = []

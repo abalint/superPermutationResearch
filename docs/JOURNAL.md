@@ -62,11 +62,19 @@ minutes — median 1.85 min in pass 1), 4 nice'd workers, resumable CSV at
 validation, never auto-believed. Expected yield is modest; the point is that
 no open chain goes un-attempted by the second engine family.
 
-**Next session:** (1) tally the finished DLX sweep + rerun `census_merge.py`,
-commit the updated merged CSV; (2) reconcile satworker's encoding with
-`chain7` (chain 34 is the 1-second test case); (3) Track C v2 (learned column
-choice) per `analysis/trackc/RESULTS-s17.md`; (4) pass 2 on the 138 survivors
-should lead with symmetry reduction, the one method that ever worked at n=7.
+**Sweep FINISHED (07:05 next morning): all 133 remaining open chains
+attempted by DLX — 133/133 TIMEOUT at 10 min, no SAT, no new closures.**
+Every one of the 223 census chains has now been attempted by both engine
+families; the ledgers are committed (`analysis/cover7/results_n7_merged.csv`
++ the raw DLX ledger `results_n7_dlx_sweep.csv`). Final census: **85 closed
+(52 structural, 33 search-UNSAT), 138 open, both engines agreeing the
+survivors are out of reach of blind complete search at these budgets.**
+
+**Next session:** (1) Track C v2 (learned column choice, dead-end mining) per
+`analysis/trackc/RESULTS-s17.md`; (2) pass 2 on the 138 survivors should lead
+with symmetry reduction, the one method that ever worked at n=7 (satworker's
+encoder fix is in but changes nothing for the survivors — their CNFs were
+already canonical); (3) the s16 upstream patch to Egan remains unsent.
 
 ## 2026-07-28 (session 18) — n=7 refutation pass 1 COMPLETE: 223/223 chains attempted, **41 unconditionally refuted**, 182 undecided at the 30-min budget, no SAT
 
