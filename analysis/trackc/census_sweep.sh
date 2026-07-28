@@ -64,7 +64,10 @@ run_one() {
 }
 
 # Work queue: indices 5..222 not already in the CSV.
-for idx in $(seq 5 222); do
+# If runs/census/worklist.txt exists (one index per line), sweep exactly those;
+# else the full range. Already-recorded indices are skipped either way.
+if [ -f "$OUT/worklist.txt" ]; then QUEUE=$(cat "$OUT/worklist.txt"); else QUEUE=$(seq 5 222); fi
+for idx in $QUEUE; do
   grep -q "^${idx}," "$CSV" && continue
   while [ "$(jobs -rp | wc -l)" -ge "$WORKERS" ]; do wait -n; done
   run_one "$idx" &

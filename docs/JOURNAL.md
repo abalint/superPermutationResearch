@@ -6,6 +6,56 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-28 (session 17b, overnight continuation) — census jumps 41 → **85/223 closed**: 52 chains are STRUCTURALLY uncoverable (zero-candidate column) and the farm's SAT pass missed 44 of them; merged multi-engine ledger committed; DLX sweep re-aimed at the 138 survivors
+
+Overnight continuation of s17's Track C session, after s18's pass-1 census
+landed. The local dlx7g sweep's first 37 chains held a surprise: 3 "UNSAT in
+under a second" verdicts (chains 34/37/41, K=30) on chains the farm's CaDiCaL
+ran 30 minutes on and left undecided. Investigation: those instances each have
+a **zero-candidate column** in the canonical formulation
+(`chain7.build_instance_from_chain`) — no rows can cover one orbit, so no cover
+exists, unconditionally. That is s13's structural-refutation mechanism; the
+farm worklist evidently never got the prefilter.
+
+**Running the structural test over all 223 worklist chains: 52 are structurally
+uncoverable** (14 × K=30, 38 × K=31; indices in
+`analysis/cover7/results_n7_merged.csv`), of which **44 are new closures**
+beyond CaDiCaL's 41. Merged census (`analysis/trackc/census_merge.py`, output
+`analysis/cover7/results_n7_merged.csv`, precedence STRUCTURAL > UNSAT > OPEN,
+any SAT surfaced loudly): **STRUCTURAL 52 + UNSAT 33 = 85/223 closed; 138 OPEN**
+(5 × K=27, 19 × K=29, 30 × K=30, 84 × K=31).
+
+**Discrepancy flagged, worth a look**: an exactly-one SAT constraint over an
+empty candidate set should be instantly UNSAT, yet satworker's CaDiCaL runs
+burned 30 min on structurally-dead chains. Either satworker builds its instance
+by a different (more liberal) rule than `chain7` — in which case its verdicts
+describe a different formulation and the encodings should be reconciled — or
+its encoder skips empty columns. Next farm session should check
+`satworker.py`'s instance construction against `chain7` on chain 34 before
+trusting pass-2 budgets. (The structural closures themselves do not depend on
+this: they are proved in the canonical formulation that all our ledger claims
+use.)
+
+**Engine-agreement datum**: within the 37 chains both engines attempted, zero
+dominance either way — DLX never closed a non-structural chain CaDiCaL
+couldn't, and never timed out where CaDiCaL succeeded. The two encodings
+appear to hit the same wall, which sharpens s18's conclusion: the 138
+survivors need a different *method* (symmetry reduction, Track C v2 column
+learning, better encodings), not more budget.
+
+**Local sweep re-aimed**: now iterating exactly the 138 open chains
+(worklist mode in `census_sweep.sh`), 10-min caps (decidable chains die in
+minutes — median 1.85 min in pass 1), 4 nice'd workers, resumable CSV at
+`analysis/trackc/runs/census/results.csv`. Any exit-0 SAT is flagged for
+validation, never auto-believed. Expected yield is modest; the point is that
+no open chain goes un-attempted by the second engine family.
+
+**Next session:** (1) tally the finished DLX sweep + rerun `census_merge.py`,
+commit the updated merged CSV; (2) reconcile satworker's encoding with
+`chain7` (chain 34 is the 1-second test case); (3) Track C v2 (learned column
+choice) per `analysis/trackc/RESULTS-s17.md`; (4) pass 2 on the 138 survivors
+should lead with symmetry reduction, the one method that ever worked at n=7.
+
 ## 2026-07-28 (session 18) — n=7 refutation pass 1 COMPLETE: 223/223 chains attempted, **41 unconditionally refuted**, 182 undecided at the 30-min budget, no SAT
 
 The PC farm finished its first full sweep of the V₇=15 census. Ledger committed

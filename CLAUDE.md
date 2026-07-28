@@ -51,8 +51,13 @@ Claude session. Operating runbook: `analysis/cover7/REMOTE-FARM.md`; scripts:
 **Pass 1 is COMPLETE (s18): 223/223 chains attempted, 41 unconditionally
 refuted, 182 undecided at 30 min, no SAT** — census committed at
 `analysis/cover7/results_n7_pass1.csv`. Decidable chains are fast (median 1.85
-min, 25/41 under 5 min), so the 182 survivors need a better *method*, not a
-bigger budget. The farm is currently IDLE.
+min, 25/41 under 5 min), so the survivors need a better *method*, not a
+bigger budget. The farm is currently IDLE. **s17b update: the merged
+multi-engine census is `analysis/cover7/results_n7_merged.csv` — 85/223
+closed (52 structural zero-candidate-column refutations, 44 of them missed by
+the SAT pass; 33 search-UNSAT), 138 open.** Before pass 2, reconcile
+satworker's encoding with `chain7` (chain 34 should be instant UNSAT; see
+JOURNAL s17b).
 It runs a CaDiCaL **refutation** engine; ledger
 `F:\superpermFarm\results.csv`. UNSAT = a chain unconditionally closed; a SAT
 would be a candidate **world record**, auto-compiled and then validated with
