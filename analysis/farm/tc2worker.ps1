@@ -67,7 +67,9 @@ foreach ($line in $lines) {
     if ($verdict -eq "SOLVED") { $verdict = "SAT-CANDIDATE" }
     $jl = "$ROOT\gen\$jid.jsonl"
     $recs = 0
-    if (Test-Path $jl) { $recs = @(Get-Content $jl -EA SilentlyContinue).Count }
+    # size in MB, not a line count: slurping the ~200MB JSONL into a PS array
+    # x20 workers is what OOM-wedged the box on 2026-07-28 (see OPERATIONS.md)
+    if (Test-Path $jl) { $recs = [math]::Round((Get-Item $jl).Length / 1MB, 1) }
     $row = "$jid,$inst,$verdict,$rc,$nodes,$maxd,$secs,$recs,$me"
 
     Set-Content -Path "$ROOT\results.d\$jid.csv" -Value $row
