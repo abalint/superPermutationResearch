@@ -1,0 +1,58 @@
+{
+ "feature_order": [
+  "min_child_sz_log",
+  "mean_child_sz_log",
+  "scarce_children",
+  "parent_is_root",
+  "parent_grounded",
+  "parent_depth_log",
+  "static_min_child_log",
+  "grounds_pending"
+ ],
+ "coef": [
+  0.0,
+  -2.6829537246299324,
+  -0.1579406053171768,
+  -0.40663609796049405,
+  0.655285430622157,
+  0.07332607539198732,
+  0.19478099074085678,
+  -0.7388358384409132
+ ],
+ "bias": 6.087265916782334,
+ "train": {
+  "files": [
+   "data/trackc/corpus_n6.jsonl",
+   "data/trackc/corpus_5907.jsonl"
+  ],
+  "n_pairs": 19325,
+  "n_train_pairs": 16995,
+  "n_held_out_pairs": 2330,
+  "n_covers": 299,
+  "n_held_out_covers": 31,
+  "l2": 0.0003,
+  "held_out_pair_acc": 0.5450643776824035,
+  "train_pair_acc": 0.5457487496322447,
+  "held_out_pair_acc_learnable": 0.6094049904030711,
+  "train_pair_acc_learnable": 0.6182096913950543,
+  "random_weight_pair_acc_learnable": 0.5113243761996161,
+  "zero_within_node_variance": [
+   "min_child_sz_log"
+  ],
+  "held_out_top1": 0.6204954954954955,
+  "train_top1": 0.6537684088940225,
+  "random_weight_pair_acc": 0.4573390557939915,
+  "degenerate_pair_frac": 0.1158085381630013,
+  "std_coef": [
+   0.0,
+   -1.1345214785291136,
+   -0.01786957056455117,
+   -0.10324018577779252,
+   0.2366267917802298,
+   0.025049105606304748,
+   0.027674808462715764,
+   -0.08326438116232339
+  ],
+  "eval": {}
+ }
+}
