@@ -36,8 +36,27 @@ distribution of |C*_0|, |C*_1| on n6std, two refuted n=7 chains, and n7std (node
 capped). If MRV ties are rare (< 10% of nodes), Δ=0 is inert and Δ=1 becomes the
 training/deployment default. Record the numbers here once measured.
 
-M0 RESULT: *to be filled in from the `--mrv-stats` measurement before training
-begins — do not train until this section has numbers.*
+M0 RESULT (measured s19, `dlx7g --mrv-stats`, `cc -O2`, Mac; logs in
+`analysis/trackc/runs/v2/m0_*.log`). "decision nodes" = nodes that actually
+choose a column (total nodes minus dead ends / complete-cover leaves);
+percentages and medians are over decision nodes.
+
+| instance | run | nodes | decision nodes | % with \|C*_0\| ≥ 2 | median \|C*_0\| | median \|C*_1\| |
+|---|---|---|---|---|---|---|
+| n6std (SAT, first cover) | blind | 21,627 | 16,530 | **61.8 %** | 2 | 4 |
+| chain 5, K=29 (UNSAT) | blind exhaust | 60,037,516 | 48,768,668 | **73.2 %** | 3 | 8 |
+| chain 26, K=30 (UNSAT) | blind exhaust | 8,548,527 | 6,877,404 | **71.8 %** | 2 | 8 |
+| n7std K=5 | 1M-node cap | 1,000,001 | 827,334 | **73.9 %** | 3 | 10 |
+
+MRV ties are the common case, not the exception (62–74 % ≫ the 10 % inertness
+threshold), so **Δ = 0 is a live lever** and stays the strictly-safe default;
+Δ = 1 remains the measured relaxation of §7 (the band roughly doubles-to-triples
+the candidate set: median 2–3 → 4–10). Training may proceed.
+
+Early mechanism datum (not a gate): on n6std, `--col-delta 1` with an all-zero
+weight vector — i.e. pure "lowest column index inside the MRV+1 band" — finds
+the 25-row cover in **2,044 nodes vs 21,627 blind (10.6×)**, confirming the band
+carries real, exploitable choice before any learning.
 
 ## 2. Column feature vector — LOCKED, v2 (order matters; 10 features)
 
@@ -70,6 +89,18 @@ Score = `dot(w, f) + b` = predicted log-effort; cover the candidate with the
 text, line 1 = `trackc-cw1 10`, line 2 = 10 floats then bias (standardization
 folded in by the trainer). Companion JSON exported for the Python side
 (`feature_order`, `coef`, `bias`, `target`, training metadata).
+
+Conventions settled during the build (binding, parity surface):
+- Feature 4 `is_root` is a literal membership test on column ids. In every
+  instance we build, root orbits are not columns (roots appear only as
+  `parent = -1` on rows), so f4 ≡ 0.0 — a dead feature kept for slot
+  stability (v1 precedent: `min_child_sz_log`). The trainer must guard
+  zero-variance columns when folding standardization.
+- Parity dump format: one line per active column in ascending column id,
+  `node_idx col_id f1 ... f10` at %.6f, no header lines; node_idx from 0.
+- `sz_rel` uses min over ALL active columns (node-level MRV min), not the band.
+- Degenerate `size[c]==0`: f7/f8/f9 = 0.0. Covered columns read as size 0
+  (the C engine's stale `SZ[]` on inactive columns must not leak in).
 
 **Parity gate (mandatory, blocks training):** teacher-forced replay of the n=6
 standard 25-row cover (same trace file as v1), column policy fixed at plain MRV
@@ -145,6 +176,19 @@ nodes; n6std blind cover at 21,627 nodes).
 - `--dump-col-features <trace>`: parity mode (§2).
 - `--mrv-stats`: M0 counters, printed at exit to stderr.
 - v1 row `--weights` continues to work and composes with column choice.
+
+Build notes settled s19 (binding):
+- `--col-epsilon` uses its own xorshift stream seeded from `--col-seed` and does
+  **not** arm the v1 node-cap restart machinery (only row `--epsilon` does).
+  Generation runs are therefore a single DFS pass, which is what subtree mining
+  needs: a restart would censor every frame still on the stack.
+- `--log-subtrees` records `cand` = the size of the candidate set actually used
+  at that node (|C*_Δ| normally, |C*_1| on an ε-exploration node).
+- The 1/1024 small-subtree sample is `splitmix64(entry_node_index ^ (col<<32) ^
+  (depth<<8)) & 1023 == 0` — deterministic and reproducible per run.
+- Verified s19: flagless = 21,627 (n6std) / 8,548,527 (chain 26); all-zero
+  `--col-weights` with Δ=0 reproduces both exactly (ties → lowest column index
+  ≡ MRV); column parity dump byte-clean vs the Python extractor.
 
 Driver: `analysis/trackc/solve_guided.py` grows `--col-weights/--col-delta`
 passthrough; any found cover still MUST pass `check_cover` →

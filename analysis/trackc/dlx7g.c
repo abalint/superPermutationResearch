@@ -15,6 +15,11 @@
  *   dlx7g <instance.txt> [--weights f] [--epsilon p] [--seed s]
  *         [--time-limit sec] [--max-nodes N] [--dump-features f]
  *         [--out f] [--first-only] [--progress-nodes N]
+ *         [--col-weights f] [--col-delta d] [--col-epsilon p] [--col-seed s]
+ *         [--log-subtrees f] [--dump-col-features f] [--mrv-stats]
+ *
+ * v2 (docs/TRACKC2-DESIGN.md §5): learned COLUMN choice.  Every new behavior is
+ * flag-gated; with none of the v2 flags the search is bit-identical to v1.
  *
  * build: cc -O2 -o dlx7g dlx7g.c -lm
  */
@@ -26,12 +31,27 @@
 #include <limits.h>
 
 #define NFEAT 8
+#define NCFEAT 10
 
 /* ------------------------------------------------------------------ rng */
 static unsigned long long rng_state = 88172645463325252ull;
 static unsigned long long xrand(void){
     rng_state ^= rng_state << 13; rng_state ^= rng_state >> 7;
     rng_state ^= rng_state << 17; return rng_state;
+}
+
+/* independent stream for column exploration (must not perturb the row rng) */
+static unsigned long long col_rng_state = 88172645463325252ull;
+static unsigned long long col_rand(void){
+    col_rng_state ^= col_rng_state << 13; col_rng_state ^= col_rng_state >> 7;
+    col_rng_state ^= col_rng_state << 17; return col_rng_state;
+}
+
+static unsigned long long splitmix64(unsigned long long x){
+    x += 0x9E3779B97F4A7C15ull;
+    x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9ull;
+    x = (x ^ (x >> 27)) * 0x94D049BB133111EBull;
+    return x ^ (x >> 31);
 }
 
 #ifdef _WIN32
@@ -53,6 +73,7 @@ static int ncols, nrows, nloops, nchild;
 static int *row_loop, *row_parent;   /* per row */
 static int *row_child;               /* nrows*nchild */
 static double *static_min_child_log; /* per row, feature 7 */
+static double *static_col_log;       /* per col, column feature 3 */
 static int max_col_sz;               /* max initial column size */
 static int depth_bound;              /* ncols/nchild + slack */
 
@@ -60,7 +81,7 @@ static int depth_bound;              /* ncols/nchild + slack */
 static int *L, *R, *U, *D, *C, *ROWID, *SZ;
 static int head;
 static int *sol; static int nsol;
-static long long nodes, node_cap;
+static long long nodes, node_cap, grand_nodes;
 static double deadline;
 static long long stat_cycle_prunes, stat_dead_ends, stat_rootless;
 static int max_depth_attempt, max_depth_ever;
@@ -70,6 +91,22 @@ static double W[NFEAT], Wbias;
 static int have_weights = 0;
 static double epsilon_p = 0.0;
 static unsigned long long epsilon_thresh = 0; /* xrand() < thresh -> shuffle */
+
+/* v2 column guidance (docs/TRACKC2-DESIGN.md §2) */
+static double CW[NCFEAT], CWbias;
+static int have_colw = 0;
+static int col_delta = 0;
+static double col_epsilon_p = 0.0;
+static unsigned long long col_eps_thresh = 0; /* col_rand() < thresh -> explore */
+static int col_scan = 0;        /* any v2 per-node column work required */
+static int mrv_stats = 0;
+static FILE *subtree_fp = NULL;
+static char inst_tag[256] = "inst";
+
+/* M0 counters (--mrv-stats) */
+#define MRVH 512                 /* last bucket is the >= MRVH-1 overflow */
+static long long mrv_dec_nodes, mrv_tie_nodes;
+static long long mrv_h0[MRVH], mrv_h1[MRVH];
 
 /* forest state: loop -> parent loop (or ROOTMARK) ; col -> covering row */
 #define NOPAR -1
@@ -286,6 +323,52 @@ static double score_row(int rid){
     return s;
 }
 
+/* Column feature vector per docs/TRACKC2-DESIGN.md §2, LOCKED order (10).
+ * Evaluated on the node state BEFORE cover(c) (v1 timing rule), O(size[c]*nchild).
+ * `min_size` is the node's MRV minimum, `nactive` its active-column count.
+ *
+ * Feature 4 (`is_root`) is identically 0.0 on every instance we build: the
+ * builders (gain1.build_instance / chain7.build_instance_from_chain) subtract
+ * the kernel root orbits OUT of the column set, so no column is ever a root
+ * orbit.  Kept in the vector to hold the LOCKED slot (see report/§2 note).
+ */
+static void col_features(int c, int min_size, int nactive, double *f){
+    double sum_mean = 0.0, min_all = 0.0;
+    int have_min = 0, nr = 0, ng = 0;
+    for (int i = D[c]; i != c; i = D[i]){
+        int rid = ROWID[i];
+        double s = 0.0, mn = 0.0;
+        for (int k = 0; k < nchild; k++){
+            int x = row_child[rid*nchild + k];
+            /* a covered (inactive) child contributes log1p(0) = 0.0 */
+            double v = (covered_by[x] >= 0) ? 0.0 : log1p((double)SZ[x]);
+            s += v;
+            if (k == 0 || v < mn) mn = v;
+        }
+        sum_mean += s / (double)nchild;
+        if (!have_min || mn < min_all){ min_all = mn; have_min = 1; }
+        int po = row_parent[rid];
+        if (po == -1 || grounded[po]) ng++;
+        nr++;
+    }
+    f[0] = log1p((double)SZ[c]);
+    f[1] = (double)(SZ[c] - min_size);
+    f[2] = static_col_log[c];
+    f[3] = 0.0;
+    f[4] = grounded[c] ? 1.0 : 0.0;
+    f[5] = log1p((double)pending[c]);
+    f[6] = nr ? sum_mean / (double)nr : 0.0;
+    f[7] = have_min ? min_all : 0.0;
+    f[8] = nr ? (double)ng / (double)nr : 0.0;
+    f[9] = log1p((double)nactive);
+}
+
+static double score_col(const double *f){
+    double s = CWbias;
+    for (int k = 0; k < NCFEAT; k++) s += CW[k]*f[k];
+    return s;
+}
+
 /* ------------------------------------------------------- candidate pools */
 static int *cand_pool;      /* depth_bound * max_col_sz */
 static double *score_pool;
@@ -324,6 +407,7 @@ static void maybe_progress(void){
 
 /* ----------------------------------------------------------------- search */
 static int search(int depth){
+    long long entry_nodes = nodes;   /* this node is counted by the ++ below */
     nodes++;
     if (nsol > max_depth_attempt){ max_depth_attempt = nsol; }
     if (nsol > max_depth_ever){ max_depth_ever = nsol; }
@@ -338,11 +422,58 @@ static int search(int depth){
         stat_rootless++;
         return 0;
     }
-    int best = -1, best_sz = 1<<30;
-    for (int j = R[head]; j != head; j = R[j])
+    int best = -1, best_sz = 1<<30, nactive = 0;
+    for (int j = R[head]; j != head; j = R[j]){
+        nactive++;
         if (SZ[j] < best_sz){ best_sz = SZ[j]; best = j; }
+    }
     if (best_sz == 0){ stat_dead_ends++; return 0; }
     int c = best;
+
+    /* ---------------------------------------- v2: column choice within C*_D */
+    double cfeat[NCFEAT];
+    int have_cfeat = 0, ncand_used = 0;
+    if (col_scan){
+        int n0 = 0, n1 = 0, nd = 0;
+        for (int j = R[head]; j != head; j = R[j]){
+            int s = SZ[j];
+            if (s == best_sz) n0++;
+            if (s <= best_sz + 1) n1++;
+            if (s <= best_sz + col_delta) nd++;
+        }
+        if (mrv_stats){
+            mrv_dec_nodes++;
+            if (n0 >= 2) mrv_tie_nodes++;
+            mrv_h0[n0 < MRVH ? n0 : MRVH-1]++;
+            mrv_h1[n1 < MRVH ? n1 : MRVH-1]++;
+        }
+        ncand_used = nd;
+        int explored = 0;
+        if (col_eps_thresh && col_rand() < col_eps_thresh){
+            int t = (int)(col_rand() % (unsigned long long)n1);
+            for (int j = R[head]; j != head; j = R[j])
+                if (SZ[j] <= best_sz + 1 && t-- == 0){ c = j; break; }
+            ncand_used = n1;
+            explored = 1;
+        }
+        if (!explored && have_colw){
+            double bests = 0.0; int first = 1;
+            double f[NCFEAT];
+            for (int j = R[head]; j != head; j = R[j]){
+                if (SZ[j] > best_sz + col_delta) continue;
+                col_features(j, best_sz, nactive, f);
+                double s = score_col(f);
+                if (first || s < bests){       /* ties -> lowest column index */
+                    bests = s; c = j; first = 0;
+                    memcpy(cfeat, f, sizeof(f)); have_cfeat = 1;
+                }
+            }
+        }
+        if (subtree_fp && !have_cfeat){
+            col_features(c, best_sz, nactive, cfeat);
+            have_cfeat = 1;
+        }
+    }
 
     /* collect candidates BEFORE covering c (feature state = partial cover) */
     int base = depth * max_col_sz;
@@ -386,6 +517,24 @@ static int search(int depth){
         if (res == -1){ uncover(c); return -1; }
     }
     uncover(c);
+    /* frame pop with the subtree fully exhausted -> an exact effort label
+     * (docs/TRACKC2-DESIGN.md §3).  Censored frames (timeout/cap via res==-1,
+     * solution path via res==1) return above and are never written. */
+    if (subtree_fp && have_cfeat){
+        long long sub = nodes - entry_nodes;
+        unsigned long long h = splitmix64((unsigned long long)entry_nodes
+                                          ^ ((unsigned long long)c << 32)
+                                          ^ ((unsigned long long)depth << 8));
+        if (sub >= 500 || (h & 1023ull) == 0ull){
+            fprintf(subtree_fp,
+                    "{\"inst\": \"%s\", \"depth\": %d, \"cand\": %d, \"col\": %d,"
+                    " \"feats\": [", inst_tag, depth, ncand_used, c);
+            for (int t = 0; t < NCFEAT; t++)
+                fprintf(subtree_fp, "%s%.6f", t ? ", " : "", cfeat[t]);
+            fprintf(subtree_fp, "], \"subtree\": %lld, \"outcome\": \"exhaust\"}\n",
+                    sub);
+        }
+    }
     return 0;
 }
 
@@ -444,6 +593,92 @@ static int dump_features(const int *cover_rows, int ncover, FILE *out){
     return 0;
 }
 
+/* ----------------------------------------------------- dump-col-features */
+/* Parity mode for the v2 column vector (§2): teacher-forced replay of a known
+ * cover with the column policy fixed at plain MRV (lowest index on ties); at
+ * every node print the 10-vector for EVERY active column.
+ * Format: one line per column, `node_idx col_id f1 .. f10` at %.6f. */
+static int dump_col_features(const int *cover_rows, int ncover, FILE *out){
+    int nodek = 0;
+    while (R[head] != head){
+        int best = -1, best_sz = 1<<30, nactive = 0;
+        for (int j = R[head]; j != head; j = R[j]){
+            nactive++;
+            if (SZ[j] < best_sz){ best_sz = SZ[j]; best = j; }
+        }
+        if (best_sz == 0){
+            fprintf(stderr, "dump-col-features: dead end at node %d (col %d)\n",
+                    nodek, best);
+            return 1;
+        }
+        int c = best;
+        for (int j = R[head]; j != head; j = R[j]){
+            double f[NCFEAT];
+            col_features(j, best_sz, nactive, f);
+            fprintf(out, "%d %d", nodek, j);
+            for (int t = 0; t < NCFEAT; t++) fprintf(out, " %.6f", f[t]);
+            fprintf(out, "\n");
+        }
+        /* place the cover row that covers c */
+        int pick = -1, picknode = -1;
+        for (int i = D[c]; i != c; i = D[i]){
+            int rid = ROWID[i];
+            for (int t = 0; t < ncover; t++)
+                if (cover_rows[t] == rid){ pick = rid; picknode = i; break; }
+            if (pick >= 0) break;
+        }
+        if (pick < 0){
+            fprintf(stderr, "dump-col-features: no cover row covers column %d "
+                    "at node %d\n", c, nodek);
+            return 1;
+        }
+        cover(c);
+        int ts;
+        if (!forest_push(pick, &ts)){
+            fprintf(stderr, "dump-col-features: cover row %d creates a cycle\n", pick);
+            return 1;
+        }
+        sol[nsol++] = pick;
+        for (int j = R[picknode]; j != picknode; j = R[j]) cover(C[j]);
+        nodek++;
+    }
+    fprintf(stderr, "dump-col-features: %d nodes, %d rows placed\n", nodek, nsol);
+    if (nsol != ncover)
+        fprintf(stderr, "dump-col-features: WARNING placed %d of %d cover rows\n",
+                nsol, ncover);
+    return 0;
+}
+
+/* ---------------------------------------------------------- M0 statistics */
+static double hist_median(const long long *h){
+    long long tot = 0;
+    for (int i = 0; i < MRVH; i++) tot += h[i];
+    if (!tot) return 0.0;
+    long long half = (tot + 1) / 2, run = 0;
+    for (int i = 0; i < MRVH; i++){
+        run += h[i];
+        if (run >= half) return (double)i;
+    }
+    return 0.0;
+}
+
+static void print_mrv_stats(void){
+    if (!mrv_stats) return;
+    fprintf(stderr, "[mrv-stats] inst=%s nodes=%lld decision_nodes=%lld "
+            "tie_nodes=%lld tie_frac=%.4f median_C0=%.1f median_C1=%.1f\n",
+            inst_tag, grand_nodes, mrv_dec_nodes, mrv_tie_nodes,
+            mrv_dec_nodes ? (double)mrv_tie_nodes/(double)mrv_dec_nodes : 0.0,
+            hist_median(mrv_h0), hist_median(mrv_h1));
+    for (int pass = 0; pass < 2; pass++){
+        const long long *h = pass ? mrv_h1 : mrv_h0;
+        fprintf(stderr, "[mrv-hist] |C*_%d|:", pass);
+        for (int i = 0; i < MRVH; i++)
+            if (h[i]) fprintf(stderr, " %d=%lld%s", i, h[i],
+                              (i == MRVH-1) ? "+" : "");
+        fprintf(stderr, "\n");
+    }
+}
+
 /* ----------------------------------------------------------- build links */
 static void build_links(void){
     int total = ncols + 1 + nrows*nchild;
@@ -489,7 +724,10 @@ static void usage(void){
     fprintf(stderr,
       "usage: dlx7g <instance.txt> [--weights f] [--epsilon p] [--seed s]\n"
       "             [--time-limit sec] [--max-nodes N] [--dump-features f]\n"
-      "             [--out f] [--first-only] [--progress-nodes N]\n");
+      "             [--out f] [--first-only] [--progress-nodes N]\n"
+      "             [--col-weights f] [--col-delta d] [--col-epsilon p]\n"
+      "             [--col-seed s] [--log-subtrees f] [--dump-col-features f]\n"
+      "             [--mrv-stats]\n");
 }
 
 static int load_weights(const char *fn){
@@ -513,11 +751,45 @@ static int load_weights(const char *fn){
     return 0;
 }
 
+static int load_col_weights(const char *fn){
+    FILE *fh = fopen(fn, "r");
+    if (!fh){ fprintf(stderr, "cannot open col-weights file %s\n", fn); return 1; }
+    char tag[64]; int nf = 0;
+    if (fscanf(fh, "%63s %d", tag, &nf) != 2){
+        fprintf(stderr, "bad col-weights header\n"); fclose(fh); return 1; }
+    if (strcmp(tag, "trackc-cw1") != 0 || nf != NCFEAT){
+        fprintf(stderr, "col-weights header must be 'trackc-cw1 %d' (got '%s %d')\n",
+                NCFEAT, tag, nf);
+        fclose(fh); return 1;
+    }
+    for (int i = 0; i < NCFEAT; i++)
+        if (fscanf(fh, "%lf", &CW[i]) != 1){
+            fprintf(stderr, "col-weights: need %d floats\n", NCFEAT);
+            fclose(fh); return 1; }
+    if (fscanf(fh, "%lf", &CWbias) != 1){
+        fprintf(stderr, "col-weights: missing bias\n"); fclose(fh); return 1; }
+    fclose(fh);
+    have_colw = 1;
+    return 0;
+}
+
+/* `.../runs/census/instances/wl_026.txt` -> `wl_026` (the JSONL `inst` tag) */
+static void set_inst_tag(const char *path){
+    const char *b = strrchr(path, '/');
+    b = b ? b + 1 : path;
+    size_t n = strlen(b);
+    if (n > 4 && !strcmp(b + n - 4, ".txt")) n -= 4;
+    if (n >= sizeof(inst_tag)) n = sizeof(inst_tag) - 1;
+    memcpy(inst_tag, b, n);
+    inst_tag[n] = '\0';
+}
+
 int main(int argc, char **argv){
     const char *inst_fn = NULL, *w_fn = NULL, *dump_fn = NULL, *out_fn = NULL;
+    const char *cw_fn = NULL, *cdump_fn = NULL, *sublog_fn = NULL;
     double tl = 3600.0;
     long long total_cap = 0;
-    unsigned long long seed = 0;
+    unsigned long long seed = 0, col_seed = 0;
     int first_only = 1;
 
     if (argc < 2){ usage(); return 1; }
@@ -534,8 +806,29 @@ int main(int argc, char **argv){
         else if (!strcmp(a, "--progress-nodes") && i+1 < argc)
             progress_nodes = atoll(argv[++i]);
         else if (!strcmp(a, "--first-only")) first_only = 1;
+        else if (!strcmp(a, "--col-weights") && i+1 < argc) cw_fn = argv[++i];
+        else if (!strcmp(a, "--col-delta") && i+1 < argc) col_delta = atoi(argv[++i]);
+        else if (!strcmp(a, "--col-epsilon") && i+1 < argc)
+            col_epsilon_p = atof(argv[++i]);
+        else if (!strcmp(a, "--col-seed") && i+1 < argc)
+            col_seed = strtoull(argv[++i], NULL, 10);
+        else if (!strcmp(a, "--log-subtrees") && i+1 < argc) sublog_fn = argv[++i];
+        else if (!strcmp(a, "--dump-col-features") && i+1 < argc)
+            cdump_fn = argv[++i];
+        else if (!strcmp(a, "--mrv-stats")) mrv_stats = 1;
         else { fprintf(stderr, "unknown option %s\n", a); usage(); return 1; }
     }
+    if (col_delta < 0) col_delta = 0;
+    if (col_epsilon_p < 0.0) col_epsilon_p = 0.0;
+    if (col_epsilon_p > 1.0) col_epsilon_p = 1.0;
+    if (col_epsilon_p > 0.0){
+        double t = col_epsilon_p * 18446744073709551616.0;
+        col_eps_thresh = (t >= 18446744073709551615.0) ? ULLONG_MAX
+                                                       : (unsigned long long)t;
+        if (col_eps_thresh == 0) col_eps_thresh = 1;
+    }
+    col_rng_state = col_seed*2654435761ull + 1442695040888963407ull;
+    if (col_rng_state == 0) col_rng_state = 88172645463325252ull;
     (void)first_only;  /* the search always stops at the first solution */
     if (!inst_fn){ usage(); return 1; }
     if (epsilon_p < 0.0) epsilon_p = 0.0;
@@ -588,6 +881,8 @@ int main(int argc, char **argv){
         }
         static_min_child_log[i] = log1p((double)mn);
     }
+    static_col_log = malloc((size_t)ncols*sizeof(double));
+    for (int c = 0; c < ncols; c++) static_col_log[c] = log1p((double)colsz[c]);
     free(colsz);
 
     depth_bound = ncols/nchild + 16;
@@ -607,19 +902,34 @@ int main(int argc, char **argv){
     trail = NULL; captrail = 0; ntrail = 0;
 
     if (w_fn && load_weights(w_fn)) return 1;
+    if (cw_fn && load_col_weights(cw_fn)) return 1;
+    set_inst_tag(inst_fn);
+    if (sublog_fn){
+        subtree_fp = fopen(sublog_fn, "w");
+        if (!subtree_fp){
+            fprintf(stderr, "cannot write subtree log %s\n", sublog_fn); return 1; }
+    }
+    col_scan = have_colw || col_eps_thresh || mrv_stats || subtree_fp;
 
     fprintf(stderr, "[dlx7g] %s: cols=%d rows=%d loops=%d nchild=%d "
             "maxcolsz=%d weights=%s eps=%g seed=%llu\n",
             inst_fn, ncols, nrows, nloops, nchild, max_col_sz-8,
             have_weights ? w_fn : "none", epsilon_p, (unsigned long long)seed);
+    if (col_scan)
+        fprintf(stderr, "[dlx7g] col: tag=%s colweights=%s delta=%d coleps=%g "
+                "colseed=%llu subtrees=%s mrvstats=%d\n",
+                inst_tag, have_colw ? cw_fn : "none", col_delta, col_epsilon_p,
+                (unsigned long long)col_seed, sublog_fn ? sublog_fn : "none",
+                mrv_stats);
 
     build_links();
     reset_state();
 
     /* ------------------------------------------------- dump-features mode */
-    if (dump_fn){
-        FILE *cf = fopen(dump_fn, "r");
-        if (!cf){ fprintf(stderr, "cannot open cover rows file %s\n", dump_fn); return 1; }
+    if (dump_fn || cdump_fn){
+        const char *trace_fn = dump_fn ? dump_fn : cdump_fn;
+        FILE *cf = fopen(trace_fn, "r");
+        if (!cf){ fprintf(stderr, "cannot open cover rows file %s\n", trace_fn); return 1; }
         int *cr = malloc((size_t)nrows*sizeof(int)); int ncr = 0, rid;
         while (fscanf(cf, "%d", &rid) == 1){
             if (rid < 0 || rid >= nrows){ fprintf(stderr, "bad row id %d\n", rid); return 1; }
@@ -629,13 +939,14 @@ int main(int argc, char **argv){
         FILE *out = stdout;
         if (out_fn){ out = fopen(out_fn, "w");
             if (!out){ fprintf(stderr, "cannot write %s\n", out_fn); return 1; } }
-        int rc = dump_features(cr, ncr, out);
+        int rc = dump_fn ? dump_features(cr, ncr, out)
+                         : dump_col_features(cr, ncr, out);
         if (out != stdout) fclose(out);
         return rc ? 1 : 0;
     }
 
     /* ------------------------------------------------------------ search */
-    long long grand_nodes = 0;
+    grand_nodes = 0;
     int attempt = 0;
     /* Deterministic single pass when epsilon == 0 (no randomness to re-roll).
      * With epsilon > 0 keep the node-cap restart machinery. */
@@ -665,6 +976,8 @@ int main(int argc, char **argv){
     }
 
     double el = now_s() - t_start;
+    if (subtree_fp){ fclose(subtree_fp); subtree_fp = NULL; }
+    print_mrv_stats();
     if (res == 1){
         FILE *out = stdout;
         if (out_fn){ out = fopen(out_fn, "w");

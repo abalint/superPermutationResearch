@@ -10,6 +10,8 @@ usage:
                                         # or a path to an instance .txt
   solve_guided.py --chains f.jsonl --index 3
   solve_guided.py n6std --weights w.txt --time-limit 600 --epsilon 0.05 --seed 2
+  solve_guided.py n6std --col-weights ml/models/trackc_cw1.txt --col-delta 1
+  solve_guided.py n6std --col-weights w.txt --col-epsilon 0.15 --col-seed 3
 
 exit: 0 validated (or verified cover when --no-compile); 2 exhausted;
       3 timeout; 4 compile/validate failure; 1 usage/setup error.
@@ -143,6 +145,18 @@ def run_engine(inst_path: str, args, out_path: str) -> tuple[int, str]:
         cmd += ["--epsilon", str(args.epsilon)]
     if args.max_nodes:
         cmd += ["--max-nodes", str(args.max_nodes)]
+    # Track C v2 (docs/TRACKC2-DESIGN.md §5): learned COLUMN choice.  These are
+    # independent of the v1 row flags above and compose with them; the
+    # validation pipeline below is unchanged, so a guided cover is still only
+    # believed after check_cover -> compile -> Rust validate.
+    if args.col_weights:
+        cmd += ["--col-weights", args.col_weights]
+    if args.col_delta:
+        cmd += ["--col-delta", str(args.col_delta)]
+    if args.col_epsilon:
+        cmd += ["--col-epsilon", str(args.col_epsilon)]
+    if args.col_seed:
+        cmd += ["--col-seed", str(args.col_seed)]
     print("[run] " + " ".join(cmd), flush=True)
     proc = subprocess.run(cmd)
     return proc.returncode, out_path
@@ -167,6 +181,14 @@ def main() -> int:
     ap.add_argument("--weights")
     ap.add_argument("--epsilon", type=float, default=0.0)
     ap.add_argument("--seed", type=int, default=0)
+    # v2 column-choice passthrough (docs/TRACKC2-DESIGN.md §5)
+    ap.add_argument("--col-weights", help="trackc-cw1 column weights file")
+    ap.add_argument("--col-delta", type=int, default=0,
+                    help="MRV band width for the learned column choice")
+    ap.add_argument("--col-epsilon", type=float, default=0.0,
+                    help="per-node exploration prob among C*_1 (generation)")
+    ap.add_argument("--col-seed", type=int, default=0,
+                    help="seed for --col-epsilon (independent of --seed)")
     ap.add_argument("--time-limit", type=float, default=600.0)
     ap.add_argument("--max-nodes", type=int, default=0)
     ap.add_argument("--outdir", default=".")
