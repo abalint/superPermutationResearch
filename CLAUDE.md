@@ -13,7 +13,7 @@ planned learned value function.
 4. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 
 Current state in one line: **phase 3 underway, items 1–4 done, item 5 step 2
-proven out at n=6 (JOURNAL s11, `docs/ITEM5-DESIGN.md`, `analysis/kernelchain/`)**
+proven out at n=6; n=7 record hunt running on a remote farm (JOURNAL s14) (JOURNAL s11, `docs/ITEM5-DESIGN.md`, `analysis/kernelchain/`)**
 — headline: **Egan−1 = 872 is optimal in the gain-one certificate grammar at n=6**
 (skip-priced ledger waste = 148 − K/4 + Σskip/4 + f4 + 2f5; forced-map period 4;
 absolute pivot confinement; max V = 8, all 12 optimal chains fail the cover —
@@ -35,6 +35,16 @@ moves; weave as a move, kernel as a parameter — Robin's thread reply + 5906
 boundary fact; tablebase becomes the terminal solver). Expert corpus: 298 distinct
 872s (`data/records872/` + `data/gain1_872s/`), Chaffin prefixes in
 `data/chaffin/`, field news in `../extraDocs/2026-07-27-urdvr-email-and-repo.md`.
+
+**Live compute (check this first if picking up cold):** an n=7 record search runs
+continuously on a remote 28-core Windows PC — 27 workers, independent of any
+Claude session. Operating runbook: `analysis/cover7/REMOTE-FARM.md`; scripts:
+`analysis/farm/`. Status in one line:
+`ssh transcribe "powershell -NoProfile -ExecutionPolicy Bypass -File F:\superpermFarm\status.ps1"`.
+A `7_59*.txt` file there is a candidate **world record** — validate it with
+`validate -n 7 --file <f> --complete` before believing anything. Open question
+blocking interpretation of all farm negatives: does an orderly finish refute a
+chain? See the positive control in REMOTE-FARM.md (JOURNAL s14).
 
 ## Commands
 

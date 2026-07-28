@@ -6,6 +6,70 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 14) — the search moved to a 28-core PC (27 workers, 96% CPU, survives disconnect); two "crash" diagnoses refuted; the real open question is whether an orderly finish REFUTES a chain
+
+Infrastructure session, plus one reinterpretation that may matter more than the
+compute. Operating runbook: **`analysis/cover7/REMOTE-FARM.md`**; scripts:
+**`analysis/farm/`**. Both are written for an agent with no memory of this work.
+
+**The farm moved off the laptop.** Windows PC (`ssh transcribe`, 28 cores, 48 GB,
+standard user, **not** admin). Everything lives on `F:\superpermFarm`; C: is
+nearly full and `F:\audioPrime` (a separate production app) is off-limits.
+Persistence was the whole problem: Windows OpenSSH kills its session's process
+tree, WMI process creation is denied, and `schtasks` can only register
+"Interactive only" tasks without stored credentials. Solved as a plain user with
+**`detach.exe`** (`analysis/farm/detach.c`) — `CreateProcess` with
+`CREATE_BREAKAWAY_FROM_JOB | DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP |
+BELOW_NORMAL_PRIORITY_CLASS`, opening its own log handles and restricting
+inheritance to exactly those three (otherwise the child inherits sshd's pipes and
+every ssh call hangs). Verified by a marker process surviving a full disconnect.
+An optional admin installer (SYSTEM tasks, `/sc ONSTART`, for reboot survival)
+exists but was deliberately **not** run — more privilege than the job needs.
+
+**Scaled to 27 workers / 96.2% CPU** (`farmscale.ps1`, backfilling scheduler
+against a 218-pattern worklist, K=29 → K=30 → K=31; the 5 K=27 chains run
+untouched at top priority). RAM is not the binding resource: 4.4 MB peak per
+worker against 37 GB free, so cores bind (cap arithmetic and a 15%-free valve
+are in the script anyway). `watchdog.ps1` does one backfill pass per call and
+logs free RAM; it is called from the Mac, not scheduled (non-admin).
+**Validation gate passed before any launch**: `gen_worklist.py` derives the
+KernelFinder `nsk` patterns from the census (ride length `((j−k) mod 6)+1`) and
+refuses to emit a worklist unless it reproduces the five known K=27 strings
+exactly. Nuance found there: the published tier counts (5/21/48/149) only
+reproduce if the **terminal loop is allowed a partial ride** — with a forced full
+terminal ride the census is 5/21/40/141.
+
+**Two "crash" diagnoses refuted by measurement, in sequence** (recorded so nobody
+re-runs them): *stack overflow* — `searchPC`'s frame is 128 bytes over ~141
+levels, peak stack under 100 KB; a 64 MB rebuild (`dumpbin`-verified) changed
+nothing. *OOM* — 4.4 MB RSS against 37 GB free. What the logs actually show is an
+**orderly exit**: a complete final line with trailing newline after the
+`PCsolSize=…` best-partial dump, 0-byte stderr. Three K=29 chains "finished" in
+~1 CPU-minute. (The mid-line truncation seen earlier on the *Mac* was genuine
+memory pressure there — 13 solvers on a laptop — which is what sent the second
+diagnosis down the wrong path.)
+
+**THE OPEN QUESTION, and the session's real deliverable.** If the engine's plain
+mode is exhaustive, then a chain finishing without a solution **refutes** it (no
+rooted cover ⇒ no 5905 from that chain) — and the farm is a refutation engine
+producing publishable negatives at ~1 CPU-minute per K=29 chain, which would
+close large parts of the census fast. If the mode is bounded/heuristic, finishing
+means only "this strategy gave up" and refutes nothing. **Positive control
+launched** (`runs\ctrl`, standard K=5 kernel `nsk66666`, which provably HAS
+covers — it is how the known 5907s were built): at last check it was climbing
+normally (PCsolSize 121 of target 143). If it finds a cover, orderly completion
+elsewhere is meaningful; if it also completes empty, every "finished" chain means
+nothing. **Do not characterize any chain as refuted until this control returns.**
+
+**Still no 5905.** Nothing about sessions 10–13's proven results changed.
+
+**Next session:** (1) read the control's verdict first — it decides whether the
+farm's finishes are refutations or noise, and hence what the whole campaign has
+produced; (2) `watchdog.ps1` periodically to backfill; (3) if finishes ARE
+refutations, tally which chains are eliminated and re-aim at the remaining
+tiers + the pen ≥ 17 census; (4) Track C (learned ordering) and Track B (n=6
+871 hunt) remain the unstarted research lines.
+
 ## 2026-07-27 (session 13) — record attempt round 1: no 5905 yet, but the formalization is proven record-capable (real 5906s parse as V₇=10 partial-ride certificates and recompile validated); 5904 closed at pen≤16; the open question reduced to concrete instances
 
 One mega-thread (the cover agent; 2.4 h). Pipeline in **`analysis/cover7/`**;

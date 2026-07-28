@@ -53,23 +53,47 @@ All are idempotent: `farmscale`/`watchdog` skip chains already running and
 backfill only dead slots. Worker count is a single `TARGET` variable at the top
 of `farmscale.ps1`.
 
-## Known failure modes
+## Known failure modes — and the "silent crash" that wasn't
 
-1. **OOM kills, not crashes.** Instances grow as the search deepens; on the Mac,
-   13 concurrent solvers exhausted RAM and were killed silently (logs truncated
-   mid-line, no crash report, one 0-byte log). Symptoms look like a mystery
-   crash. Cap workers by RAM, not cores, and keep the watchdog's low-memory
-   safety valve (no new workers below ~15% free).
-   (An earlier stack-overflow theory was **wrong** — measured peak stack is
-   under 100 KB: `searchPC`'s frame is 128 bytes over ~141 levels. The `/F`
-   large-stack rebuild is harmless but fixes nothing.)
+1. **Workers that vanish are (apparently) FINISHING, not crashing.** Two
+   successive diagnoses were wrong and are recorded here so nobody re-runs them:
+   - *Stack overflow* — **refuted by measurement**: `searchPC`'s frame is 128
+     bytes over ~141 levels ⇒ peak stack under 100 KB. A 64 MB rebuild
+     (`build64.bat`, `dumpbin` confirms a `4000000` reserve vs `100000`)
+     changed nothing; workers exit at the same depth.
+   - *OOM kill* — **refuted by measurement**: peak RSS is 4.4 MB per worker
+     against 37 GB free.
+   - What the evidence actually shows: logs end on a **complete line with a
+     trailing newline** after the `PCsolSize=…` best-partial dump, with a
+     0-byte stderr — an orderly exit, not a kill (a kill loses the unflushed
+     4 KB stdout buffer, which is what mid-line truncation on the Mac looked
+     like under memory pressure). Three K=29 chains "finished" in ~1
+     CPU-minute.
+
+   > **OPEN QUESTION — do not state a conclusion until it is settled.** If the
+   > engine's plain mode exhausts its search space, then finishing without a
+   > solution *refutes* that chain (no rooted cover ⇒ no 5905 from it), which
+   > would make the farm a refutation engine and is publishable progress. If
+   > instead the mode is bounded/heuristic, finishing means only "this
+   > strategy gave up" and refutes nothing. **Positive control in flight**:
+   > the standard K=5 kernel (`nsk66666`, `runs\ctrl`) provably HAS covers —
+   > it is how the known 5907s were built. If the control finds one, orderly
+   > completion elsewhere is meaningful; if the control also completes without
+   > a solution, completion means nothing and the farm's negatives are void.
+   > Check `runs\ctrl\out.log` for a `Found SOLUTION` line or a `7_59*.txt`.
+
 2. **Truncated `IntersectionFlags7.dat`.** A killed run leaves it corrupt and
    the engine then aborts instantly with `Error reading from file
    IntersectionFlags7.dat`. Launchers delete it before every start; do the same
    in anything new.
-3. **The engine is fully deterministic** (no `rand()`), so restarting a crashed
-   chain reproduces the identical run — restarts alone never help. Change the
-   chain, the mode, or the resource that killed it.
+3. **The engine is fully deterministic** (no `rand()`), so restarting a finished
+   or crashed chain reproduces the identical run — restarts alone never help.
+   Change the chain, the mode, or the resource involved.
+4. **Perf counters, WMI, and `systeminfo` are all Access-denied** for this
+   account. Use `meminfo.ps1` (`GlobalMemoryStatusEx` P/Invoke) for RAM.
+5. **Two binaries exist**: `PermutationChains.exe` (held open by the 5 priority
+   workers) and `PermutationChains64.exe` (the pointless large-stack build).
+   `farmstop.ps1` targets both names.
 
 ## Harvest — what a win looks like
 
