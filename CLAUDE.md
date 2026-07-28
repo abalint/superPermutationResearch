@@ -43,7 +43,11 @@ won strictly before the last ~25 perms ⇒ all weight on **item 5** (cycle-level
 moves; weave as a move, kernel as a parameter — Robin's thread reply + 5906
 boundary fact; tablebase becomes the terminal solver). Expert corpus: 298 distinct
 872s (`data/records872/` + `data/gain1_872s/`), Chaffin prefixes in
-`data/chaffin/`, field news in `../extraDocs/2026-07-27-urdvr-email-and-repo.md`.
+`data/chaffin/`, field news in `../extraDocs/2026-07-27-urdvr-email-and-repo.md`
+and `../extraDocs/2026-07-28-urdvr-lean-lower-bound.md` (Lean-formalized LB:
+**S(6) ≥ 869, S(7) ≥ 5888, S(8) ≥ 46103** — n=6 window now {869..872}, n=7 window
+[5888, 5906]; "exitless paths are exhausted, improvement must come from the
+reduction" is the stated frontier).
 
 **Live compute (check this first if picking up cold):** a remote 28-core Windows
 PC (`ssh transcribe`) hosts the n=7 refutation farm — **currently IDLE**, pass 1
