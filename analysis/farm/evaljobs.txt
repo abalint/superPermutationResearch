@@ -1,0 +1,7 @@
+# Track C v2 EVAL blind baselines (G2v2) -- 6 chains (jobid|instance|args)
+wl_025_evalblind|wl_025.txt|--time-limit 3600 --mrv-stats
+wl_043_evalblind|wl_043.txt|--time-limit 3600 --mrv-stats
+wl_072_evalblind|wl_072.txt|--time-limit 3600 --mrv-stats
+wl_073_evalblind|wl_073.txt|--time-limit 3600 --mrv-stats
+wl_074_evalblind|wl_074.txt|--time-limit 3600 --mrv-stats
+wl_076_evalblind|wl_076.txt|--time-limit 3600 --mrv-stats

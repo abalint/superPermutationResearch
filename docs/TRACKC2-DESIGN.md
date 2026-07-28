@@ -131,8 +131,9 @@ from C*_1 instead of the policy choice. Generation default ε=0.15.
 Sources (train/eval split is BY INSTANCE, locked before training):
 - n=6: n6std, blind + ε runs (fast, in-sample mechanism data).
 - n=7 TRAIN: the search-UNSAT chains minus the eval set, i.e. indices
-  {82, 84, 85, 89, 98, 103, 106, 109, 127, 131, 134, 141, 150, 160, 174, 175,
-  189, 194, 196, 217, 219, 220, 221, 222} (indices into
+  {79, 82, 84, 85, 89, 98, 103, 106, 109, 127, 131, 134, 141, 150, 160, 174,
+  175, 189, 194, 196, 217, 219, 220, 221, 222} (79 was accidentally omitted
+  from the first draft and restored s19 — it is UNSAT and not in eval) (indices into
   `analysis/farm/farm_chains.jsonl`, index-aligned with
   `analysis/cover7/results_n7_merged.csv`), plus a sample of OPEN chains
   (their exhausted subtrees are clean labels), 10-min caps.
@@ -148,6 +149,45 @@ Sources (train/eval split is BY INSTANCE, locked before training):
 
 Corpus assembly: `analysis/trackc/mine_subtrees.py` merges run logs →
 `data/trackc/coleffort_*.jsonl` (gitignored except a small committed sample).
+
+### 3b. Within-state pairwise data (v2.1 — added s19 after the smoke run)
+
+The local smoke run exposed the expected confound in plain effort regression:
+subtree size reflects *state hardness* at least as much as *choice quality*
+(columns whose rows have roomy children co-occur with big subtrees whether or
+not choosing them was wrong), and the leftover within-node signal actively
+broke MRV on an eval chain (chain 26: Δ=0 2.70× worse, Δ=1 8.83× worse under
+the single-instance smoke model). The fix is comparisons **at the same state**,
+where hardness differences cancel:
+
+- `shash`: every subtree record carries a state hash — XOR over
+  `splitmix64(rowid · SHASH_SALT)` of the placed-row set, maintained
+  incrementally (order-independent; the placed-row set determines the DLX
+  subproblem exactly). Same `shash` ⇒ same state, whether reached by
+  transposition within a run or across runs/seeds.
+- **Probe mode** (`--probe-rate p --probe-cap N`): at a probed decision node,
+  after the normal choice c is scored, pick a second column c′ ≠ c uniformly
+  from C*_1, exhaust its subtree under a node cap with full trail unwind, and
+  emit a record for c′ at the same `shash` (outcome `exhaust`, or `capped` if
+  the cap hit). Probe work is counted separately (`probe_nodes`), never in
+  `nodes`, and nested logging is suppressed inside probes — node-count
+  semantics of the main search are unchanged. On a SAT instance a probe can
+  legitimately find a cover; it is then reported exactly like a normal
+  solution (exit 0) and validated as usual.
+- Pair mining (`mine_subtrees.py --pairs`): group records by (inst, shash);
+  emit ordered pairs of distinct columns as (winner = smaller subtree, loser).
+  `capped` records compare soundly only when the other side's subtree is
+  smaller than the cap (then the finished side wins); capped-vs-larger and
+  capped-vs-capped are indeterminate and dropped.
+- Trainer pairwise mode (`fit_col_effort.py --pairwise`): logistic RankNet on
+  score differences (loss `softplus(−(s_loser − s_winner))`, score = predicted
+  effort, lower is better), standardization folded into the same `trackc-cw1`
+  export; held-out metric = pair accuracy, split by instance. Regression on
+  the same logs remains the fallback objective.
+
+M1 (viability measurement, blocks the farm pairwise sweep): organic
+transposition pair yield without probes, and probe overhead factor at
+(p=0.02, cap=20k), measured locally. Record results here.
 
 ## 4. Model and trainer
 
@@ -217,6 +257,12 @@ passthrough; any found cover still MUST pass `check_cover` →
   reduction ≥ 1.3× with no chain blowing up > 2×; stretch goal ≥ 2×. This is
   the go/no-go for pass-2 deployment (UNSAT economy was v1's proven-impossible
   axis — any consistent win here is new capability).
+  BLIND BASELINES (measured s19 on the PC farm, none capped; chain 25 exactly
+  matches the Mac census run — cross-platform bit-repro): 5 = 60,037,516;
+  25 = 199,733,787; 26 = 8,548,527; 43 = 4; 72 = 5; 73 = 23,257,326;
+  74 = 1,450,087; 76 = 12,030,955. Chains 43 and 72 have trivial trees (near-
+  structural) and carry no discriminating signal — they stay in the table for
+  honesty but the median is over the six non-trivial chains.
 - **G1 (headline)**: n7std K=5, 60-min, blind (det + 2 seeds) vs guided
   (Δ=0/Δ=1, det + ε-restarts). Metric: first validated cover (time, nodes);
   secondary max-depth profile. Any validated cover is a project first.

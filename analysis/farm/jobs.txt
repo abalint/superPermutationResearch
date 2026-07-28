@@ -1,0 +1,163 @@
+# Track C v2 GENERATION sweep -- 54 train chains x 3 runs (jobid|instance|args)
+wl_006_blind|wl_006.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_006_blind.jsonl
+wl_006_e15s1|wl_006.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_006_e15s1.jsonl
+wl_006_e15s2|wl_006.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_006_e15s2.jsonl
+wl_007_blind|wl_007.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_007_blind.jsonl
+wl_007_e15s1|wl_007.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_007_e15s1.jsonl
+wl_007_e15s2|wl_007.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_007_e15s2.jsonl
+wl_008_blind|wl_008.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_008_blind.jsonl
+wl_008_e15s1|wl_008.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_008_e15s1.jsonl
+wl_008_e15s2|wl_008.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_008_e15s2.jsonl
+wl_009_blind|wl_009.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_009_blind.jsonl
+wl_009_e15s1|wl_009.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_009_e15s1.jsonl
+wl_009_e15s2|wl_009.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_009_e15s2.jsonl
+wl_010_blind|wl_010.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_010_blind.jsonl
+wl_010_e15s1|wl_010.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_010_e15s1.jsonl
+wl_010_e15s2|wl_010.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_010_e15s2.jsonl
+wl_011_blind|wl_011.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_011_blind.jsonl
+wl_011_e15s1|wl_011.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_011_e15s1.jsonl
+wl_011_e15s2|wl_011.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_011_e15s2.jsonl
+wl_012_blind|wl_012.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_012_blind.jsonl
+wl_012_e15s1|wl_012.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_012_e15s1.jsonl
+wl_012_e15s2|wl_012.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_012_e15s2.jsonl
+wl_013_blind|wl_013.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_013_blind.jsonl
+wl_013_e15s1|wl_013.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_013_e15s1.jsonl
+wl_013_e15s2|wl_013.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_013_e15s2.jsonl
+wl_014_blind|wl_014.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_014_blind.jsonl
+wl_014_e15s1|wl_014.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_014_e15s1.jsonl
+wl_014_e15s2|wl_014.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_014_e15s2.jsonl
+wl_015_blind|wl_015.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_015_blind.jsonl
+wl_015_e15s1|wl_015.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_015_e15s1.jsonl
+wl_015_e15s2|wl_015.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_015_e15s2.jsonl
+wl_027_blind|wl_027.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_027_blind.jsonl
+wl_027_e15s1|wl_027.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_027_e15s1.jsonl
+wl_027_e15s2|wl_027.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_027_e15s2.jsonl
+wl_028_blind|wl_028.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_028_blind.jsonl
+wl_028_e15s1|wl_028.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_028_e15s1.jsonl
+wl_028_e15s2|wl_028.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_028_e15s2.jsonl
+wl_029_blind|wl_029.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_029_blind.jsonl
+wl_029_e15s1|wl_029.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_029_e15s1.jsonl
+wl_029_e15s2|wl_029.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_029_e15s2.jsonl
+wl_030_blind|wl_030.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_030_blind.jsonl
+wl_030_e15s1|wl_030.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_030_e15s1.jsonl
+wl_030_e15s2|wl_030.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_030_e15s2.jsonl
+wl_031_blind|wl_031.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_031_blind.jsonl
+wl_031_e15s1|wl_031.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_031_e15s1.jsonl
+wl_031_e15s2|wl_031.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_031_e15s2.jsonl
+wl_032_blind|wl_032.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_032_blind.jsonl
+wl_032_e15s1|wl_032.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_032_e15s1.jsonl
+wl_032_e15s2|wl_032.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_032_e15s2.jsonl
+wl_036_blind|wl_036.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_036_blind.jsonl
+wl_036_e15s1|wl_036.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_036_e15s1.jsonl
+wl_036_e15s2|wl_036.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_036_e15s2.jsonl
+wl_038_blind|wl_038.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_038_blind.jsonl
+wl_038_e15s1|wl_038.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_038_e15s1.jsonl
+wl_038_e15s2|wl_038.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_038_e15s2.jsonl
+wl_039_blind|wl_039.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_039_blind.jsonl
+wl_039_e15s1|wl_039.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_039_e15s1.jsonl
+wl_039_e15s2|wl_039.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_039_e15s2.jsonl
+wl_040_blind|wl_040.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_040_blind.jsonl
+wl_040_e15s1|wl_040.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_040_e15s1.jsonl
+wl_040_e15s2|wl_040.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_040_e15s2.jsonl
+wl_075_blind|wl_075.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_075_blind.jsonl
+wl_075_e15s1|wl_075.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_075_e15s1.jsonl
+wl_075_e15s2|wl_075.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_075_e15s2.jsonl
+wl_082_blind|wl_082.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_082_blind.jsonl
+wl_082_e15s1|wl_082.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_082_e15s1.jsonl
+wl_082_e15s2|wl_082.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_082_e15s2.jsonl
+wl_083_blind|wl_083.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_083_blind.jsonl
+wl_083_e15s1|wl_083.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_083_e15s1.jsonl
+wl_083_e15s2|wl_083.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_083_e15s2.jsonl
+wl_084_blind|wl_084.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_084_blind.jsonl
+wl_084_e15s1|wl_084.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_084_e15s1.jsonl
+wl_084_e15s2|wl_084.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_084_e15s2.jsonl
+wl_085_blind|wl_085.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_085_blind.jsonl
+wl_085_e15s1|wl_085.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_085_e15s1.jsonl
+wl_085_e15s2|wl_085.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_085_e15s2.jsonl
+wl_086_blind|wl_086.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_086_blind.jsonl
+wl_086_e15s1|wl_086.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_086_e15s1.jsonl
+wl_086_e15s2|wl_086.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_086_e15s2.jsonl
+wl_088_blind|wl_088.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_088_blind.jsonl
+wl_088_e15s1|wl_088.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_088_e15s1.jsonl
+wl_088_e15s2|wl_088.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_088_e15s2.jsonl
+wl_089_blind|wl_089.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_089_blind.jsonl
+wl_089_e15s1|wl_089.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_089_e15s1.jsonl
+wl_089_e15s2|wl_089.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_089_e15s2.jsonl
+wl_090_blind|wl_090.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_090_blind.jsonl
+wl_090_e15s1|wl_090.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_090_e15s1.jsonl
+wl_090_e15s2|wl_090.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_090_e15s2.jsonl
+wl_091_blind|wl_091.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_091_blind.jsonl
+wl_091_e15s1|wl_091.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_091_e15s1.jsonl
+wl_091_e15s2|wl_091.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_091_e15s2.jsonl
+wl_092_blind|wl_092.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_092_blind.jsonl
+wl_092_e15s1|wl_092.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_092_e15s1.jsonl
+wl_092_e15s2|wl_092.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_092_e15s2.jsonl
+wl_094_blind|wl_094.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_094_blind.jsonl
+wl_094_e15s1|wl_094.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_094_e15s1.jsonl
+wl_094_e15s2|wl_094.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_094_e15s2.jsonl
+wl_095_blind|wl_095.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_095_blind.jsonl
+wl_095_e15s1|wl_095.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_095_e15s1.jsonl
+wl_095_e15s2|wl_095.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_095_e15s2.jsonl
+wl_097_blind|wl_097.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_097_blind.jsonl
+wl_097_e15s1|wl_097.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_097_e15s1.jsonl
+wl_097_e15s2|wl_097.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_097_e15s2.jsonl
+wl_098_blind|wl_098.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_098_blind.jsonl
+wl_098_e15s1|wl_098.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_098_e15s1.jsonl
+wl_098_e15s2|wl_098.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_098_e15s2.jsonl
+wl_103_blind|wl_103.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_103_blind.jsonl
+wl_103_e15s1|wl_103.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_103_e15s1.jsonl
+wl_103_e15s2|wl_103.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_103_e15s2.jsonl
+wl_106_blind|wl_106.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_106_blind.jsonl
+wl_106_e15s1|wl_106.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_106_e15s1.jsonl
+wl_106_e15s2|wl_106.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_106_e15s2.jsonl
+wl_109_blind|wl_109.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_109_blind.jsonl
+wl_109_e15s1|wl_109.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_109_e15s1.jsonl
+wl_109_e15s2|wl_109.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_109_e15s2.jsonl
+wl_127_blind|wl_127.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_127_blind.jsonl
+wl_127_e15s1|wl_127.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_127_e15s1.jsonl
+wl_127_e15s2|wl_127.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_127_e15s2.jsonl
+wl_131_blind|wl_131.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_131_blind.jsonl
+wl_131_e15s1|wl_131.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_131_e15s1.jsonl
+wl_131_e15s2|wl_131.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_131_e15s2.jsonl
+wl_134_blind|wl_134.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_134_blind.jsonl
+wl_134_e15s1|wl_134.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_134_e15s1.jsonl
+wl_134_e15s2|wl_134.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_134_e15s2.jsonl
+wl_141_blind|wl_141.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_141_blind.jsonl
+wl_141_e15s1|wl_141.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_141_e15s1.jsonl
+wl_141_e15s2|wl_141.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_141_e15s2.jsonl
+wl_150_blind|wl_150.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_150_blind.jsonl
+wl_150_e15s1|wl_150.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_150_e15s1.jsonl
+wl_150_e15s2|wl_150.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_150_e15s2.jsonl
+wl_160_blind|wl_160.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_160_blind.jsonl
+wl_160_e15s1|wl_160.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_160_e15s1.jsonl
+wl_160_e15s2|wl_160.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_160_e15s2.jsonl
+wl_174_blind|wl_174.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_174_blind.jsonl
+wl_174_e15s1|wl_174.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_174_e15s1.jsonl
+wl_174_e15s2|wl_174.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_174_e15s2.jsonl
+wl_175_blind|wl_175.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_175_blind.jsonl
+wl_175_e15s1|wl_175.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_175_e15s1.jsonl
+wl_175_e15s2|wl_175.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_175_e15s2.jsonl
+wl_189_blind|wl_189.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_189_blind.jsonl
+wl_189_e15s1|wl_189.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_189_e15s1.jsonl
+wl_189_e15s2|wl_189.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_189_e15s2.jsonl
+wl_194_blind|wl_194.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_194_blind.jsonl
+wl_194_e15s1|wl_194.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_194_e15s1.jsonl
+wl_194_e15s2|wl_194.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_194_e15s2.jsonl
+wl_196_blind|wl_196.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_196_blind.jsonl
+wl_196_e15s1|wl_196.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_196_e15s1.jsonl
+wl_196_e15s2|wl_196.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_196_e15s2.jsonl
+wl_217_blind|wl_217.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_217_blind.jsonl
+wl_217_e15s1|wl_217.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_217_e15s1.jsonl
+wl_217_e15s2|wl_217.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_217_e15s2.jsonl
+wl_219_blind|wl_219.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_219_blind.jsonl
+wl_219_e15s1|wl_219.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_219_e15s1.jsonl
+wl_219_e15s2|wl_219.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_219_e15s2.jsonl
+wl_220_blind|wl_220.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_220_blind.jsonl
+wl_220_e15s1|wl_220.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_220_e15s1.jsonl
+wl_220_e15s2|wl_220.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_220_e15s2.jsonl
+wl_221_blind|wl_221.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_221_blind.jsonl
+wl_221_e15s1|wl_221.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_221_e15s1.jsonl
+wl_221_e15s2|wl_221.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_221_e15s2.jsonl
+wl_222_blind|wl_222.txt|--time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_222_blind.jsonl
+wl_222_e15s1|wl_222.txt|--col-epsilon 0.15 --col-seed 1 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_222_e15s1.jsonl
+wl_222_e15s2|wl_222.txt|--col-epsilon 0.15 --col-seed 2 --time-limit 600 --log-subtrees F:\superpermFarm\trackc2\gen\wl_222_e15s2.jsonl
