@@ -144,7 +144,13 @@ accuracy (held-out = whole certs, not sampled pairs — split by cert id). Expor
   first for this project's engines.
 - **G1b**: 5906 K=18 chain, Model B, same protocol.
 - **G2 (UNSAT economy)**: nodes-to-exhaust guided vs blind on 2 small refuted
-  chains (ordering also shapes exhaustion cost).
+  chains. **Measured (s17): null by construction** — with the column rule fixed
+  (MRV), row order only permutes the DFS; the exhaustion tree is the identical
+  node set (verified: byte-identical node counts on both chains). UNSAT economy
+  would need learned *column* choice — a v2 direction, not built. Bonus finding:
+  dlx7g exhausts K=29/K=30 census chains in 1–8 min locally (a third
+  independent refutation engine), motivating a local census sweep
+  (`census_sweep.sh`).
 - **G3 (the record attack, only if G1 or G1b passes)**: the 5 open K=27 chains
   (`chains_V15_s14.jsonl` / farm worklist), long budget, background. Any SAT →
   compile → validate → **5905, world record**.
