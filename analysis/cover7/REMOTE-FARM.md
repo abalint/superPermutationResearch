@@ -4,6 +4,33 @@ Session-independent runbook. The farm survives ssh disconnects, this laptop
 sleeping, and any Claude session ending — everything below can be driven from a
 fresh session, a phone, or by hand.
 
+## CURRENT STATE (2026-07-28, end of session 18)
+
+**Pass 1 is COMPLETE and the farm is IDLE.** 223/223 chains attempted:
+**41 unconditionally refuted (UNSAT), 182 undecided at the 30-min budget, no
+SAT.** Census: `results_n7_pass1.csv` in this directory (and
+`F:\superpermFarm\results.csv` on the PC). Nothing of ours is running; the five
+leftover `spf_c*` scheduled tasks from the abandoned schtasks approach have been
+deleted.
+
+Also settled: the patched PermutationChains **passed the full n=6 gate on
+Windows** — `6` and `6 nsk5555` both produced exactly 42,288 solutions of 872
+characters. The s16 fix is completely validated.
+
+**Do not simply relaunch pass 2 with a bigger budget.** UNSAT solve times were
+median 1.85 min with 25/41 under 5 min — decidable chains are fast, so the 182
+timeouts are qualitatively harder, not marginally slower. Change the method
+(learned column choice / symmetry-reduced encoding / `analysis/trackc/dlx7g`),
+not the clock.
+
+> ⚠ **NEVER kill python processes indiscriminately on this box.** The account
+> exists for the user's transcription service — `I:\transcribe\.venv\Scripts\
+> python.exe` and a companion `C:\Program Files\Python311\python.exe` are
+> ITS processes, not ours, and `satstatus.ps1`'s `python_procs` counter includes
+> them. Kill only PIDs recorded in the farm's own `runs\*/pid.txt` or via
+> `satstop.ps1`. Likewise never touch `F:\audioPrime` (a separate production
+> app).
+
 ## The machine
 
 - Host: `ssh transcribe` (alias in `~/.ssh/config`; `transcribe-svc@100.72.37.37`,
