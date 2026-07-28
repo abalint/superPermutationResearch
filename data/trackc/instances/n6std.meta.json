@@ -1,0 +1,14 @@
+{
+ "K": 4,
+ "R": 25,
+ "Sigma": 0,
+ "V": null,
+ "n": 6,
+ "name": "n6std",
+ "nchild": 4,
+ "ncols": 100,
+ "nrows": 464,
+ "roots": 20,
+ "source": "gain1.build_instance(6)",
+ "tag": "n6std"
+}

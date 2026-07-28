@@ -1,0 +1,14 @@
+{
+ "K": 27,
+ "R": 114,
+ "Sigma": 12,
+ "V": 15,
+ "n": 7,
+ "name": "k27_3",
+ "nchild": 5,
+ "ncols": 570,
+ "nrows": 2595,
+ "roots": 150,
+ "source": "analysis/cover7/chains_V15_s14.jsonl K=27 entry 3",
+ "tag": "k27_3"
+}

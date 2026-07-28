@@ -1,0 +1,14 @@
+{
+ "K": 5,
+ "R": 138,
+ "Sigma": 0,
+ "V": 5,
+ "n": 7,
+ "name": "n7std",
+ "nchild": 5,
+ "ncols": 690,
+ "nrows": 4440,
+ "roots": 30,
+ "source": "chain7.standard_chain()",
+ "tag": "n7std"
+}

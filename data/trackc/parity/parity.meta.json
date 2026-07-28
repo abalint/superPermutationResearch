@@ -1,0 +1,18 @@
+{
+ "instance": "n6std",
+ "source_word": "data/gain1_872s/872.g1-000e190.txt",
+ "rows": 25,
+ "nodes": 25,
+ "feature_order": [
+  "min_child_sz_log",
+  "mean_child_sz_log",
+  "scarce_children",
+  "parent_is_root",
+  "parent_grounded",
+  "parent_depth_log",
+  "static_min_child_log",
+  "grounds_pending"
+ ],
+ "format": "NODE <k> col=<c> then '<rowid> f1..f8' (%.6f), candidates ascending by row id",
+ "feature_timing": "before cover(c)"
+}

@@ -55,6 +55,10 @@ row that grounds waiting subtrees), the thing s8 proved no static walk feature
 could express. Features shared by all siblings at a node (e.g. `size[c]`, depth)
 are deliberately excluded: pairwise loss cancels them.
 
+**Timing (binding, settled during the build):** features are evaluated on the
+state BEFORE `cover(c)` — the chosen column is still active, `size[c]` still
+counts all its candidates, and candidates are enumerated from the active column.
+
 Score = `dot(w, f) + b`, try rows in **descending score**, ties by row id.
 Weights file format (consumed by the C engine): text, line 1 = `trackc-w1 8`,
 line 2 = 8 whitespace-separated floats then the bias (standardization already

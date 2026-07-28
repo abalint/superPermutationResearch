@@ -1,6 +1,14 @@
 /target
 /target-analysis
-/data/
+/data/*
 *.jsonl
 .DS_Store
-ml/__pycache__/
+__pycache__/
+
+# Track C (docs/TRACKC-DESIGN.md): the corpora stay out of the repo, but the
+# instance files, the parity artifacts and a small corpus sample are committed.
+!/data/trackc/
+/data/trackc/*
+!/data/trackc/instances/
+!/data/trackc/parity/
+!/data/trackc/corpus_sample.jsonl
