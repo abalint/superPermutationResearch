@@ -1,0 +1,83 @@
+Subject: [PATCH] PermutationChains.c: invalid fopen() modes + dropped FILE*
+         assignment make all solution output fail on Windows
+
+PermutationChains.c writes no solution file at all when built with MSVC: the
+process dies at the first solution with exit code 0xC0000409, which is normally
+read as STATUS_STACK_BUFFER_OVERRUN (the /GS stack-cookie check), and which is
+unaffected by /Od, /GS- or a larger stack. It is not a stack overrun. There are
+two independent defects, both in the solution-writing block, and both invisible
+on macOS/BSD libc:
+
+1. Invalid fopen() mode strings: the code passes "wa" and "aa". A C mode string
+   is a single leading 'r'/'w'/'a' optionally followed by '+', 'b', 't'; the
+   trailing 'a' is not valid. BSD libc (macOS) inspects only the first character
+   and silently ignores the rest, so the calls behave as the intended "w"/"a".
+   The Microsoft UCRT validates the whole mode string, and an unrecognised
+   character trips the invalid-parameter handler, whose default action is
+   __fastfail(FAST_FAIL_INVALID_ARG). __fastfail raises status 0xC0000409 — the
+   same code used for stack-cookie failures, which is why the real fault
+   misreports as a stack buffer overrun. Reduced repro, which reproduces
+   0xC0000409 exactly under `cl /O2` (fopen never returns):
+
+       FILE *f = fopen("x.txt","wa");
+
+   glibc and mingw-w64's msvcrt are a third case: they reject the mode and
+   return NULL, so the program exits via its own "Error opening file" path.
+
+2. A dropped assignment: the second fopen() discards its return value.
+
+       fopen(superPermsOutputFile, ...);   /* result thrown away */
+       if (f==NULL) ...
+       printSuperPerm(f);
+       fclose(f);
+
+   `f` still holds the twoCycles stream, fclose()d three lines earlier. So the
+   NULL check tests the wrong pointer, printSuperPerm() writes to a closed
+   FILE*, fclose() double-closes it, and the stream fopen() actually returned is
+   leaked — once per solution (42,288 times at n=6). This is undefined
+   behaviour. It is masked on macOS only because BSD libc allocates FILE objects
+   from a recycled pool: fclose() releases the slot and the immediately
+   following fopen() hands back the very same struct, so the stale `f` happens
+   to point at the newly opened file. A libc that does not recycle the slot
+   writes the superpermutations into a closed stream and double-closes it.
+   AddressSanitizer does not flag this, because the FILE object is never
+   malloc/free'd from the sanitizer's point of view — which is why it survived
+   sanitized runs.
+
+Verification: with the patch, the clang/macOS output is byte-identical to the
+unpatched build (n=5 -> 6 solutions, n=6 -> 42,288 solutions, same solution
+files). MSVC and mingw-w64 Windows builds, which previously produced zero
+solution files, now match macOS: on three n=7 nsk kernels the full search trace
+is identical line-for-line between the Windows and macOS binaries apart from one
+informational line reporting sizeof(long).
+
+---
+--- PermutationChains.c
++++ PermutationChains.c
+@@ -2358,7 +2358,7 @@
+ printf("Found SOLUTION %d (size %d) among %d provisional solutions:\n",PCsolCount+1,PCsolSize,PCprovCount);
+ if (showSols) showPCsol();
+
+-FILE *f = fopen(twoCyclesOutputFile,twoCyclesOutputFileOpened?"aa":"wa");
++FILE *f = fopen(twoCyclesOutputFile,twoCyclesOutputFileOpened?"a":"w");
+ if (f==NULL)
+ 	{
+ 	printf("Error opening file %s\n",twoCyclesOutputFile);
+@@ -2378,7 +2378,7 @@
+ fprintf(f,"}\n");
+ fclose(f);
+
+-fopen(superPermsOutputFile,superPermsOutputFileOpened?"aa":"wa");
++f = fopen(superPermsOutputFile,superPermsOutputFileOpened?"a":"w");
+ if (f==NULL)
+ 	{
+ 	printf("Error opening file %s\n",superPermsOutputFile);
+@@ -4707,7 +4707,7 @@
+
+ if (twoCyclesOutputFileOpened)
+ 	{
+-	f = fopen(twoCyclesOutputFile,"aa");
++	f = fopen(twoCyclesOutputFile,"a");
+ 	if (f==NULL)
+ 		{
+ 		printf("Error opening results file %s to append\n",twoCyclesOutputFile);

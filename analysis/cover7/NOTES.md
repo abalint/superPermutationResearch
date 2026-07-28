@@ -46,10 +46,12 @@
 - All 8 palindromic V=15 chains (K<=31): NO 2-fold symmetric cover
   (sym_sat.py UNSAT; cross-validated by PermutationChains symmPairs
   'unviable' on chain 2). Egan's 2SYMM method cannot reach 5905 from these.
-- PermutationChains asym coverFirst on chain 0: DXL reached minColsLeft=0 —
-  EXACT COVERS OF CHAIN 0 EXIST (at least of the reduced/cover-first set);
-  process then died silently (~15:18) — possible crash at searchPC handoff,
-  reproducing with asym_c0b.
+- [RETRACTED s16 — see docs/JOURNAL.md] "PermutationChains asym coverFirst on
+  chain 0: DXL reached minColsLeft=0 — EXACT COVERS OF CHAIN 0 EXIST; process
+  then died silently." BOTH claims are false: coverFirst does not crash (chain 0
+  exits 0 with zero solutions), and minColsLeft=0 refers to the cover-first
+  REDUCED subproblem at depth 93, not a 141-size cover. No evidence chain 0 has
+  a cover.
 - Triage: K=27 chains 1,2,3 UNDECIDED at 900s (CaDiCaL, 5906-phase bias).
 
 - PermutationChains coverFirst mode CRASHES silently mid-search on our nsk

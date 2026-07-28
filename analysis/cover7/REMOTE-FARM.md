@@ -64,7 +64,18 @@ of `farmscale.ps1`.
 > §"failure modes" discussion below about orderly exits should be treated as
 > evidence about the mathematics; it was describing a crashing binary.
 >
-> The farm now runs `satworker.py` (CaDiCaL over the exact-cover encoding) as a
+> **s16 update — root cause found and patched.** The Windows failure was NOT a
+> stack overrun: `PermutationChains.c` passes invalid `fopen` modes (`"wa"`,
+> `"aa"`), which the MSVC UCRT turns into `__fastfail` → the misleading
+> 0xC0000409, plus a dropped `FILE*` assignment causing a write-to-closed-stream
+> and a double close. Patch (3 lines, upstream-ready):
+> `PermutationChains-fopen-fix.patch`. With it, MSVC and mingw-w64 builds both
+> pass Egan's smoke tests on Windows (n=5 → 6, `6 ffc` → 36). The fixed binary
+> was then used as an INDEPENDENT ORACLE and **agrees with our CaDiCaL
+> refutations on 6 of 6 chains, 0 disagreements** — the UNSAT column of
+> `results.csv` is cross-validated.
+>
+> The farm runs `satworker.py` (CaDiCaL over the exact-cover encoding) as a
 > **refutation engine**: UNSAT is an unconditional refutation of a chain, SAT
 > would be auto-compiled and validated. Operating commands are `satstatus.ps1` /
 > `satscale.ps1` / `satstop.ps1` (same invocation pattern as below), ledger at

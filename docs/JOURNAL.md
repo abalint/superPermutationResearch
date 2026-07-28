@@ -6,6 +6,64 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 16) — two real upstream bugs found and patched in PermutationChains (not a stack overrun at all); the refutation census is now CROSS-VALIDATED by an independent engine (6/6 agree); one earlier claim retracted
+
+**Root cause of the broken Windows build — two genuine defects in
+`PermutationChains.c`, both invisible on macOS** (patch + upstream write-up:
+`analysis/cover7/PermutationChains-fopen-fix.patch`, 3 lines):
+
+1. **Invalid `fopen` mode strings `"wa"` / `"aa"`** (3 sites). BSD libc reads
+   only the leading character and ignores the rest, so macOS behaves as
+   intended. The Microsoft UCRT validates the whole string, trips the
+   invalid-parameter handler, and calls `__fastfail(FAST_FAIL_INVALID_ARG)` —
+   which raises **0xC0000409, the same status as a `/GS` stack-cookie
+   failure**. That is why it misreported as a stack overrun and why `/Od`,
+   `/GS-` and larger stacks all changed nothing. Reduced 12-line repro on the
+   PC reproduces 0xC0000409 exactly under `cl /O2`. (glibc/mingw are a third
+   case: they return NULL and the program exits via its own error path.)
+2. **A dropped assignment**: the second `fopen`'s result is discarded, so `f`
+   still points at the twoCycles stream `fclose`d three lines earlier ⇒ the
+   NULL check tests the wrong pointer, `printSuperPerm` writes to a closed
+   `FILE*`, `fclose` double-closes, and the real stream leaks once per solution
+   (42,288 times at n=6). Undefined behaviour, masked on macOS only because BSD
+   libc recycles the `FILE` slot and hands the stale pointer the new file.
+
+With the patch, **native MSVC builds and works** (mingw-w64 too; the two
+binaries are byte-identical in output). Gate on Windows: `5` → **6**,
+`5 nsk444` → **6**, `6 ffc` → **36** (Egan's documented number), all exit 0 with
+solution files written. The full `6` → 42,288 counts are still grinding
+(~7.7k/42,288 at last look) — not a defect: F: does **48 ms per file
+open/close** and Egan reopens two files per solution. Verdict any time via
+`F:\superpermFarm\gate6verdict.ps1`. ASan/UBSan were unusable (sanitized
+binaries hang in dyld init on this macOS) and could not have caught defect 2
+anyway — `FILE` is not malloc-tracked.
+
+**The result that matters: our refutation census is independently
+cross-validated. 6 of 6 chains agree, 0 disagreements.** Egan's plain mode is a
+complete DFS with sound pruning, so it is a true independent oracle for our
+CaDiCaL UNSATs: chains 5, 25 (K=29) and 26, 43 (K=30) exhausted with 0
+solutions, exit 0; chains 33, 35 (K=30) were rejected as structurally unviable
+before search. Windows and macOS traces are byte-identical bar one
+`sizeof(long)` line. Two independent engines, two independent encodings, same
+verdicts — the UNSAT column of `results.csv` can be trusted.
+
+**RETRACTION (s13 NOTES).** "PermutationChains asym coverFirst on chain 0: DXL
+reached minColsLeft=0 — EXACT COVERS OF CHAIN 0 EXIST … process then died
+silently" is **wrong on both counts**. `coverFirst` does not crash: chain 0
+completes with exit 0 and zero solutions. And `minColsLeft=0` refers to the
+cover-first *reduced* subproblem at depth 93, not a 141-size cover. There is no
+evidence that chain 0 has a cover.
+
+**Farm state:** 27 CaDiCaL workers, 60/223 claimed, ledger 6 UNSAT + 27
+TIMEOUT-KILLED. Roughly 80% of chains exceed the 30-minute budget, so the first
+pass will be a partial census; the sensible follow-up is a longer-budget second
+pass over the survivors, or a better encoding.
+
+**Next session:** (1) `results.csv` census tally; (2) send the patch upstream to
+Egan — it is a live defect for anyone building his code on Windows; (3) Track C
+(learned ordering) remains the one lever aimed at the instances both engines
+time out on.
+
 ## 2026-07-27 (session 15) — the positive control paid for itself: the Windows PermutationChains binary was BROKEN (all its farm output void); no engine can *find* a known cover; farm re-aimed as a validated refutation engine (first real UNSATs)
 
 A correctness session. Everything here follows from insisting on a positive
