@@ -10,6 +10,17 @@ but whether a **learned evaluation function over residual-graph structure** can 
 better than the hand-derived waste/cycle bounds. See [docs/THEORY.md](docs/THEORY.md) for
 the full framing and [docs/ROADMAP.md](docs/ROADMAP.md) for the phased plan.
 
+> **Founding thought (2026-07-26, preserved verbatim):** *"What if we view it as a game
+> where the goal is to create the shortest superpermutation by taking turns picking nodes
+> down a tree — and then use an evaluation system similar to chess engines to decide what
+> the next best move is?"*
+>
+> Everything since is that sentence maturing, not being replaced: the beam scorers are the
+> evaluation function, the endgame tablebase is literally the chess analogue (exact play
+> once ≤ 25 perms remain), and Track C deploys the same idea one level up — the "moves"
+> become certificate/cover decisions (which column to branch on in the DLX game tree),
+> where an ordering can never cost correctness, only time.
+
 ## Status
 
 **Phases 1–2 complete; phase 3 underway (items 1–4 done)** — Rust search core:
