@@ -25,16 +25,24 @@ beyond CaDiCaL's 41. Merged census (`analysis/trackc/census_merge.py`, output
 any SAT surfaced loudly): **STRUCTURAL 52 + UNSAT 33 = 85/223 closed; 138 OPEN**
 (5 × K=27, 19 × K=29, 30 × K=30, 84 × K=31).
 
-**Discrepancy flagged, worth a look**: an exactly-one SAT constraint over an
-empty candidate set should be instantly UNSAT, yet satworker's CaDiCaL runs
-burned 30 min on structurally-dead chains. Either satworker builds its instance
-by a different (more liberal) rule than `chain7` — in which case its verdicts
-describe a different formulation and the encodings should be reconciled — or
-its encoder skips empty columns. Next farm session should check
-`satworker.py`'s instance construction against `chain7` on chain 34 before
-trusting pass-2 budgets. (The structural closures themselves do not depend on
-this: they are proved in the canonical formulation that all our ledger claims
-use.)
+**Discrepancy RESOLVED same night — encoder bug found and fixed.**
+`sat_chain.py` (which `satworker.py` shells out to) built its at-least-one
+clauses by iterating `by_col` — a dict **keyed from the rows** — so a column
+with zero candidate rows never became a key and got *no clause at all*
+(`sat_chain.py:51` pre-fix). CaDiCaL was handed a relaxation with 554/555
+columns constrained: a genuinely hard formula whose contradiction was never
+encoded — that is exactly why structurally-dead chains burned full 30-min
+budgets. Consequences: the CNF was a strict clause-subset of the canonical
+instance, so **all 41 pass-1 UNSAT verdicts remain sound**
+(relaxation-UNSAT ⇒ true-UNSAT); the 182 TIMEOUTs were verdicts about the
+relaxation. Fixed: `sat_chain.py` now iterates `inst["columns"]` and
+short-circuits a zero-candidate column to the exit-2 UNSAT path
+("STRUCTURAL-UNSAT … 0 cuts, unconditional"). Verified locally with a stubbed
+solver: chain 34 → exit 2 before any solving; chain 6 (non-structural) still
+builds all 147,764 clauses and reaches the solver, with an assert that no
+empty clause ever passes through. A SAT could never have slipped through
+either way (`assert rep["exact_cover"]` fires post-model), so the bug only
+ever wasted time, never soundness.
 
 **Engine-agreement datum**: within the 37 chains both engines attempted, zero
 dominance either way — DLX never closed a non-structural chain CaDiCaL

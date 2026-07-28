@@ -49,7 +49,18 @@ def main():
 
     solver = Cadical195()
     ncl = 0
-    for c, lits in by_col.items():
+    # Iterate the instance's column list, not by_col's keys: a zero-candidate
+    # column must contribute an EMPTY at-least-one clause (instant UNSAT).
+    # Enumerating from rows silently dropped such columns and handed the solver
+    # a relaxation (JOURNAL s17b — chains 34/37/41 burned 30 min each on it).
+    for c in inst["columns"]:
+        lits = by_col.get(c, [])
+        if not lits:
+            # Don't rely on the binding accepting an empty clause — report the
+            # unconditional refutation directly through the UNSAT exit path.
+            print(f"[{tag}] STRUCTURAL-UNSAT: column {c} has zero candidate "
+                  f"rows -> no cover exists (0 cuts, unconditional)", flush=True)
+            return 2
         solver.add_clause(lits)
         ncl += 1
         for a in range(len(lits)):
