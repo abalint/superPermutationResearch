@@ -165,7 +165,15 @@ compute class (~10¹⁵× the 2019 distributed effort) — everything below is t
        S−1+#w3+2#w4+3#w5; 871 ⇒ e.g. S=144 with three w3s) + impossibility
        lemmas; **Track C** — the thesis: learned evaluator over partial
        certificates/sojourn plans (records as labeled data), deployed where
-       Tracks A/B explode. Original framing below, superseded where it
+       Tracks A/B explode. **v1 built and gated s17** (`docs/TRACKC-DESIGN.md`,
+       `analysis/trackc/RESULTS-s17.md`): corpus 310 certs / 21,423 pairs,
+       parity-clean guided C DLX (`dlx7g`), holdout ranker models. Mechanism
+       GO (22× nodes-to-cover on n=6; cross-n transfer 0.746 pair acc);
+       n=7 cover gates NO-GO at 60 min (6/6 timeout both arms); row order
+       proven irrelevant to UNSAT under fixed MRV ⇒ v2 lever = learned
+       column choice, then dead-end mining, value-based restarts, CDCL
+       biasing. Bonus: dlx7g = fast third refutation engine; local census
+       sweep running (`analysis/trackc/census_sweep.sh`). Original framing below, superseded where it
        conflicts: play on the 120 rotation cycles —
        entry/exit points and weave order as moves, so the record structure is a move,
        not an accident. Design constraints sharpened by s8 + Robin's thread reply:

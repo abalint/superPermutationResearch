@@ -35,16 +35,18 @@ print('instances ready')
 EOF
 
 run_one() {
-  local idx=$1
-  local inst="$OUT/instances/wl_${idx}.txt"
-  local log="$OUT/logs/wl_${idx}.log"
+  local idx=$1                      # unpadded, for the CSV
+  local pad
+  pad=$(printf 'wl_%03d' "$idx")    # files are zero-padded
+  local inst="$OUT/instances/${pad}.txt"
+  local log="$OUT/logs/${pad}.log"
   local meta pattern K Sigma
   meta=$(cat "$inst.meta")
   pattern=$(python3 -c "import json,sys;print(json.loads(sys.argv[1])['pattern'])" "$meta")
   K=$(python3 -c "import json,sys;print(json.loads(sys.argv[1])['K'])" "$meta")
   Sigma=$(python3 -c "import json,sys;print(json.loads(sys.argv[1])['Sigma'])" "$meta")
   local t0=$SECONDS
-  nice -n 10 ./dlx7g "$inst" --time-limit "$TL" --out "$OUT/logs/wl_${idx}.rows" > "$log" 2>&1
+  nice -n 10 ./dlx7g "$inst" --time-limit "$TL" --out "$OUT/logs/${pad}.rows" > "$log" 2>&1
   local rc=$? dt=$((SECONDS - t0))
   local verdict nodes maxd
   case $rc in
@@ -62,10 +64,10 @@ run_one() {
 }
 
 # Work queue: indices 5..222 not already in the CSV.
-for idx in $(seq -f '%03g' 5 222); do
-  grep -q "^${idx#0},\|^$((10#$idx))," "$CSV" && continue
+for idx in $(seq 5 222); do
+  grep -q "^${idx}," "$CSV" && continue
   while [ "$(jobs -rp | wc -l)" -ge "$WORKERS" ]; do wait -n; done
-  run_one "$((10#$idx))" &
+  run_one "$idx" &
 done
 wait
 echo "SWEEP COMPLETE $(date)" >> "$CSV"

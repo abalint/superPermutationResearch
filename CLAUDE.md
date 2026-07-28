@@ -21,6 +21,11 @@ absolute pivot confinement; max V = 8, all 12 optimal chains fail the cover —
 exhaustive proofs). Sub-872 must leave the grammar. Next: **Track A** (n=7 max-V₇
 campaign — V₇ ≥ 15 + cover beats 5906), **Track B** (sojourn-level out-of-grammar
 search at n=6), **Track C** (learned partial-certificate evaluator — the thesis).
+**Track C v1 landed s17** (`docs/TRACKC-DESIGN.md`, `analysis/trackc/RESULTS-s17.md`):
+guided DLX row ordering works in principle (22× on n=6, real cross-n transfer) but
+NO-GO on the n=7 cover gates at 60 min; v2 lever = learned column choice. Side
+product: `analysis/trackc/dlx7g` is a fast third refutation engine — a local
+census sweep may be running on this Mac (`analysis/trackc/runs/census/results.csv`).
 Prior state: —
 from-scratch bests: n=6 **873** (stratified beam, ~8 s), n=7 **5913** (same config
 + `--allow-n-mismatch`, ties greedy, ~5.5 min; bar 5907). Item 3 verdict (s8): the

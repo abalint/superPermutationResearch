@@ -6,6 +6,74 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 17) — Track C v1 built end-to-end and gated: learned row ordering inside DLX works (22× on n=6) but does NOT crack the n=7 cover instances at 60 min; row order proven irrelevant to UNSAT under MRV; a local DLX census sweep opened as a third refutation engine
+
+Track C (the thesis — learned evaluator inside the cover search) went from zero
+code to a fully gated v1 in one session. Spec: **`docs/TRACKC-DESIGN.md`**
+(locked 8-feature vector, pre-`cover(c)` timing, holdout design); results:
+**`analysis/trackc/RESULTS-s17.md`**; code: `analysis/trackc/` (instances.py,
+replay.py, `dlx7g.c`, solve_guided.py, census_sweep.sh), `ml/fit_cover_rank.py`,
+models `ml/models/trackc_model{A,B,N6}.*`. Built by parallel subagents against
+the locked spec; every cross-language boundary gated.
+
+**What was built (all gates green):**
+- **Corpus**: 296/296 n=6 record words extract to certificates and replay
+  (`extract_certificate` → map to `gain1.build_instance(6)` rows →
+  `check_cover`), plus 3/3 5907 and 11/11 5906 certs → **9,150 teacher-forced
+  decisions / 21,423 (pos, neg) sibling pairs** over 12 exported instances
+  (`data/trackc/instances/`, incl. the 5 open K=27 chains).
+- **Engine**: `dlx7g` — guided descendant of the farm's C DLX: variable child
+  count (n=6 and n=7 instances), incremental `grounded[]`/`pending[]` forest
+  features on the undo trail, `--weights` linear row ordering, ε-restart
+  diversification, `--dump-features` parity mode. **Python↔C feature parity is
+  byte-clean** (the one boundary that could silently poison everything).
+- **Trainer**: numpy pairwise RankNet (s8 architecture), standardization folded
+  into exported weights; two honest holdout models (A: n6+5906, gates on 5907;
+  B: n6+5907, gates on the 5906 K=18 chain).
+
+**The positive result: the mechanism works.** On the n=6 standard instance
+(known-SAT), learned ordering cuts nodes-to-first-cover **21,627 → 961 (22.5×,
+model B)**. And cross-n transfer is real: a model trained ONLY on n=6 ranks
+n=7 cover rows at 0.746 pair accuracy (chance 0.51). The certificate-level
+features do carry structure across n — the thing item 3's walk-level features
+never did.
+
+**The honest negative: G1/G1b NO-GO.** On the two held-out known-SAT n=7 gates
+(standard K=5, 690×4440, R=138; and the real 5906's K=18 chain, R=124), guided
+and blind alike: 6/6 TIMEOUT at 60 min, max depth ~112/138 and ~98/124,
+depth differences noise-level, ~600–790M nodes per run. Top-1 ≈ 0.62–0.68 per
+node compounds to ~0 over a 138-deep all-correct descent — a static linear
+ranker over local features cannot bridge the n=7 plateau. Per the design's
+gate criteria the K=27 record attack (G3) was NOT triggered.
+
+**A structural theorem-lite from G2**: with the column rule fixed (MRV), row
+ordering permutes the DFS but the exhaustion tree is the *same node set* —
+verified byte-identical node counts (60,037,516 and 8,548,527) blind vs guided
+on two refuted chains. Row ordering is purely a time-to-first-solution lever;
+**UNSAT economy needs learned COLUMN choice** — the top v2 lever.
+
+**Bonus, possibly the sleeper result: dlx7g is a fast third refutation
+engine.** It exhausted farm chain 5 (K=29) in 8 min and chain 26 (K=30) in
+64 s locally — fresh independent confirmations of the CaDiCaL+Egan verdicts,
+DLX encoding, third engine family. A **local census sweep** over the 218
+unclaimed-by-us worklist chains is now running (`census_sweep.sh`, 4 workers,
+30-min caps, resumable, results → `analysis/trackc/runs/census/results.csv`;
+any exit-0 SAT candidate is flagged for validation, never auto-believed).
+Check it before starting new compute on this machine.
+
+**v2 levers recorded in RESULTS-s17.md**: (1) learned column choice, (2)
+dead-end mining (off-path training), (3) value-based restarts, (4) CDCL
+phase/branching biasing from the same model, (5) MLP. Dead v1 features:
+`min_child_sz_log` (zero within-node variance under MRV — the chosen column is
+everyone's child and the global min); `grounds_pending` weak-negative in
+teacher-forced data.
+
+**Next session:** (1) read `analysis/trackc/runs/census/results.csv` — the
+sweep verdict tally (UNSATs close census chains; cross-check against the
+remote farm's ledger); (2) Track C v2: learned column choice is the highest-EV
+lever, dead-end mining second; (3) the farm patch upstream to Egan (s16)
+remains unsent.
+
 ## 2026-07-27 (session 16) — two real upstream bugs found and patched in PermutationChains (not a stack overrun at all); the refutation census is now CROSS-VALIDATED by an independent engine (6/6 agree); one earlier claim retracted
 
 **Root cause of the broken Windows build — two genuine defects in
