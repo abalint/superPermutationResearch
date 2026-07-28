@@ -48,7 +48,12 @@ Claude session. Operating runbook: `analysis/cover7/REMOTE-FARM.md`; scripts:
 `analysis/farm/`. Status in one line:
 `ssh transcribe "powershell -NoProfile -ExecutionPolicy Bypass -File F:\superpermFarm\satstatus.ps1"`
 (`status.ps1` is the retired PermutationChains-era reporter).
-It now runs a CaDiCaL **refutation** engine; ledger
+**Pass 1 is COMPLETE (s18): 223/223 chains attempted, 41 unconditionally
+refuted, 182 undecided at 30 min, no SAT** — census committed at
+`analysis/cover7/results_n7_pass1.csv`. Decidable chains are fast (median 1.85
+min, 25/41 under 5 min), so the 182 survivors need a better *method*, not a
+bigger budget. The farm is currently IDLE.
+It runs a CaDiCaL **refutation** engine; ledger
 `F:\superpermFarm\results.csv`. UNSAT = a chain unconditionally closed; a SAT
 would be a candidate **world record**, auto-compiled and then validated with
 `validate -n 7 --file <f> --complete` before believing anything. Two hard facts

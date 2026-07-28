@@ -6,6 +6,52 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-28 (session 18) — n=7 refutation pass 1 COMPLETE: 223/223 chains attempted, **41 unconditionally refuted**, 182 undecided at the 30-min budget, no SAT
+
+The PC farm finished its first full sweep of the V₇=15 census. Ledger committed
+as `analysis/cover7/results_n7_pass1.csv` (223 rows: timestamp, index, pattern,
+K, Σ, engine, outcome, best_partial, minutes, pid, word_file).
+
+| K | UNSAT / attempted | decided |
+|---|---|---|
+| 27 | 0 / 5 | 0% |
+| 29 | 2 / 21 | 10% |
+| 30 | 6 / 48 | 12% |
+| 31 | **33 / 149** | 22% |
+| **all** | **41 / 223** | **18%** |
+
+**No SAT** — no candidate 5905 word from any chain.
+
+**What the 41 are worth.** Each is an unconditional refutation: CaDiCaL UNSAT at
+0 cuts over the exact-cover encoding, with **no symmetry assumption**, so it
+rules out *every* cover of that chain — asymmetric ones included. That is
+strictly stronger than the published negatives in this area, which come from
+symmetry-reduced searches (Egan's 2SYMM route). And the column is
+cross-validated: s16's patched PermutationChains, an independent engine on an
+independent encoding, agreed with our verdicts on 6/6 chains sampled.
+
+**Solve-time structure — decisive for pass 2.** UNSAT times: min 0.02, median
+**1.85**, max 32.17 minutes; **25 of 41 landed under 5 minutes**. So decidable
+chains are overwhelmingly *fast*, and the 182 timeouts are not "nearly done" —
+they are qualitatively harder, not marginally slower. Raising the budget alone
+will therefore yield little: a 4× budget would likely convert only the handful
+near the 30-min boundary. Difficulty also tracks K inversely (K=31 decides 22%
+of the time, K=27 zero of five) — consistent with lower-K chains having more row
+freedom and hence bigger search spaces.
+
+**Reading.** Pass 1 closes 18% of the penalty-≤16 space at n=7 unconditionally.
+The remaining 182 need a better method, not more minutes — exactly the gap
+Track C v1 identified from the other direction (s17: guided row ordering is a
+22× win at n=6 but a NO-GO on the n=7 cover gates; the open lever is learned
+*column* choice). Two engines, two sessions, same conclusion: n=7 cover decision
+needs a structural improvement, not more compute.
+
+**Next:** (1) pass 2 aimed at *method*, not budget — learned column choice
+(Track C v2), symmetry-reduced encodings where chains admit them, or s17's
+`dlx7g` as a third opinion on the survivors; (2) the 41 refutations plus s11's
+n=6 theorem are enough to draft the write-up; (3) send the s16 fopen/`FILE*`
+patch upstream to Egan.
+
 ## 2026-07-27 (session 17) — Track C v1 built end-to-end and gated: learned row ordering inside DLX works (22× on n=6) but does NOT crack the n=7 cover instances at 60 min; row order proven irrelevant to UNSAT under MRV; a local DLX census sweep opened as a third refutation engine
 
 Track C (the thesis — learned evaluator inside the cover search) went from zero
