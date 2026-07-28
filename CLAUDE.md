@@ -13,8 +13,9 @@ planned learned value function.
 4. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 
 Current state in one line: **phase 3 underway, items 1–4 done, item 5 step 2
-proven out at n=6; n=7 record hunt running on a remote farm (JOURNAL s11 + s14,
-`docs/ITEM5-DESIGN.md`, `analysis/kernelchain/`, `analysis/cover7/REMOTE-FARM.md`)**
+proven out at n=6; the n=7 refutation census is COMPLETE at pass-1 budgets —
+85/223 chains closed, 138 open, both engine families exhausted, farm and Mac
+idle (JOURNAL s17b + s18; `docs/ITEM5-DESIGN.md`, `analysis/cover7/REMOTE-FARM.md`)**
 — headline: **Egan−1 = 872 is optimal in the gain-one certificate grammar at n=6**
 (skip-priced ledger waste = 148 − K/4 + Σskip/4 + f4 + 2f5; forced-map period 4;
 absolute pivot confinement; max V = 8, all 12 optimal chains fail the cover —
@@ -24,8 +25,10 @@ search at n=6), **Track C** (learned partial-certificate evaluator — the thesi
 **Track C v1 landed s17** (`docs/TRACKC-DESIGN.md`, `analysis/trackc/RESULTS-s17.md`):
 guided DLX row ordering works in principle (22× on n=6, real cross-n transfer) but
 NO-GO on the n=7 cover gates at 60 min; v2 lever = learned column choice. Side
-product: `analysis/trackc/dlx7g` is a fast third refutation engine — a local
-census sweep may be running on this Mac (`analysis/trackc/runs/census/results.csv`).
+product: `analysis/trackc/dlx7g` is a fast third refutation engine; its census
+sweep is FINISHED (all 223 chains attempted, no SAT) — ledgers committed at
+`analysis/cover7/results_n7_merged.csv` (canonical, 85 closed / 138 open) and
+`results_n7_dlx_sweep.csv` (raw DLX rows). No compute is running anywhere.
 Prior state: —
 from-scratch bests: n=6 **873** (stratified beam, ~8 s), n=7 **5913** (same config
 + `--allow-n-mismatch`, ties greedy, ~5.5 min; bar 5907). Item 3 verdict (s8): the
@@ -42,9 +45,9 @@ boundary fact; tablebase becomes the terminal solver). Expert corpus: 298 distin
 872s (`data/records872/` + `data/gain1_872s/`), Chaffin prefixes in
 `data/chaffin/`, field news in `../extraDocs/2026-07-27-urdvr-email-and-repo.md`.
 
-**Live compute (check this first if picking up cold):** an n=7 record search runs
-continuously on a remote 28-core Windows PC — 27 workers, independent of any
-Claude session. Operating runbook: `analysis/cover7/REMOTE-FARM.md`; scripts:
+**Live compute (check this first if picking up cold):** a remote 28-core Windows
+PC (`ssh transcribe`) hosts the n=7 refutation farm — **currently IDLE**, pass 1
+complete. Operating runbook: `analysis/cover7/REMOTE-FARM.md`; scripts:
 `analysis/farm/`. Status in one line:
 `ssh transcribe "powershell -NoProfile -ExecutionPolicy Bypass -File F:\superpermFarm\satstatus.ps1"`
 (`status.ps1` is the retired PermutationChains-era reporter).

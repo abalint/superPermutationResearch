@@ -84,6 +84,16 @@ Greedy with min-weight/lexicographic tie-breaking reproduces the classic
 sum-of-factorials construction (9, 33, 153, 873, …). Beating 872 at n=6 or 5906 at n=7
 is the long-term goal; phase 1 only has to *recover the known optima for n ≤ 5*.
 
+**Current front (2026-07): the certificate campaign.** Beyond the beam story above,
+the project moved to the gain-one certificate grammar: at n=6, **Egan−1 = 872 is
+proven optimal in the grammar** (`docs/RESULT-gain1-optimality-n6.md`); at n=7, the
+V₇=15 kernel-chain census (any covered chain ⇒ a record 5905) stands at **85/223
+chains refuted, 138 open** after a two-engine pass (`analysis/cover7/
+results_n7_merged.csv`), and **Track C** — a learned row-ordering evaluator inside
+the DLX cover search — is built and gated (`docs/TRACKC-DESIGN.md`,
+`analysis/trackc/RESULTS-s17.md`). Session-by-session state: `docs/JOURNAL.md`
+(read newest entry first); agent conventions: `CLAUDE.md`.
+
 ## Quickstart
 
 ```bash
