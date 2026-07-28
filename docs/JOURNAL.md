@@ -34,8 +34,12 @@ columns constrained: a genuinely hard formula whose contradiction was never
 encoded — that is exactly why structurally-dead chains burned full 30-min
 budgets. Consequences: the CNF was a strict clause-subset of the canonical
 instance, so **all 41 pass-1 UNSAT verdicts remain sound**
-(relaxation-UNSAT ⇒ true-UNSAT); the 182 TIMEOUTs were verdicts about the
-relaxation. Fixed: `sat_chain.py` now iterates `inst["columns"]` and
+(relaxation-UNSAT ⇒ true-UNSAT). Precision on the timeouts: only chains that
+*have* a zero-candidate column lost a clause — so the 44 structurally-dead
+timeouts were spent on a relaxation, while the remaining **138 open chains'
+CNFs were bit-identical to canonical and their timeout verdicts stand** as
+genuine hardness evidence (re-running CaDiCaL on them post-fix would change
+nothing). Fixed: `sat_chain.py` now iterates `inst["columns"]` and
 short-circuits a zero-candidate column to the exit-2 UNSAT path
 ("STRUCTURAL-UNSAT … 0 cuts, unconditional"). Verified locally with a stubbed
 solver: chain 34 → exit 2 before any solving; chain 6 (non-structural) still
