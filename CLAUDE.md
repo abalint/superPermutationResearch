@@ -41,8 +41,9 @@ boundary fact; tablebase becomes the terminal solver). Expert corpus: 298 distin
 continuously on a remote 28-core Windows PC — 27 workers, independent of any
 Claude session. Operating runbook: `analysis/cover7/REMOTE-FARM.md`; scripts:
 `analysis/farm/`. Status in one line:
-`ssh transcribe "powershell -NoProfile -ExecutionPolicy Bypass -File F:\superpermFarm\status.ps1"`.
-It now runs a CaDiCaL **refutation** engine (`satstatus.ps1`); ledger
+`ssh transcribe "powershell -NoProfile -ExecutionPolicy Bypass -File F:\superpermFarm\satstatus.ps1"`
+(`status.ps1` is the retired PermutationChains-era reporter).
+It now runs a CaDiCaL **refutation** engine; ledger
 `F:\superpermFarm\results.csv`. UNSAT = a chain unconditionally closed; a SAT
 would be a candidate **world record**, auto-compiled and then validated with
 `validate -n 7 --file <f> --complete` before believing anything. Two hard facts
