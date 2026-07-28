@@ -53,7 +53,31 @@ All are idempotent: `farmscale`/`watchdog` skip chains already running and
 backfill only dead slots. Worker count is a single `TARGET` variable at the top
 of `farmscale.ps1`.
 
-## Known failure modes — and the "silent crash" that wasn't
+> ## ⚠ SUPERSEDED IN PART — read this box first (session 15)
+>
+> The farm no longer runs Egan's `PermutationChains`. **The Windows build of it
+> was broken at the build level**: `PermutationChains.exe 5` / `6` fail Egan's
+> own smoke tests, exiting `0xC0000409` (STATUS_STACK_BUFFER_OVERRUN) with zero
+> solution files, while the same source under clang on the Mac produces the
+> correct 6 and 42,288 solutions. **Every chain the PermutationChains farm ever
+> "finished" is void — those chains were never searched.** Nothing in the
+> §"failure modes" discussion below about orderly exits should be treated as
+> evidence about the mathematics; it was describing a crashing binary.
+>
+> The farm now runs `satworker.py` (CaDiCaL over the exact-cover encoding) as a
+> **refutation engine**: UNSAT is an unconditional refutation of a chain, SAT
+> would be auto-compiled and validated. Operating commands are `satstatus.ps1` /
+> `satscale.ps1` / `satstop.ps1` (same invocation pattern as below), ledger at
+> `F:\superpermFarm\results.csv`.
+>
+> **Sobering limit, stated plainly:** no engine we have — CaDiCaL, Python DLX,
+> or C DLX — can *find* a cover for a known-SAT control instance (the standard
+> K=5 kernel, or the real 5906's K=18 chain) within 45 minutes. The validated
+> 5907/5906 words this project compiled were **reconstructed from published
+> words, not discovered**. So the farm is credible when it says UNSAT and is
+> not a likely route to a record. Absence of SAT is not evidence of absence.
+
+## Known failure modes (historical — PermutationChains era)
 
 1. **Workers that vanish are (apparently) FINISHING, not crashing.** Two
    successive diagnoses were wrong and are recorded here so nobody re-runs them:

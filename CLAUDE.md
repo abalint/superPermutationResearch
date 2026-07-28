@@ -42,10 +42,15 @@ continuously on a remote 28-core Windows PC — 27 workers, independent of any
 Claude session. Operating runbook: `analysis/cover7/REMOTE-FARM.md`; scripts:
 `analysis/farm/`. Status in one line:
 `ssh transcribe "powershell -NoProfile -ExecutionPolicy Bypass -File F:\superpermFarm\status.ps1"`.
-A `7_59*.txt` file there is a candidate **world record** — validate it with
-`validate -n 7 --file <f> --complete` before believing anything. Open question
-blocking interpretation of all farm negatives: does an orderly finish refute a
-chain? See the positive control in REMOTE-FARM.md (JOURNAL s14).
+It now runs a CaDiCaL **refutation** engine (`satstatus.ps1`); ledger
+`F:\superpermFarm\results.csv`. UNSAT = a chain unconditionally closed; a SAT
+would be a candidate **world record**, auto-compiled and then validated with
+`validate -n 7 --file <f> --complete` before believing anything. Two hard facts
+from s15: Egan's PermutationChains Windows build is BROKEN (all its earlier farm
+output is void), and **no engine we have can FIND a cover even on known-SAT
+control instances** — the 5907/5906 words we "compiled" were reconstructed from
+published words, not discovered. Treat the farm as a refutation census, not a
+route to a record.
 
 ## Commands
 

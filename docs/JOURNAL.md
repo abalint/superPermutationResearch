@@ -6,6 +6,61 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-27 (session 15) — the positive control paid for itself: the Windows PermutationChains binary was BROKEN (all its farm output void); no engine can *find* a known cover; farm re-aimed as a validated refutation engine (first real UNSATs)
+
+A correctness session. Everything here follows from insisting on a positive
+control before believing a negative.
+
+**The control failed, then the binary failed.** Pointing the farm's engine at the
+standard K=5 kernel — which provably HAS covers (the known 5907s are built from
+it; our ledger's 143 = 138 rows + 5 loops matched exactly) — it ran 9 minutes,
+reached PCsolSize 121/143 and exited empty. Chasing that, the agent ran Egan's
+own smoke tests: **`PermutationChains.exe 5` and `6` exit `0xC0000409`
+(STATUS_STACK_BUFFER_OVERRUN) with zero solution files**, under `/O2`, `/Od`, and
+`/O2 /GS-` alike, while the identical source under clang on the Mac gives the
+correct 6 and 42,288 solutions. ⇒ **Every chain that farm ever reported as
+"finished" is void — those chains were never searched.** (This also retro-
+explains s14's "orderly exits" and the Mac's mid-line truncations: a latent
+memory bug, caught by MSVC's stack cookie, tolerated by clang.) The
+PermutationChains farm was stopped.
+
+**What the modes actually are** (source-read, for the record): `searchPC` (plain)
+IS a complete DFS with only sound pruning — so an exhaust *would* be a genuine
+refutation, if the binary worked. `trackPartial` is print-only. `coverFirst` is a
+DLX pre-pass. `stabiliser/limStab/symmPairs/littleGroup/blocks/fullSymm` are
+symmetry reductions. **Egan's n=7 recipe was `7 fullSymm limStab ffc`** — a
+4-cycle kernel *plus symmetry* (762 solutions, ~30 min); he never claims plain
+mode completes at n=7. The `nsk` path was verified faithful (`nsk444` ≡ default
+at n=5 → 6 solutions; `nsk5555` ≡ default at n=6 → 42,288).
+
+**The hard, honest negative: nothing we have can FIND a cover.** Control gate on
+two known-SAT instances (standard K=5; the real 5906's K=18 chain), three
+engines — CaDiCaL, Python DLX, C DLX — **none found a cover in > 45 min each**.
+The 5907/5906 words this project "compiled and validated" in s13 were
+**reconstructed from published words, not discovered**; that claim is corrected
+here. These instances are simply hard, and Egan needed symmetry reduction to
+crack them at all.
+
+**Farm re-aimed as a refutation engine.** `satworker.py` (CaDiCaL over the
+exact-cover encoding) runs because its **UNSAT direction is validated** (K=29
+chain UNSAT in 33 s CaDiCaL / 49 s kissat, at 0 cuts = unconditional), and any
+SAT would be auto-compiled and validated before being believed. 27 workers,
+**30-min per-chain budget** (fixes s14's permanent queue stall — 193 of 218
+chains had never started), atomic `O_CREAT|O_EXCL` claims, write-once row files
+rebuilt into `F:\superpermFarm\results.csv`. Worklist 223 (5 K=27 first).
+**First real outcomes: 3 UNSAT** (0.11–1.96 min each), 30/223 claimed.
+
+**Reading.** The farm's realistic product is now a *census of refutations*
+narrowing where a 5905 could hide — not a record. Combined with s11's n=6
+theorem, the shape of a paper is "Egan−1 is optimal in the gain-one class at
+n=6, and here is how much of the n=7 penalty-≤16 space is closed." The record
+itself, if it is reachable at all, needs the search to get smarter — symmetry
+reduction (Egan's own lever) or Track C's learned ordering — not more cores.
+
+**Next session:** (1) read `results.csv` — how much of the 223 is closed; (2)
+consider a symmetry-reduced encoding (the one lever known to work at n=7); (3)
+Track C / Track B remain the research lines.
+
 ## 2026-07-27 (session 14) — the search moved to a 28-core PC (27 workers, 96% CPU, survives disconnect); two "crash" diagnoses refuted; the real open question is whether an orderly finish REFUTES a chain
 
 Infrastructure session, plus one reinterpretation that may matter more than the
