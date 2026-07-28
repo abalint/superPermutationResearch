@@ -15,6 +15,13 @@ fresh session, a phone, or by hand.
 - Quoting through ssh → cmd → PowerShell mangles arguments. Ship a
   **parameterless** script with `scp <file> "transcribe:F:/superpermFarm/"` and
   run it by path.
+- Why `-ExecutionPolicy Bypass` appears in every command: it lets an *unsigned
+  local* `.ps1` run in that one process. It is per-invocation, changes no
+  machine policy, and grants nothing beyond what this (non-admin) account
+  already has. The alternatives are signing our scripts or inlining everything
+  as `-Command` strings — the latter is the quoting trap above. If you would
+  rather not use it, sign the scripts or set the policy once per user with
+  `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` and drop the flag.
 
 ## How persistence works (no admin needed)
 

@@ -1,0 +1,10 @@
+[dlx7g] ../../data/trackc/instances/unsat_26.txt: cols=555 rows=2446 loops=526 nchild=5 maxcolsz=35 weights=../../ml/models/trackc_modelA.txt eps=0 seed=0
+[progress] nodes=1048576 total=1048576 depth=35 maxdepth=68 elapsed=10.5s
+[progress] nodes=2162688 total=2162688 depth=40 maxdepth=69 elapsed=20.8s
+[progress] nodes=3080192 total=3080192 depth=38 maxdepth=69 elapsed=31.2s
+[progress] nodes=4128768 total=4128768 depth=46 maxdepth=71 elapsed=41.3s
+[progress] nodes=5308416 total=5308416 depth=39 maxdepth=71 elapsed=51.9s
+[progress] nodes=6225920 total=6225920 depth=38 maxdepth=71 elapsed=61.9s
+[progress] nodes=7471104 total=7471104 depth=41 maxdepth=71 elapsed=72.3s
+[attempt 1] res=0 nodes=8548527 (cap 0) total=8548527 maxdepth=71 cycle_prunes=55843 dead_ends=1671123 rootless=0
+RESULT EXHAUSTED nodes=8548527 attempts=1 maxdepth=71 elapsed=81.182s
