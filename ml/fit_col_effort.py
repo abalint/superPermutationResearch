@@ -19,10 +19,24 @@ spend all of its capacity on them (§4).
 Held-out = whole instances (`--holdout chain5,chain26`), never sampled rows:
 records from one search share a policy and a tree, so a random row split leaks.
 
+v2.1 PAIRWISE mode (§3b).  Plain effort regression confounds *state hardness*
+with *choice quality*.  `--pairwise` instead consumes within-state pairs from
+`mine_subtrees.py --pairs`
+
+    {"inst","shash","depth","fw":[10],"fl":[10],"yw","yl","src"}
+
+and fits a RankNet logistic model on the score DIFFERENCE: score is predicted
+effort (lower = better = covered first), so the winner must score below the
+loser, and the loss is `softplus(-(s_loser - s_winner))`.  The bias cancels in
+a difference and is exported as 0 — only within-node score *order* is ever used
+by the engine.  Held-out metric is pair accuracy, split by instance.
+
 Usage:
     python3 ml/fit_col_effort.py --train data/trackc/coleffort_s19.jsonl \\
         --name cw1 --holdout chain5,chain26 [--l2 1e-2]
     # --l2 omitted => sweep and pick the best held-out R^2
+    python3 ml/fit_col_effort.py --pairwise --train data/trackc/pairs_s19.jsonl \\
+        --name cwp1 --holdout chain82
     python3 ml/fit_col_effort.py --self-test    # synthetic round-trip
 """
 
@@ -48,9 +62,13 @@ FEATURE_ORDER = [
 ]
 NF = len(FEATURE_ORDER)
 TARGET = "log1p(subtree)"
+TARGET_PAIRWISE = "ranknet(within-state pair, score = effort, lower wins)"
 WEIGHTS_MAGIC = "trackc-cw1"
 
 L2_GRID = [1e-4, 1e-3, 1e-2, 1e-1, 1.0, 10.0]
+# pairwise loss is a SUM over pairs (not a mean), so the useful penalty range
+# scales with the pair count -- hence a grid that reaches further up.
+L2_GRID_PAIR = [1e-2, 1e-1, 1.0, 10.0, 100.0, 1000.0]
 NDEC = 10  # depth buckets (deciles)
 
 
@@ -238,11 +256,163 @@ def train(X, y, depth, inst, holdout, l2_grid, verbose=True):
     return rep
 
 
+# --------------------------------------------------------------- pairwise
+#
+# docs/TRACKC2-DESIGN.md §3b.  Everything below operates on DIFFERENCE vectors
+# d = f_loser - f_winner; the model is correct on a pair iff coef . d > 0.
+
+
+def load_pairs(paths):
+    """-> (Fw (n,NF), Fl (n,NF), inst (n,), src (n,), depth (n,))."""
+    Fw, Fl, inst, src, depth = [], [], [], [], []
+    for path in paths:
+        with open(path) as fh:
+            for lineno, line in enumerate(fh, 1):
+                line = line.strip()
+                if not line:
+                    continue
+                d = json.loads(line)
+                fw, fl = d["fw"], d["fl"]
+                if len(fw) != NF or len(fl) != NF:
+                    raise SystemExit(
+                        f"{path}:{lineno} pair feature width != {NF}")
+                Fw.append(fw)
+                Fl.append(fl)
+                inst.append(d.get("inst", os.path.basename(path)))
+                src.append(d.get("src", "?"))
+                depth.append(d.get("depth", 0))
+    if not Fw:
+        raise SystemExit("no pairs found")
+    return (
+        np.asarray(Fw, dtype=float),
+        np.asarray(Fl, dtype=float),
+        np.asarray(inst),
+        np.asarray(src),
+        np.asarray(depth, dtype=float),
+    )
+
+
+def fit_ranknet(D, l2, iters=60, tol=1e-10):
+    """Newton/IRLS on sum softplus(-D beta) + l2/2 |beta|^2.  -> beta (p,).
+
+    The L2 term keeps the Hessian positive definite even when the pairs are
+    separable (the usual RankNet failure mode: |beta| runs to infinity), so a
+    plain Newton step is safe; a halving line search guards the rest.
+    """
+    n, p = D.shape
+    beta = np.zeros(p)
+
+    def obj(b):
+        z = D @ b
+        return float(np.sum(np.logaddexp(0.0, -z)) + 0.5 * l2 * float(b @ b))
+
+    f = obj(beta)
+    for _ in range(iters):
+        z = D @ beta
+        s = 1.0 / (1.0 + np.exp(np.clip(z, -500, 500)))   # sigma(-z)
+        grad = -(D.T @ s) + l2 * beta
+        w = s * (1.0 - s)
+        H = D.T @ (w[:, None] * D) + l2 * np.eye(p)
+        try:
+            step = np.linalg.solve(H, grad)
+        except np.linalg.LinAlgError:
+            step = np.linalg.lstsq(H, grad, rcond=None)[0]
+        t = 1.0
+        for _ls in range(30):
+            cand = beta - t * step
+            fc = obj(cand)
+            if fc <= f:
+                break
+            t *= 0.5
+        else:
+            break
+        if abs(f - fc) <= tol * max(1.0, abs(f)):
+            beta, f = cand, fc
+            break
+        beta, f = cand, fc
+    return beta
+
+
+def pair_acc(D, coef):
+    """Fraction of pairs where the winner scores strictly below the loser."""
+    if len(D) == 0:
+        return float("nan")
+    return float(np.mean((D @ coef) > 0.0))
+
+
+def train_pairwise(Fw, Fl, inst, src, holdout, l2_grid, verbose=True):
+    """RankNet on within-state pairs.  -> report dict (same export contract)."""
+    held = np.isin(inst, list(holdout)) if holdout else np.zeros(len(inst), bool)
+    tr = ~held
+    if not tr.any():
+        raise SystemExit("holdout consumed every pair")
+
+    # Standardize on the raw feature vectors seen on either side of a training
+    # pair, then fold sd into the coefficients: d_std = (fl - fw) / sd.
+    stack = np.vstack([Fw[tr], Fl[tr]])
+    mu = stack.mean(axis=0)
+    sd = stack.std(axis=0)
+    sd[sd < 1e-12] = 1.0
+    D = (Fl - Fw) / sd
+    del mu  # a difference kills the location term; kept explicit on purpose
+
+    results = []
+    for l2 in l2_grid:
+        beta = fit_ranknet(D[tr], l2)
+        coef = beta / sd
+        acc_tr = pair_acc(Fl[tr] - Fw[tr], coef)
+        acc_te = pair_acc(Fl[held] - Fw[held], coef) if held.any() else acc_tr
+        results.append((acc_te, l2, coef, beta, acc_tr))
+        if verbose:
+            print(f"  l2={l2:<8g} train pair-acc {acc_tr:.4f}   "
+                  f"{'held-out' if held.any() else 'in-sample'} "
+                  f"pair-acc {acc_te:.4f}")
+    acc_te, l2, coef, beta, acc_tr = max(
+        results, key=lambda t: (t[0] if np.isfinite(t[0]) else -1e18, -t[1])
+    )
+
+    rep = {
+        "feature_order": FEATURE_ORDER,
+        "coef": [float(c) for c in coef],
+        "bias": 0.0,          # cancels in a within-state difference
+        "target": TARGET_PAIRWISE,
+        "mode": "pairwise",
+        "holdout": sorted(holdout),
+        "n_records": int(len(inst)),
+        "n_train": int(tr.sum()),
+        "n_holdout": int(held.sum()),
+        "instances": sorted(set(inst.tolist())),
+        "l2": float(l2),
+        "train_pair_acc": float(acc_tr),
+        "held_out_pair_acc": float(acc_te) if held.any() else None,
+        "std_coef": [float(c) for c in beta],
+        "std_bias": 0.0,
+        "by_src": {s: int(np.sum(src == s)) for s in sorted(set(src.tolist()))},
+    }
+    rep["per_inst"] = {}
+    for t in sorted(set(inst.tolist())):
+        m = inst == t
+        rep["per_inst"][t] = {
+            "n": int(m.sum()),
+            "held_out": bool(t in holdout),
+            "pair_acc": float(pair_acc(Fl[m] - Fw[m], coef)),
+        }
+    rep["per_src_held"] = {}
+    for s in sorted(set(src.tolist())):
+        m = held & (src == s)
+        if m.any():
+            rep["per_src_held"][s] = {
+                "n": int(m.sum()),
+                "pair_acc": float(pair_acc(Fl[m] - Fw[m], coef)),
+            }
+    return rep
+
+
 # ----------------------------------------------------------------- export
 
 
 def export(rep, name, out_dir):
-    stem = name if name.startswith("trackc_") else f"trackc_{name}"
+    stem = name if name.startswith("trackc") else f"trackc_{name}"
     os.makedirs(out_dir, exist_ok=True)
     txt = os.path.join(out_dir, stem + ".txt")
     with open(txt, "w") as fh:
@@ -344,11 +514,128 @@ def self_test(out_dir):
 
     os.remove(txt)
     os.remove(js)
+
+    ok = self_test_pairwise(out_dir) and ok
     print(f"[self-test] {'PASS' if ok else 'FAIL'}")
     return 0 if ok else 1
 
 
+def self_test_pairwise(out_dir):
+    """Synthetic pairwise round-trip (§3b): a known effort direction must be
+    recovered from within-state comparisons alone, and the exported weights
+    must reproduce the in-memory pair verdicts."""
+    rng = np.random.default_rng(7)
+    n = 6000
+    insts = np.array(["synA", "synB", "synC", "synD"])[rng.integers(0, 4, n)]
+    src = np.where(rng.random(n) < 0.7, "probe", "transpo")
+    w_true = rng.normal(size=NF)
+
+    # Each pair is two candidate columns AT THE SAME STATE: a shared per-state
+    # offset (the confound pairwise mode is designed to cancel) plus per-column
+    # variation.  Labels come from the true effort order, with logistic noise
+    # so the scale of w_true is identified.
+    state = rng.normal(size=(n, NF)) * 3.0
+    A = state + rng.normal(size=(n, NF))
+    B = state + rng.normal(size=(n, NF))
+    gap = (A - B) @ w_true
+    a_wins = gap + rng.logistic(size=n) * 1.0 < 0.0   # lower effort wins
+    Fw = np.where(a_wins[:, None], A, B)
+    Fl = np.where(a_wins[:, None], B, A)
+
+    print(f"\n[self-test] pairwise synthetic corpus: {n} pairs, "
+          f"{len(set(insts.tolist()))} instances")
+    rep = train_pairwise(Fw, Fl, insts, src, {"synD"}, L2_GRID_PAIR)
+    ok = True
+    acc = rep["held_out_pair_acc"]
+    print(f"[self-test] held-out pair accuracy {acc:.4f}  (l2 {rep['l2']:g})")
+    if not (acc > 0.75):
+        print("[self-test] FAIL pairwise held-out accuracy <= 0.75")
+        ok = False
+    coef = np.asarray(rep["coef"])
+    cos = float(coef @ w_true / (np.linalg.norm(coef) * np.linalg.norm(w_true)))
+    print(f"[self-test] cosine(coef, true effort direction) {cos:+.4f}")
+    if cos < 0.95:
+        print("[self-test] FAIL pairwise direction not recovered")
+        ok = False
+    if rep["bias"] != 0.0:
+        print("[self-test] FAIL pairwise bias must be 0 (it cancels)")
+        ok = False
+
+    txt, js = export(rep, "selftest_colpair", out_dir)
+    fcoef, fbias = read_weights(txt)
+    v_mem = (Fl - Fw) @ coef > 0
+    v_file = (Fl - Fw) @ fcoef + 0.0 * fbias > 0
+    if not np.array_equal(v_mem, v_file):
+        print("[self-test] FAIL exported weights change pair verdicts")
+        ok = False
+    jrep = json.load(open(js))
+    for k in ("feature_order", "coef", "bias", "target", "mode",
+              "held_out_pair_acc", "by_src"):
+        if k not in jrep:
+            print(f"[self-test] FAIL pairwise JSON missing {k!r}")
+            ok = False
+    if jrep.get("target") != TARGET_PAIRWISE or jrep.get("mode") != "pairwise":
+        print("[self-test] FAIL pairwise JSON metadata mismatch")
+        ok = False
+    os.remove(txt)
+    os.remove(js)
+
+    # A perfectly separable, noiseless problem must still terminate and be
+    # right on every training pair (the L2 term is what makes this safe).
+    D = rng.normal(size=(500, NF))
+    D[(D @ w_true) < 0] *= -1.0
+    beta = fit_ranknet(D, 1e-2)
+    sep = float(np.mean((D @ beta) > 0))
+    print(f"[self-test] separable-case train pair-acc {sep:.4f}")
+    if sep < 0.999:
+        print("[self-test] FAIL separable pairs not fit")
+        ok = False
+    print(f"[self-test] pairwise {'PASS' if ok else 'FAIL'}")
+    return ok
+
+
 # ------------------------------------------------------------------- main
+
+
+def main_pairwise(args):
+    Fw, Fl, inst, src, depth = load_pairs(args.train)
+    holdout = {t for t in args.holdout.split(",") if t}
+    known = set(inst.tolist())
+    for t in sorted(holdout - known):
+        print(f"  WARNING holdout instance {t!r} is not in the corpus")
+    if not holdout:
+        print("  WARNING no --holdout: reported pair accuracy is IN-SAMPLE only")
+
+    grid = [args.l2] if args.l2 is not None else L2_GRID_PAIR
+    rep = train_pairwise(Fw, Fl, inst, src, holdout, grid)
+
+    print(f"\nmodel {args.name} (PAIRWISE, §3b)")
+    print(f"  files        : {', '.join(args.train)}")
+    print(f"  pairs        : {rep['n_records']} (train {rep['n_train']} / "
+          f"held-out {rep['n_holdout']}) over {len(rep['instances'])} instances")
+    print(f"  sources      : " + "  ".join(
+        f"{k}={v:,}" for k, v in sorted(rep["by_src"].items())))
+    print(f"  target       : {rep['target']}")
+    print(f"  holdout      : {', '.join(rep['holdout']) or '(none)'}")
+    print(f"  chosen L2    : {rep['l2']:g}")
+    print(f"  train pair-acc   : {rep['train_pair_acc']:.4f}")
+    if rep["held_out_pair_acc"] is not None:
+        print(f"  HELD-OUT pair-acc: {rep['held_out_pair_acc']:.4f}")
+        for s, d in sorted(rep["per_src_held"].items()):
+            print(f"    src {s:<10} n={d['n']:>9,}  acc {d['pair_acc']:.4f}")
+    print("  per instance (held-out marked *):")
+    for t, d in sorted(rep["per_inst"].items()):
+        print(f"    {'*' if d['held_out'] else ' '} {t:<22} n={d['n']:>9,}  "
+              f"acc {d['pair_acc']:.4f}")
+    print("  coefficients (standardized / folded):")
+    for name, sc, c in zip(FEATURE_ORDER, rep["std_coef"], rep["coef"]):
+        print(f"    {name:22s} {sc:+.4f}   {c:+.6g}")
+    del depth
+    if args.no_export:
+        return 0
+    txt, js = export(rep, args.name, args.out_dir)
+    print(f"  wrote {txt}\n  wrote {js}")
+    return 0
 
 
 def main():
@@ -361,12 +648,17 @@ def main():
     ap.add_argument("--out-dir", default="ml/models")
     ap.add_argument("--no-export", action="store_true")
     ap.add_argument("--self-test", action="store_true")
+    ap.add_argument("--pairwise", action="store_true",
+                    help="--train files are mine_subtrees.py --pairs output (§3b)")
     args = ap.parse_args()
 
     if args.self_test:
         return self_test(args.out_dir)
     if not args.train or not args.name:
         raise SystemExit("need --train and --name (or --self-test)")
+
+    if args.pairwise:
+        return main_pairwise(args)
 
     X, y, depth, inst = load(args.train)
     holdout = {t for t in args.holdout.split(",") if t}

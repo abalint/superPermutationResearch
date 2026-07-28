@@ -185,9 +185,74 @@ where hardness differences cancel:
   export; held-out metric = pair accuracy, split by instance. Regression on
   the same logs remains the fallback objective.
 
-M1 (viability measurement, blocks the farm pairwise sweep): organic
-transposition pair yield without probes, and probe overhead factor at
-(p=0.02, cap=20k), measured locally. Record results here.
+Build conventions settled s19 during the v2.1 build (binding):
+- `shash` salt = `splitmix64(rowid * 0x9E3779B97F4A7C15)`; the record key order
+  is LOCKED as v2's line with `, "shash": "%016llx"` appended, and probe
+  records append `, "probe": 1` after it. A v2 log is therefore a v2.1 log
+  minus one key, and `mine_subtrees.py` needs the `probe` marker to label a
+  pair's `src` (it cannot be inferred from the record otherwise).
+- Probes use a THIRD rng stream (seeded `splitmix64(col_seed ^ k)`), and the
+  probe driver saves/restores the row rng, the column rng, the cycle/dead-end/
+  rootless counters and the max-depth watermarks around every probe. Probe
+  work lands in `probe_nodes` only. Verified: main `nodes` is bit-identical
+  with and without `--probe-rate` on every instance measured below.
+- A probed node ALWAYS logs its own chosen column, bypassing the 1/1024
+  small-subtree sample. Without this the partner of most probe records is
+  discarded by the qualify filter and pair yield collapses by ~50×.
+- `cand` on a probe record = |C\*_1|, the pool c′ was drawn from.
+- When several runs log the same (inst, shash, col), the miner keeps the
+  SMALLEST finished subtree (achievable effort) or, if none finished, the
+  LARGEST capped count (strongest lower bound). Exact-tie subtree
+  comparisons are dropped: they carry no order.
+- The pairwise trainer exports `bias = 0` — a bias cancels in a within-state
+  difference and the engine only ever compares scores inside one node. No
+  depth-balanced weighting in pairwise mode (§4's reweighting exists to stop
+  near-root giants dominating a *regression*; pairs are already within-node).
+
+**Structural fact (proved s19, load-bearing for M1):** within a single run,
+transposition groups are IMPOSSIBLE, for any column policy. DLX branches on
+"which row covers column c", and rows covering c are mutually exclusive in an
+exact cover, so sibling subtrees' placed-row sets are disjoint — by induction
+every node of one run has a distinct row set. Measured: a blind chain-26 run
+produced 42,228 records with 42,228 distinct `shash` and zero repeats; an
+ε=0.15 run produced 63,238 records, 63,238 distinct `shash`, **zero pairs**.
+Organic pairs therefore only ever arise ACROSS runs (two seeds reaching the
+same state and choosing differently), which is why probes are the mechanism.
+
+M1 RESULT (measured s19 locally, Mac, `cc -O2`; logs and JSONL in
+`analysis/trackc/runs/v2/v21/`; chain 26 = `unsat_26`, chain 82 = train-set
+chain, both ε=0.15, probes at p=0.02 / cap=20,000):
+
+| instance | mode | runs | nodes | records | pairs | pairs / 10⁶ rec | pairs / min | probe_nodes/nodes | wall |
+|---|---|---|---|---|---|---|---|---|---|
+| chain 26 | no probes | 3 seeds | 38,740,720 | 189,451 | 6,036 | 31,860 | 2,932 | — | 123.5 s |
+| chain 26 | probes | 1 seed | 12,905,013 | 457,522 | **171,566** | 374,990 | **177,225** | **0.414** | 58.1 s |
+| chain 82 | no probes | 8 seeds | 1,635,333 | 8,322 | 464 | 55,756 | 5,006 | — | 5.6 s |
+| chain 82 | probes | 8 seeds | 1,635,333 | 58,267 | **22,911** | 393,207 | **150,203** | **0.517** | 9.2 s |
+
+Probes are **30–60× more pair-productive per minute** than cross-seed organic
+transpositions, at a node overhead of 0.41–0.52 and a wall-clock cost of
+1.44× (chain 26, 40.4 s → 58.1 s) to 1.63× (chain 82). Single-seed organic
+yield is exactly ZERO (the structural fact above); the "no probes" rows above
+are cross-seed only. Verdicts and main node counts are unchanged by probing
+(chain 26: EXHAUSTED, 12,905,013 nodes with and without probes; chain 82: all
+8 seeds bit-identical). Probe-found covers work: on n6std at p=0.5 a probe
+returned a validated 25-row cover after 3 main nodes, exit 0. **M1 = GO** for
+the farm pairwise sweep at (0.02, 20k).
+
+Pairwise fit on this local data (200,590 pairs — 194,013 probe, 6,577
+transposition — train chain 26, **holdout chain 82**, `--pairwise`):
+- **held-out pair accuracy 0.746** (probe pairs .747, transposition pairs
+  .689); train .739. Chosen L2 1000.
+- The learned direction is dominated by `sz_log` (standardized +0.92): the
+  model mostly rediscovers MRV, which is a correctness signal but not new
+  capability.
+- **Caveat (the Δ=0 question):** restricted to pairs whose two columns have
+  EQUAL size — exactly the MRV-tie set Δ=0 deploys on — held-out pair accuracy
+  falls to **0.532** (train .548, n=5,698 held-out). So the within-band
+  tie-break signal is weak-to-marginal in this two-instance sample. Deciding
+  Δ=0 viability needs the farm sweep's instance diversity; G2v2 remains the
+  only go/no-go currency.
 
 ## 4. Model and trainer
 
@@ -215,6 +280,9 @@ nodes; n6std blind cover at 21,627 nodes).
   pop; drop censored frames).
 - `--dump-col-features <trace>`: parity mode (§2).
 - `--mrv-stats`: M0 counters, printed at exit to stderr.
+- `--probe-rate <p> --probe-cap <N>`: §3b within-state probes (requires
+  `--log-subtrees`). Adds `probes=/probe_recs=/probe_nodes=/probe_overhead=`
+  to the attempt line; `nodes` is untouched.
 - v1 row `--weights` continues to work and composes with column choice.
 
 Build notes settled s19 (binding):

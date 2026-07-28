@@ -17,9 +17,18 @@
  *         [--out f] [--first-only] [--progress-nodes N]
  *         [--col-weights f] [--col-delta d] [--col-epsilon p] [--col-seed s]
  *         [--log-subtrees f] [--dump-col-features f] [--mrv-stats]
+ *         [--probe-rate p] [--probe-cap N]
  *
  * v2 (docs/TRACKC2-DESIGN.md §5): learned COLUMN choice.  Every new behavior is
  * flag-gated; with none of the v2 flags the search is bit-identical to v1.
+ *
+ * v2.1 (docs/TRACKC2-DESIGN.md §3b): within-state pairwise data.  Every
+ * --log-subtrees record carries `shash`, an order-independent XOR hash of the
+ * placed-row set (the state key two records must share to be comparable), and
+ * --probe-rate/--probe-cap exhaust a SECOND column's subtree at a sampled
+ * decision node so both branches of the same state get a label.  Probe work is
+ * counted in `probe_nodes`, never in `nodes`; the main search is bit-identical
+ * with or without probes.
  *
  * build: cc -O2 -o dlx7g dlx7g.c -lm
  */
@@ -45,6 +54,14 @@ static unsigned long long col_rng_state = 88172645463325252ull;
 static unsigned long long col_rand(void){
     col_rng_state ^= col_rng_state << 13; col_rng_state ^= col_rng_state >> 7;
     col_rng_state ^= col_rng_state << 17; return col_rng_state;
+}
+
+/* independent stream for probe sampling (§3b): must not perturb either the row
+ * rng or the column-exploration rng, so probing never changes the main tree. */
+static unsigned long long probe_rng_state = 88172645463325252ull;
+static unsigned long long probe_rand(void){
+    probe_rng_state ^= probe_rng_state << 13; probe_rng_state ^= probe_rng_state >> 7;
+    probe_rng_state ^= probe_rng_state << 17; return probe_rng_state;
 }
 
 static unsigned long long splitmix64(unsigned long long x){
@@ -102,6 +119,27 @@ static int col_scan = 0;        /* any v2 per-node column work required */
 static int mrv_stats = 0;
 static FILE *subtree_fp = NULL;
 static char inst_tag[256] = "inst";
+
+/* v2.1 state hash (docs/TRACKC2-DESIGN.md §3b) ------------------------------
+ * shash = XOR over the placed-row set of splitmix64(rowid * SHASH_SALT).
+ * XOR is order-independent, so two visits that placed the SAME set of rows in
+ * different orders (a transposition) collide by construction — which is
+ * exactly the equivalence we want: the placed-row set determines the residual
+ * DLX subproblem exactly.  Maintained incrementally at row place / unplace. */
+#define SHASH_SALT 0x9E3779B97F4A7C15ull
+static unsigned long long *row_hash;   /* per row, precomputed */
+static unsigned long long shash;
+
+/* v2.1 probe mode (§3b) ---------------------------------------------------- */
+static double probe_rate_p = 0.0;
+static unsigned long long probe_thresh = 0;  /* probe_rand() < thresh -> probe */
+static long long probe_cap = 20000;          /* node cap for one probe */
+static int in_probe = 0;                     /* inside a probe subtree */
+static int force_col = -1;                   /* next search() must cover this */
+static int probe_capped = 0;                 /* current probe hit its cap */
+static long long probe_nodes;                /* nodes in the current probe */
+static long long stat_probe_nodes;           /* probe nodes this attempt */
+static long long stat_probes, stat_probe_recs;
 
 /* M0 counters (--mrv-stats) */
 #define MRVH 512                 /* last bucket is the >= MRVH-1 overflow */
@@ -405,9 +443,35 @@ static void maybe_progress(void){
             nodes, grand_nodes_prev + nodes, nsol, max_depth_ever, t - t_start);
 }
 
+/* ------------------------------------------------------------ record write */
+/* One JSONL subtree record (docs/TRACKC2-DESIGN.md §3/§3b).  Key order is
+ * LOCKED: v2.1 only appends `shash` (and `probe` on probe records) to the v2
+ * line, so old readers and old logs stay comparable field-for-field. */
+static void log_subtree_record(int depth, int cand, int col, const double *f,
+                               long long sub, const char *outcome,
+                               unsigned long long sh, int is_probe){
+    fprintf(subtree_fp,
+            "{\"inst\": \"%s\", \"depth\": %d, \"cand\": %d, \"col\": %d,"
+            " \"feats\": [", inst_tag, depth, cand, col);
+    for (int t = 0; t < NCFEAT; t++)
+        fprintf(subtree_fp, "%s%.6f", t ? ", " : "", f[t]);
+    fprintf(subtree_fp, "], \"subtree\": %lld, \"outcome\": \"%s\","
+            " \"shash\": \"%016llx\"", sub, outcome, sh);
+    if (is_probe) fprintf(subtree_fp, ", \"probe\": 1");
+    fprintf(subtree_fp, "}\n");
+}
+
 /* ----------------------------------------------------------------- search */
 static int search(int depth){
     long long entry_nodes = nodes;   /* this node is counted by the ++ below */
+    unsigned long long entry_shash = shash;   /* §3b: this node's state key */
+    if (in_probe){
+        /* probe nodes are accounted separately and NEVER touch `nodes`, the
+         * main-search statistics, or the progress/restart machinery (§3b). */
+        probe_nodes++; stat_probe_nodes++;
+        if (probe_cap && probe_nodes > probe_cap){ probe_capped = 1; return -1; }
+        if ((stat_probe_nodes & 2047) == 0 && now_s() > deadline) return -1;
+    } else {
     nodes++;
     if (nsol > max_depth_attempt){ max_depth_attempt = nsol; }
     if (nsol > max_depth_ever){ max_depth_ever = nsol; }
@@ -417,6 +481,7 @@ static int search(int depth){
     }
     if ((nodes & 2047) == 0 && now_s() > deadline) return -1;
     if (node_cap && nodes > node_cap) return -1;
+    }
     if (R[head] == head){
         if (complete_ok()) return 1;
         stat_rootless++;
@@ -429,11 +494,14 @@ static int search(int depth){
     }
     if (best_sz == 0){ stat_dead_ends++; return 0; }
     int c = best;
+    /* §3b probe: this frame's column was dictated by the probe driver. */
+    int forced = 0;
+    if (force_col >= 0){ c = force_col; force_col = -1; forced = 1; }
 
     /* ---------------------------------------- v2: column choice within C*_D */
     double cfeat[NCFEAT];
-    int have_cfeat = 0, ncand_used = 0;
-    if (col_scan){
+    int have_cfeat = 0, ncand_used = 0, probed_here = 0;
+    if (col_scan && !forced && (!in_probe || have_colw || col_eps_thresh)){
         int n0 = 0, n1 = 0, nd = 0;
         for (int j = R[head]; j != head; j = R[j]){
             int s = SZ[j];
@@ -441,7 +509,7 @@ static int search(int depth){
             if (s <= best_sz + 1) n1++;
             if (s <= best_sz + col_delta) nd++;
         }
-        if (mrv_stats){
+        if (mrv_stats && !in_probe){
             mrv_dec_nodes++;
             if (n0 >= 2) mrv_tie_nodes++;
             mrv_h0[n0 < MRVH ? n0 : MRVH-1]++;
@@ -469,9 +537,51 @@ static int search(int depth){
                 }
             }
         }
-        if (subtree_fp && !have_cfeat){
+        if (subtree_fp && !in_probe && !have_cfeat){
             col_features(c, best_sz, nactive, cfeat);
             have_cfeat = 1;
+        }
+    }
+
+    /* --------------------------------- v2.1 §3b: within-state pairwise probe
+     * At a sampled decision node, after the policy's choice `c` is fixed, pick
+     * a second column c' != c uniformly from C*_1 and exhaust ITS subtree under
+     * a node cap, with full trail unwind.  One record is emitted for c' at this
+     * node's `shash`; the frame's own record (same shash, column c) is then
+     * force-logged so the miner can pair them.  Everything the main search can
+     * observe — nodes, the two rngs, dead-end/cycle/rootless counters, max
+     * depth — is saved and restored, so probes cannot perturb the tree. */
+    if (probe_thresh && !in_probe && subtree_fp && have_cfeat
+        && probe_rand() < probe_thresh){
+        int m = 0, npool = 0;
+        for (int j = R[head]; j != head; j = R[j])
+            if (SZ[j] <= best_sz + 1){ npool++; if (j != c) m++; }
+        if (m > 0){
+            int t = (int)(probe_rand() % (unsigned long long)m), cp = -1;
+            for (int j = R[head]; j != head; j = R[j])
+                if (SZ[j] <= best_sz + 1 && j != c && t-- == 0){ cp = j; break; }
+            double pf[NCFEAT];
+            col_features(cp, best_sz, nactive, pf);
+            unsigned long long sv_row = rng_state, sv_col = col_rng_state;
+            long long sv_cyc = stat_cycle_prunes, sv_de = stat_dead_ends,
+                      sv_rl = stat_rootless;
+            int sv_mda = max_depth_attempt, sv_mde = max_depth_ever;
+            probe_nodes = 0; probe_capped = 0;
+            in_probe = 1; force_col = cp;
+            stat_probes++;
+            int pres = search(depth);
+            in_probe = 0; force_col = -1;
+            if (pres == 1) return 1;   /* a probe may legitimately solve (§3b) */
+            rng_state = sv_row; col_rng_state = sv_col;
+            stat_cycle_prunes = sv_cyc; stat_dead_ends = sv_de;
+            stat_rootless = sv_rl;
+            max_depth_attempt = sv_mda; max_depth_ever = sv_mde;
+            if (pres == -1 && !probe_capped) return -1;   /* deadline, not cap */
+            log_subtree_record(depth, npool, cp, pf, probe_nodes,
+                               probe_capped ? "capped" : "exhaust",
+                               entry_shash, 1);
+            stat_probe_recs++;
+            probed_here = 1;
         }
     }
 
@@ -507,12 +617,12 @@ static int search(int depth){
         int i = cands[ci];
         int rid = ROWID[i], ts;
         if (!forest_push(rid, &ts)){ stat_cycle_prunes++; continue; }
-        sol[nsol++] = rid;
+        sol[nsol++] = rid; shash ^= row_hash[rid];   /* §3b state key */
         for (int j = R[i]; j != i; j = R[j]) cover(C[j]);
         int res = search(depth+1);
         for (int j = L[i]; j != i; j = L[j]) uncover(C[j]);
         if (res == 1) return 1;
-        nsol--;
+        nsol--; shash ^= row_hash[rid];
         forest_pop(ts);
         if (res == -1){ uncover(c); return -1; }
     }
@@ -520,20 +630,16 @@ static int search(int depth){
     /* frame pop with the subtree fully exhausted -> an exact effort label
      * (docs/TRACKC2-DESIGN.md §3).  Censored frames (timeout/cap via res==-1,
      * solution path via res==1) return above and are never written. */
-    if (subtree_fp && have_cfeat){
+    if (subtree_fp && !in_probe && have_cfeat){
         long long sub = nodes - entry_nodes;
         unsigned long long h = splitmix64((unsigned long long)entry_nodes
                                           ^ ((unsigned long long)c << 32)
                                           ^ ((unsigned long long)depth << 8));
-        if (sub >= 500 || (h & 1023ull) == 0ull){
-            fprintf(subtree_fp,
-                    "{\"inst\": \"%s\", \"depth\": %d, \"cand\": %d, \"col\": %d,"
-                    " \"feats\": [", inst_tag, depth, ncand_used, c);
-            for (int t = 0; t < NCFEAT; t++)
-                fprintf(subtree_fp, "%s%.6f", t ? ", " : "", cfeat[t]);
-            fprintf(subtree_fp, "], \"subtree\": %lld, \"outcome\": \"exhaust\"}\n",
-                    sub);
-        }
+        /* a probed node ALWAYS logs its own choice: otherwise the qualify
+         * filter would discard the partner of most probe records (§3b). */
+        if (probed_here || sub >= 500 || (h & 1023ull) == 0ull)
+            log_subtree_record(depth, ncand_used, c, cfeat, sub, "exhaust",
+                               entry_shash, 0);
     }
     return 0;
 }
@@ -582,7 +688,7 @@ static int dump_features(const int *cover_rows, int ncover, FILE *out){
             fprintf(stderr, "dump-features: cover row %d creates a forest cycle\n", pick);
             return 1;
         }
-        sol[nsol++] = pick;
+        sol[nsol++] = pick; shash ^= row_hash[pick];
         for (int j = R[picknode]; j != picknode; j = R[j]) cover(C[j]);
         nodek++;
     }
@@ -638,7 +744,7 @@ static int dump_col_features(const int *cover_rows, int ncover, FILE *out){
             fprintf(stderr, "dump-col-features: cover row %d creates a cycle\n", pick);
             return 1;
         }
-        sol[nsol++] = pick;
+        sol[nsol++] = pick; shash ^= row_hash[pick];
         for (int j = R[picknode]; j != picknode; j = R[j]) cover(C[j]);
         nodek++;
     }
@@ -717,6 +823,9 @@ static void reset_state(void){
     }
     ntrail = 0; nsol = 0; nodes = 0; max_depth_attempt = 0;
     stat_cycle_prunes = stat_dead_ends = stat_rootless = 0;
+    shash = 0; in_probe = 0; force_col = -1;
+    probe_nodes = 0; probe_capped = 0;
+    stat_probe_nodes = stat_probes = stat_probe_recs = 0;
 }
 
 /* ------------------------------------------------------------------ main */
@@ -727,7 +836,7 @@ static void usage(void){
       "             [--out f] [--first-only] [--progress-nodes N]\n"
       "             [--col-weights f] [--col-delta d] [--col-epsilon p]\n"
       "             [--col-seed s] [--log-subtrees f] [--dump-col-features f]\n"
-      "             [--mrv-stats]\n");
+      "             [--mrv-stats] [--probe-rate p] [--probe-cap N]\n");
 }
 
 static int load_weights(const char *fn){
@@ -773,9 +882,15 @@ static int load_col_weights(const char *fn){
     return 0;
 }
 
-/* `.../runs/census/instances/wl_026.txt` -> `wl_026` (the JSONL `inst` tag) */
+/* `.../runs/census/instances/wl_026.txt` -> `wl_026` (the JSONL `inst` tag).
+ * Both separators are honoured: on the Windows farm the path arrives as
+ * `F:\superpermFarm\trackc2\inst\wl_026.txt`, and a tag that kept those raw
+ * backslashes would emit invalid JSON escapes (\s, \t, ...) into the
+ * --log-subtrees corpus, making every record unparseable. */
 static void set_inst_tag(const char *path){
     const char *b = strrchr(path, '/');
+    const char *bw = strrchr(path, '\\');
+    if (bw && (!b || bw > b)) b = bw;
     b = b ? b + 1 : path;
     size_t n = strlen(b);
     if (n > 4 && !strcmp(b + n - 4, ".txt")) n -= 4;
@@ -816,6 +931,10 @@ int main(int argc, char **argv){
         else if (!strcmp(a, "--dump-col-features") && i+1 < argc)
             cdump_fn = argv[++i];
         else if (!strcmp(a, "--mrv-stats")) mrv_stats = 1;
+        else if (!strcmp(a, "--probe-rate") && i+1 < argc)
+            probe_rate_p = atof(argv[++i]);
+        else if (!strcmp(a, "--probe-cap") && i+1 < argc)
+            probe_cap = atoll(argv[++i]);
         else { fprintf(stderr, "unknown option %s\n", a); usage(); return 1; }
     }
     if (col_delta < 0) col_delta = 0;
@@ -829,6 +948,19 @@ int main(int argc, char **argv){
     }
     col_rng_state = col_seed*2654435761ull + 1442695040888963407ull;
     if (col_rng_state == 0) col_rng_state = 88172645463325252ull;
+    /* §3b: probe sampling gets its OWN stream, seeded from --col-seed but
+     * decorrelated from the column-exploration stream. */
+    probe_rng_state = splitmix64(col_seed ^ 0x50524F42452D5253ull);
+    if (probe_rng_state == 0) probe_rng_state = 88172645463325252ull;
+    if (probe_cap < 0) probe_cap = 0;
+    if (probe_rate_p < 0.0) probe_rate_p = 0.0;
+    if (probe_rate_p > 1.0) probe_rate_p = 1.0;
+    if (probe_rate_p > 0.0){
+        double t = probe_rate_p * 18446744073709551616.0;
+        probe_thresh = (t >= 18446744073709551615.0) ? ULLONG_MAX
+                                                     : (unsigned long long)t;
+        if (probe_thresh == 0) probe_thresh = 1;
+    }
     (void)first_only;  /* the search always stops at the first solution */
     if (!inst_fn){ usage(); return 1; }
     if (epsilon_p < 0.0) epsilon_p = 0.0;
@@ -884,6 +1016,9 @@ int main(int argc, char **argv){
     static_col_log = malloc((size_t)ncols*sizeof(double));
     for (int c = 0; c < ncols; c++) static_col_log[c] = log1p((double)colsz[c]);
     free(colsz);
+    row_hash = malloc((size_t)nrows*sizeof(unsigned long long));
+    for (int i = 0; i < nrows; i++)
+        row_hash[i] = splitmix64((unsigned long long)i * SHASH_SALT);
 
     depth_bound = ncols/nchild + 16;
     sol = malloc((size_t)depth_bound*sizeof(int));
@@ -910,6 +1045,8 @@ int main(int argc, char **argv){
             fprintf(stderr, "cannot write subtree log %s\n", sublog_fn); return 1; }
     }
     col_scan = have_colw || col_eps_thresh || mrv_stats || subtree_fp;
+    if (probe_thresh && !subtree_fp){
+        fprintf(stderr, "--probe-rate requires --log-subtrees\n"); return 1; }
 
     fprintf(stderr, "[dlx7g] %s: cols=%d rows=%d loops=%d nchild=%d "
             "maxcolsz=%d weights=%s eps=%g seed=%llu\n",
@@ -917,10 +1054,10 @@ int main(int argc, char **argv){
             have_weights ? w_fn : "none", epsilon_p, (unsigned long long)seed);
     if (col_scan)
         fprintf(stderr, "[dlx7g] col: tag=%s colweights=%s delta=%d coleps=%g "
-                "colseed=%llu subtrees=%s mrvstats=%d\n",
+                "colseed=%llu subtrees=%s mrvstats=%d proberate=%g probecap=%lld\n",
                 inst_tag, have_colw ? cw_fn : "none", col_delta, col_epsilon_p,
                 (unsigned long long)col_seed, sublog_fn ? sublog_fn : "none",
-                mrv_stats);
+                mrv_stats, probe_rate_p, probe_cap);
 
     build_links();
     reset_state();
@@ -964,9 +1101,15 @@ int main(int argc, char **argv){
         res = search(0);
         grand_nodes += nodes;
         fprintf(stderr, "[attempt %d] res=%d nodes=%lld (cap %lld) total=%lld "
-                "maxdepth=%d cycle_prunes=%lld dead_ends=%lld rootless=%lld\n",
+                "maxdepth=%d cycle_prunes=%lld dead_ends=%lld rootless=%lld",
                 attempt, res, nodes, node_cap, grand_nodes, max_depth_attempt,
                 stat_cycle_prunes, stat_dead_ends, stat_rootless);
+        if (probe_thresh)   /* §3b: probe work is reported, never in `nodes` */
+            fprintf(stderr, " probes=%lld probe_recs=%lld probe_nodes=%lld"
+                    " probe_overhead=%.4f", stat_probes, stat_probe_recs,
+                    stat_probe_nodes,
+                    nodes ? (double)stat_probe_nodes/(double)nodes : 0.0);
+        fprintf(stderr, "\n");
         if (res == 1 || res == 0) break;
         if (now_s() > deadline) break;
         if (total_cap && grand_nodes >= total_cap) break;
