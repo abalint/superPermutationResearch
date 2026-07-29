@@ -64,13 +64,54 @@ OUTSIDE his liftable grammar — upper-bound mirror of our n=6 result). No E−3
 target exists in his program: **5905 remains ours alone.** Candidate DLX
 pruning rule: `StandardKernelHighMissingObstruction.lean`.
 
-**Next session:** (1) reboot PC → resume sweep-1 → gen2 pairwise sweep →
-retrain pw at 55-chain diversity (does within-band signal appear, or is
-canonicalization all there is?); (2) bounded G3 trial in PORTFOLIO mode on a
-slice of the 138 open chains (any exhaust = census closure); (3) G1: pw1 Δ=1
-on n7std given the 77-node n=6 SAT-side result; (4) kernelchain7 5-full-ride
-audit; (5) residual-graph Bound-1 admissible lb (search-side prize from the
-LB paper); (6) s16 Egan patch still unsent.
+**Late-s19 continuation (same day, PC rebooted by Andrew):** farm recovered
+cleanly (worker OOM bug backported first — `tc2worker.ps1` now reports file
+size, never slurps); sweep-1 finished 162/162; gen2 pairwise probe sweep ran
+on the v2.1 binary; corpora shipped home. Four more results landed:
+
+1. **G1/G1b/G3: no covers, no closures — and the gate currency was wrong.**
+   pw1 on n7std/c5906: 6× TIMEOUT, maxdepth ≤ blind (the 77-node n6std
+   SAT-side result did not transfer). G3 portfolio trial on open chains
+   {0,1,9,10,31,83}: 0/6, guided the weaker arm every time. Root cause is a
+   solo throughput probe: **the column policy costs 2.4–2.6× per node** (495k
+   → 208k nodes/s), so G2v2's 1.50× node GO is **~0.6× in wall-clock — NO-GO
+   as deployed**. Mechanism stands (trees really shrink); deployment is
+   blocked on scoring overhead. Fix order: overhead (target ≤1.2×) → gen2
+   retrain → re-gate in wall-clock. RESULTS-s19 has the full tables.
+2. **Residual admissible bound landed (`--bound residual`,
+   `src/lb_residual.rs`, proofs in RESIDUAL-BOUND-DESIGN.md):** first-visit
+   reduction makes covering-walk admissibility rigorous; Tier-1 theorem —
+   the existing arc bound is OPTIMAL among per-class accounting; Tier-2 door
+   terms proven residual-locally (entries ≥3/≥4 as cheap in-neighbors die);
+   GA 10,400 tablebase states, 0 violations; hand-bound stratified beam
+   **902 → 894** at equal width. The Hunter q_k root strength is **provably
+   non-localizable** (weight-≤2 graph is connected; exitlessness collapses on
+   residual sets) — root stays 838+6, power grows with depth (+9.4 at d650).
+   `--bound` and `--model` don't compose yet — the certified-floor evaluator
+   integration is open.
+3. **Counting calibration (`analysis/counting/`):** proven local rules
+   overshoot true counts by 2.4/16.2/91.6 orders (n=4/5/6); smallest-
+   nonzero-L has closed form n + n! + (n−1)! − 2 = 32/147/844 — local rules
+   recover exactly the classical bound, independently confirming the
+   residual-bound obstruction from the counting side. Branching numbers are
+   the indecomposable permutations (A003319), not w!−(w−1)!. **All 296 known
+   872s share one weight multiset (575·w1 + 141·w2 + 3·w3)** — the record
+   class is maximally rigid. (Corpus is 296 words, not 298 — CLAUDE.md
+   corrected.)
+4. **Ops hardening after the farm wedge:** `docs/OPERATIONS.md` — pre-launch
+   disclosure rule for >30-min compute, mandatory STATUS/ledger heartbeats,
+   monitor + stall alerts, abort commands, runtime cheat sheet.
+
+**Next session:** (1) dlx7g column-scoring overhead attack (feature caching /
+incremental scores / score-only-on-ties), then re-gate G2v2 in WALL-CLOCK;
+(2) retrain pw on the gen2 55-chain pairwise corpus
+(`analysis/trackc/runs/v2/farm/`) — offline check only: does equal-size pair
+accuracy move off ~.52?; (3) integrate `--bound residual` with `--model`
+(certified floor + learned residual — the founding-idea composition);
+(4) kernelchain7 5-full-ride audit (lem:closure allows 5 at n=7; census
+patterns max at 4 — coverage-of-enumeration question); (5) try
+`StandardKernelHighMissingObstruction` as a DLX instance prefilter; (6) s16
+Egan patch still unsent.
 
 ## 2026-07-28 (session 17b, overnight continuation) — census jumps 41 → **85/223 closed**: 52 chains are STRUCTURALLY uncoverable (zero-candidate column) and the farm's SAT pass missed 44 of them; merged multi-engine ledger committed; DLX sweep re-aimed at the 138 survivors
 

@@ -106,6 +106,35 @@ bounded trial in this mode (the 138 open chains all have unknown blind tree
 sizes — precisely the population where variance collapse to K-typical size
 could convert TIMEOUTs into census closures).
 
+## G1 / G1b / G3 (late s19, Mac) — no covers, no closures, and the number
+that re-prices the whole gate
+
+All runs with pw1 (n7std, c5906, chains 0/1 never in its corpus). G1: n7std
+Δ=1 det/ε.05/ε.15 + Δ=0 det → 4× TIMEOUT at 424–502M nodes, maxdepth 103–109
+of 138 (v1 blind refs: 708–777M, maxdepth ≤114). G1b: c5906 2× TIMEOUT,
+maxdepth 85–87 of 124 (blind ref 93–94). The n6std 77-node SAT-side magic did
+NOT transfer. G3 portfolio trial (chains 0,1,9,10,31,83; blind ∥ guided-Δ0,
+30-min arms): 0/6 closures, all twelve arms TIMEOUT; guided explored only
+0.30–0.76× blind's nodes in equal wall time and was the weaker portfolio arm
+every time.
+
+**Solo throughput probe (uncontended, 60 s, n7std): blind 495k nodes/s,
+guided Δ=0 208k/s, Δ=1 194k/s — the learned column policy costs 2.4–2.6× per
+node.** Re-scoring G2v2 in wall-clock: 1.50× median node reduction ÷ ~2.5×
+per-node cost ≈ **0.6× — a NO-GO in the currency that actually matters.**
+The v2 verdict therefore splits cleanly: the MECHANISM claim stands (learned
+column choice shrinks the exhaustion tree — the thing v1 proved impossible
+for rows), but the DEPLOYMENT fails on scoring overhead. Caveat for the
+record: batch node counts under wall-clock caps are throughput-confounded
+(runs were 6-way concurrent); the solo probe and all verdicts are clean, and
+within-chain G3 comparisons shared identical contention.
+
+Next lever, in order: (1) cut the 2.4× overhead (feature caching, incremental
+column scores, scoring only at high-tie nodes) — at ≤1.2× overhead the
+portfolio wins in wall-clock with the CURRENT model; (2) gen2 55-chain
+retrain — does within-band signal appear at full diversity?; (3) only then
+re-gate, in wall-clock.
+
 ## Infrastructure incident (documented for the record)
 
 Sweep-1 (162 regression-generation runs, PC farm) reached 65/162 when the PC
