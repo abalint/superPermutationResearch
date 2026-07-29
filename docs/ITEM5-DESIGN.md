@@ -158,6 +158,7 @@ explicitly so it doesn't drift:
    given the 5906 exists at V₇ = 10-with-concessions).
 2. Track B's search space is genuinely open-ended; the sojourn-level formulation
    needs a concrete state/move design before any search runs (next session's
-   design task).
+   design task). **Done s21: `docs/TRACKB-DESIGN.md` (opening-first design —
+   class ledger, canonical opening exhaustion, bandit + NRPA, tablebase tails).**
 3. Anti-goal carried forward (s8): do NOT statically reward row-like shapes in a
    move-level beam — Tracks A–C search structure spaces directly.

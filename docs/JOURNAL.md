@@ -6,6 +6,114 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (session 21) — Track B DESIGNED: opening-first sojourn-level search (`docs/TRACKB-DESIGN.md`); solved-game survey reframed the whole attack around the proven "decided in the opening" theorems; no code, no runs
+
+**Session shape.** Started as a survey: which *solved* games are better analogs
+than chess (single-agent, absolute objective, optimality wanted)? Candidates
+mapped: Rubik's/God's-number (coset partition ⇒ per-class closure), Chinook
+(opening book as root proof tree + endgame DB), 15-puzzle/Sokoban (pattern DBs,
+deadlock rules), Morpion Solitaire (NRPA — the record-setting technique for
+exactly this problem class), snake-in-the-box (canonical early exhaustion),
+LKH/tour-merging, AlphaTensor (construction-as-game). First-pass ranking put
+retrograde endgame DP on top — **wrong, per our own s9 theorems** (endgame door
+proven shut; Andrew caught it). Re-read through the opening lens, the imports
+that survive are exactly the ones solved games use where evaluation is least
+informative: enumeration, canonical exhaustion, budgeted root exploration,
+policy adaptation.
+
+**Product: `docs/TRACKB-DESIGN.md`** — the concrete state/move design ITEM5 §6.2
+was missing. Skeleton: general waste ledger with i2 priced (T0 = machine-verify
+before use); L0 waste-allocation × L1 split-profile class ledger with per-class
+closed/open status (Vlad's GAPS/ledger process model adopted; his F1/F2 and cell
+kills cross-reference only until re-derived); L2 canonical opening prefixes
+(first ~10–12 sojourns, relabeling-canonical keys, Zobrist) exhausted per class;
+UCB/successive-halving bandit over the opening frontier on tail-focused reward;
+rollouts by sojourn-level NRPA (nesting 2–3) + seeded stratified beam with
+depth-tapered width; tablebase closes r≤20; residual bound at budget 146 as the
+admissible pruner (needs T2: `--bound`+`--model` composition; T3:
+`--seed-file`). Two-sided by construction: every class closed by lemma is a
+publishable narrowing of where 871 can hide (hedge against the ~5–10% prior),
+and full closure would be an independent a(6)=872 path. Gates: C1 positive
+control (re-find a validated 872 from the records' own class — s15 lesson
+institutionalized), C2 n=5 gate, M1 lemma coverage, M2 exhaustion feasibility,
+M3 (independent 872 or out-of-grammar ≤873) before any farm spend. Side probe
+(§7, one afternoon): Cook–Seymour tour merge over the 296 known 872s — their
+tails are provably shared, so the union graph is pure opening diversity; exact
+search over it either finds 871 or gives independent tier-upgrade evidence on
+Vlad's (0,5,25,0) cell.
+
+**Also updated:** ROADMAP item 5 Track B and ITEM5-DESIGN §6.2 now point at the
+design note.
+
+**Next session, concretely (build order = TRACKB-DESIGN §9):**
+- T0: verify the i2-priced waste identity over the full corpus (296 records,
+  greedy, 873s, rollouts).
+- L0 enumeration + class ledger CSV; read M1 (what fraction closes by cheap
+  lemma).
+- T1 door atlas (w3/w4/w5 cycle-level door tables).
+- Then L2 canonical DFS on the records' class → M2, and the C1 control.
+- Independent of all of the above: the §7 tour-merge probe whenever idle.
+
+## 2026-07-29 (session 20) — field news read: **Vlad Gheorghe's preliminary a(6) = 872 claim**; both offline verify tiers pass here; we cross-validated his coordinate frame on **299 of our own words (299/299, 11/11 identities)** — frame corroborated, cell kills untested, Track B downgraded not retired
+
+Full read: `../extraDocs/2026-07-29-vlad-a6-872-claim.md`. Clone: `../extraDocs/a6-872`
+(commit `f386a8a`). New tool: `analysis/counting/coords_a6_872_frame.py`.
+
+**The claim (Superpermutators email, 2026-07-29 00:25).** a(6) = 872, i.e. the lower
+bound a(6) ≥ 872, offered as a preliminary claim for refutation. A covering simple path
+has `length = 867 + e + r + l` with `r = 0`; a four-line block/component confinement
+theorem (`B ≥ κ = v − s + β` from Euler on the class×loop incidence graph D(P)) makes the
+cells `(e, l, s, j)` finite; **209 cells across δ = 1..4 (8/26/60/115)**, all recorded
+closed, partition machine-checked as a partition. Companion `a7/`: **a(7) ≥ 5896**,
+conditional on the n=6 layer, frontier δ=12.
+
+**Verified here.** `verify_all.py --tier 1` 9/9 (~9 s) and `--tier 2` 11/11 (~3 min, all
+66 offline ledger checkers + adversarial reproducers), stock Python, unmodified. The
+harness reports honestly that 50 bundle-bound rows are *skipped, not passed* and 60/176
+ledger rows have no checker.
+
+**Our contribution — the frame on 299 objects.** Their own §8 names "no clean-room
+reimplementation" as the top gap; they checked the frame on Houston's 872, one
+non-saturated 872, and the n=5 minima. We ran their definitions (no package code) over
+**296 distinct 872s + 3 distinct 873s**: T1 length identity, T2 r=0, T3 s≤5l, T4 B+x=v−s+e,
+T5 B≥κ & κ=v−s+β, T6 0≤j≤e & x=e−j, T7 β≤s−1 (β=0 at s=0), T8 block confinement, T9 cell in
+universe — **299/299, zero exceptions**, including the l=0 corner (e=6, s=0, β=0) that
+Houston does not exercise. Two facts fell out: (1) **our entire 872 population is
+coordinate-degenerate — all 296 sit in the single cell (e,l,s,j) = (0,5,25,0)**, exactly
+Houston's (Δ=0, B=4, x=0), so our corpus cannot discriminate between his cell kills at all;
+(2) **his B=4, x=0 IS our s19 weight multiset 575/141/3** (3 weight-3 edges ⇒ 4 blocks, no
+boundary excess) — two independently derived facts about the same object.
+
+**Grading (his ledger, and we agree with it).** rungs 869/870 effective `V-orch` all-objects;
+871 `V-orch` canonical; **872 effective `L`** — 22 of 115 δ=4 cells at `L`. Open: **O5
+continuation abstraction** (a real logical hole, not an evidence shortfall — the packing is
+demonstrably lossy in continuation-relevant fields, 14,464 collided fibres, and this failure
+class fired twice in production), **O6 prune monotonicity** (208 site certificates: 190
+certified, 7 insufficient, 6 failed-then-rescued), G1 argued out of the closure by
+re-derivation + adversarial audit, `scope:canonical-suffices`. Two release archives are
+defective and two more were reopened mid-certification. His own AI review fleet:
+**true ~90–95%, proved-to-referee-standard ~40–65%.**
+
+**Consequences for us.**
+1. **n=6 window is unconditionally still {869..872}** (only 869 is kernel-checked, by HR's
+   Lean). **Track B is downgraded, NOT retired** — a sub-872 word is now ~5–10% likely, and
+   Track B is expensive; but the top rung rests on two open soundness obligations in exactly
+   the direction where exhaustion fails silently.
+2. **Our s12–s16 grammar result is untouched** and stays the only independently produced
+   structural n=6 statement we hold.
+3. **n=7: the 5905 campaign SURVIVES.** 5896 = 5884 + 12; our target is δ=21. No conflict.
+   **The thing to watch is whether his framework pushes n=7 past δ≈21** — that, not the n=6
+   claim, would moot the 138-open-chain census. Read `a7/bundle_v2` before the next farm pass.
+4. **Search-side lever:** his filters F1 (`Δ + δ ≥ 5`) and F2 (`3Δ + 4δ + 5(j − β) ≥ 20`) are
+   inequalities in coordinates maintainable incrementally on a partial path — same shape as
+   the HR Bound-1 item already in `RESIDUAL-BOUND-DESIGN.md`. Candidate probe: F1/F2 as beam
+   pruning terms.
+5. **Process note worth copying:** `GAPS.md` + `ERRATA.md` + a ledger that computes *effective*
+   tier as the weakest link over the dependency closure. Best model we have seen for publishing
+   a claim of this kind, independent of whether it holds.
+
+---
+
 ## 2026-07-28 (session 19) — Track C v2 BUILT AND GATED in one session: learned COLUMN choice, v2.1 within-state pairwise training, **G2v2 formal GO (median 1.50×, Δ=0)** with the real finding being K-CLASS CANONICALIZATION; farm PC OOM-wedged mid-sweep (recoverable); two urdvr Lean results landed (LB 869/5888; lift theorem S(n)≤Egan(n)−1 ∀n≥8)
 
 Full results ledger: `analysis/trackc/RESULTS-s19.md`. Spec (with every
