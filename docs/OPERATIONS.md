@@ -58,3 +58,19 @@ Current locations:
 - Farm waves: jobs ÷ 20 workers × cap = wall time (162 × 600 s ÷ 20 ≈ 81 min).
 - 600 s open-chain run ≈ 1.1M subtree records ≈ 215 MB JSONL — mine/sample on
   the PC, never scp raw sweeps.
+
+## Farm lessons appended post-recovery (s19 late)
+
+- **PID files do not survive a reboot**: Windows recycles PIDs; 5 of 96 stale
+  pid files resolved to unrelated live processes after the s19 reboot. Any
+  stop-script must verify process NAME (and ideally start time) before
+  killing, and recovery must delete all pid files first.
+- `tasklist`/WMI/systeminfo are Access-denied for the farm account — use
+  PowerShell `Get-Process`.
+- **Detached stdout is lost** (`detach.exe → cmd → redirect` yields 0-byte
+  logs for python): long-running PC-side scripts must write their own
+  progress/summary files (see `mine2.progress` pattern), never rely on
+  stdout redirection.
+- Ledger column semantics must never change mid-file (sweep-1 col 8 is line
+  count in pre-fix rows, MB in post-fix rows — dedupe by last-row-per-jid and
+  do not aggregate col 8 across the boundary).
