@@ -1,6 +1,8 @@
 /target
 /target-analysis
 /data/*
+# s26 splice-closure hybrids (docs/RECOMB-DESIGN.md §8.1): results, tiny, committed.
+!/data/hybrids872/
 *.jsonl
 .DS_Store
 __pycache__/

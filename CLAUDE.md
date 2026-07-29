@@ -60,11 +60,24 @@ the policy pipeline; M3 (independent 872) OPEN: hunt design must be cap 874
 the **discriminator verdict is in**: 288 rollouts × 2 seeds collect ZERO
 ≤873 walks besides the seed record — the shell is thin, off-line deviations
 cost ≥2 chars, local policy exploration cannot reach an independent ≤872.
-NEXT = structural moves (record-pair splicing, §7 tour-merge, cross-class
-surgery — the latter also bootstraps the specimen-free waste-146 classes
-where an 871 must live), cheap record-bandit pass, warm-depth curriculum,
-auto corpus cross-check in the collector → M3 verdict; cheap closure probes queued: perfect-ride ATSP (closes all 616
-S=120 live classes), §7 tour-merge. Track B downgraded-not-retired s20 (Vlad's preliminary
+s26 landed structural recombination
+(`docs/RECOMB-DESIGN.md`, `src/corpus.rs` + `src/recomb.rs` +
+`src/unionsearch.rs`): the splice closure of all 296 records is EXACTLY 298
+walks — **+2 hybrid 872s** (`data/hybrids872/`, known-872 corpus now 298),
+both crossings of one record pair at the braid's only midgame junction
+(record diversity is an opening phenomenon: 293/296 junctions before depth
+200); union-edge DFS (usage-ordered, undo-based, strand pruning = lossless
+union-specific prune, 4.3M nodes/s) is built and controlled, but union
+ENUMERATION is intractable even for 2-record sub-corpora (blocked zone,
+third measurement) — honest products are single-record controls, truncated
+hunts, cap-871 decision runs (verdict in JOURNAL s26); near-miss splice
+repair KILLED by measurement (symdiff bimodal 0 or ≥20). NEXT =
+union-restricted BEAM (width sidesteps DFS's shallowest-divergence-last
+pathology; reuse residual+endgame beam with union edges + k free credits),
+cross-class surgery design (also bootstraps the specimen-free waste-146
+classes where an 871 must live), warm-depth curriculum → M3 verdict; cheap
+closure probes queued: perfect-ride ATSP (closes all 616 S=120 live
+classes). Track B downgraded-not-retired s20 (Vlad's preliminary
 a(6)=872 claim; n=6 window unconditionally still {869..872}); n=7 5905
 campaign survives (his conditional a(7) ≥ 5896 is δ≤11 vs our δ=21 bar);
 Track C v2 parked on the 2.4× scoring-overhead fix; farm and Mac idle
@@ -209,6 +222,12 @@ cargo run --release -- nrpa -n 5 --class 60,10,0,0,10 --level 2 --iters 10 --swi
 # record warm-start hunt (s25 verdict config): cap 874 keeps the gradient alive, collect catches any <=872;
 # reps 20 re-derives the seed 872 at rollout 1 (cold start plateaus at 883 — don't bother without --warm-start):
 cargo run --release -- nrpa -n 6 --class 145,3,0,0,0 --records-profile --level 2 --iters 12 --switch-depth 500 --tail-width 8000 --max-len 874 --prior 3 --early-tail --warm-start data/records872/872.0053cad.txt --warm-reps 20 --collect 872 --seed 3
+
+# s26 structural recombination (docs/RECOMB-DESIGN.md; src/recomb.rs + src/unionsearch.rs):
+cargo run --release -- recomb -n 6 --dirs data/records872,data/gain1_872s --emit-dir data/hybrids872   # 0.25s; pins: 298 closure walks, 2 hybrids
+# union-edge DFS — enumeration mode truncates at any feasible budget (design §8.2); --tt = decision/optimality mode:
+cargo run --release -- union-dfs -n 6 --dirs data/records872,data/gain1_872s --cap 872 --bound residual --out-dir data/union_finds --max-nodes 200000000
+cargo run --release -- union-dfs -n 6 --dirs data/records872,data/gain1_872s --cap 871 --bound residual --tt
 
 # CURRENT BEST FROM SCRATCH — stratified learned beam, validated 873 (n=6), ~8 s (phase-3 item 1, JOURNAL s7):
 cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --alpha 1 --stratify --strat-quota 4 --strat-bucket 1

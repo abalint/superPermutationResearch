@@ -146,6 +146,10 @@ mod tests {
 
     #[test]
     fn n6_record_dirs_load() {
+        if !Path::new("data/records872").exists() {
+            eprintln!("skipping: gitignored corpus not present");
+            return;
+        }
         let g = Graph::new(6);
         let recs = load_corpus(
             &g,

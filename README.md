@@ -23,7 +23,27 @@ the full framing and [docs/ROADMAP.md](docs/ROADMAP.md) for the phased plan.
 
 ## Status
 
-**Latest (session 25, 2026-07-29): NRPA.** The policy layer prescribed by the
+**Latest (session 26, 2026-07-29): structural recombination — two new 872s.**
+The s25 discriminator pointed at structural moves; s26 designed them
+measurement-first (`docs/RECOMB-DESIGN.md`) and built them (`src/corpus.rs`,
+`src/recomb.rs`, `src/unionsearch.rs`). The splice closure of all 296 known
+872s — every walk reachable by gluing record prefixes/suffixes at shared
+search states, chained — is EXACTLY 298 walks: the corpus plus **two new
+hybrid 872s** (`data/hybrids872/`), both crossings of one record pair at the
+braid's only midgame junction. The known-872 corpus grows 296 → 298 (first
+new members since the campaign began), though as splice derivatives they do
+not close M3 (independence). Structural facts worth the price of the session:
+record diversity is an *opening* phenomenon (293/296 braid junctions sit
+before depth 200; all records share one terminal state), and exhaustive
+search inside the 1,279-edge record-edge union — even with a new lossless
+strand prune worth 6× throughput — is intractable already for TWO records:
+the completion-blocked midgame, now measured a third independent way.
+Near-miss splice repair was killed by measurement before a line of code
+(state gaps are bimodal: identical or ≥20 perms apart). Next: a
+union-restricted beam (width beats DFS ordering here) and cross-class
+surgery design. Full story: `docs/JOURNAL.md` s26.
+
+**Prior (session 25, 2026-07-29): NRPA.** The policy layer prescribed by the
 s24 verdict is built (`src/nrpa.rs` + a shared `Grammar` move generator in
 `src/sojourn.rs`): softmax policy over move features, nested adaptation,
 capped-beam tail finish, waste prior, early-tail, record warm-start, and a

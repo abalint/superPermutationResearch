@@ -1,9 +1,12 @@
 # Structural recombination (s26) — record-pair splicing + corpus-edge union search
 
-**Status (2026-07-29, s26): DESIGN COMPLETE, feasibility-measured; implementation
-split across two modules (`src/recomb.rs`, `src/unionsearch.rs`) on the shared
-corpus loader `src/corpus.rs`. This is the M3 front after the s25 discriminator
-verdict.**
+**Status (2026-07-29, s26): BUILT AND MEASURED — see §8 for outcomes. R1
+(splice closure) delivered exactly: 298 walks, +2 hybrid 872s
+(`data/hybrids872/`). R3 (union DFS) built with a union-specific lossless
+strand prune, but full enumeration is INTRACTABLE even for 2-record
+sub-corpora (§8.2) — the tool's supported claims are single-record controls,
+truncated hunts, and (if it completes) the cap-871 decision. This is the M3
+front after the s25 discriminator verdict.**
 
 ## 1. Why this, why now
 
@@ -204,7 +207,7 @@ the cap.
   wall; anything projected longer follows OPERATIONS.md (pre-announce,
   heartbeat, abort command) per the standing launch protocol.
 
-## 7. Anti-goals
+## 7. Anti-goals (see also §8.4, added after the build)
 
 - No near-miss splice repair (measurement 4: the population doesn't exist).
 - No stochastic exploration in this probe (NRPA/bandit) until the
@@ -214,3 +217,75 @@ the cap.
   `--tt` runs.
 - No new scorer machinery — this probe needs only the existing admissible
   bounds.
+
+## 8. s26 build outcomes (measured same day)
+
+### 8.1 R1 — splice closure: DELIVERED EXACTLY
+
+`recomb -n 6 --dirs data/records872,data/gain1_872s --emit-dir data/hybrids872`
+runs in 0.25 s and reproduces every §2 pin (172,521 states / 172,816 edges /
+1 terminal / 298 paths). The **+2 hybrids** are both crossovers of the SAME
+record pair (`872.g1-992c42f` × `872.g1-ca00934`), spliced in both directions
+at the braid's **only midgame junction** (steps 432/433, the lone 400–499
+band entry in the junction histogram); both validate at 872 with the
+universal 575/141/3 weight multiset. Junction histogram: 232 junctions at
+depth 0–99, 61 at 100–199, 2 at 200–299, 1 at 400–499, none later — record
+diversity is an *opening* phenomenon; past depth ~200 the corpus is one
+braid strand per family. Known-872 corpus: 296 → 298.
+
+### 8.2 R3 — union DFS: built, but enumeration is INTRACTABLE (negative result, kept)
+
+Built as specced (§5) plus two additions that earned their place:
+
+- **Usage-ordered adjacency** (most-record-used edge first) — find-first
+  heuristic; measured irrelevant to the intractability below.
+- **Strand pruning** (lossless, union-specific): `live_in[q]` = unvisited
+  union in-neighbours of `q`; a subtree dies when any unvisited perm has no
+  live in-neighbour, is not directly reachable from `cur`, and no free
+  credit remains. Records never strand, so no sound walk is lost. Fires 2×
+  as often as the residual bound and lifts throughput ~6× (0.7M → 4.3M
+  nodes/s full-corpus).
+
+Measured walls (all residual bound, cap 872):
+
+- Full corpus, 200M nodes, 47 s: TRUNCATED, **0 completions**, max depth 581,
+  strand prunes 39.1M vs bound prunes 20.8M.
+- **A 2-record union already does not exhaust at 50M nodes** (max depth 672,
+  0 completions). Mixed A/B prefixes stay strand- and bound-viable for
+  hundreds of steps because record pairs share most edges; pure-record
+  completions hide behind the *shallowest* divergence, which DFS flips last.
+  This is the s23/s24 blocked zone measured a third way: the admissible
+  bound has zero slack on records and cannot see the wall until ~depth 600.
+- Single-record n=6 control COMPLETEs and re-derives its record exactly
+  (pipe proof, pinned in tests).
+
+Consequence: C-U2's "exact census of in-union 872s" claim is DEAD, and
+**C-U3 died with it**: the cap-871 run also TRUNCATED at 200M nodes (29 s,
+max depth 574; bound prunes barely tighter than at cap 872). Zero slack
+kills only record paths; the mixed-prefix churn has bound slack, so the
+"no ≤871 in-union" lemma is not obtainable from this instrument. Also
+measured: TT pruning fired ZERO times in every n=6 configuration — exact
+transpositions do not occur in the churn region — while its memory
+appetite page-thrashed the first 871 attempt (killed, re-run TT-less, 20×
+faster). Default recommendation: leave `--tt` off at n=6.
+
+### 8.3 M3 status after s26
+
+The two hybrids are new 872s but *splice-derived* — coordinated multi-move
+objects, yet reachable from the corpus, so they do not discharge M3's
+"independent" requirement; they DO prove the recombination machinery
+end-to-end. The remaining designed-but-unbuilt lever for in-union
+interleaving hunts: a **union-restricted beam** (width-based completer —
+restrict successor generation to union edges + k free credits, reuse the
+proven residual+endgame beam) instead of DFS; width sidesteps the
+shallowest-divergence-last pathology. That, and cross-class surgery (§1(c)),
+are the s27 candidates.
+
+### 8.4 Anti-goal updates
+
+- The naive C-U1 smoke ("re-find a record within a small budget") was
+  measured FALSE — do not re-add it; the pinned honest tests are the
+  single-record COMPLETE and the pair TRUNCATED-with-strand-prunes.
+- Do not burn budget growing `--max-nodes` on full-corpus enumeration; the
+  frontier of that tree is exponential in opening junctions (232 of 296 are
+  in depth 0–99).

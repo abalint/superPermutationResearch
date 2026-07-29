@@ -45,6 +45,10 @@
 //!   JSON files produced by the Python training side;
 //! * [`rollout`] — epsilon-greedy rollout generator emitting JSONL
 //!   training records for a future learned value function;
+//! * [`recomb`] — record-pair splice closure over the braid state-DAG
+//!   (s26 Probe R1, `docs/RECOMB-DESIGN.md` §4);
+//! * [`unionsearch`] — exhaustive bound-capped DFS inside the corpus
+//!   edge union (s26 Probe R3 / §7 tour-merge, RECOMB-DESIGN §5);
 //! * [`trace`] — first-visit trajectory extraction from existing
 //!   superpermutation strings (e.g. community records) plus beam-exact
 //!   state scoring for prune-depth analysis;
@@ -62,8 +66,10 @@ pub mod greedy;
 pub mod lb_residual;
 pub mod model;
 pub mod nrpa;
+pub mod recomb;
 pub mod rollout;
 pub mod sojourn;
 pub mod trace;
+pub mod unionsearch;
 pub mod validate;
 pub mod walk;

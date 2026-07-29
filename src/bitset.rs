@@ -29,6 +29,14 @@ impl BitSet {
         self.words[i >> 6] |= 1u64 << (i & 63);
     }
 
+    /// Clear bit `i` (must be within capacity). Added for undo-based
+    /// depth-first searchers (`unionsearch`) that retreat by reversing
+    /// a visit instead of cloning the set.
+    #[inline]
+    pub fn clear(&mut self, i: usize) {
+        self.words[i >> 6] &= !(1u64 << (i & 63));
+    }
+
     /// Return whether bit `i` is set (must be within capacity).
     #[inline]
     pub fn get(&self, i: usize) -> bool {
@@ -81,6 +89,12 @@ mod tests {
         // Setting an already-set bit is idempotent.
         b.set(63);
         assert_eq!(b.popcount(), 5);
+        // Clearing reverses a set exactly.
+        b.clear(64);
+        assert!(!b.get(64));
+        assert_eq!(b.popcount(), 4);
+        b.clear(64);
+        assert_eq!(b.popcount(), 4);
     }
 
     #[test]

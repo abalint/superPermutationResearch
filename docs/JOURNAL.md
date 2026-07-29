@@ -6,7 +6,92 @@ mechanism — read it before touching code.
 
 ---
 
-## 2026-07-29 (session 25) — NRPA built (`src/nrpa.rs` + shared `Grammar` in sojourn.rs): n=5 control PASS (153); cold-start n=6 plateaus at 883 (no gradient across the blocked zone); record warm-start (Track C §5) carries the policy to depth 500 and the full pipeline re-derives 872 END-TO-END (byte-identical to seed) — oracle-grade PASS for the policy machinery; discriminator verdict: the record's neighborhood contains ZERO other ≤873 completions in 288 rollouts — the 872 shell is thin, an independent ≤872 is a coordinated multi-move object, M3 pivots to structural recombination (splice/tour-merge/cross-class surgery); two hard lessons: cap-at-target starves the gradient, and the completion U-curve maps s23's blocked zone from the policy side
+## 2026-07-29 (session 26) — Structural recombination built and measured (docs/RECOMB-DESIGN.md; `src/corpus.rs` + `src/recomb.rs` + `src/unionsearch.rs`): the splice closure of all 296 known 872s is EXACTLY 298 walks — **+2 new hybrid 872s** (known-872 corpus now 298), both crossings of ONE record pair at the braid's only midgame junction; record diversity is an opening phenomenon (293/296 junctions before depth 200, none after 500, one common terminal state); union-edge DFS built with a lossless union-specific STRAND prune (6× throughput, 4.3M nodes/s) — but union enumeration is INTRACTABLE even for a 2-record sub-corpus (the s23/s24 blocked zone measured a third way); the cap-871 decision run is ALSO bound-blocked (TRUNCATED at 200M nodes / 29 s, 0 completions — no lemma); near-miss splice repair KILLED by measurement before any code was written
+
+Design-first session (Andrew's directive: design before implementation). The
+four feasibility measurements (`analysis/trackb/recomb_feasibility.py`,
+pure Python over the corpus, ~2 min) reshaped the s25 next-steps *before*
+implementation and are the load-bearing content of `docs/RECOMB-DESIGN.md`
+§2:
+
+1. 6,434 states are shared by ≥2 byte-distinct records — at every depth —
+   and ALL at equal prefix length (no free improvement anywhere).
+2. The braid DAG (172,521 states, 172,816 edges, ONE terminal — all 296
+   records end at the same final state) has exactly **298** root→terminal
+   paths: splice closure = corpus + 2.
+3. Near-miss repair is dead: at matched (cur, depth), cross-record
+   visited-set symdiff is bimodal — 0 or ≥20 perms (63 pairs in 1..19 out
+   of 60k+). There is nothing to repair with a capped beam. KILLED.
+4. The union of record first-visit edges is TINY: 1,279 edges / 720 nodes,
+   out-degree ≤2, weights 700/576/3 — which made exhaustive in-union search
+   look feasible (it isn't; see below — the graph is small but the *tree*
+   is exponential in the 232 opening junctions).
+
+**Built 1 — `src/corpus.rs`.** Shared record loader: deterministic, skips
+non-record files, HARD-ERRORS on untight/incomplete records (silent corpus
+shrinkage would poison every census), dedups byte-identical strings.
+
+**Built 2 — `src/recomb.rs` + `recomb` CLI (Probe R1).** Braid state-DAG,
+u128 path count (a pin, not a big number: 298), full enumeration + `Walk`
+replay + validation + corpus dedup, provenance segmentation, junction
+histograms. All §2 pins reproduced in Rust and pinned in
+`recomb::tests::n6_braid_pins` (runs in seconds). The **two hybrids**
+(`data/hybrids872/872.h-10c7cbe.txt`, `872.h-287df8a.txt` + provenance.tsv)
+are `872.g1-992c42f × 872.g1-ca00934` crossed in BOTH directions at steps
+432/433 — the single junction in the 400–499 band. Both validate at 872,
+both carry the universal 575/141/3 multiset (forced: the braid only
+reconverges at equal length and the union has only 3 w3 edges). These are
+genuine new members of the known-872 corpus, but splice-DERIVED — they do
+not discharge M3 ("independent"), they prove the machinery.
+
+**Built 3 — `src/unionsearch.rs` + `union-dfs` CLI (Probe R3, the §7
+tour-merge).** Undo-based DFS (no per-node cloning; own incremental state
+mirroring `Walk::advance` for the residual terms), cycle/residual bound
+against `--cap`, `--tt` transposition mode (exact keys; sound for
+decision/optimality, NOT enumeration — the tool prints which claim its
+configuration supports), `--free k` off-union credits, `--max-nodes` with
+honest COMPLETE/TRUNCATED verdicts, usage-ordered adjacency. Plus the
+addition that earned its keep: **strand pruning** — `live_in[q]` = count of
+unvisited union in-neighbours of unvisited `q`; if any unvisited perm has
+none, isn't reachable from `cur` right now, and no free credit remains, the
+subtree can never complete. Records never strand ⇒ lossless. Fires 2× as
+often as the residual bound and lifted full-corpus throughput 0.7 → 4.3M
+nodes/s.
+
+**The negative result (kept, it's the finding).** Union ENUMERATION is
+intractable at every scale that matters: full corpus TRUNCATED at 200M
+nodes (47 s, 0 completions, max depth 581); even a 2-RECORD union does not
+exhaust 50M nodes (0 completions, max depth 672) — mixed A/B prefixes stay
+viable for hundreds of steps because record pairs share most edges, and
+pure-record completions hide behind the *shallowest* divergence, which DFS
+flips LAST. The blocked zone again, measured a third way (beam s23, policy
+s25, exhaustive-DFS s26). The **cap-871 decision run (C-U3) is equally
+blocked**: TRUNCATED at 200M nodes (29 s, 7.0M nodes/s, max depth 574,
+bound prunes 23.0M vs 20.8M at cap 872 — barely tighter). The zero-slack
+fact only kills RECORD paths at cap 871; the mixed-prefix churn has bound
+slack, so no "no-871-in-union" lemma is obtainable from this instrument.
+Also measured: TT pruning hit ZERO times in every n=6 run (exact-state
+transpositions just don't occur in the churn region) — and the TT's memory
+appetite sent the first 871 attempt into page-thrash; killed per the launch
+protocol, re-run without TT, 20× faster. Controls that DO pass and are
+pinned: n=5 single/pair suite, n=6 single-record COMPLETE (re-derives its
+record byte-identically), n=6 pair TRUNCATED-with-strand-prunes.
+
+**Next session, concretely:**
+- **Union-restricted BEAM** — width sidesteps the shallowest-divergence-last
+  pathology; restrict successor generation to union edges (+k free
+  credits) in the proven residual+endgame beam. The cheap hunt for in-union
+  interleaving 872s that DFS order can't reach.
+- **Cross-class surgery design** (RECOMB-DESIGN §1(c)) — the only bootstrap
+  for the specimen-free waste-146 classes; now with the s26 braid facts
+  (opening-concentrated diversity) as constraints.
+- Re-run `recomb` whenever the corpus grows (hybrids/union finds feed back;
+  closure can only grow).
+- Queued from earlier: perfect-ride ATSP closure probe, warm-depth
+  curriculum.
+
+All 72 lib tests green (112 total with integration suites), clippy `-D
+warnings` clean, fmt clean. (`src/nrpa.rs` + shared `Grammar` in sojourn.rs): n=5 control PASS (153); cold-start n=6 plateaus at 883 (no gradient across the blocked zone); record warm-start (Track C §5) carries the policy to depth 500 and the full pipeline re-derives 872 END-TO-END (byte-identical to seed) — oracle-grade PASS for the policy machinery; discriminator verdict: the record's neighborhood contains ZERO other ≤873 completions in 288 rollouts — the 872 shell is thin, an independent ≤872 is a coordinated multi-move object, M3 pivots to structural recombination (splice/tour-merge/cross-class surgery); two hard lessons: cap-at-target starves the gradient, and the completion U-curve maps s23's blocked zone from the policy side
 
 Build order continues (TRACKB-DESIGN §4 step 4a). All 112 tests green, clippy/fmt
 clean.
