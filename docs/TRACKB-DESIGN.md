@@ -207,3 +207,20 @@ T0 identity verification → L0 enumeration + ledger (M1 read) → T1 door atlas
 L2 canonical DFS + M2 on the records' class → C1/C2 controls → T3 `--seed-file`
 + T2 bound/model composition → bandit + NRPA → M3 verdict. The §7 tour-merge
 probe is independent and can run any time the Mac is otherwise idle.
+
+**Queued for the L2 DFS (from the 2026-07-29 Kristan-5906 analysis): the
+emergent-edge canonicalization filter.** A weight-w move whose appended
+characters spell an unvisited permutation `p` in an interior window builds a
+string byte-identical to the decomposed line through `p` (weight k + weight
+w−k), so generating both branches duplicates entire subtrees. Rule: annotate at
+graph build time which edges have permutation interiors (static per edge; per
+node exactly 1 of the 2 weight-2 successors and 3 of the 6 weight-3 successors
+at n=7), then at move generation skip a composed edge whenever an annotated
+interior rank is unvisited; keep it when all interior ranks are visited (that
+case is real and record-tying — Kristan's string). Provably lossless for both
+optimality and enumeration — every skipped branch's strings are built
+identically by the surviving twin. Cost ≈ a few bitset lookups per expansion.
+Biggest payoff here in the exhaustive DFS (duplicate-subtree merging); in beam
+it only frees width slots since dominated candidates already lose on any
+admissible bound. Details: JOURNAL 2026-07-29 (field news) and
+`../../extraDocs/2026-07-29-tomaz-kristan-5906-repeat.md`.

@@ -84,6 +84,21 @@ still a fair question, but about which simple-path optima the grammar reaches,
 not about leaving the class. Reproduce: `extraDocs/shortcut_tk5906.py` (exits
 0).
 
+**QUEUED WORK (out of this analysis) — emergent-edge canonicalization filter,
+now in TRACKB-DESIGN §9.** The one concrete machinery improvement from the
+detour. A composed weight-2/3 move whose interior window spells an *unvisited*
+permutation is byte-identical to the decomposed line through it, so the search
+currently spawns duplicate subtrees (`graph.rs:135-151` generates all
+successors with no filter; beam dedup can't merge them since the two readings
+have different visited-sets). Fix: annotate perm-interior edges at graph build
+time (static per edge — per node 1 of 2 weight-2 and 3 of 6 weight-3
+successors at n=7), skip a composed edge at move generation iff an annotated
+interior rank is unvisited, keep it iff all are visited (the Kristan case, so
+his string stays reachable). Lossless for optimality AND enumeration; cost a
+few bitset lookups per expansion. Payoff ranking: Track B L2 exhaustive DFS
+and the endgame solver (true duplicate-subtree merging) >> beam (frees width
+slots only). Not implemented — queued for the Track B build.
+
 **Method withheld, deliberately.** He's hunting the record ("if he manages to get
 under 5906 characters, you'll be the first to see it") and this looks like a
 byproduct. **Don't press him.** If he volunteers: what produced it, was the repeat
