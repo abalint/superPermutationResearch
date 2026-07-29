@@ -6,7 +6,7 @@ mechanism — read it before touching code.
 
 ---
 
-## 2026-07-29 (session 25) — NRPA built (`src/nrpa.rs` + shared `Grammar` in sojourn.rs): n=5 control PASS (153); cold-start n=6 plateaus at 883 (no gradient across the blocked zone); record warm-start (Track C §5) carries the policy to depth 500 and the full pipeline re-derives 872 END-TO-END (byte-identical to seed) — oracle-grade PASS for the policy machinery; independent-872 (M3) still open, neighborhood completes 873/874; two hard lessons: cap-at-target starves the gradient, and the completion U-curve maps s23's blocked zone from the policy side
+## 2026-07-29 (session 25) — NRPA built (`src/nrpa.rs` + shared `Grammar` in sojourn.rs): n=5 control PASS (153); cold-start n=6 plateaus at 883 (no gradient across the blocked zone); record warm-start (Track C §5) carries the policy to depth 500 and the full pipeline re-derives 872 END-TO-END (byte-identical to seed) — oracle-grade PASS for the policy machinery; discriminator verdict: the record's neighborhood contains ZERO other ≤873 completions in 288 rollouts — the 872 shell is thin, an independent ≤872 is a coordinated multi-move object, M3 pivots to structural recombination (splice/tour-merge/cross-class surgery); two hard lessons: cap-at-target starves the gradient, and the completion U-curve maps s23's blocked zone from the policy side
 
 Build order continues (TRACKB-DESIGN §4 step 4a). All 112 tests green, clippy/fmt
 clean.
@@ -70,21 +70,36 @@ rollouts, both runs re-find 872 — but the collection contains ONLY the seed
 record; the explored neighborhood completes at 873/874. **M3 (independent
 872) remains open.**
 
-**Next session, concretely:**
-- Measure neighborhood diversity first: `--collect 873` — how many DISTINCT
-  873s does one warm-started run produce? If many, the 872 shell is thin but
-  reachable; if the collection is also seed-dominated, exploration radius is
-  the binding constraint (then: adapt-alpha/temperature sweeps, higher
-  nesting, lower reps with cap 874 which is now safe).
-- Loop over records: warm-start from each of the 296 (or several per run),
-  seeds × records — TRACKB §4 step 3's bandit over exemplars, with reward =
-  collection growth, not best length.
-- Warm-depth curriculum: shrink `--warm-depth` (500 → 450 → 400 …) so the
-  policy must OWN progressively more of the blocked zone instead of riding
-  the record; watch the depth telemetry for where it breaks.
-- The collector should also cross-check against `data/records872/` +
-  `data/gain1_872s/` automatically and flag any byte-distinct ≤872 loudly
-  (M3 verdict criteria unchanged: validated, byte-distinct from all 296).
+**Discriminator run (same session, after the handoff pass): the shell is
+THIN.** Two independent hunts (seeds 3/7, reps 20, l2×12, cap 874,
+`--collect 873`; 288 rollouts total, 81 live): the ONLY collected walk ≤873
+is the seed record itself — **zero distinct 873s, let alone 872s**. Every
+off-line completion lands at 874+. Combined with the fact that all 296 known
+872s share one weight multiset and one s20 coordinate cell, the verdict:
+single- or few-move deviations from a record cost ≥ 2 chars, so **local
+policy-space exploration around one record cannot produce an independent
+≤872 — a new 872 is a coordinated multi-move object.** This cheaply closes
+the "tune exploration harder" alternative (temperature/alpha/nesting sweeps
+de-prioritized). Analysis script: scratchpad `disc_analysis.py` pattern —
+collected walks vs seed divergence positions vs the corpus.
+
+**Next session, concretely (re-planned after the discriminator):**
+- **Structural moves, not policy jitter.** (a) Record-pair recombination:
+  splice compatible segments of two byte-distinct 872s (they share the
+  weight multiset; find crossover points where prefix of A + suffix of B is
+  a legal walk, tail-repair with the capped beam). (b) The queued §7
+  tour-merge. (c) Cross-class surgery: legal cycle-level edits that CHANGE a
+  record's L0 allocation (trade w3 door ↔ two w2 splits, introduce a priced
+  skip) — also the only known bootstrap for the specimen-free waste-146
+  classes where an 871 must live.
+- Bandit over the 296 records as warm-starts still worth one cheap pass
+  (some record may sit in a denser pocket), but with collection growth as
+  reward and low per-record budget.
+- Warm-depth curriculum (500 → 450 → 400 …) remains the path to making the
+  policy own the blocked zone rather than ride the seed.
+- Collector should cross-check `data/records872/` + `data/gain1_872s/`
+  automatically and flag any byte-distinct ≤872 loudly (M3 criteria
+  unchanged).
 
 ## 2026-07-29 (session 24) — T2 built (`Scorer::Composed` + admissible `--max-len` cap): composition is the first learned-signal WIN on completion (pipeline 879 → 874, robust plateau); cap proven sound + big speedups on viable searches; capped runs then PROVE the midgame ranking is the sole remaining failure — 872 needs a policy, not width; NRPA is next with three measured motivations
 

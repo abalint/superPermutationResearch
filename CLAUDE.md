@@ -57,10 +57,13 @@ warm-start (reps 20, switch 500, w8000 tail, cap 872) **re-derives 872
 end-to-end at rollout 1, byte-identical to seed** — oracle-grade PASS for
 the policy pipeline; M3 (independent 872) OPEN: hunt design must be cap 874
 + collect ≤872 (cap-at-target starves the gradient — twice-measured), and
-the explored neighborhood so far completes 873/874 only. NEXT = neighborhood
-diversity (`--collect 873`), bandit over the 296 warm-start records,
-warm-depth curriculum, auto cross-check of collections vs the record corpus
-→ M3 verdict; cheap closure probes queued: perfect-ride ATSP (closes all 616
+the **discriminator verdict is in**: 288 rollouts × 2 seeds collect ZERO
+≤873 walks besides the seed record — the shell is thin, off-line deviations
+cost ≥2 chars, local policy exploration cannot reach an independent ≤872.
+NEXT = structural moves (record-pair splicing, §7 tour-merge, cross-class
+surgery — the latter also bootstraps the specimen-free waste-146 classes
+where an 871 must live), cheap record-bandit pass, warm-depth curriculum,
+auto corpus cross-check in the collector → M3 verdict; cheap closure probes queued: perfect-ride ATSP (closes all 616
 S=120 live classes), §7 tour-merge. Track B downgraded-not-retired s20 (Vlad's preliminary
 a(6)=872 claim; n=6 window unconditionally still {869..872}); n=7 5905
 campaign survives (his conditional a(7) ≥ 5896 is δ≤11 vs our δ=21 bar);

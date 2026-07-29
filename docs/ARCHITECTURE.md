@@ -128,6 +128,25 @@ bitset ──→ no crate deps
   legality uses `build_interiors(&Graph)` (interior perm windows per w≥3 edge,
   the emergent-edge filter). Dedup tiers documented on `DedupMode` (exact /
   orbit via the O(1) cur-inverse relabeling / abstraction with exemplar cap).
+  s25: the move generator is factored into `Grammar { g, caps, profile,
+  interiors }` (`root(track_path)` / `children(&State) ->
+  Vec<(SojournMove, State)>` / `feasible`) — the ONE source of legal moves,
+  shared by the DFS and the NRPA rollouts; `children` preserves the DFS push
+  order exactly (exemplar caps are order-sensitive; the M2 pin reproduces).
+- **`src/nrpa.rs`** — NRPA over the sojourn grammar (s25, TRACKB §4 step 4a):
+  `nrpa_search(&NrpaCfg) -> NrpaResult`. Softmax policy = `HashMap<u64, f64>`
+  over three feature codes per move (species / door context / exact `(cur,
+  target)` identity, splitmix-hashed); nested adapt-toward-best (Rosin),
+  replay-based `adapt` (+α chosen, −α·softmax all legal, prior included in
+  the gradient). Rollouts hand off to
+  `beam_search_multi_seeded_capped` at `switch_depth` visited perms; knobs
+  that are load-bearing (all measured s25): `prior` (−β·waste logit bias —
+  without it n=5 needs 5× the rollouts), `early_tail` (dead-ends complete via
+  the unconstrained tail; without it the records class gives zero gradient),
+  `warm_start`/`warm_reps` (policy pre-adapted toward record move sequences —
+  cold start plateaus at 883, warm start re-derives 872), `collect_max` (all
+  distinct completions ≤ L). Deterministic per `seed` (`StdRng`); depth
+  telemetry (min/mean/max hand-off depth) in every result.
 - **`src/trace.rs`** — trajectory extraction from existing superpermutation strings
   (e.g. community records): `extract_path(n, s)` (first-visit rank order via a sliding
   window), `trace_string(&Graph, s) -> Trace { path, weights, input_len, replay_len,
@@ -139,7 +158,8 @@ bitset ──→ no crate deps
   total, complete }`. Sliding-window checker; the only accepted proof that a string is
   a superpermutation.
 - **`src/main.rs`** — clap CLI (`struct Cli`, `enum Cmd`): subcommands `info`, `atlas`,
-  `sojourn-dfs`, `greedy`, `beam`, `beam2`, `trace`, `rollouts`, `validate`.
+  `sojourn-dfs`, `nrpa`, `greedy`, `beam`, `beam2`, `trace`, `endgame`,
+  `rollouts`, `cert-verify`, `validate`.
 
 ## Core data structures
 
@@ -393,7 +413,9 @@ plug in:
   (two-ended beam, `src/beam2.rs` + `Preds` + `lb_arc2`), and item 4 (endgame
   tablebase, `src/endgame.rs::solve_endgame` — theorem-grade, m ≤ 25, use it as
   the terminal solver in any new searcher) are built — see above. Item 5 split
-  into Tracks A/B/C; the Rust tree has **no sojourn/cycle-level searcher yet**.
+  into Tracks A/B/C; the sojourn/cycle-level machinery now lives in
+  `src/sojourn.rs` (exhaustive DFS, s22) and `src/nrpa.rs` (policy search,
+  s25), both driving the shared `Grammar` move generator.
 
 ## Track B implementation map (`docs/TRACKB-DESIGN.md`; s22 status inline)
 
@@ -431,10 +453,14 @@ module, do NOT patch `beam_search`.
   emits ≤ K frontier exemplars per canonical class with their first-visit
   rank paths (`FrontierSeed`; states carry paths only when dumping). NOT yet
   wired: residual-bound pruning (`len + bound > 725 + 146` — waits on T2).
-- **NRPA rollout engine**: `src/nrpa.rs` over the same sojourn move space —
-  policy weights on move features, softmax rollouts, adapt-toward-best per
-  nesting level (2–3 levels). `Walk` in `src/walk.rs` is the replay/feature
-  substrate; `unvisited_succs` shows the candidate-enumeration pattern.
+- **NRPA rollout engine — BUILT s25** (`src/nrpa.rs`, `nrpa` subcommand; see
+  the module list above for the full knob inventory). Verdicts: n=5 control
+  PASS (153, 100 rollouts, prior=1); n=6 cold start plateaus at 883 (no
+  gradient across the s23 blocked zone — depth stalls ~85/450); record
+  warm-start re-derives 872 end-to-end (byte-identical to seed, rollout 1);
+  hunt design must be cap 874 + collect ≤872 (cap-at-target starves the
+  gradient). M3 (byte-distinct ≤872) OPEN — next: neighborhood diversity,
+  record bandit, warm-depth curriculum (JOURNAL s25).
 - **T2 — DONE s24**, two pieces. (a) `Scorer::Composed { bound, model,
   alpha }`: score = `len + lb(bound) + α·pred` (`model_pred` shared with the
   `Learned` arm; still a pure function of `(cur, visited, len)`); CLI

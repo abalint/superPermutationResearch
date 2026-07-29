@@ -23,7 +23,28 @@ the full framing and [docs/ROADMAP.md](docs/ROADMAP.md) for the phased plan.
 
 ## Status
 
-**Latest (sessions 22–24, 2026-07-29): the Track B build.** The opening-first
+**Latest (session 25, 2026-07-29): NRPA.** The policy layer prescribed by the
+s24 verdict is built (`src/nrpa.rs` + a shared `Grammar` move generator in
+`src/sojourn.rs`): softmax policy over move features, nested adaptation,
+capped-beam tail finish, waste prior, early-tail, record warm-start, and a
+≤L completion collector. Controls: n=5 finds 153 (100 rollouts); a record's
+path replays 499/499 moves in-grammar. The headline: **cold-start NRPA
+plateaus at 883** (no learnable gradient across the completion-blocked
+midgame), but **warm-starting the policy from a known record carries rollouts
+to depth 500 and the full pipeline re-derives that 872 end-to-end, validated,
+byte-identical** — the policy machinery passes at oracle grade. The M3 gate
+(a ≤872 byte-distinct from all 296 known) is still open, and the
+same-session discriminator sharpened it: 288 warm-started rollouts collect
+**zero** walks ≤873 other than the seed record itself — the shell around a
+record is thin, and an independent ≤872 must be a coordinated multi-move
+object, out of reach of local policy exploration. Hunt design lesson
+(measured twice): a cap at exactly the target kills every rollout and the
+gradient with it — hunt at cap 874, collect at ≤872. Next: structural
+recombination (record-pair splicing, tour-merge, cross-class surgery), a
+cheap bandit pass over the 296 warm-start records, and a warm-depth
+curriculum. Full story: `docs/JOURNAL.md` s25.
+
+**Prior (sessions 22–24, 2026-07-29): the Track B build.** The opening-first
 sojourn-level machinery is up: the general waste identity is machine-verified on 806
 walks (`analysis/trackb/verify_identity.py`), the L0 allocation ledger is built with
 two closure lemmas (M1 passed at 66.5%; new pass-over lemma `ip ≤ 4(S−120)`), the
@@ -146,8 +167,12 @@ composed bound+model scoring → admissible `--max-len` cap). Gate status:
 C2 passed (n=5 pipeline finds 153); C1 oracle passed (a known 872
 re-derived byte-identically from its own depth-≥450 prefix); C1 pipeline
 open at **874** (879 → 874 via composition) with the residual failure
-isolated to midgame ranking at levels ~60–450 — the target of the next
-build, NRPA policy rollouts, followed by the frontier bandit → M3.
+isolated to midgame ranking at levels ~60–450. s25 built that midgame's
+policy layer — NRPA over the sojourn grammar — and its warm-started form
+re-derives a known 872 end-to-end through policy + grammar + capped tail;
+M3 (an *independent* ≤872) is the open gate, next attacked via
+neighborhood diversity, a bandit over the 296 warm-start records, and a
+warm-depth curriculum.
 Session-by-session state: `docs/JOURNAL.md`
 (read newest entry first); agent conventions: `CLAUDE.md`.
 
