@@ -35,6 +35,8 @@
 //! * [`endgame`] — exact endgame tablebase: Held–Karp DP giving the
 //!   provably optimal completion once ≤ ~25 permutations remain
 //!   (phase-3 item 4);
+//! * [`corpus`] — record corpus loading (traced, validated, deduped)
+//!   shared by the s26 recombination probes (`docs/RECOMB-DESIGN.md`);
 //! * [`cert`] — clean-room verifier for the n = 6 gain-one kernel-chain
 //!   certificate: rebuilds marked loops, hops, chains, and covers from
 //!   the mathematical definitions alone and re-checks claims C1–C5
@@ -53,6 +55,7 @@ pub mod beam2;
 pub mod bitset;
 pub mod bound;
 pub mod cert;
+pub mod corpus;
 pub mod endgame;
 pub mod graph;
 pub mod greedy;
