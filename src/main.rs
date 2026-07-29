@@ -22,7 +22,7 @@ use superperm::endgame::{solve_endgame, spell_path, MAX_REMAINING};
 use superperm::graph::Graph;
 use superperm::greedy::greedy;
 use superperm::model::Model;
-use superperm::rollout::{log_trajectory, run_rollouts_guided, Guide};
+use superperm::rollout::{log_trajectory, run_rollouts_strings, Guide};
 use superperm::trace::{score_trajectory, trace_string};
 use superperm::validate::validate;
 
@@ -119,6 +119,17 @@ enum Cmd {
         /// Number of symbols (3..=8).
         #[arg(short, long)]
         n: usize,
+    },
+    /// Dump the door atlas (Track B T1): every weight->=3 edge with
+    /// cycle labels, in-cycle offsets, and statically-known interior
+    /// permutation windows, as TSV on stdout.
+    Atlas {
+        /// Number of symbols (3..=8).
+        #[arg(short, long)]
+        n: usize,
+        /// Minimum door weight to include (default 3; 2 adds w2x/i2).
+        #[arg(long, default_value_t = 3)]
+        min_weight: u8,
     },
     /// Run the deterministic greedy baseline and print the result.
     Greedy {
@@ -310,6 +321,10 @@ enum Cmd {
         /// Output JSONL file path.
         #[arg(long)]
         out: PathBuf,
+        /// Also write each completed rollout's superpermutation string
+        /// (one per line) to this file.
+        #[arg(long)]
+        strings: Option<PathBuf>,
     },
     /// Independently verify the n=6 gain-one kernel-chain certificate
     /// (claims C1-C5) from a clean-room reimplementation, printing a
@@ -353,6 +368,64 @@ fn main() -> ExitCode {
                 println!("  weight {w}: {count} edges ({} per perm)", count / g.nfact);
             }
             println!("successors per perm = {}", g.succs[0].len());
+        }
+        Cmd::Atlas { n, min_weight } => {
+            let g = Graph::new(n);
+            // In-cycle offset: number of weight-1 rotations from the
+            // cycle's representative (lowest-ranked member) to the perm.
+            let mut offset = vec![0u8; g.nfact];
+            for cid in 0..g.cycle_count {
+                let rep = (0..g.nfact)
+                    .find(|&r| g.cycle_id[r] == cid as u32)
+                    .expect("nonempty cycle");
+                let mut cur = rep;
+                for off in 0..n {
+                    offset[cur] = off as u8;
+                    cur = g.succ1(cur as u32) as usize;
+                }
+                debug_assert_eq!(cur, rep);
+            }
+            let out = std::io::stdout();
+            let mut w = BufWriter::new(out.lock());
+            use std::io::Write;
+            writeln!(
+                w,
+                "from_rank\tweight\tto_rank\tfrom_cycle\tfrom_off\tto_cycle\tto_off\tinterior_perm_ranks"
+            )
+            .unwrap();
+            for r in 0..g.nfact {
+                let p = &g.perms[r];
+                for &(q, wt) in &g.succs[r] {
+                    if wt < min_weight {
+                        continue;
+                    }
+                    let qp = &g.perms[q as usize];
+                    // appended chars are qp[n-wt..]; interior window after
+                    // j appended chars (1 <= j < wt) is p[j..] + qp[n-wt..n-wt+j]
+                    let mut interior = Vec::new();
+                    for j in 1..wt as usize {
+                        let mut win: Vec<u8> = p[j..].to_vec();
+                        win.extend_from_slice(&qp[n - wt as usize..n - wt as usize + j]);
+                        let mut mask = 0u16;
+                        for &v in &win {
+                            mask |= 1 << v;
+                        }
+                        if mask == ((1u16 << n) - 1) << 1 {
+                            interior.push(superperm::graph::rank(&win).to_string());
+                        }
+                    }
+                    writeln!(
+                        w,
+                        "{r}\t{wt}\t{q}\t{}\t{}\t{}\t{}\t{}",
+                        g.cycle_id[r],
+                        offset[r],
+                        g.cycle_id[q as usize],
+                        offset[q as usize],
+                        interior.join(";")
+                    )
+                    .unwrap();
+                }
+            }
         }
         Cmd::Greedy { n, log } => {
             let g = Graph::new(n);
@@ -800,6 +873,7 @@ fn main() -> ExitCode {
             model,
             alpha,
             out,
+            strings,
         } => {
             let g = Graph::new(n);
             let loaded = model.map(|path| load_model(&path, n, false));
@@ -813,8 +887,24 @@ fn main() -> ExitCode {
                 std::process::exit(1);
             });
             let mut writer = BufWriter::new(file);
-            let s = run_rollouts_guided(&g, count, epsilon, seed, guide, &mut writer)
-                .expect("rollout write failed");
+            let mut strings_writer = strings.map(|p| {
+                BufWriter::new(fs::File::create(&p).unwrap_or_else(|e| {
+                    eprintln!("cannot create {}: {e}", p.display());
+                    std::process::exit(1);
+                }))
+            });
+            let s = run_rollouts_strings(
+                &g,
+                count,
+                epsilon,
+                seed,
+                guide,
+                &mut writer,
+                strings_writer
+                    .as_mut()
+                    .map(|w| w as &mut dyn std::io::Write),
+            )
+            .expect("rollout write failed");
             println!(
                 "rollouts n={n} count={} epsilon={epsilon} seed={seed}{mdesc}",
                 s.rollouts

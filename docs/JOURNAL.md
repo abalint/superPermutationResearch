@@ -6,6 +6,72 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (session 22) — Track B build begins: T0 identity VERIFIED (806 walks, 0 exceptions, general form found), L0 ledger built (78,813 allocations, M1 PASS at 66.5%), NEW pass-over capacity lemma (ip ≤ 4·(S−120)), T1 door atlas verified (150 canonical edges)
+
+Build order = TRACKB-DESIGN §9; this session landed T0 → L0+M1 → T1. New code:
+`analysis/trackb/{verify_identity,enumerate_l0,door_atlas}.py`, `atlas`
+subcommand, `rollouts --strings` (emit completed rollout strings; RNG stream
+untouched, all 95 tests green).
+
+**T0 — the i2-priced identity is VERIFIED, and the fully general form is now
+known.** `verify_identity.py` works on the string's first-visit reading
+(immune to walk bookkeeping and emergent-edge ambiguity), 806 strings, zero
+exceptions. The stated form `waste = (S−1) + #w3 + 2#w4 + 3#w5 + i2` is exact
+on every walk whose moves are w1/w2/cross-cycle-w3..5 — all 297 records
+(147 = 144+3, S=145), all 873s, greedy n=5/6, and (n-generic) Kristan's n=7
+5906 (860 = 842 + 18·w3). i2 pricing exercised on 319 ε-rollout walks (up to
+i2=14), exact on all. Two further move classes exist under budget 146 and are
+exactly priced by the **general identity**
+`waste = (S−1) + Σ_{w≥3}(w−2)·inter[w] + Σ_{w≥2}(w−1)·intra[w]`:
+intra-orbit rotations k∈{3,4,5} (priced k−1) and w6 doors (priced 4; intra-w6
+is impossible — rotation by 6 is the identity). Only ε-rollouts/fallbacks use
+them, but L0 must carry them. **New structural lemma (canonical reading of
+i2):** an intra-orbit rotate-by-k exists only when all k−1 skipped members are
+ALREADY VISITED — else the appended chars spell them and the move decomposes.
+So canonical i2 = "pass over a visited member", not "skip and revisit later".
+Bonus: Egan's 873 is a pure w2-door walk (S=149, zero w3+/i2) — a different
+cycle-level shape from greedy's 873 (S=120, 18 w3/4 w4/1 w5; confirms ITEM5
+§3's 119+18+8+3=148, corrects CLAUDE.md's "15 w3" aside).
+
+**L0 — ledger built; M1 PASS.** Post-T0 allocation tuple `(S, d3, d4, d5, d6,
+ip)` with `ip` = priced intra-skip waste (i2+2i3+3i4+4i5). The design's "few
+hundred tuples" was off two orders: **78,813 allocations at waste ≤ 146**.
+Closures: **LB-869** (urdvr Lean floor: waste ≤ 143 ⇔ length ≤ 868) kills
+44,541 (56.5%) — the live shell is waste ∈ {144,145,146} = lengths 869/870/871,
+34,272 rows. **NEW Lemma B (pass-over capacity), machine-self-checked:** per
+cycle with p sojourns the priced intra-skip waste is ≤ f(p) = (0,4,6,6,4,0)
+for p=1..6 (skips sit in len_j−1 gaps of ≤4 passed members each, passed
+members must be earlier-sojourn covers; spreading splits dominates) ⇒
+**ip ≤ 4·(S−120)**; in particular S=120 ⇒ ip=0. Kills 7,856 live rows (22.9%).
+**M1 = 66.5% of all allocations closed ≥ 50% — PASS** (honest live-shell
+number: 22.9%). 26,416 open classes (7,441 at 869 / 8,747 at 870 / 10,228 at
+871); annotations: 2,135 carry the s11-grammar-subregion note (ip=0, d6=0 —
+in-grammar sub-region closed by s10/s11), 616 are the S=120 perfect-ride
+family, closable outright by a 120-node cycle-level ATSP over the door atlas —
+flagged as the cheapest next closure wave. Ledger: `analysis/trackb/
+ledger_l0.csv` (34,272 live rows; LB-closed bulk not emitted, counts in
+script output).
+
+**T1 — door atlas built and orbit-verified.** `atlas` subcommand dumps all
+720×150 weight-≥3 edges (cycle labels, in-cycle offsets, and each edge's
+statically-known interior permutation windows — the emergent-edge filter
+data). `door_atlas.py` proves the table is exactly the relabeling orbit of
+**150 canonical edges** from the identity (edge set, weights, interior perms
+all commute with relabeling) → `door_atlas_canonical.tsv`. Facts: per perm,
+w3/w4/w5 = 6/24/120 edges, exactly one intra rotation each; **every
+cross-cycle door of a given weight reaches a distinct cycle** (5/23/119
+distinct targets); interior-perm histograms give the unconditionally-usable
+door fractions **w3: 3/6, w4: 13/24, w5: 71/120** (a door is legal in
+canonical reading iff its interior perms are all visited); the intra rot-k's
+interiors are exactly its k−1 skipped members — independent confirmation of
+the T0 lemma.
+
+**Next (build order continues):** L2 canonical opening DFS (`src/sojourn.rs`)
++ M2 on the records' class (S=145, d3=3, 25 splits) with the emergent-edge
+filter from the atlas; then C1/C2 controls; then T3 `--seed-file` + T2
+bound/model composition; then bandit + NRPA → M3. Perfect-ride ATSP closure
+probe and the §7 tour-merge probe are idle-Mac candidates.
+
 ## 2026-07-29 (field news, no code) — Group thread on the Lean soundness bug behind a fake Collatz "disproof"; verdict: our adopted LBs (869/5888) are NOT threatened, but one cheap hygiene task queued (re-check urdvr's proof under the patched toolchain)
 
 **Source.** Superpermutators thread, 2026-07-29 (Gould → Houston → Gould →

@@ -156,6 +156,23 @@ pub fn run_rollouts_guided(
     guide: Option<Guide>,
     out: &mut impl Write,
 ) -> io::Result<RolloutSummary> {
+    run_rollouts_strings(g, count, epsilon, seed, guide, out, None)
+}
+
+/// [`run_rollouts_guided`] that additionally writes each completed
+/// rollout's superpermutation string (one per line) to `strings_out` —
+/// the walk-level corpus consumed by Track B's identity verifier
+/// (`analysis/trackb/verify_identity.py`). The RNG stream and JSONL
+/// output are byte-identical to [`run_rollouts_guided`].
+pub fn run_rollouts_strings(
+    g: &Graph,
+    count: usize,
+    epsilon: f64,
+    seed: u64,
+    guide: Option<Guide>,
+    out: &mut impl Write,
+    mut strings_out: Option<&mut dyn Write>,
+) -> io::Result<RolloutSummary> {
     let mut lines = 0usize;
     let mut total = 0u64;
     let mut min_len = usize::MAX;
@@ -185,6 +202,10 @@ pub fn run_rollouts_guided(
         let final_len = walk.len_chars();
         total += final_len as u64;
         min_len = min_len.min(final_len);
+        if let Some(w) = strings_out.as_deref_mut() {
+            w.write_all(walk.string().as_bytes())?;
+            w.write_all(b"\n")?;
+        }
         for mut f in records {
             f.cost_to_go = final_len as u32 - f.len_so_far;
             serde_json::to_writer(&mut *out, &f)?;

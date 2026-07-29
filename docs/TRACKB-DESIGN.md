@@ -58,6 +58,27 @@ the unique non-w2x w2; each skips a cycle member, forcing a later revisit).
 over the full corpus** (296 records, greedy, all 873s, rollout walks) — the i2-free
 form is verified, the i2 pricing is not yet.
 
+> **T0 DONE (2026-07-29, `analysis/trackb/verify_identity.py`, 806 strings, zero
+> exceptions).** The stated form is exact on every walk whose only moves are w1,
+> w2 (both kinds), and cycle-changing w3/w4/w5 — all 297 records (147 = 144+3),
+> all 873s, greedy n=5/6, Kristan's n=7 5906 (860 = 842 + 18·w3, i2=0 —
+> n-generic).
+> The i2 pricing was exercised on 319 ε-rollout walks (up to i2=14), exact on
+> all. Two correction terms exist beyond the stated form, both measured and
+> exactly priced by the **general identity**
+> `waste = (S−1) + Σ_{w≥3}(w−2)·inter[w] + Σ_{w≥2}(w−1)·intra[w]`:
+> (a) intra-orbit rotations of weight k≥3 (priced k−1); (b) weight-≥6 doors
+> (priced w−2). Both occur only in ε-rollouts/fallbacks, never in records or
+> greedy — but both are legal under budget 146, so **L0 must carry them** (or
+> close them by lemma). New structural lemma from T0 (emergent-edge, intra-orbit
+> case): in the canonical first-visit reading, an intra-orbit rotate-by-k exists
+> only when all k−1 skipped members are ALREADY VISITED — otherwise the appended
+> characters spell the skipped members and the move decomposes into cheaper
+> moves. Canonical i2 therefore means "pass over a visited member", not "skip
+> and revisit later". Bonus fact: Egan's 873 is a pure w2-door walk (S=149,
+> zero w3+/i2) — a different cycle-level shape from greedy's 873 (S=120,
+> 18/4/1).
+
 Door facts that shape the space: at weight 2 there are exactly two successors —
 the intra-orbit double rotation (the i2 move) and `w2x = P[2:]+P[1]+P[0]` (the
 unique cross-cycle w2 door). So out-of-grammar freedom at n=6 lives in exactly:
