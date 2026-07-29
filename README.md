@@ -112,7 +112,11 @@ V₇=15 kernel-chain census (any covered chain ⇒ a record 5905) stands at **85
 chains refuted, 138 open** after a two-engine pass (`analysis/cover7/
 results_n7_merged.csv`), and **Track C** — a learned row-ordering evaluator inside
 the DLX cover search — is built and gated (`docs/TRACKC-DESIGN.md`,
-`analysis/trackc/RESULTS-s17.md`). Session-by-session state: `docs/JOURNAL.md`
+`analysis/trackc/RESULTS-s17.md`). **Next implementation: Track B** — the n=6
+out-of-grammar, opening-first sojourn-level search (`docs/TRACKB-DESIGN.md`,
+designed 2026-07-29; class ledger + canonical opening exhaustion + bandit/NRPA
+rollouts + tablebase tails, gated by a re-find-a-known-872 positive control).
+Session-by-session state: `docs/JOURNAL.md`
 (read newest entry first); agent conventions: `CLAUDE.md`.
 
 ## Quickstart
@@ -138,6 +142,7 @@ tests/          acceptance tests pinned to the proven optima
 docs/THEORY.md  problem formulation, cycle structure, lower bound, value-net plan
 docs/ROADMAP.md phased plan with checkboxes
 docs/JOURNAL.md dated lab notebook — read this first when resuming work
+docs/TRACKB-DESIGN.md  active design doc: opening-first Track B search (the next implementation)
 CLAUDE.md       working conventions for AI-assisted sessions
 ```
 

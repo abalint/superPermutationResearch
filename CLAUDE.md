@@ -9,21 +9,31 @@ planned learned value function.
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
-3. `docs/ARCHITECTURE.md` — code map: modules, data structures, where phase-2 plugs in.
-4. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
+3. The active design doc named by the journal's latest entry — **currently
+   `docs/TRACKB-DESIGN.md` (s21): the next implementation.** Its §9 is the build
+   order; ARCHITECTURE.md's "Track B implementation map" says where each task
+   lands in the code.
+4. `docs/ARCHITECTURE.md` — code map: modules, data structures, extension points.
+5. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 
-Current state in one line: **phase 3 underway; n=7 census 85/223 closed / 138
-open (both engine families exhausted at pass-1 budgets); Track C v2 built and
-gated s19 — mechanism proven, wall-clock NO-GO on 2.4× scoring overhead (fix
-first, then re-gate); new admissible `--bound residual` (beam 902→894);
-bounds windows moved by urdvr Lean results: n=6 {869..872}, n=7 [5888,5906];
-farm and Mac idle (JOURNAL s19 is the handoff)**
+Current state in one line: **phase 3; NEXT IMPLEMENTATION = Track B build
+(`docs/TRACKB-DESIGN.md` §9: T0 verify the i2-priced waste identity → L0 class
+ledger + M1 → T1 door atlas → L2 canonical opening DFS + M2 → C1/C2 controls →
+T2 `--bound`+`--model` composition + T3 `--seed-file` → bandit + NRPA → M3
+verdict; §7 tour-merge probe runnable any idle afternoon); Track B designed s21,
+downgraded-not-retired s20 (Vlad Gheorghe's preliminary a(6)=872 claim — his
+coordinate frame corroborated 299/299 on our corpus, his cell kills untested
+here, n=6 window unconditionally still {869..872}); n=7 5905 campaign survives
+(his conditional a(7) ≥ 5896 is δ≤11 vs our δ=21 bar); Track C v2 parked on the
+2.4× scoring-overhead fix; farm and Mac idle (JOURNAL s21 + s20 are the
+handoff)**
 — headline: **Egan−1 = 872 is optimal in the gain-one certificate grammar at n=6**
 (skip-priced ledger waste = 148 − K/4 + Σskip/4 + f4 + 2f5; forced-map period 4;
 absolute pivot confinement; max V = 8, all 12 optimal chains fail the cover —
-exhaustive proofs). Sub-872 must leave the grammar. Next: **Track A** (n=7 max-V₇
-campaign — V₇ ≥ 15 + cover beats 5906), **Track B** (sojourn-level out-of-grammar
-search at n=6), **Track C** (learned partial-certificate evaluator — the thesis).
+exhaustive proofs). Sub-872 must leave the grammar. Tracks: **Track B** (n=6
+out-of-grammar opening-first search — designed, next up), **Track A** (n=7
+max-V₇ campaign — V₇ ≥ 15 + cover beats 5906), **Track C** (learned evaluator —
+the thesis; deploys into Track B per TRACKB-DESIGN §5 once C1 passes).
 **Track C v2 COMPLETE s19** (`docs/TRACKC2-DESIGN.md`, `analysis/trackc/RESULTS-s19.md`,
 `analysis/trackc/WORKFLOW-V2.md`, `docs/OPERATIONS.md`): learned COLUMN choice built,
 parity byte-clean, G2v2 formal GO in nodes (median 1.50× at Δ=0) — but the **final
@@ -74,7 +84,16 @@ reduction" is the stated frontier), and
 Egan(n)−1 for ALL n ≥ 8**, certificate-level induction; 6→7 lift provably
 fails; the 5906 record is outside his liftable grammar — mirror of our n=6
 result; NO E−3 target exists in his program, so 5905 remains ours alone;
-candidate DLX pruning rule in `StandardKernelHighMissingObstruction.lean`).
+candidate DLX pruning rule in `StandardKernelHighMissingObstruction.lean`), and
+`../extraDocs/2026-07-29-vlad-a6-872-claim.md` (Vlad Gheorghe's **preliminary,
+for-refutation claim that a(6) = 872** — 209-cell confinement partition, both
+offline verify tiers pass here, top rung at effective tier `L` with two open
+soundness obligations; **we cross-validated his coordinate frame on 299 of our
+words, 299/299 — all 296 known 872s occupy the single cell (0,5,25,0), and his
+B=4/x=0 is our 575/141/3 weight multiset**; n=6 window unconditionally still
+{869..872} so **Track B is downgraded, not retired**; his conditional a(7) ≥ 5896
+is δ≤11 vs our δ=21 target, so **5905 survives** — watch whether n=7 pushes past
+δ≈21; tool `analysis/counting/coords_a6_872_frame.py`).
 
 **Live compute (check this first if picking up cold):** a remote 28-core Windows
 PC (`ssh transcribe`) hosts the n=7 refutation farm — **currently IDLE**, pass 1

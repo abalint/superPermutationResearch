@@ -42,8 +42,14 @@ tails are provably shared, so the union graph is pure opening diversity; exact
 search over it either finds 871 or gives independent tier-upgrade evidence on
 Vlad's (0,5,25,0) cell.
 
-**Also updated:** ROADMAP item 5 Track B and ITEM5-DESIGN §6.2 now point at the
-design note.
+**Also updated (fresh-agent handoff pass):** ROADMAP item 5 Track B and
+ITEM5-DESIGN §6.2 point at the design note; CLAUDE.md's reading order + current-
+state block now name Track B as the next implementation (s21+s20 are the
+handoff); ARCHITECTURE.md gained a **"Track B implementation map"** section
+(where T0/T1/T2/T3, the L0 ledger, `src/sojourn.rs`/`src/nrpa.rs`, and the gates
+land in the code — API names verified against `src/`); README fronts Track B as
+the current front. A fresh agent should be able to start at TRACKB-DESIGN §9
+with no other context.
 
 **Next session, concretely (build order = TRACKB-DESIGN §9):**
 - T0: verify the i2-priced waste identity over the full corpus (296 records,

@@ -380,13 +380,62 @@ plug in:
   derive) and a match arm in `main()`; put the logic in a library module and export it
   from `src/lib.rs`. Follow the existing pattern of printing a summary line then the
   payload.
-- **Phase 3 status**: item 1 (stratified beam, `beam_search_stratified`) and item 2
-  (two-ended beam, `src/beam2.rs` + `Preds` + `lb_arc2`) are built — see above. For
-  item 5 (cycle-level search) nothing is built yet. The cycle machinery to build
-  on: `Graph::cycle_id`/`cycle_count`, the arc-component maintenance in
-  `Walk::advance`/`child_arcs`, and THEORY.md's 2-cycle/tree background. This is a new
-  search representation (super-node graph over rotation cycles), not a patch to
-  `beam_search`.
+- **Phase 3 status**: item 1 (stratified beam, `beam_search_stratified`), item 2
+  (two-ended beam, `src/beam2.rs` + `Preds` + `lb_arc2`), and item 4 (endgame
+  tablebase, `src/endgame.rs::solve_endgame` — theorem-grade, m ≤ 25, use it as
+  the terminal solver in any new searcher) are built — see above. Item 5 split
+  into Tracks A/B/C; the Rust tree has **no sojourn/cycle-level searcher yet**.
+
+## Track B implementation map (`docs/TRACKB-DESIGN.md`, s21 — the next build)
+
+Where each §9 build-order task lands. New analysis code goes in `analysis/trackb/`
+(new dir); new Rust search code follows the beam2 precedent — own state type and
+module, do NOT patch `beam_search`.
+
+- **T0 — verify the i2-priced waste identity** (`waste = (S−1) + #w3 + 2#w4 +
+  3#w5 + i2`) over the corpus before any ledger use. Sojourn segmentation =
+  split a walk's move-weight sequence at cycle changes; `Graph::cycle_id` gives
+  the cycle of each perm, and the `trace` subcommand already replays any string
+  move-by-move (add a `--sojourn-log` dump, or parse strings directly in
+  Python). Corpus: `data/records872/`, `data/gain1_872s/`, greedy/beam outputs,
+  rollout JSONL. Deliverable: `analysis/trackb/verify_identity.py`, zero
+  exceptions required.
+- **L0/L1 class ledger** — pure Python, no Rust: enumerate waste allocations
+  `(S, #w3, #w4, #w5, i2)` at budget ≤ 146, apply feasibility lemmas, emit
+  `analysis/trackb/ledger_l0.csv` with per-class `closed-lemma | closed-search |
+  open` status + closure artifact (s20 ledger discipline).
+- **T1 — door atlas**: for w ∈ {3,4,5}, the static cycle-level table (exit
+  offset → target cycle, entry offset) per door. Source data is the
+  `Graph::succs` adjacency lists (`(rank, weight)` pairs) + `Graph::cycle_id`; cleanest as a small `atlas`
+  subcommand (clap pattern below) dumping TSV that Python consumes. Note the
+  weight-2 facts are already theorem-level: exactly two w2 successors — the
+  intra-orbit double rotation (the `i2` move) and `w2x` (the unique cross-cycle
+  w2) — so the atlas only needs w ≥ 3.
+- **L2 — canonical opening DFS + sojourn searcher**: new module
+  (`src/sojourn.rs`), own `State` = `(cur, visited BitSet, per-cycle visit
+  patterns, waste ledger, residual bound)` — the per-cycle counters generalize
+  the beam `State` cycle counts; keep every field O(1)/O(n) incremental (repo
+  invariant). Canonical key (relabeling-invariant pattern multiset) hashed
+  Zobrist-style. Prune with the admissible waste-budget test (`len + bound >
+  725 + 146 ⇒ dead`) using `--bound residual` (`src/bound.rs`); terminal-solve
+  at r ≤ 20 with `solve_endgame`; validate every completion (validator, then
+  `analysis/counting/coords_a6_872_frame.py` as a free structural cross-check).
+- **NRPA rollout engine**: `src/nrpa.rs` over the same sojourn move space —
+  policy weights on move features, softmax rollouts, adapt-toward-best per
+  nesting level (2–3 levels). `Walk` in `src/walk.rs` is the replay/feature
+  substrate; `unvisited_succs` shows the candidate-enumeration pattern.
+- **T2 — `--bound` + `--model` composition**: today `Scorer::Learned` ignores
+  `--bound` (s19 note). Fix in `src/beam.rs::score_move` — keep the score a
+  pure function of `(cur, visited, len)` or the dedup argument breaks; the
+  `lb_arc` anchor in the residual branch shows the pattern.
+- **T3 — `--seed-file`**: generalize `beam_search_seeded` (`src/beam.rs`) from
+  greedy-prefix-depth to an arbitrary walk prefix loaded from a file; clap arg
+  in `src/main.rs` alongside `--seed-prefix`.
+- **Gates before any 871 hunting** (TRACKB-DESIGN §6): C1 — re-find a validated
+  872 from the records' own class (S=145, #w3=3, 25 splits); C2 — the n=5
+  pipeline still finds 153 (hard invariant); M2 — d=10 canonical exhaustion of
+  the records' class within ~10⁶ nodes. M3 (independent 872 or out-of-grammar
+  ≤ 873) gates farm spend.
 
 ## Performance notes
 
