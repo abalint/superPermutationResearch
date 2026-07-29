@@ -23,12 +23,30 @@ the full framing and [docs/ROADMAP.md](docs/ROADMAP.md) for the phased plan.
 
 ## Status
 
-**Latest (session 19, 2026-07-28):** Track C v2 (learned DLX column choice) built and
+**Latest (sessions 22–24, 2026-07-29): the Track B build.** The opening-first
+sojourn-level machinery is up: the general waste identity is machine-verified on 806
+walks (`analysis/trackb/verify_identity.py`), the L0 allocation ledger is built with
+two closure lemmas (M1 passed at 66.5%; new pass-over lemma `ip ≤ 4(S−120)`), the
+door atlas is orbit-verified (150 canonical edges), the canonical opening DFS
+(`src/sojourn.rs`) exhausts the records' class to depth 10 in book mode (M2 passed),
+and the completion machinery is wired end to end: frontier seed dumps
+(`--dump-frontier`), multi-seed beam injection (`beam --seed-file`), scorer
+composition (`--bound` + `--model`), and an admissible length cap (`--max-len`,
+lossless, proven sound). Controls: **C2 passed** (the n=5 pipeline finds a validated
+153); **C1 oracle passed** (the beam re-derives a known 872 byte-identically from its
+own prefix at depth ≥ 450) but the **pipeline control is not yet passed** — best 874
+via composed scoring (879 → 874, the first productive learned signal on completion),
+with the remaining 2 chars *proven* to be a midgame ranking failure at levels ~60–450
+(the record's own line has zero admissible-cap slack until the end, so no bound, cap,
+or width can fix selection there). Next: NRPA policy rollouts, then the frontier
+bandit → M3. Full story: `docs/JOURNAL.md` s22–s24.
+
+**Prior (session 19, 2026-07-28):** Track C v2 (learned DLX column choice) built and
 fully gated in one day — the mechanism is proven (1.50× median node reduction on
 held-out refutation chains; learned *row* order provably cannot shrink these trees),
-deployment is blocked on a 2.4× feature-scoring overhead (wall-clock NO-GO as-is; fix
-targeted next). Side results: a new admissible residual bound (`--bound residual`)
-improves the hand-bound stratified beam **902 → 894** at equal width with 10,400
+deployment is blocked on a 2.4× feature-scoring overhead (wall-clock NO-GO as-is).
+Side results: a new admissible residual bound (`--bound residual`) improves the
+hand-bound stratified beam **902 → 894** at equal width with 10,400
 tablebase-verified admissibility samples and an optimality theorem for the old arc
 bound; field lower bounds moved to **S(6) ≥ 869 / S(7) ≥ 5888** (urdvr/Hunter, Lean).
 Full story: `docs/JOURNAL.md` s19, `analysis/trackc/RESULTS-s19.md`.
@@ -116,14 +134,21 @@ the DLX cover search — is built and gated (`docs/TRACKC-DESIGN.md`,
 out-of-grammar, opening-first sojourn-level search (`docs/TRACKB-DESIGN.md`,
 designed 2026-07-29; class ledger + canonical opening exhaustion + bandit/NRPA
 rollouts + tablebase tails, gated by a re-find-a-known-872 positive control).
-Build began s22 (2026-07-29): the waste identity is machine-verified in its
+Build s22–s24 (2026-07-29): the waste identity is machine-verified in its
 fully general form (`analysis/trackb/verify_identity.py`), the L0 allocation
 ledger is built with two closure lemmas (66.5% closed — M1 passed; new
 pass-over capacity lemma `ip ≤ 4(S−120)`), the w≥3 door atlas is
-orbit-verified (150 canonical edges), and the sojourn-level opening DFS
+orbit-verified (150 canonical edges), the sojourn-level opening DFS
 (`src/sojourn.rs`) exhausts the records' class to depth 10 in book mode
-(M2 passed; sound exhaustion reaches depth ~6). Next: the C1 positive
-control. Session-by-session state: `docs/JOURNAL.md`
+(M2 passed; sound exhaustion reaches depth ~6), and the T3/T2 completion
+machinery is live (frontier seed dumps → multi-seed beam injection →
+composed bound+model scoring → admissible `--max-len` cap). Gate status:
+C2 passed (n=5 pipeline finds 153); C1 oracle passed (a known 872
+re-derived byte-identically from its own depth-≥450 prefix); C1 pipeline
+open at **874** (879 → 874 via composition) with the residual failure
+isolated to midgame ranking at levels ~60–450 — the target of the next
+build, NRPA policy rollouts, followed by the frontier bandit → M3.
+Session-by-session state: `docs/JOURNAL.md`
 (read newest entry first); agent conventions: `CLAUDE.md`.
 
 ## Quickstart

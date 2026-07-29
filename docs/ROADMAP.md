@@ -163,9 +163,12 @@ compute class (~10¹⁵× the 2019 distributed effort) — everything below is t
        pivot structure unknown; V₇ ≥ 15 + feasible cover beats 5906); **Track B**
        — out-of-grammar sojourn-level search at n=6 (general identity: waste =
        S−1+#w3+2#w4+3#w5; 871 ⇒ e.g. S=144 with three w3s) + impossibility
-       lemmas — **designed s21, `docs/TRACKB-DESIGN.md`** (opening-first: L0/L1
-       class ledger, canonical opening exhaustion, root bandit, NRPA rollouts,
-       tablebase tails; gated by positive control C1); **Track C** — the thesis: learned evaluator over partial
+       lemmas — **designed s21, `docs/TRACKB-DESIGN.md`; build s22–s24**
+       (opening-first: L0/L1 class ledger + M1 PASS, canonical opening
+       exhaustion + M2 PASS, frontier→beam completion machinery T3/T2 —
+       C2 PASS, C1 oracle PASS, C1 pipeline open at 874 with the failure
+       isolated to midgame ranking; NRPA rollouts + root bandit are the
+       remaining build → M3); **Track C** — the thesis: learned evaluator over partial
        certificates/sojourn plans (records as labeled data), deployed where
        Tracks A/B explode. **v1 built and gated s17** (`docs/TRACKC-DESIGN.md`,
        `analysis/trackc/RESULTS-s17.md`): corpus 310 certs / 21,423 pairs,
