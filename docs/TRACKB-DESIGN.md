@@ -1,6 +1,12 @@
 # Track B design — opening-first sojourn-level search at n=6 ("the opening book")
 
-Status: design note opened session 21 (2026-07-29). This is the concrete state/move
+Status: design note opened session 21 (2026-07-29). **Build status (s22,
+2026-07-29): T0 DONE (§2 blockquote), L0 ledger DONE + M1 PASS
+(`analysis/trackb/enumerate_l0.py`, ledger_l0.csv), T1 atlas DONE
+(`atlas` subcommand + `analysis/trackb/door_atlas.py`), L2 sojourn DFS BUILT
+(`src/sojourn.rs`, `sojourn-dfs`) + M2 PASS in book mode (§6 blockquote).
+Next: T3 `--seed-file` → C1/C2 → T2 → bandit + NRPA → M3. JOURNAL s22 has all
+numbers.** This is the concrete state/move
 design that ITEM5-DESIGN §6.2 named as Track B's missing prerequisite. Inputs:
 (a) the opening-decides-everything evidence chain (s5/s6/s7/s9, §1 below); (b) the
 s11 grammar theorem (sub-872 must leave the certificate grammar); (c) the s19
@@ -195,6 +201,19 @@ model has to relearn.
   872 (byte-distinct from all 296 known) from C1's class, or any validated ≤873
   from an out-of-grammar class. GO ⇒ fund the 871 campaign (and only then the
   farm). NO-GO after C1 passes ⇒ Track B stays parked at lemma-production only.
+
+> **Gate results so far (s22).** **M1 PASS**: 66.5% of the 78,813 L0
+> allocations closed by lemma (LB-869 floor + the new pass-over lemma
+> `ip ≤ 4(S−120)`); honest live-shell (waste 144–146) number: 22.9%, 26,416
+> classes open. **M2 PASS in book mode, with a design correction**: d=10
+> exhaustion of the records' class needs 746k nodes at exemplar cap E=16
+> (13,527 canonical classes, 2.6 s) — within the ~10⁶ budget — but the
+> *sound* tiers cannot reach d=10 (exact ≈ 5.9M nodes at d=6, oversize by
+> d=8; the relabeling-orbit quotient buys ~0.3% because the identity start
+> breaks the symmetry). Closure/exhaustion claims must stay at d ≤ 6 or wait
+> for T2 residual-bound pruning; the book/bandit layer is unaffected
+> (coverage dial E measured: at d=4, E=1/64/256 → 174/323/334 of 334 true
+> classes). C1/C2 not yet run (need T3 completion machinery).
 
 ## 7. Side probe (independent, one afternoon): tour merging over the 296
 

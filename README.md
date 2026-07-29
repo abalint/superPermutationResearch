@@ -112,11 +112,18 @@ V₇=15 kernel-chain census (any covered chain ⇒ a record 5905) stands at **85
 chains refuted, 138 open** after a two-engine pass (`analysis/cover7/
 results_n7_merged.csv`), and **Track C** — a learned row-ordering evaluator inside
 the DLX cover search — is built and gated (`docs/TRACKC-DESIGN.md`,
-`analysis/trackc/RESULTS-s17.md`). **Next implementation: Track B** — the n=6
+`analysis/trackc/RESULTS-s17.md`). **Current implementation: Track B** — the n=6
 out-of-grammar, opening-first sojourn-level search (`docs/TRACKB-DESIGN.md`,
 designed 2026-07-29; class ledger + canonical opening exhaustion + bandit/NRPA
 rollouts + tablebase tails, gated by a re-find-a-known-872 positive control).
-Session-by-session state: `docs/JOURNAL.md`
+Build began s22 (2026-07-29): the waste identity is machine-verified in its
+fully general form (`analysis/trackb/verify_identity.py`), the L0 allocation
+ledger is built with two closure lemmas (66.5% closed — M1 passed; new
+pass-over capacity lemma `ip ≤ 4(S−120)`), the w≥3 door atlas is
+orbit-verified (150 canonical edges), and the sojourn-level opening DFS
+(`src/sojourn.rs`) exhausts the records' class to depth 10 in book mode
+(M2 passed; sound exhaustion reaches depth ~6). Next: the C1 positive
+control. Session-by-session state: `docs/JOURNAL.md`
 (read newest entry first); agent conventions: `CLAUDE.md`.
 
 ## Quickstart
@@ -135,8 +142,9 @@ python3 ml/fit_linear.py data/roll_n5_*.jsonl   # linear cost-to-go baseline vs 
 ## Repo layout
 
 ```
-src/            Rust search core (graph, bitset, bounds/features, greedy, beam, rollouts, validator, CLI)
+src/            Rust search core (graph, bitset, bounds/features, greedy, beam, sojourn DFS, rollouts, validator, CLI)
 ml/             Python model side (numpy): linear cost-to-go baseline
+analysis/       campaign tooling + committed ledgers (trackb/ = waste identity, L0 ledger, door atlas)
 data/           generated JSONL corpora (gitignored)
 tests/          acceptance tests pinned to the proven optima
 docs/THEORY.md  problem formulation, cycle structure, lower bound, value-net plan

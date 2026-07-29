@@ -32,7 +32,7 @@ ALREADY VISITED — else the appended chars spell them and the move decomposes.
 So canonical i2 = "pass over a visited member", not "skip and revisit later".
 Bonus: Egan's 873 is a pure w2-door walk (S=149, zero w3+/i2) — a different
 cycle-level shape from greedy's 873 (S=120, 18 w3/4 w4/1 w5; confirms ITEM5
-§3's 119+18+8+3=148, corrects CLAUDE.md's "15 w3" aside).
+§3's 119+18+8+3=148, corrects ITEM5 §1's "15 w3" aside — now fixed there).
 
 **L0 — ledger built; M1 PASS.** Post-T0 allocation tuple `(S, d3, d4, d5, d6,
 ip)` with `ip` = priced intra-skip waste (i2+2i3+3i4+4i5). The design's "few

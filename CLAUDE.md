@@ -153,6 +153,14 @@ cargo run --release -- beam -n 5 --width 2000
 cargo run --release -- rollouts -n 5 --count 200 --epsilon 0.15 --seed 0 --out out.jsonl
 cargo run --release -- validate -n 5 <string>
 
+# TRACK B (s22) — waste-identity verifier, L0 ledger, door atlas, sojourn DFS:
+python3 analysis/trackb/verify_identity.py <files with superperm strings>   # T0; exit 0 = general identity holds
+python3 analysis/trackb/enumerate_l0.py                                     # regenerates ledger_l0.csv + M1 stats
+cargo run --release -- atlas -n 6 > raw.tsv && python3 analysis/trackb/door_atlas.py raw.tsv  # T1 verify + canonical TSV
+cargo run --release -- rollouts -n 6 --count 100 --epsilon 0.15 --seed 0 --out f.jsonl --strings f.strings  # rollout strings for T0
+# L2 opening DFS on the records' class; --dedup exact = sound (d<=6), abstraction+--exemplars = book mode (M2 config):
+cargo run --release -- sojourn-dfs -n 6 --class 145,3,0,0,0 --records-profile --depth 10 --dedup abstraction --exemplars 16
+
 # CURRENT BEST FROM SCRATCH — stratified learned beam, validated 873 (n=6), ~8 s (phase-3 item 1, JOURNAL s7):
 cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --alpha 1 --stratify --strat-quota 4 --strat-bucket 1
 # learned-score beam without stratification (phase 2) plateaus at 874 with the canonical boot1 model:

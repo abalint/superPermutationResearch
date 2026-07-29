@@ -119,6 +119,15 @@ bitset ──→ no crate deps
   seed ⇒ byte-identical output. Also `log_trajectory(&Graph, path, out)`,
   which replays a recorded visit-order path through a `Walk` and emits the identical
   record format (used by `greedy --log` / `beam --log`).
+- **`src/sojourn.rs`** — Track B's L2 sojourn-level canonical opening DFS (s22):
+  `SojournDfs { g, caps: ClassCaps, profile: Option<SplitProfile>, depth,
+  max_nodes, dedup: DedupMode, exemplars_per_class }.run() -> DfsStats`. Own
+  `State` (does not reuse `Walk`, beam2 precedent): visited `BitSet`, ledger
+  `(s, d3, d4, d5, ip)`, per-cycle `PackedParts` (3 bits per completed part),
+  `cur_part`, `cycle_rem`, `untouched`. Moves = T0 canonical grammar; door
+  legality uses `build_interiors(&Graph)` (interior perm windows per w≥3 edge,
+  the emergent-edge filter). Dedup tiers documented on `DedupMode` (exact /
+  orbit via the O(1) cur-inverse relabeling / abstraction with exemplar cap).
 - **`src/trace.rs`** — trajectory extraction from existing superpermutation strings
   (e.g. community records): `extract_path(n, s)` (first-visit rank order via a sliding
   window), `trace_string(&Graph, s) -> Trace { path, weights, input_len, replay_len,
@@ -129,8 +138,8 @@ bitset ──→ no crate deps
 - **`src/validate.rs`** — `validate(n, s: &str) -> Validation { n, length, distinct,
   total, complete }`. Sliding-window checker; the only accepted proof that a string is
   a superpermutation.
-- **`src/main.rs`** — clap CLI (`struct Cli`, `enum Cmd`): subcommands `info`, `greedy`,
-  `beam`, `beam2`, `trace`, `rollouts`, `validate`.
+- **`src/main.rs`** — clap CLI (`struct Cli`, `enum Cmd`): subcommands `info`, `atlas`,
+  `sojourn-dfs`, `greedy`, `beam`, `beam2`, `trace`, `rollouts`, `validate`.
 
 ## Core data structures
 
@@ -386,40 +395,42 @@ plug in:
   the terminal solver in any new searcher) are built — see above. Item 5 split
   into Tracks A/B/C; the Rust tree has **no sojourn/cycle-level searcher yet**.
 
-## Track B implementation map (`docs/TRACKB-DESIGN.md`, s21 — the next build)
+## Track B implementation map (`docs/TRACKB-DESIGN.md`; s22 status inline)
 
-Where each §9 build-order task lands. New analysis code goes in `analysis/trackb/`
-(new dir); new Rust search code follows the beam2 precedent — own state type and
+Where each §9 build-order task lands. New analysis code goes in `analysis/trackb/`;
+new Rust search code follows the beam2 precedent — own state type and
 module, do NOT patch `beam_search`.
 
-- **T0 — verify the i2-priced waste identity** (`waste = (S−1) + #w3 + 2#w4 +
-  3#w5 + i2`) over the corpus before any ledger use. Sojourn segmentation =
-  split a walk's move-weight sequence at cycle changes; `Graph::cycle_id` gives
-  the cycle of each perm, and the `trace` subcommand already replays any string
-  move-by-move (add a `--sojourn-log` dump, or parse strings directly in
-  Python). Corpus: `data/records872/`, `data/gain1_872s/`, greedy/beam outputs,
-  rollout JSONL. Deliverable: `analysis/trackb/verify_identity.py`, zero
-  exceptions required.
-- **L0/L1 class ledger** — pure Python, no Rust: enumerate waste allocations
-  `(S, #w3, #w4, #w5, i2)` at budget ≤ 146, apply feasibility lemmas, emit
-  `analysis/trackb/ledger_l0.csv` with per-class `closed-lemma | closed-search |
-  open` status + closure artifact (s20 ledger discipline).
-- **T1 — door atlas**: for w ∈ {3,4,5}, the static cycle-level table (exit
-  offset → target cycle, entry offset) per door. Source data is the
-  `Graph::succs` adjacency lists (`(rank, weight)` pairs) + `Graph::cycle_id`; cleanest as a small `atlas`
-  subcommand (clap pattern below) dumping TSV that Python consumes. Note the
-  weight-2 facts are already theorem-level: exactly two w2 successors — the
-  intra-orbit double rotation (the `i2` move) and `w2x` (the unique cross-cycle
-  w2) — so the atlas only needs w ≥ 3.
-- **L2 — canonical opening DFS + sojourn searcher**: new module
-  (`src/sojourn.rs`), own `State` = `(cur, visited BitSet, per-cycle visit
-  patterns, waste ledger, residual bound)` — the per-cycle counters generalize
-  the beam `State` cycle counts; keep every field O(1)/O(n) incremental (repo
-  invariant). Canonical key (relabeling-invariant pattern multiset) hashed
-  Zobrist-style. Prune with the admissible waste-budget test (`len + bound >
-  725 + 146 ⇒ dead`) using `--bound residual` (`src/bound.rs`); terminal-solve
-  at r ≤ 20 with `solve_endgame`; validate every completion (validator, then
-  `analysis/counting/coords_a6_872_frame.py` as a free structural cross-check).
+- **T0 — DONE s22** (`analysis/trackb/verify_identity.py`, 806 walks, zero
+  exceptions). Works on the string's first-visit reading. Established the
+  general identity `waste = (S−1) + Σ_{w≥3}(w−2)·inter[w] + Σ_{w≥2}(w−1)·intra[w]`
+  and the canonical-reading lemma (skips pass only visited members). Rollout
+  strings come from `rollouts --strings <path>` (added s22, RNG-stream
+  neutral).
+- **L0 class ledger — DONE s22** (`analysis/trackb/enumerate_l0.py` →
+  `ledger_l0.csv`, 34,272 live-shell rows; tuple extended to
+  `(S, d3, d4, d5, d6, ip)` per T0). Closures: LB-869 floor + the pass-over
+  lemma `ip ≤ 4(S−120)` (proof + brute-force self-check in the script).
+  M1 PASS (66.5%). L1 refinement (per-class split profiles) not yet built.
+- **T1 — door atlas — DONE s22**: `atlas` subcommand dumps all 720×150
+  w≥3 edges (cycle labels, offsets, interior permutation windows);
+  `analysis/trackb/door_atlas.py` verifies the relabeling-orbit structure and
+  emits `door_atlas_canonical.tsv` (150 canonical edges). The weight-2 facts
+  stay theorem-level (i2 + `w2x` only).
+- **L2 — sojourn DFS — BUILT s22** (`src/sojourn.rs`, `sojourn-dfs`
+  subcommand): `State` = `(cur, visited BitSet, ledger, per-cycle packed part
+  compositions, cur_part, cycle_rem, untouched)`; moves = T0 canonical grammar
+  (ride / skip with pass-over legality / doors with the emergent-edge interior
+  filter via `build_interiors`); pruning = class caps + owed-sojourn
+  completability (`SplitProfile`-aware). Three dedup tiers (`DedupMode`):
+  `Exact` (sound), `Orbit` (sound relabeling quotient; measured worthless —
+  identity start breaks the symmetry), `Abstraction` (L2 canonical key +
+  per-class exemplar cap `--exemplars`; book mode, not exhaustion-sound).
+  M2 PASS in book mode (d=10, E=16, 746k nodes, 13,527 classes); exact tier
+  sound to d≈6 (5.9M nodes). NOT yet wired: residual-bound pruning (`len +
+  bound > 725 + 146` — waits on T2), `solve_endgame` tails, completion +
+  validation (waits on T3); frontier states are counted/classed but not yet
+  dumped for the bandit layer.
 - **NRPA rollout engine**: `src/nrpa.rs` over the same sojourn move space —
   policy weights on move features, softmax rollouts, adapt-toward-best per
   nesting level (2–3 levels). `Walk` in `src/walk.rs` is the replay/feature
