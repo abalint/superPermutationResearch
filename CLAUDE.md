@@ -16,17 +16,24 @@ planned learned value function.
 4. `docs/ARCHITECTURE.md` — code map: modules, data structures, extension points.
 5. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 
-Current state in one line: **phase 3; NEXT IMPLEMENTATION = Track B build
-(`docs/TRACKB-DESIGN.md` §9: T0 verify the i2-priced waste identity → L0 class
-ledger + M1 → T1 door atlas → L2 canonical opening DFS + M2 → C1/C2 controls →
-T2 `--bound`+`--model` composition + T3 `--seed-file` → bandit + NRPA → M3
-verdict; §7 tour-merge probe runnable any idle afternoon); Track B designed s21,
-downgraded-not-retired s20 (Vlad Gheorghe's preliminary a(6)=872 claim — his
-coordinate frame corroborated 299/299 on our corpus, his cell kills untested
-here, n=6 window unconditionally still {869..872}); n=7 5905 campaign survives
-(his conditional a(7) ≥ 5896 is δ≤11 vs our δ=21 bar); Track C v2 parked on the
-2.4× scoring-overhead fix; farm and Mac idle (JOURNAL s21 + s20 are the
-handoff)**
+Current state in one line: **phase 3; Track B build IN PROGRESS — s22 landed
+T0 (identity verified on 806 walks, general form
+`waste = (S−1) + Σ(w−2)·inter + Σ(w−1)·intra`, canonical-reading lemma), L0
+ledger (`analysis/trackb/ledger_l0.csv`, 78,813 allocations, live shell
+34,272, M1 PASS 66.5% via LB-869 + NEW pass-over lemma ip ≤ 4(S−120)), T1
+door atlas (150 canonical edges, orbit-verified, interior-perm filter data),
+and L2 sojourn DFS (`src/sojourn.rs`, `sojourn-dfs` subcommand, 3 dedup
+tiers) with M2 PASS in book mode (d=10, E=16, 746k nodes, 13,527 classes;
+exact tier sound only to d≈6 = 5.9M nodes; orbit dedup proven worthless —
+identity start breaks symmetry). NEXT = C1 control (re-find a validated 872
+from the records' class; needs T3 `--seed-file` completion machinery first) +
+C2 n=5 → T2 bound/model composition → bandit + NRPA → M3 verdict; cheap
+closure probes queued: perfect-ride ATSP (closes all 616 S=120 live classes),
+§7 tour-merge. Track B downgraded-not-retired s20 (Vlad's preliminary
+a(6)=872 claim; n=6 window unconditionally still {869..872}); n=7 5905
+campaign survives (his conditional a(7) ≥ 5896 is δ≤11 vs our δ=21 bar);
+Track C v2 parked on the 2.4× scoring-overhead fix; farm and Mac idle
+(JOURNAL s22 is the handoff)**
 — headline: **Egan−1 = 872 is optimal in the gain-one certificate grammar at n=6**
 (skip-priced ledger waste = 148 − K/4 + Σskip/4 + f4 + 2f5; forced-map period 4;
 absolute pivot confinement; max V = 8, all 12 optimal chains fail the cover —

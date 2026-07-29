@@ -40,6 +40,11 @@ impl BitSet {
         self.words.iter().map(|w| w.count_ones()).sum()
     }
 
+    /// The backing words (padding bits beyond the capacity are clear).
+    pub fn words(&self) -> &[u64] {
+        &self.words
+    }
+
     /// Index of the lowest clear bit strictly below `limit`, if any.
     ///
     /// Used to find the lowest-ranked unvisited permutation for the

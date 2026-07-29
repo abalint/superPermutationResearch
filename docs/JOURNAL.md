@@ -6,12 +6,13 @@ mechanism — read it before touching code.
 
 ---
 
-## 2026-07-29 (session 22) — Track B build begins: T0 identity VERIFIED (806 walks, 0 exceptions, general form found), L0 ledger built (78,813 allocations, M1 PASS at 66.5%), NEW pass-over capacity lemma (ip ≤ 4·(S−120)), T1 door atlas verified (150 canonical edges)
+## 2026-07-29 (session 22) — Track B build: T0 identity VERIFIED (806 walks, 0 exceptions, general form found), L0 ledger (78,813 allocations, M1 PASS 66.5%), NEW pass-over lemma (ip ≤ 4·(S−120)), T1 door atlas (150 canonical edges), L2 sojourn DFS built, M2 PASS in book mode (d=10, 746k nodes) with exact-tier infeasibility QUANTIFIED
 
-Build order = TRACKB-DESIGN §9; this session landed T0 → L0+M1 → T1. New code:
-`analysis/trackb/{verify_identity,enumerate_l0,door_atlas}.py`, `atlas`
-subcommand, `rollouts --strings` (emit completed rollout strings; RNG stream
-untouched, all 95 tests green).
+Build order = TRACKB-DESIGN §9; this session landed T0 → L0+M1 → T1 → L2+M2.
+New code: `analysis/trackb/{verify_identity,enumerate_l0,door_atlas}.py`,
+`src/sojourn.rs` (sojourn-grammar DFS, 3 dedup tiers), `atlas` and
+`sojourn-dfs` subcommands, `rollouts --strings` (RNG stream untouched).
+All 99 tests green, clippy/fmt clean.
 
 **T0 — the i2-priced identity is VERIFIED, and the fully general form is now
 known.** `verify_identity.py` works on the string's first-visit reading
@@ -66,11 +67,45 @@ canonical reading iff its interior perms are all visited); the intra rot-k's
 interiors are exactly its k−1 skipped members — independent confirmation of
 the T0 lemma.
 
-**Next (build order continues):** L2 canonical opening DFS (`src/sojourn.rs`)
-+ M2 on the records' class (S=145, d3=3, 25 splits) with the emergent-edge
-filter from the atlas; then C1/C2 controls; then T3 `--seed-file` + T2
-bound/model composition; then bandit + NRPA → M3. Perfect-ride ATSP closure
-probe and the §7 tour-merge probe are idle-Mac candidates.
+**L2 — sojourn DFS built; M2 PASS in book mode; exact exhaustion feasibility
+now quantified (a design-assumption correction).** `src/sojourn.rs`: state =
+(cur, visited, ledger, per-cycle packed part compositions, cur-part), moves =
+the T0 canonical grammar (ride / skip with visited-pass-over legality / exit
+door with the emergent-edge interior filter), class-completability pruning
+(caps + owed-sojourn accounting, split-profile aware). Three dedup tiers:
+**exact** (sound), **orbit** (sound quotient by relabeling — O(1) canonical
+form: the unique relabeling sending cur to identity), **abstraction** (L2
+canonical key: necklace multiset + ledger + current pattern, with a per-class
+exemplar cap E). Measurements on the records' class (S=145, d3=3, profile
+6|2,4|3,3|4,2|2,2,2):
+
+| depth | exact nodes | orbit nodes | true classes | book E=16 nodes (classes) |
+|---|---|---|---|---|
+| 4 | 78,953 | 78,670 | 334 | 10,291 (272) |
+| 6 | 5,899,572 | 5,887,556 | 2,114 | 58,835 (1,279) |
+| 8 | >20M (oversize) | >20M | ≥3,921 | — |
+| 10 | ~10⁹–10¹⁰ (proj.) | same | — | **746,107 (13,527), 2.6s** |
+
+Findings: (1) **M2 PASSES in book mode** — d=10 exhaustion at E=16 within 10⁶
+nodes (746k), 13,527 opening classes; E=64 gives 19,572 classes at 2.7M
+nodes/9s. Coverage dial measured against exact ground truth: at d=4,
+E=1/64/256 reach 174/323/334 of 334 classes; at d=6, E=256 reaches 94.4%.
+(2) **The sound tiers cannot exhaust d=10** (exact tops out ≈ d=6–7 at 10⁷) —
+the design's "~10⁶ nodes at d=10" holds only for the abstraction tier; closure
+claims must either stay at d ≤ 6 (exact d=6 is 5.9M nodes, 6 s — usable!) or
+wait for stronger pruning (residual-bound composition, T2). (3) **Negative
+result worth keeping: orbit dedup is worthless here** (~0.3% reduction) — the
+identity start anchors every branch, so cross-branch relabeling coincidences
+barely occur; symmetry pays only at the abstraction level. (4) Exact-frontier
+redundancy is enormous (3.07M states → 2,114 classes at d=6, ×1450) — the
+canonical key is doing exactly the compression the bandit layer needs.
+
+**Next (build order continues):** C1 control (the pipeline must re-find a
+validated 872 from the records' class — needs completion machinery: seeded
+beam/tablebase below the frontier, i.e. T3 `--seed-file` first) + C2 n=5;
+then T2 bound/model composition; then bandit + NRPA → M3. Perfect-ride ATSP
+closure probe (task from L0: closes all 616 S=120 live classes in one exact
+solve) and the §7 tour-merge probe are idle-Mac candidates.
 
 ## 2026-07-29 (field news, no code) — Group thread on the Lean soundness bug behind a fake Collatz "disproof"; verdict: our adopted LBs (869/5888) are NOT threatened, but one cheap hygiene task queued (re-check urdvr's proof under the patched toolchain)
 

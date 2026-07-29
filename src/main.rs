@@ -104,6 +104,17 @@ fn yn(ok: bool) -> &'static str {
     }
 }
 
+/// CLI mirror of [`superperm::sojourn::DedupMode`].
+#[derive(Clone, Copy, ValueEnum)]
+enum DedupArg {
+    /// Exact state dedup (no symmetry reduction).
+    Exact,
+    /// Relabeling-orbit quotient (sound exhaustion up to symmetry).
+    Orbit,
+    /// L2 canonical-key abstraction (book mode; not exhaustion-sound).
+    Abstraction,
+}
+
 /// Superpermutation search research toolkit (phase 1).
 #[derive(Parser)]
 #[command(name = "superperm", version, about)]
@@ -130,6 +141,33 @@ enum Cmd {
         /// Minimum door weight to include (default 3; 2 adds w2x/i2).
         #[arg(long, default_value_t = 3)]
         min_weight: u8,
+    },
+    /// Exhaustive sojourn-level canonical opening DFS inside an L0/L1
+    /// class (Track B L2; M2 gate).
+    SojournDfs {
+        /// Number of symbols (3..=8).
+        #[arg(short, long)]
+        n: usize,
+        /// Class caps as S,d3,d4,d5,ip (e.g. "145,3,0,0,0" = records).
+        #[arg(long, value_delimiter = ',')]
+        class: Vec<u16>,
+        /// Enforce the records' n=6 split profile (6|2,4|3,3|4,2|2,2,2).
+        #[arg(long)]
+        records_profile: bool,
+        /// Opening depth in completed sojourns.
+        #[arg(long, default_value_t = 10)]
+        depth: u16,
+        /// Hard node budget (reported honestly if hit).
+        #[arg(long, default_value_t = 10_000_000)]
+        max_nodes: u64,
+        /// Dedup tier: exact state, relabeling-orbit quotient (sound,
+        /// the L2 default), or canonical-key abstraction (book mode,
+        /// not exhaustion-sound).
+        #[arg(long, value_enum, default_value_t = DedupArg::Orbit)]
+        dedup: DedupArg,
+        /// Abstraction mode only: exact exemplars expanded per class.
+        #[arg(long, default_value_t = 1)]
+        exemplars: u32,
     },
     /// Run the deterministic greedy baseline and print the result.
     Greedy {
@@ -426,6 +464,60 @@ fn main() -> ExitCode {
                     .unwrap();
                 }
             }
+        }
+        Cmd::SojournDfs {
+            n,
+            class,
+            records_profile,
+            depth,
+            max_nodes,
+            dedup,
+            exemplars,
+        } => {
+            use superperm::sojourn::{ClassCaps, DedupMode, SojournDfs, SplitProfile};
+            assert_eq!(class.len(), 5, "--class needs S,d3,d4,d5,ip");
+            let g = Graph::new(n);
+            let caps = ClassCaps {
+                s: class[0],
+                d3: class[1],
+                d4: class[2],
+                d5: class[3],
+                ip: class[4],
+            };
+            let dfs = SojournDfs {
+                g: &g,
+                caps,
+                profile: records_profile.then(SplitProfile::records_n6),
+                depth,
+                max_nodes,
+                dedup: match dedup {
+                    DedupArg::Exact => DedupMode::Exact,
+                    DedupArg::Orbit => DedupMode::Orbit,
+                    DedupArg::Abstraction => DedupMode::Abstraction,
+                },
+                exemplars_per_class: exemplars,
+            };
+            let t = std::time::Instant::now();
+            let st = dfs.run();
+            println!(
+                "sojourn-dfs n={n} class=(S={},d3={},d4={},d5={},ip={}) waste={} depth={depth}",
+                caps.s,
+                caps.d3,
+                caps.d4,
+                caps.d5,
+                caps.ip,
+                caps.waste(),
+            );
+            println!("nodes             = {}", st.nodes);
+            println!("frontier states   = {}", st.frontier);
+            println!("canonical classes = {}", st.canonical_classes);
+            println!("dead ends         = {}", st.dead_ends);
+            println!("completed walks   = {}", st.completed);
+            println!(
+                "oversize          = {} (max_nodes {max_nodes})",
+                st.oversize
+            );
+            println!("elapsed           = {:.3}s", t.elapsed().as_secs_f64());
         }
         Cmd::Greedy { n, log } => {
             let g = Graph::new(n);
