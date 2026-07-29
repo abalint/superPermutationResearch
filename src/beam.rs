@@ -32,6 +32,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::bitset::BitSet;
 use crate::graph::Graph;
+use crate::lb_residual::{self, ParentCtx, PredTable};
 use crate::model::Model;
 
 /// Which admissible lower bound scores beam candidates.
@@ -42,6 +43,9 @@ pub enum Bound {
     /// Arc bound `r + arcs − [succ1(cur) unvisited]`; dominates `Cycle`
     /// (see [`crate::bound::lower_bound_arc`]).
     Arc,
+    /// Residual bound `r + door + intact + long`; dominates `Arc`
+    /// (see [`crate::lb_residual`]).
+    Residual,
 }
 
 /// How beam candidates are scored.
@@ -212,6 +216,12 @@ struct State {
     /// exact definition; phase-3 item 3). Pure function of the visited
     /// set.
     w2_bridges: u32,
+    /// `Σ_{x unvisited} (minin(x) − 1)` — the residual bound's `door`
+    /// term (0 unless the residual bound is in use).
+    door: u32,
+    /// The residual bound's dead-door singly-covered-class term (0
+    /// unless the residual bound is in use).
+    long: u32,
     /// Zobrist hash of the visited set (0 when jitter is off).
     zhash: u64,
     /// Index of this state's node in the path arena.
@@ -272,6 +282,7 @@ fn child_arcs(g: &Graph, parent: &State, q: u32) -> u32 {
 /// the child's length, `node` its already-pushed arena node. All
 /// counters update in O(1) from the parent's (`parent.visited` itself
 /// still excludes `q`, as `child_arcs` requires).
+#[allow(clippy::too_many_arguments)]
 fn child_state(
     g: &Graph,
     parent: &State,
@@ -280,6 +291,7 @@ fn child_state(
     visited: BitSet,
     node: u32,
     jctx: Option<&JitterCtx>,
+    res: Option<(&PredTable, &ParentCtx)>,
 ) -> State {
     let arcs = child_arcs(g, parent, q);
     let w2_bridges = (parent.w2_bridges as i64
@@ -290,6 +302,12 @@ fn child_state(
     let intact = parent.intact - u32::from(rem == g.n);
     let half_open = parent.half_open + u32::from(rem == g.n) - u32::from(rem == g.n - 2);
     let nearly_done = parent.nearly_done + u32::from(rem == 3) - u32::from(rem == 1);
+    let (door, long) = match res {
+        Some((tab, ctx)) => {
+            lb_residual::child_terms(g, tab, &parent.visited, &parent.cycle_rem, ctx, q)
+        }
+        None => (0, 0),
+    };
     cycle_rem[cid] -= 1;
     let k = parent.k - u32::from(cycle_rem[cid] == 0);
     State {
@@ -304,6 +322,8 @@ fn child_state(
         half_open,
         nearly_done,
         w2_bridges,
+        door,
+        long,
         zhash: jctx.map_or(0, |j| parent.zhash ^ j.zobrist[q as usize]),
         node,
     }
@@ -476,6 +496,11 @@ fn beam_search_impl(
         .filter(|j| j.eps > 0.0)
         .map(|j| JitterCtx::new(j, nfact));
     let jctx = jctx.as_ref();
+    // The residual bound's in-neighbour table is built only when that
+    // bound is selected, so every other scorer keeps its exact previous
+    // cost (and the `door`/`long` counters stay at 0, unused).
+    let tab = matches!(scorer, Scorer::Bound(Bound::Residual)).then(|| PredTable::new(g));
+    let tab = tab.as_ref();
 
     // Arena node 0 is the root (identity permutation, no parent).
     let mut arena: Vec<(u32, u32)> = vec![(u32::MAX, 0)];
@@ -485,6 +510,10 @@ fn beam_search_impl(
         visited.set(0);
         let mut cycle_rem = vec![n as u8; g.cycle_count].into_boxed_slice();
         cycle_rem[g.cycle_id[0] as usize] -= 1;
+        // At the root every permutation is standable, so every `minin`
+        // is 1 and only rank 0's class is touched.
+        let door = tab.map_or(0, |t| lb_residual::door_scratch(g, t, &visited, 0));
+        let long = tab.map_or(0, |_| lb_residual::long_scratch(g, &visited, 0, &cycle_rem));
         vec![State {
             cur: 0,
             len: n as u32,
@@ -501,6 +530,8 @@ fn beam_search_impl(
             half_open: 1,
             nearly_done: u32::from(n - 1 <= 2),
             w2_bridges: 0,
+            door,
+            long,
             zhash: jctx.map_or(0, |j| j.zobrist[0]),
             node: 0,
         }]
@@ -516,6 +547,21 @@ fn beam_search_impl(
             let w = (n - Graph::overlap(&g.perms[root.cur as usize], &g.perms[q as usize])) as u32;
             let arcs = child_arcs(g, root, q);
             let w2d = g.w2_bridges_delta(&root.visited, &root.cycle_rem, q);
+            if let Some(t) = tab {
+                let ctx = ParentCtx::new(
+                    g,
+                    t,
+                    &root.visited,
+                    root.cur,
+                    &root.cycle_rem,
+                    root.door,
+                    root.long,
+                );
+                let (door, long) =
+                    lb_residual::child_terms(g, t, &root.visited, &root.cycle_rem, &ctx, q);
+                root.door = door;
+                root.long = long;
+            }
             root.visited.set(q as usize);
             let cid = g.cycle_id[q as usize] as usize;
             let rem = root.cycle_rem[cid] as usize;
@@ -573,6 +619,16 @@ fn beam_search_impl(
             }
         }
         cands.clear();
+        // One residual-bound transition context per parent: dropping
+        // `cur` from the standable set is shared by all its candidates.
+        let ctxs: Vec<ParentCtx> = match tab {
+            Some(t) => beam
+                .iter()
+                .map(|s| ParentCtx::new(g, t, &s.visited, s.cur, &s.cycle_rem, s.door, s.long))
+                .collect(),
+            None => Vec::new(),
+        };
+        let res_of = |pi: usize| tab.map(|t| (t, &ctxs[pi]));
         for (pi, s) in beam.iter().enumerate() {
             let mut any = false;
             for &(q, w) in &g.succs[s.cur as usize] {
@@ -580,7 +636,16 @@ fn beam_search_impl(
                     continue;
                 }
                 any = true;
-                cands.push(score_move(g, s, q, w as u32, pi as u32, scorer, jctx));
+                cands.push(score_move(
+                    g,
+                    s,
+                    q,
+                    w as u32,
+                    pi as u32,
+                    scorer,
+                    jctx,
+                    res_of(pi),
+                ));
             }
             if !any {
                 // Weight-n fallback: jump to the lowest unvisited rank so
@@ -590,7 +655,16 @@ fn beam_search_impl(
                     .first_clear(nfact)
                     .expect("state with r > 0 must have an unvisited perm")
                     as u32;
-                cands.push(score_move(g, s, q, n as u32, pi as u32, scorer, jctx));
+                cands.push(score_move(
+                    g,
+                    s,
+                    q,
+                    n as u32,
+                    pi as u32,
+                    scorer,
+                    jctx,
+                    res_of(pi),
+                ));
             }
         }
 
@@ -631,7 +705,16 @@ fn beam_search_impl(
                         best_kept = score;
                     }
                     worst_kept = score;
-                    next.push(child_state(g, parent, q, len, visited, node, jctx));
+                    next.push(child_state(
+                        g,
+                        parent,
+                        q,
+                        len,
+                        visited,
+                        node,
+                        jctx,
+                        res_of(pi as usize),
+                    ));
                 }
             }
             Some(st) => {
@@ -668,7 +751,10 @@ fn beam_search_impl(
                     *count += 1;
                     let node = arena.len() as u32;
                     arena.push((parent.node, q));
-                    kept.push((i, child_state(g, parent, q, len, visited, node, jctx)));
+                    kept.push((
+                        i,
+                        child_state(g, parent, q, len, visited, node, jctx, res_of(pi as usize)),
+                    ));
                 }
                 let pass1 = kept.len(); // entries 0..pass1 ascend by index
                 let mut ki = 0;
@@ -691,7 +777,10 @@ fn beam_search_impl(
                     seen.insert(key);
                     let node = arena.len() as u32;
                     arena.push((parent.node, q));
-                    kept.push((i, child_state(g, parent, q, len, visited, node, jctx)));
+                    kept.push((
+                        i,
+                        child_state(g, parent, q, len, visited, node, jctx, res_of(pi as usize)),
+                    ));
                 }
                 // Restore global score order so the next level's
                 // parent-index tie-break behaves exactly as if the beam
@@ -792,6 +881,7 @@ fn beam_search_impl(
 /// incrementally maintained Zobrist hash), so it preserves that
 /// invariant.
 #[inline]
+#[allow(clippy::too_many_arguments)]
 fn score_move(
     g: &Graph,
     parent: &State,
@@ -800,6 +890,7 @@ fn score_move(
     parent_idx: u32,
     scorer: Scorer,
     jctx: Option<&JitterCtx>,
+    res: Option<(&PredTable, &ParentCtx)>,
 ) -> (i64, u32, u32, u32) {
     let len = parent.len + w;
     let r = parent.r - 1;
@@ -818,6 +909,22 @@ fn score_move(
                         let arcs = child_arcs(g, parent, q);
                         let succ1_unvis = !parent.visited.get(g.succ1(q) as usize);
                         r + arcs - u32::from(succ1_unvis)
+                    }
+                    Bound::Residual => {
+                        let (tab, ctx) = res.expect("residual bound needs its transition context");
+                        let (door, long) = lb_residual::child_terms(
+                            g,
+                            tab,
+                            &parent.visited,
+                            &parent.cycle_rem,
+                            ctx,
+                            q,
+                        );
+                        let intact = parent.intact
+                            - u32::from(
+                                parent.cycle_rem[g.cycle_id[q as usize] as usize] as usize == g.n,
+                            );
+                        r + door + intact + long
                     }
                 }
             };

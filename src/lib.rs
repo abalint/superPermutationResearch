@@ -20,6 +20,9 @@
 //! * [`bitset`] — a small fixed-size bitset used for visited sets;
 //! * [`bound`] — an admissible lower bound on remaining characters plus a
 //!   serializable [`bound::Features`] record for ML training data;
+//! * [`lb_residual`] — the residual-graph admissible lower bound
+//!   (`docs/RESIDUAL-BOUND-DESIGN.md`): minimum-in-edge, intact-class
+//!   and dead-door terms, dominating the cycle and arc bounds;
 //! * [`walk`] — incremental walk state shared by all searchers;
 //! * [`greedy`] — the deterministic greedy baseline (achieves the known
 //!   optima 9 / 33 / 153 for `n = 3, 4, 5`);
@@ -53,6 +56,7 @@ pub mod cert;
 pub mod endgame;
 pub mod graph;
 pub mod greedy;
+pub mod lb_residual;
 pub mod model;
 pub mod rollout;
 pub mod trace;

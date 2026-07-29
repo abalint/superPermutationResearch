@@ -33,6 +33,9 @@ enum BoundArg {
     Cycle,
     /// Arc bound `r + arcs − [succ1(cur) unvisited]`; dominates cycle.
     Arc,
+    /// Residual bound `r + door + intact + long`; dominates arc
+    /// (`docs/RESIDUAL-BOUND-DESIGN.md`).
+    Residual,
 }
 
 impl From<BoundArg> for Bound {
@@ -40,6 +43,7 @@ impl From<BoundArg> for Bound {
         match b {
             BoundArg::Cycle => Bound::Cycle,
             BoundArg::Arc => Bound::Arc,
+            BoundArg::Residual => Bound::Residual,
         }
     }
 }
@@ -398,6 +402,7 @@ fn main() -> ExitCode {
                         match bound {
                             BoundArg::Cycle => "cycle",
                             BoundArg::Arc => "arc",
+                            BoundArg::Residual => "residual",
                         }
                     ),
                 ),

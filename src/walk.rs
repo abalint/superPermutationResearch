@@ -8,6 +8,7 @@
 use crate::bitset::BitSet;
 use crate::bound::{lower_bound, lower_bound_arc, Features};
 use crate::graph::Graph;
+use crate::lb_residual::{self, ParentCtx, PredTable};
 
 /// A partial superpermutation under construction.
 ///
@@ -43,6 +44,17 @@ pub struct Walk<'g> {
     pub chars: Vec<u8>,
     /// Number of advances taken (permutations visited − 1).
     pub steps: u32,
+    /// Cycles with all `n` members unvisited (intact) — the `intact`
+    /// term of [`crate::lb_residual`].
+    pub intact: usize,
+    /// `Σ_{x unvisited} (minin(x) − 1)`, the `door` term of
+    /// [`crate::lb_residual`].
+    pub door: u32,
+    /// The dead-door singly-covered-class term of
+    /// [`crate::lb_residual`].
+    pub long: u32,
+    /// Tabulated weight-≤3 in-neighbours (drives `door`/`long`).
+    tab: PredTable,
 }
 
 impl<'g> Walk<'g> {
@@ -52,6 +64,13 @@ impl<'g> Walk<'g> {
         visited.set(0);
         let mut cycle_rem = vec![g.n as u8; g.cycle_count].into_boxed_slice();
         cycle_rem[g.cycle_id[0] as usize] -= 1;
+        let tab = PredTable::new(g);
+        // At the root every permutation is standable, so every `minin`
+        // is 1 (`pred1` is always available) and no class but rank 0's
+        // is touched: `door = long = 0`. Computed rather than asserted
+        // so the initialisation cannot drift from the definitions.
+        let door = lb_residual::door_scratch(g, &tab, &visited, 0);
+        let long = lb_residual::long_scratch(g, &visited, 0, &cycle_rem);
         Walk {
             g,
             visited,
@@ -70,6 +89,10 @@ impl<'g> Walk<'g> {
             cur: 0,
             chars: g.perms[0].clone(),
             steps: 0,
+            intact: g.cycle_count - 1,
+            door,
+            long,
+            tab,
         }
     }
 
@@ -129,6 +152,28 @@ impl<'g> Walk<'g> {
         let w2d = self
             .g
             .w2_bridges_delta(&self.visited, &self.cycle_rem, rank);
+        // Residual-bound terms, likewise from the pre-move state.
+        let ctx = ParentCtx::new(
+            self.g,
+            &self.tab,
+            &self.visited,
+            self.cur,
+            &self.cycle_rem,
+            self.door,
+            self.long,
+        );
+        let (door, long) = lb_residual::child_terms(
+            self.g,
+            &self.tab,
+            &self.visited,
+            &self.cycle_rem,
+            &ctx,
+            rank,
+        );
+        self.door = door;
+        self.long = long;
+        self.intact -=
+            usize::from(self.cycle_rem[self.g.cycle_id[rank as usize] as usize] as usize == n);
         self.visited.set(rank as usize);
         let cid = self.g.cycle_id[rank as usize] as usize;
         // Arc maintenance. If the cycle was fully unvisited its circular
@@ -177,6 +222,22 @@ impl<'g> Walk<'g> {
     /// pointwise (see [`crate::bound::lower_bound_arc`]).
     pub fn lb_arc(&self) -> usize {
         lower_bound_arc(self.r, self.arcs, self.succ1_unvisited())
+    }
+
+    /// Residual admissible lower bound; dominates [`Walk::lb_arc`]
+    /// pointwise (see [`crate::lb_residual`]).
+    pub fn lb_residual(&self) -> usize {
+        lb_residual::lower_bound_residual(
+            self.r,
+            self.door as usize,
+            self.intact,
+            self.long as usize,
+        )
+    }
+
+    /// The weight-≤3 in-neighbour table backing the residual bound.
+    pub fn pred_table(&self) -> &PredTable {
+        &self.tab
     }
 
     /// Snapshot the state as a [`Features`] record (`cost_to_go` is left

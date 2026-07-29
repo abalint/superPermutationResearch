@@ -118,6 +118,7 @@ pub fn score_state(walk: &Walk, scorer: Scorer) -> f64 {
     let fixed: i64 = match scorer {
         Scorer::Bound(Bound::Cycle) => i64::from(len + walk.lb() as u32) << 12,
         Scorer::Bound(Bound::Arc) => i64::from(len + walk.lb_arc() as u32) << 12,
+        Scorer::Bound(Bound::Residual) => i64::from(len + walk.lb_residual() as u32) << 12,
         Scorer::Learned { model, alpha } => {
             let f = walk.features();
             let lb_cycle = walk.lb() as u32;
