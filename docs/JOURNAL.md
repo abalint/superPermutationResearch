@@ -6,6 +6,74 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (session 26c) — Full-corpus recalibration census (all 22,062 community classes): waste identity 22,062/22,062; exactly **8 specimen-backed L0 allocations** in 1:1 correspondence with the 8 weight multisets AND with **8 Vlad-frame cells** (his 11 identities pass corpus-wide — the s20 "single cell" was OUR sample bias, not his structure); **545 split profiles** vs the 1 the grammar hard-codes, including split types `1|5`/`5|1` the grammar never allowed; every "all known 872s…" note is now corrected in place (README, CLAUDE.md, TRACKB-DESIGN M3/§7)
+
+Andrew's question — "do we need to analyse the new corpus now, all of our
+notes are wrong" — triaged: theorems and machinery survive (bounds, endgame
+tablebase, gain-1 certificate result, in-grammar-871 impossibility, the L0
+*allocation* ledger); everything of the form "all known 872s share X" was
+sample-scoped and is recalibrated by this census
+(`analysis/counting/upstream872_structure.py` → `upstream872_structure.tsv`,
+`upstream872_vlad_cells.txt`; corpus archive `data/upstream872/`, 22,062
+forward-renumbered class representatives, gitignored).
+
+**1 — Waste identity: 22,062/22,062, ip = 0 and zero intra-cycle w≥3 moves
+corpus-wide.** T0 is now verified at full community scale — and the i2 term
+never fires on any known 872: every weight-2 move in every known 872 is
+cross-cycle. (ε-rollout walks remain the only i2 exercisers.)
+
+**2 — The specimen-backed L0 shell is EXACTLY 8 allocations** (all waste
+147, all ip=0):
+
+| S | d3 | d4 | classes | share |
+|---|----|----|---------|-------|
+| 145 | 3 | 0 | 21,144 | 95.8% (the records class) |
+| 143 | 5 | 0 | 470 | |
+| 140 | 6 | 1 | 388 | w4 exists! |
+| 142 | 6 | 0 | 19 | |
+| 135 | 9 | 2 | 18 | two w4s |
+| 140 | 8 | 0 | 10 | |
+| 138 | 8 | 1 | 9 | |
+| 141 | 7 | 0 | 4 | |
+
+Track B's grammar, caps, and all s22–s25 verdicts live in row 1 only. The
+918 other classes are the cross-class-surgery specimens we assumed didn't
+exist — the "specimen-free waste-146 bootstrap" problem now has 7
+specimen-backed NEIGHBOR allocations to learn the door pricing from.
+
+**3 — Vlad frame: structure vindicated, "single cell" debunked.** All 11
+of his identities/tests (T1–T9 incl. block confinement and cell-universe
+membership) pass on every one of the 22,062 classes — his framework is
+corpus-sound. But the corpus occupies **8 cells** (e up to 2, s from 15 to
+25, always delta=5, j=0), in 1:1 correspondence with the L0 allocations.
+The s20 "299/299 in (0,5,25,0)" was our sample bias; his B=4/x=0 ↔
+575/141/3 equation holds only for the records class.
+
+**4 — Split profiles: 545 distinct, and the type vocabulary was
+incomplete.** The grammar's records profile (whole-6, 2|4, 3|3, 4|2,
+2|2|2) is one of 545 observed profiles; type census over 2.65M cycle
+visits: whole-6 dominates (2.10M), 3|3/2|4/4|2 ≈ 180k each, 2|2|2 = 4,817
+— and **1|5 and 5|1 occur** (2 each, inside the S=141,d3=7 allocation): a
+single-perm sojourn is legal in real 872s. `SojournDfs`/`Grammar` with
+`--records-profile` cannot represent 545−1 of the observed profiles; the
+profile mechanism needs to become per-allocation data, not one hard-coded
+constant.
+
+**Consequences queued (s27+):**
+- Re-scope the sojourn grammar: caps + profile per specimen-backed
+  allocation (8 configs), profile learned from the census TSV, not
+  hard-coded.
+- Cross-class surgery design now trains on 918 real specimens (door
+  pricing across allocations: how do the (143,5) walks pay for the extra
+  two w3 doors? Diff them against (145,3) neighbors in the braid).
+- The waste-146 (871) target shell: which of the 8 allocations neighbor
+  it in ledger space; lemma pass over the 26,416-allocation live shell
+  with the 8 anchors.
+- M3 independence re-scoped: inequivalent to all 22,062 classes
+  (relabel+reversal), checked with `upstream872_census.py`.
+
+---
+
 ## 2026-07-29 (session 26b) — The publish check DEBUNKS the hybrids and recalibrates the whole corpus picture: the two s26 hybrids are BYTE-IDENTICAL to strings in the community corpus (rediscoveries — no PR); the true known-872 universe is **50,009 strings / 22,062 relabel+reversal classes** (our 296 was a 1.3% sample, 290 classes, all ⊂ upstream); the "universal 575/141/3 multiset" is a SAMPLE ARTIFACT — upstream has **8 multisets including w4-bearing 872s** (918 classes outside the records class); and the community corpus is **SPLICE-CLOSED up to symmetry** (full 22,062-walk braid: 22,066 paths, 5 new walks, all equivalent to known)
 
 Andrew asked to publish the two s26 hybrids / PR them to the community

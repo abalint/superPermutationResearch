@@ -62,22 +62,34 @@ the **discriminator verdict is in**: 288 rollouts × 2 seeds collect ZERO
 cost ≥2 chars, local policy exploration cannot reach an independent ≤872.
 s26 landed structural recombination
 (`docs/RECOMB-DESIGN.md`, `src/corpus.rs` + `src/recomb.rs` +
-`src/unionsearch.rs`): the splice closure of all 296 records is EXACTLY 298
-walks — **+2 hybrid 872s** (`data/hybrids872/`, known-872 corpus now 298),
-both crossings of one record pair at the braid's only midgame junction
-(record diversity is an opening phenomenon: 293/296 junctions before depth
-200); union-edge DFS (usage-ordered, undo-based, strand pruning = lossless
-union-specific prune, 4.3M nodes/s) is built and controlled, but union
-ENUMERATION is intractable even for 2-record sub-corpora (blocked zone,
-third measurement) — honest products are single-record controls, truncated
-hunts, cap-871 decision runs (verdict in JOURNAL s26); near-miss splice
-repair KILLED by measurement (symdiff bimodal 0 or ≥20). NEXT =
+`src/unionsearch.rs`): the splice closure of our local 296-record sample is
+EXACTLY 298 walks (+2 hybrids, `data/hybrids872/` — s26b: both turned out
+BYTE-IDENTICAL to known community strings, see NOTE.md there); union-edge
+DFS (usage-ordered, undo-based, strand pruning = lossless union-specific
+prune, 4.3M nodes/s) is built and controlled, but union ENUMERATION is
+intractable even for 2-record sub-corpora (blocked zone, third measurement)
+— honest products are single-record controls, truncated hunts, cap-871
+decision runs (also bound-blocked, JOURNAL s26); near-miss splice repair
+KILLED by measurement (symdiff bimodal 0 or ≥20). **s26b/c RECALIBRATION
+(read before citing any "all known 872s" claim): the community corpus
+(superpermutators/superperm) holds 50,009 872s = 22,062 relabel+reversal
+classes — our 296 was a 1.3% sample (290 classes, all upstream). Census
+over all 22,062 (`analysis/counting/upstream872_structure.py`, archive
+`data/upstream872/`, gitignored): waste identity 22,062/22,062; exactly 8
+specimen-backed L0 allocations — (145,3,0,0,0)=21,144 (the records class,
+95.8%), (143,5,0,0,0)=470, (140,6,1,0,0)=388, (142,6,0,0,0)=19,
+(135,9,2,0,0)=18, (140,8,0,0,0)=10, (138,8,1,0,0)=9, (141,7,0,0,0)=4 —
+w4-bearing 872s EXIST; 8 Vlad cells in 1:1 correspondence (his 11 tests
+pass corpus-wide; s20's 'single cell' was sample bias); 545 split profiles
+(grammar hard-codes 1) and split types 1|5, 5|1 exist (4 classes); the
+community corpus is SPLICE-CLOSED up to symmetry (5 closure walks, all
+equivalent to known).** NEXT = re-scope Track B to the 8 specimen-backed
+allocations (grammar caps/profile per allocation; the 918 non-records
+classes are the cross-class surgery specimens we thought didn't exist),
 union-restricted BEAM (width sidesteps DFS's shallowest-divergence-last
-pathology; reuse residual+endgame beam with union edges + k free credits),
-cross-class surgery design (also bootstraps the specimen-free waste-146
-classes where an 871 must live), warm-depth curriculum → M3 verdict; cheap
-closure probes queued: perfect-ride ATSP (closes all 616 S=120 live
-classes). Track B downgraded-not-retired s20 (Vlad's preliminary
+pathology), warm-depth curriculum → M3 verdict (now judged vs the 22,062
+classes up to equivalence); cheap closure probes queued: perfect-ride ATSP
+(closes all 616 S=120 live classes). Track B downgraded-not-retired s20 (Vlad's preliminary
 a(6)=872 claim; n=6 window unconditionally still {869..872}); n=7 5905
 campaign survives (his conditional a(7) ≥ 5896 is δ≤11 vs our δ=21 bar);
 Track C v2 parked on the 2.4× scoring-overhead fix; farm and Mac idle
@@ -108,7 +120,8 @@ worth ~4pp, optional). Models: `ml/models/trackc2_pw1` (deployed), pw2/reg2
 tablebase states 0 violations, hand-bound stratified beam **902→894**; the Hunter
 q_k root strength is proven NON-localizable; `--bound` and `--model` do not compose
 yet. Counting calibration in `analysis/counting/` (local rules cap at L =
-n+n!+(n−1)!−2 exactly; all 296 known 872s share one weight multiset 575/141/3).
+n+n!+(n−1)!−2 exactly; the "all known 872s share 575/141/3" claim was
+SAMPLE BIAS — s26c census: 8 multisets over 22,062 classes).
 **Track C v1 landed s17** (`docs/TRACKC-DESIGN.md`, `analysis/trackc/RESULTS-s17.md`):
 guided DLX row ordering works in principle (22× on n=6, real cross-n transfer) but
 NO-GO on the n=7 cover gates at 60 min; v2 lever = learned column choice. Side
@@ -129,8 +142,9 @@ to ≥ 873 (unstratified ≥ 874; n=7 ≥ 5913), and every known record (296 × 
 won strictly before the last ~25 perms ⇒ all weight on **item 5** (cycle-level
 moves; weave as a move, kernel as a parameter — Robin's thread reply + 5906
 boundary fact; tablebase becomes the terminal solver). Expert corpus: 296 distinct
-872s (`data/records872/` + `data/gain1_872s/`), Chaffin prefixes in
-`data/chaffin/`, field news in `../extraDocs/2026-07-27-urdvr-email-and-repo.md`
+872s (`data/records872/` + `data/gain1_872s/`) — a 1.3% SAMPLE; the full
+community corpus is 22,062 classes, archived at `data/upstream872/` (s26b/c),
+Chaffin prefixes in `data/chaffin/`, field news in `../extraDocs/2026-07-27-urdvr-email-and-repo.md`
 `../extraDocs/2026-07-28-urdvr-lean-lower-bound.md` (Lean-formalized LB:
 **S(6) ≥ 869, S(7) ≥ 5888, S(8) ≥ 46103** — n=6 window now {869..872}, n=7 window
 [5888, 5906]; "exitless paths are exhausted, improvement must come from the
@@ -144,8 +158,11 @@ candidate DLX pruning rule in `StandardKernelHighMissingObstruction.lean`), and
 for-refutation claim that a(6) = 872** — 209-cell confinement partition, both
 offline verify tiers pass here, top rung at effective tier `L` with two open
 soundness obligations; **we cross-validated his coordinate frame on 299 of our
-words, 299/299 — all 296 known 872s occupy the single cell (0,5,25,0), and his
-B=4/x=0 is our 575/141/3 weight multiset**; n=6 window unconditionally still
+words, 299/299 in cell (0,5,25,0) — but s26c re-ran the census on all 22,062
+community classes: his 11 identities pass corpus-wide, and the corpus
+occupies 8 cells (1:1 with the 8 L0 allocations), so the 'single cell' was
+our sample bias, not his structure** (`analysis/counting/upstream872_vlad_cells.txt`);
+n=6 window unconditionally still
 {869..872} so **Track B is downgraded, not retired**; his conditional a(7) ≥ 5896
 is δ≤11 vs our δ=21 target, so **5905 survives** — watch whether n=7 pushes past
 δ≈21; tool `analysis/counting/coords_a6_872_frame.py`), and

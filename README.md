@@ -23,25 +23,29 @@ the full framing and [docs/ROADMAP.md](docs/ROADMAP.md) for the phased plan.
 
 ## Status
 
-**Latest (session 26, 2026-07-29): structural recombination — two new 872s.**
-The s25 discriminator pointed at structural moves; s26 designed them
-measurement-first (`docs/RECOMB-DESIGN.md`) and built them (`src/corpus.rs`,
-`src/recomb.rs`, `src/unionsearch.rs`). The splice closure of all 296 known
-872s — every walk reachable by gluing record prefixes/suffixes at shared
-search states, chained — is EXACTLY 298 walks: the corpus plus **two new
-hybrid 872s** (`data/hybrids872/`), both crossings of one record pair at the
-braid's only midgame junction. The known-872 corpus grows 296 → 298 (first
-new members since the campaign began), though as splice derivatives they do
-not close M3 (independence). Structural facts worth the price of the session:
-record diversity is an *opening* phenomenon (293/296 braid junctions sit
-before depth 200; all records share one terminal state), and exhaustive
-search inside the 1,279-edge record-edge union — even with a new lossless
-strand prune worth 6× throughput — is intractable already for TWO records:
-the completion-blocked midgame, now measured a third independent way.
-Near-miss splice repair was killed by measurement before a line of code
-(state gaps are bimodal: identical or ≥20 perms apart). Next: a
-union-restricted beam (width beats DFS ordering here) and cross-class
-surgery design. Full story: `docs/JOURNAL.md` s26.
+**Latest (session 26–26c, 2026-07-29): structural recombination built — and
+the publish check rewrote our map of the known-872 universe.** s26 built the
+splice machinery measurement-first (`docs/RECOMB-DESIGN.md`; `src/corpus.rs`,
+`src/recomb.rs`, `src/unionsearch.rs`): the splice closure of our local
+296-record sample is exactly 298 walks (+2 hybrids), the record-edge union
+DFS gained a lossless strand prune (6×) but union enumeration is intractable
+even for two records (the blocked midgame, measured a third way), and
+near-miss repair died by measurement before a line of code. Then the
+pre-publication check (s26b) found **both hybrids byte-identical to known
+community strings** — and that our "corpus of all known 872s" was a 1.3%
+sample: the community corpus (superpermutators/superperm) holds **50,009
+strings = 22,062 equivalence classes**. The s26c census over all of them:
+the waste identity holds 22,062/22,062; there are exactly **8 specimen-backed
+L0 allocations** (one per weight multiset — the "universal 575/141/3" was a
+sample artifact; 918 classes have 5–9 w3 doors and up to 2 w4 doors, S down
+to 135), **8 Vlad-frame cells** in 1:1 correspondence (his confinement tests
+pass corpus-wide; the s20 "single cell" was sample bias), **545 split
+profiles** (our grammar hard-coded 1), two split types the grammar never
+allowed (`1|5`, `5|1`), and the community corpus is **splice-closed up to
+symmetry** (5 closure walks, all equivalent to known). Every "all known
+872s…" claim below this paragraph is sample-scoped; the census is the
+authority (`analysis/counting/upstream872_structure.py` + `_census.py`,
+archive in `data/upstream872/`). Full story: `docs/JOURNAL.md` s26–s26c.
 
 **Prior (session 25, 2026-07-29): NRPA.** The policy layer prescribed by the
 s24 verdict is built (`src/nrpa.rs` + a shared `Grammar` move generator in

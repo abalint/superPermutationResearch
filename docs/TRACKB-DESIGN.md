@@ -206,8 +206,10 @@ model has to relearn.
   class completes within ~10⁶ nodes. If not, the canonical key is too fine or the
   door alphabet too wide — fix before scaling out.
 - **M3 (search side, the real gate):** bandit + NRPA produces an *independent*
-  872 (byte-distinct from all 296 known) from C1's class, or any validated ≤873
-  from an out-of-grammar class. GO ⇒ fund the 871 campaign (and only then the
+  872 (byte-distinct from all 296 known — **re-scoped s26c: inequivalent, up
+  to relabeling+reversal, to all 22,062 community classes; check with
+  `analysis/counting/upstream872_census.py`**) from C1's class, or any
+  validated ≤873 from an out-of-grammar class. GO ⇒ fund the 871 campaign (and only then the
   farm). NO-GO after C1 passes ⇒ Track B stays parked at lemma-production only.
 
 > **Gate results so far (s22).** **M1 PASS**: 66.5% of the 78,813 L0
@@ -241,6 +243,14 @@ model has to relearn.
 > step-4b width-taper idea is thereby deprioritized; 4a is the next build.
 
 ## 7. Side probe (independent, one afternoon): tour merging over the 296
+
+> **s26 verdict: BUILT AND BLOCKED.** `union-dfs` (docs/RECOMB-DESIGN.md §5,
+> §8.2): the union graph is even sparser than estimated (1,279 edges,
+> out-degree ≤ 2), but exact search inside it is intractable — TRUNCATED at
+> 200M nodes even for 2-record unions, cap-871 decision equally blocked; the
+> splice closure (§8.1) and the s26c full-corpus rerun (22,062 classes, 5
+> closure walks, all equivalent to known — the community corpus is
+> splice-closed) are the surviving products.
 
 Cook–Seymour tour merging, opening-reframed: all 296 known 872s share optimal
 greedy-basin tails (s9 theorem 4), so the union of their edge sets encodes pure

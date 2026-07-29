@@ -1,0 +1,24 @@
+words read: 22062, distinct: 22062
+
+TEST RESULTS (22062 distinct 872s)
+  [ok  ] T1 len=867+e+r+l         all pass
+  [ok  ] T2 r==0                  all pass
+  [ok  ] T3 s<=5l                 all pass
+  [ok  ] T4 B+x==v-s+e            all pass
+  [ok  ] T5a B>=kappa             all pass
+  [ok  ] T5b kappa==v-s+beta      all pass
+  [ok  ] T6a 0<=j<=e              all pass
+  [ok  ] T6b x==e-j               all pass
+  [ok  ] T7 beta<=s-1             all pass
+  [ok  ] T8 block confinement     all pass
+  [ok  ] T9 cell in universe      all pass
+
+cell (e,l,s,j) distribution over the corpus  [delta = e+l must be 5]:
+  (e=0, l=5, s=25, j=0)  delta= 5   21144 words
+  (e=0, l=5, s=23, j=0)  delta= 5    470 words
+  (e=1, l=4, s=20, j=0)  delta= 5    388 words
+  (e=0, l=5, s=22, j=0)  delta= 5     19 words
+  (e=2, l=3, s=15, j=0)  delta= 5     18 words
+  (e=0, l=5, s=20, j=0)  delta= 5     10 words
+  (e=1, l=4, s=18, j=0)  delta= 5      9 words
+  (e=0, l=5, s=21, j=0)  delta= 5      4 words
