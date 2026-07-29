@@ -47,11 +47,21 @@ still finds 872, 3.7s→0.16s at d500) and capped pipeline runs die at 872
 AND 873 — with the record's own trajectory having `len+lb_residual ≤ 872`
 at every step (zero slack to prune until the end), this PROVES the midgame
 ranking at levels ~60–450 is the sole remaining failure; capped beam from
-depth ≥450 is now a fast completion oracle for NRPA tails. NEXT = NRPA
-(`src/nrpa.rs`, sojourn move space, softmax policy, nesting 2–3,
-capped-beam/tablebase finish) + bandit → re-run C1 → M3 verdict; cheap
-closure probes queued: perfect-ride ATSP (closes all 616 S=120 live
-classes), §7 tour-merge. Track B downgraded-not-retired s20 (Vlad's preliminary
+depth ≥450 is now a fast completion oracle for NRPA tails; s25 landed NRPA
+(`src/nrpa.rs` + shared `Grammar` in sojourn.rs — one move generator for DFS
+and rollouts, M2 pin reproduced exactly; softmax policy over move features,
+waste prior, early-tail, record warm-start, `--collect`): n=5 control PASS
+(153 in 100 rollouts with prior=1), cold-start n=6 plateaus at 883 (no
+gradient across the s23 blocked zone, depth stalls ~85/450), record
+warm-start (reps 20, switch 500, w8000 tail, cap 872) **re-derives 872
+end-to-end at rollout 1, byte-identical to seed** — oracle-grade PASS for
+the policy pipeline; M3 (independent 872) OPEN: hunt design must be cap 874
++ collect ≤872 (cap-at-target starves the gradient — twice-measured), and
+the explored neighborhood so far completes 873/874 only. NEXT = neighborhood
+diversity (`--collect 873`), bandit over the 296 warm-start records,
+warm-depth curriculum, auto cross-check of collections vs the record corpus
+→ M3 verdict; cheap closure probes queued: perfect-ride ATSP (closes all 616
+S=120 live classes), §7 tour-merge. Track B downgraded-not-retired s20 (Vlad's preliminary
 a(6)=872 claim; n=6 window unconditionally still {869..872}); n=7 5905
 campaign survives (his conditional a(7) ≥ 5896 is δ≤11 vs our δ=21 bar);
 Track C v2 parked on the 2.4× scoring-overhead fix; farm and Mac idle
@@ -189,6 +199,13 @@ python3 analysis/trackb/record_to_seed.py data/records872/872.0053cad.txt 6 450 
 # T2 (s24) — composed scorer (best completion config, pipeline 874) + admissible cap (lossless; may report NO completion):
 cargo run --release -- beam -n 6 --width 8000 --seed-file f.tsv --bound residual --model ml/models/linear_n6_res_boot1.json --alpha 0.25
 cargo run --release -- beam -n 6 --width 8000 --seed-file seed.txt --bound residual --max-len 872
+# NRPA (s25, src/nrpa.rs) — nested policy adaptation over the sojourn grammar, capped-beam tail finish.
+# --prior biases rollouts toward cheap moves (essential); --early-tail completes in-grammar dead-ends with
+# the unconstrained tail beam (essential in the records class — without it every random rollout dies):
+cargo run --release -- nrpa -n 5 --class 60,10,0,0,10 --level 2 --iters 10 --switch-depth 40 --tail-width 1000 --prior 1   # control: finds 153
+# record warm-start hunt (s25 verdict config): cap 874 keeps the gradient alive, collect catches any <=872;
+# reps 20 re-derives the seed 872 at rollout 1 (cold start plateaus at 883 — don't bother without --warm-start):
+cargo run --release -- nrpa -n 6 --class 145,3,0,0,0 --records-profile --level 2 --iters 12 --switch-depth 500 --tail-width 8000 --max-len 874 --prior 3 --early-tail --warm-start data/records872/872.0053cad.txt --warm-reps 20 --collect 872 --seed 3
 
 # CURRENT BEST FROM SCRATCH — stratified learned beam, validated 873 (n=6), ~8 s (phase-3 item 1, JOURNAL s7):
 cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --alpha 1 --stratify --strat-quota 4 --strat-bucket 1

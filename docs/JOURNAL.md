@@ -6,6 +6,86 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (session 25) — NRPA built (`src/nrpa.rs` + shared `Grammar` in sojourn.rs): n=5 control PASS (153); cold-start n=6 plateaus at 883 (no gradient across the blocked zone); record warm-start (Track C §5) carries the policy to depth 500 and the full pipeline re-derives 872 END-TO-END (byte-identical to seed) — oracle-grade PASS for the policy machinery; independent-872 (M3) still open, neighborhood completes 873/874; two hard lessons: cap-at-target starves the gradient, and the completion U-curve maps s23's blocked zone from the policy side
+
+Build order continues (TRACKB-DESIGN §4 step 4a). All 112 tests green, clippy/fmt
+clean.
+
+**Built 1 — grammar extraction.** `sojourn.rs` now exposes `Grammar`
+(caps + profile + emergent-edge interiors; `root()` / `children()` /
+`feasible()`) — ONE move generator shared by the exhaustive DFS and the NRPA
+rollouts, no grammar divergence possible. The refactor is behavior-preserving:
+the M2 book-mode pin reproduces exactly (746,107 nodes, 13,527 classes, d=10
+E=16).
+
+**Built 2 — `src/nrpa.rs` + `nrpa` CLI.** Standard Rosin NRPA over the sojourn
+move space: softmax policy over three feature codes per move (species; door
+context = weight/exit-part/target-cycle residual+parts; exact `(cur, target)`
+identity), nesting `--level`, `--iters` per level, replay-based adapt (+α on
+chosen, −α·p on legal), deterministic under `--seed`. Rollouts hand off to the
+beam tail at `--switch-depth` visited perms (`beam_search_multi_seeded_capped`
+with `--tail-width`/`--max-len`/`--bound`/`--model`). Extras that turned out to
+be load-bearing: `--prior β` (logit −β·waste — ride-biased start), 
+`--early-tail` (in-grammar dead-ends complete via the unconstrained tail
+instead of scoring dead), `--warm-start <record>` ×N `--warm-reps` (policy
+pre-adapted toward known-record move sequences — the Track C §5 "NRPA policy
+initialization" deployment point), `--collect L` (all distinct completions
+≤ L, not just the best). Depth telemetry (min/mean/max visited perms at
+hand-off/death) is printed every run — it is the cheapest view of whether the
+policy is actually learning.
+
+**Controls.** n=4: level 2 × 10 iters finds 33; cap 32 honestly kills all
+rollouts (pinned tests). n=5 control PASS: prior=1, level 2 × 10 (100
+rollouts, 8 s) finds validated 153; without the prior the same budget
+plateaus at ~193 and 153 needs 512+ rollouts. Grammar validation for free:
+a known 872's first-visit path replays **449/449 and 499/499 moves
+in-grammar** — the records really live in this grammar at depth 500 (T0
+corroborated at the move level).
+
+**n=6 cold start is a dead end (kept as a negative result).** Three configs
+(l2×30 prior 3, l3×10 prior 3, l2×30 prior 2; early-tail, w250 tail, cap
+895): ALL plateau at **883**, found within the first ~2 rollouts and never
+improved across 900+; hand-off depth stalls at mean ~85 (max 211) of 450.
+Diagnosis: from depths 60–160 every prefix completes to ~883 (the s23
+ceiling family), so the raw length signal cannot pull the policy deeper —
+and the levels it must cross (~60–450) are exactly s23's
+completion-blocked zone.
+
+**Warm-start changes the game.** Single record (872.0053cad), prior 3:
+reps 3 → depth mean 232/max 358 but best **890** — mid-depth hand-offs
+complete WORSE than shallow ones (the completion U-curve: 883 from ~85,
+890 from ~232, 872 from 500 — s23's blocked zone re-measured from the
+policy side). reps 10 → mean 325, one rollout reaches 450, best **874**.
+reps 20 + switch 500 + w8000 tail + cap 872: **872 at rollout 1, 0.2 s,
+validated — byte-identical to the seed record.** The full policy → grammar
+→ capped-tail pipeline re-derives a record end-to-end (the s23 oracle pass,
+now through NRPA machinery instead of a copied prefix).
+
+**Gradient lesson, learned twice.** Hunts with cap 872 + weaker warm-start
+(reps 5/10, level 2): 0 live rollouts in 180 (~10 s per death), zero
+adaptation signal — a cap at exactly the target starves NRPA (the n=4 test
+pins the same effect). Correct hunt design: **cap 874 for gradient, collect
+at ≤872.** With that (reps 20/15, l2×12, seeds 3/4): 43 and 28 live
+rollouts, both runs re-find 872 — but the collection contains ONLY the seed
+record; the explored neighborhood completes at 873/874. **M3 (independent
+872) remains open.**
+
+**Next session, concretely:**
+- Measure neighborhood diversity first: `--collect 873` — how many DISTINCT
+  873s does one warm-started run produce? If many, the 872 shell is thin but
+  reachable; if the collection is also seed-dominated, exploration radius is
+  the binding constraint (then: adapt-alpha/temperature sweeps, higher
+  nesting, lower reps with cap 874 which is now safe).
+- Loop over records: warm-start from each of the 296 (or several per run),
+  seeds × records — TRACKB §4 step 3's bandit over exemplars, with reward =
+  collection growth, not best length.
+- Warm-depth curriculum: shrink `--warm-depth` (500 → 450 → 400 …) so the
+  policy must OWN progressively more of the blocked zone instead of riding
+  the record; watch the depth telemetry for where it breaks.
+- The collector should also cross-check against `data/records872/` +
+  `data/gain1_872s/` automatically and flag any byte-distinct ≤872 loudly
+  (M3 verdict criteria unchanged: validated, byte-distinct from all 296).
+
 ## 2026-07-29 (session 24) — T2 built (`Scorer::Composed` + admissible `--max-len` cap): composition is the first learned-signal WIN on completion (pipeline 879 → 874, robust plateau); cap proven sound + big speedups on viable searches; capped runs then PROVE the midgame ranking is the sole remaining failure — 872 needs a policy, not width; NRPA is next with three measured motivations
 
 Build order continues; this session landed T2 in two pieces plus the verdict

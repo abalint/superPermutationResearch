@@ -58,6 +58,7 @@ pub mod graph;
 pub mod greedy;
 pub mod lb_residual;
 pub mod model;
+pub mod nrpa;
 pub mod rollout;
 pub mod sojourn;
 pub mod trace;
