@@ -6,6 +6,67 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (field news, no code) — Kristan: a record-TYING 5906 at n=7 that visits one permutation twice; the repeat is a fully CLOSED 1-cycle, i.e. an optimum outside the simple-path class our search assumes
+
+**Source.** Private email from Tomaž Kristan (2026-07-29 06:28), body just "All in
+the zip file included" + a link. The zip never arrived; the material is published
+on his site anyway (one-page JS app — click the "SuperPermutation 7" sidebar
+entry, nothing renders without the click, so a plain fetch shows only a topic
+index). Full writeup, provenance and translation in
+`../extraDocs/2026-07-29-tomaz-kristan-5906-repeat.md`; string in
+`../extraDocs/tk-5906-repeat.txt`; `../extraDocs/verify_tk5906.py` reproduces
+every number and exits 0.
+
+**Verified ours, independently.** Length 5906, covers **5040/5040** permutations,
+**5041** permutation windows in 5900 total, `7324615` appears **exactly twice**,
+non-palindromic. Weight histogram `{1: 4198, 2: 825, 3: 17}`, 5040 transitions
+summing to 5899. Valid superpermutation; **ties** the 2014 record, does not beat it.
+
+**The mechanism (not stated on his page — this is the finding).** The two
+occurrences of `7324615` are 7 apart and the seven transitions between them are
+*all weight 1*, visiting exactly the seven cyclic rotations of `7324615`, entered
+and left by weight-2 edges. The walk enters a 1-cycle and **traverses it
+completely, closing back to its entry vertex** — 7 weight-1 edges where the
+standard construction spends 6 and exits from the last vertex. The closure costs
+exactly 1 character and is repaid elsewhere: vs our own
+`analysis/cover7/recompiled_5906.txt` the profile differs by **+2 weight-1, −1
+weight-2** — length-neutral (4198 + 2·825 + 3·17 = 4196 + 2·826 + 3·17 = 5899).
+
+**Why it lands on us.** Beam, the certificate grammar and cover7 all model n=7 as
+a walk hitting each permutation **at most once** — a revisit is forbidden by
+construction. This is an existence proof that a *record-tying* solution lives
+outside the simple-path class. Open (not argued either way here): whether
+relaxing the restriction can go *below* the simple-path optimum. Note the usual
+shortcut argument does **not** apply — it deletes a repeated-vertex loop only when
+the loop's other vertices are covered elsewhere, and here the loop is exactly what
+covers the other six rotations. Second consequence: a fully-closed 1-cycle is a
+loop type distinct from the 6-of-7 open traversal; if the certificate vocabulary
+can't express it, it can't express this string.
+
+**Corpus check DONE (same day) — both of his uniqueness claims hold against the
+published 5906 corpus.** All 83 published 5906s
+(github.com/superpermutators/superperm, `superpermutations/7/7_5906/`) verified:
+**zero repeated vertices in any of them**, and every one has the two-fold
+symmetry (reversal ∘ relabeling) that its search *imposed* — per the corpus
+Readme all 83 came from PermutationChains seeded with palindromic kernels under
+`fullSymm`. Kristan's string has **no** such symmetry (all 5040 relabelings ×
+reversal tested) and is **not equivalent to any of the 83** under relabeling or
+reversal — genuinely new, and an existence proof that the 5906 space extends
+beyond the symmetric subspace (the corpus's symmetry is a search artifact).
+Correction to an earlier draft of this entry: `recompiled_5906.txt` is NOT a
+counterexample to "only non-palindromic" — it fails only the naive
+digit-complement test, is fixed by reversal + relabeling `1234567→5264137`, and
+is equivalent to a published solution (kernel `666466646646664666`).
+Reproduce: `extraDocs/check_corpus_5906.py` (exits 0; downloads the corpus).
+
+**Method withheld, deliberately.** He's hunting the record ("if he manages to get
+under 5906 characters, you'll be the first to see it") and this looks like a
+byproduct. **Don't press him.** If he volunteers: what produced it, was the repeat
+targeted or found after the fact, does his encoding permit revisits *generally*,
+and how many of his 5906s carry one.
+
+---
+
 ## 2026-07-29 (session 21) — Track B DESIGNED: opening-first sojourn-level search (`docs/TRACKB-DESIGN.md`); solved-game survey reframed the whole attack around the proven "decided in the opening" theorems; no code, no runs
 
 **Session shape.** Started as a survey: which *solved* games are better analogs

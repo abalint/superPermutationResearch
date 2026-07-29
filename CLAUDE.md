@@ -93,7 +93,13 @@ words, 299/299 — all 296 known 872s occupy the single cell (0,5,25,0), and his
 B=4/x=0 is our 575/141/3 weight multiset**; n=6 window unconditionally still
 {869..872} so **Track B is downgraded, not retired**; his conditional a(7) ≥ 5896
 is δ≤11 vs our δ=21 target, so **5905 survives** — watch whether n=7 pushes past
-δ≈21; tool `analysis/counting/coords_a6_872_frame.py`).
+δ≈21; tool `analysis/counting/coords_a6_872_frame.py`), and
+`../extraDocs/2026-07-29-tomaz-kristan-5906-repeat.md` (Kristan: record-TYING
+5906 at n=7 that **visits one permutation twice** — a fully CLOSED 1-cycle,
+length-neutral; the only known non-symmetric 5906, not equivalent to any of the
+83 published ones, i.e. an optimum-tying walk OUTSIDE the simple-path class that
+beam/grammar/cover7 all assume; verify: `../extraDocs/verify_tk5906.py` +
+`../extraDocs/check_corpus_5906.py`, both exit 0).
 
 **Live compute (check this first if picking up cold):** a remote 28-core Windows
 PC (`ssh transcribe`) hosts the n=7 refutation farm — **currently IDLE**, pass 1
