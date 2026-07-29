@@ -10,9 +10,12 @@ planned learned value function.
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
-   `docs/TRACKB-DESIGN.md` (s21): the next implementation.** Its §9 is the build
-   order; ARCHITECTURE.md's "Track B implementation map" says where each task
-   lands in the code.
+   `docs/RECOMB-DESIGN.md` (s26, read §8 outcomes + §8.4a recalibration FIRST)
+   for what just closed, and `docs/TRACKB-DESIGN.md` for the underlying Track B
+   frame (its M3/§7 carry s26 corrections inline).** The s27 front is defined
+   by JOURNAL s26c "Consequences queued": per-allocation grammar + cross-class
+   door pricing from the 918 non-records specimens. ARCHITECTURE.md's "Track B
+   implementation map" says where each task lands in the code.
 4. `docs/ARCHITECTURE.md` — code map: modules, data structures, extension points.
 5. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 

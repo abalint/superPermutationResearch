@@ -43,7 +43,8 @@
       via prefix depth 350 + learned endgame; sharp cliff at 350/719, no endgame
       deviation ever saves a character (JOURNAL s6)
 - [x] Record autopsy tooling + analysis (`trace`, `beam --cutoff-log`): 100 community
-      872s traced; all share the 575/141/3 weight signature; every record path is
+      872s traced; all share the 575/141/3 weight signature (s26c: sample-scoped —
+      the full 22,062-class corpus has 8 signatures; JOURNAL s26c); every record path is
       pruned by level ~62–118 and excluded mid-walk by up to ~68 chars; k/intact
       features actively penalize record midgames (JOURNAL s5)
 
@@ -145,7 +146,8 @@ compute class (~10¹⁵× the 2019 distributed effort) — everything below is t
        at r=20 completes to ≥ 873; the unstratified boot1 frontier to ≥ 874 (the
        873/874 difference is decided before level 700); greedy's/stratified's/
        seeded's 873s and the record 872 all have provably optimal last-25 tails;
-       all 296 known 872s have optimal last-20 tails (no hidden sub-872). Use going
+       all 296 sample 872s have optimal last-20 tails (no hidden sub-872; s26c:
+       the full 22,062-class corpus has NOT had this tail check — queued). Use going
        forward: item 5's searcher should call the tablebase as its terminal solver
        (once ≤ ~20 remain, finish optimally, no search); a DFS branch-and-bound
        completion prover could push theorem depth past m=25 without 2^m RAM if ever
@@ -170,8 +172,16 @@ compute class (~10¹⁵× the 2019 distributed effort) — everything below is t
        isolated to midgame ranking; s25: NRPA over the shared sojourn
        `Grammar` built — n=5 control PASS, cold start plateaus 883,
        record-warm-started policy re-derives a known 872 END-TO-END;
-       M3 = independent ≤872 still open, next via neighborhood diversity +
-       record bandit + warm-depth curriculum); **Track C** — the thesis: learned evaluator over partial
+       M3 = independent ≤872 still open; s26 built structural recombination
+       — splice closure exact, union DFS + strand prune, both CLOSED as
+       discovery instruments (RECOMB-DESIGN §8); s26b/c recalibrated the
+       whole corpus picture: 22,062 known classes, 8 specimen-backed L0
+       allocations, 8 Vlad cells, 545 split profiles — the records class
+       every Track B verdict targets is 95.8% of reality, and 918
+       out-of-class specimens now exist for cross-class surgery. Next:
+       per-allocation grammar (caps+profile as census data), door pricing
+       from the 918, union-restricted beam, warm-depth curriculum;
+       M3 judged vs the 22,062 classes up to relabel+reversal); **Track C** — the thesis: learned evaluator over partial
        certificates/sojourn plans (records as labeled data), deployed where
        Tracks A/B explode. **v1 built and gated s17** (`docs/TRACKC-DESIGN.md`,
        `analysis/trackc/RESULTS-s17.md`): corpus 310 certs / 21,423 pairs,

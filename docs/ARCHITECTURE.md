@@ -147,6 +147,31 @@ bitset ──→ no crate deps
   cold start plateaus at 883, warm start re-derives 872), `collect_max` (all
   distinct completions ≤ L). Deterministic per `seed` (`StdRng`); depth
   telemetry (min/mean/max hand-off depth) in every result.
+- **`src/corpus.rs`** — record corpus loading (s26, RECOMB-DESIGN §3):
+  `load_corpus(&Graph, &[&Path]) -> Result<Vec<CorpusRecord { name, string,
+  trace }>, String>`. Deterministic (sorted per-dir), skips non-record files,
+  HARD-ERRORS on untight/incomplete records, dedups byte-identical strings.
+  Shared by `recomb` and `unionsearch`.
+- **`src/recomb.rs`** — record-pair splice closure (s26, RECOMB-DESIGN §4):
+  `Braid::build(&Graph, &[CorpusRecord])` glues all record paths into the
+  braid state-DAG (node = (visited BitSet, cur), edge = record step, layered
+  by popcount); `braid.probe(corpus, max_walks) -> BraidResult` counts
+  root→terminal paths (u128, overflow = error), enumerates the closure when
+  small, validates + dedups hybrids, and reports junction histograms +
+  segment provenance. Scales: 22,062 walks → 10M states in 16 s. Also
+  `fnv1a64` (stable hash for emitted file names). s26b verdict: the
+  community corpus is splice-closed up to relabel+reversal.
+- **`src/unionsearch.rs`** — exhaustive DFS inside the corpus edge union
+  (s26, RECOMB-DESIGN §5/§8.2): `UnionSearch::new(&Graph, corpus, UnionCfg
+  { cap, bound, tt, tt_max, free, free_w, max_nodes }).run() -> UnionResult`.
+  Own undo-based state (trail + `BitSet::clear`; mirrors `Walk::advance`'s
+  residual-term rules incrementally), usage-ordered adjacency, `--tt`
+  decision mode (exact keys; sound for existence/optimality only), `--free`
+  off-union credits, and the STRAND prune (`live_in[q]` = unvisited union
+  in-neighbours; lossless — records never strand; 2× the bound's prune rate,
+  6× throughput). Honest COMPLETE/TRUNCATED verdicts. Measured s26: union
+  enumeration is intractable even for 2-record unions; TT fires zero times
+  at n=6 — leave it off.
 - **`src/trace.rs`** — trajectory extraction from existing superpermutation strings
   (e.g. community records): `extract_path(n, s)` (first-visit rank order via a sliding
   window), `trace_string(&Graph, s) -> Trace { path, weights, input_len, replay_len,
@@ -158,8 +183,8 @@ bitset ──→ no crate deps
   total, complete }`. Sliding-window checker; the only accepted proof that a string is
   a superpermutation.
 - **`src/main.rs`** — clap CLI (`struct Cli`, `enum Cmd`): subcommands `info`, `atlas`,
-  `sojourn-dfs`, `nrpa`, `greedy`, `beam`, `beam2`, `trace`, `endgame`,
-  `rollouts`, `cert-verify`, `validate`.
+  `sojourn-dfs`, `nrpa`, `recomb`, `union-dfs`, `greedy`, `beam`, `beam2`,
+  `trace`, `endgame`, `rollouts`, `cert-verify`, `validate`.
 
 ## Core data structures
 
@@ -481,6 +506,23 @@ module, do NOT patch `beam_search`.
   greedy prefix is bit-identical to `--seed-prefix` (pinned).
   `analysis/trackb/record_to_seed.py` converts any superperm string into
   seed lines (relabeled first-visit rank path).
+- **Structural recombination — BUILT AND CLOSED s26** (`src/corpus.rs`,
+  `src/recomb.rs`, `src/unionsearch.rs`; see the module list above and
+  RECOMB-DESIGN §8): splice closure delivered exactly (+2 hybrids — s26b:
+  both rediscoveries, byte-identical to community strings); union DFS built
+  with the strand prune but enumeration/decision both bound-blocked. The
+  probes are CLOSED as discovery instruments; `recomb` re-runs on corpus
+  growth, and `Braid`/`load_corpus` are reusable substrate.
+- **s26c recalibration (affects every row above):** the community corpus is
+  22,062 relabel+reversal classes (`data/upstream872/`, gitignored archive;
+  census tools `analysis/counting/upstream872_*.py`). Exactly 8
+  specimen-backed L0 allocations (records class = 95.8%; w4-bearing 872s
+  exist, S down to 135), 8 Vlad cells (1:1), 545 split profiles, split
+  types `1|5`/`5|1` observed. `ClassCaps`/`SplitProfile::records_n6` and
+  every grammar-scoped verdict (M2, C1, NRPA) cover ONLY the records
+  class; s27 direction: per-allocation caps + profiles as data from the
+  census TSV, cross-class door pricing from the 918 non-records specimens.
+  M3 independence is judged vs the 22,062 classes up to equivalence.
 - **Gates before any 871 hunting** (TRACKB-DESIGN §6): C1 — re-find a validated
   872 from the records' own class (S=145, #w3=3, 25 splits); C2 — the n=5
   pipeline still finds 153 (hard invariant); M2 — d=10 canonical exhaustion of

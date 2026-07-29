@@ -1,12 +1,16 @@
 # Structural recombination (s26) — record-pair splicing + corpus-edge union search
 
-**Status (2026-07-29, s26): BUILT AND MEASURED — see §8 for outcomes. R1
-(splice closure) delivered exactly: 298 walks, +2 hybrid 872s
-(`data/hybrids872/`). R3 (union DFS) built with a union-specific lossless
-strand prune, but full enumeration is INTRACTABLE even for 2-record
-sub-corpora (§8.2) — the tool's supported claims are single-record controls,
-truncated hunts, and (if it completes) the cap-871 decision. This is the M3
-front after the s25 discriminator verdict.**
+**Status (2026-07-29, s26–s26c): BUILT, MEASURED, AND CLOSED as discovery
+instruments — read §8 (outcomes) and §8.4a (s26b/c recalibration) before
+citing anything in §§1–7. R1 splice closure delivered exactly (+2 hybrids —
+later found byte-identical to known community strings; the community corpus
+is splice-closed up to symmetry). R3 union DFS built (strand prune, honest
+verdicts) but enumeration AND the cap-871 decision are bound-blocked. The
+s26b/c publish check re-founded the corpus picture: 22,062 known classes, 8
+specimen-backed L0 allocations, 8 Vlad cells, 545 split profiles — see
+JOURNAL s26b/s26c. The machinery (corpus.rs, Braid, union-dfs) remains live
+substrate; the s27 front is per-allocation grammar + cross-class door
+pricing.**
 
 ## 1. Why this, why now
 
