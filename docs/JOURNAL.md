@@ -6,6 +6,64 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (session 26b) — The publish check DEBUNKS the hybrids and recalibrates the whole corpus picture: the two s26 hybrids are BYTE-IDENTICAL to strings in the community corpus (rediscoveries — no PR); the true known-872 universe is **50,009 strings / 22,062 relabel+reversal classes** (our 296 was a 1.3% sample, 290 classes, all ⊂ upstream); the "universal 575/141/3 multiset" is a SAMPLE ARTIFACT — upstream has **8 multisets including w4-bearing 872s** (918 classes outside the records class); and the community corpus is **SPLICE-CLOSED up to symmetry** (full 22,062-walk braid: 22,066 paths, 5 new walks, all equivalent to known)
+
+Andrew asked to publish the two s26 hybrids / PR them to the community
+corpus. Verification gates before publishing (equivalence = symbol
+relabeling + reversal; canonical form = min of first-occurrence renumbering
+of the string and its reversal) produced a cascade of findings that matter
+far more than the hybrids:
+
+**1 — The hybrids are rediscoveries.** Both are byte-identical (not merely
+equivalent) to strings in `superpermutations/6/872-treelike.txt.gz` of
+github.com/superpermutators/superperm. No PR. `data/hybrids872/NOTE.md`
+records the correction; README/CLAUDE/RECOMB-DESIGN corrected in place.
+
+**2 — Our corpus was a 1.3% sample.** Upstream n=6 holdings: 50,009 872
+strings = **22,062 equivalence classes** (1,682 + 4,208 individual files,
+plus bulk collections; the treelike family dominates). Our local 296
+strings collapse to 290 classes (6 internal equivalent pairs we never
+noticed), all present upstream. Nothing we hold is unknown.
+
+**3 — The records class is NOT the whole story (major Track B
+recalibration).** Weight-multiset census over all 22,062 classes: **8
+distinct multisets**, not 1 — (575,141,3) covers 21,144 classes (95.8%),
+then (577,137,5): 470, (580,132,6,**1 w4**): 388, (578,135,6): 19,
+(585,123,9,**2 w4**): 18, (580,131,8): 10, (582,128,8,**1 w4**): 9,
+(579,133,7): 4. Every s19/s20/s25 statement of the form "all known 872s
+share one weight multiset / one coordinate cell" was calibrated on the
+biased 296-sample. 918 classes (4.2%) live in OTHER L0 allocations —
+including w4 doors, impossible in the records class 145,3,0,0,0 that ALL
+Track B machinery (L2 DFS, NRPA grammar, s23–s25 verdicts) targets.
+Specimen-backed allocations now exist beyond the records class. Queued
+re-checks: Vlad-frame cell census over the 22k classes (the 299/299
+single-cell result is now suspect as sample bias), L0 ledger live-shell
+against 8 multisets, discriminator re-read.
+
+**4 — The community corpus is splice-closed (the splice instrument is
+EXHAUSTED).** Braid over all 22,062 class representatives
+(forward-renumbered, identity-start): 10.03M states, 10.06M edges, 12
+terminal states, ~22k junctions (depth profile now reaches 500–599: 15
+junctions). Closure path count: **22,066** — five new walks, and all five
+are equivalent (relabel+reversal) to known strings. Splicing cannot
+produce anything new to the community at any scale. Clean negative;
+consistent with the thin-shell picture, now measured on the full corpus.
+
+Assets: `analysis/counting/upstream872_dump.py` (upstream → one
+forward-renumbered representative per class; needs the sparse clone),
+`analysis/counting/upstream872_census.py` (equivalence classes, multiset
+census, novelty checks), `data/upstream872/` (gitignored local archive,
+22,062 files). The braid handled the 22k-walk corpus in 16 s / 10M states
+— the s26 machinery scales.
+
+**Next (updated by this session):** re-scope Track B claims against the
+full corpus (Vlad cell census, L0 ledger, which of the 8 multisets the
+871-capable waste-146 classes neighbor); union-restricted beam and
+cross-class surgery design now have 918 out-of-records-class SPECIMENS to
+learn from instead of zero.
+
+---
+
 ## 2026-07-29 (session 26) — Structural recombination built and measured (docs/RECOMB-DESIGN.md; `src/corpus.rs` + `src/recomb.rs` + `src/unionsearch.rs`): the splice closure of all 296 known 872s is EXACTLY 298 walks — **+2 new hybrid 872s** (known-872 corpus now 298), both crossings of ONE record pair at the braid's only midgame junction; record diversity is an opening phenomenon (293/296 junctions before depth 200, none after 500, one common terminal state); union-edge DFS built with a lossless union-specific STRAND prune (6× throughput, 4.3M nodes/s) — but union enumeration is INTRACTABLE even for a 2-record sub-corpus (the s23/s24 blocked zone measured a third way); the cap-871 decision run is ALSO bound-blocked (TRUNCATED at 200M nodes / 29 s, 0 completions — no lemma); near-miss splice repair KILLED by measurement before any code was written
 
 Design-first session (Andrew's directive: design before implementation). The

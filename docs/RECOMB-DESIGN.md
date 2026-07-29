@@ -281,6 +281,27 @@ proven residual+endgame beam) instead of DFS; width sidesteps the
 shallowest-divergence-last pathology. That, and cross-class surgery (§1(c)),
 are the s27 candidates.
 
+### 8.4a s26b upstream calibration (same day) — READ THIS BEFORE CITING §8.1
+
+The publish check (JOURNAL s26b) against the community corpus
+(superpermutators/superperm, `superpermutations/6/`) recalibrates
+everything above:
+
+- **The two §8.1 hybrids are byte-identical to known upstream strings**
+  (`872-treelike.txt.gz`) — rediscoveries. `data/hybrids872/NOTE.md`.
+- The known-872 universe is **50,009 strings / 22,062 relabel+reversal
+  classes**, not 296; our local sample is 290 classes, all ⊂ upstream.
+- The "universal 575/141/3 multiset" was a sample artifact: upstream has
+  **8 multisets**, including w4-bearing 872s — 918 classes (4.2%) live
+  outside the records class that all Track B machinery targets.
+- The full-corpus braid (22,062 walks): 10.03M states, 22,066 closure
+  paths, **5 new walks, all equivalent to known strings** — the community
+  corpus is SPLICE-CLOSED up to symmetry. The splice instrument is
+  exhausted at community scale.
+- Tools: `analysis/counting/upstream872_dump.py` + `upstream872_census.py`;
+  local archive of class representatives at `data/upstream872/`
+  (gitignored, 22,062 files, forward-renumbered, identity-start).
+
 ### 8.4 Anti-goal updates
 
 - The naive C-U1 smoke ("re-find a record within a small budget") was
