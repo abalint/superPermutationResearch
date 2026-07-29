@@ -49,7 +49,7 @@ to ≥ 873 (unstratified ≥ 874; n=7 ≥ 5913), and every known record (296 × 
 3 × 5907s) plus all our 873s have provably optimal tails. The missing character is
 won strictly before the last ~25 perms ⇒ all weight on **item 5** (cycle-level
 moves; weave as a move, kernel as a parameter — Robin's thread reply + 5906
-boundary fact; tablebase becomes the terminal solver). Expert corpus: 298 distinct
+boundary fact; tablebase becomes the terminal solver). Expert corpus: 296 distinct
 872s (`data/records872/` + `data/gain1_872s/`), Chaffin prefixes in
 `data/chaffin/`, field news in `../extraDocs/2026-07-27-urdvr-email-and-repo.md`
 `../extraDocs/2026-07-28-urdvr-lean-lower-bound.md` (Lean-formalized LB:
