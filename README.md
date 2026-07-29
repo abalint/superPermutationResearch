@@ -23,6 +23,16 @@ the full framing and [docs/ROADMAP.md](docs/ROADMAP.md) for the phased plan.
 
 ## Status
 
+**Latest (session 19, 2026-07-28):** Track C v2 (learned DLX column choice) built and
+fully gated in one day — the mechanism is proven (1.50× median node reduction on
+held-out refutation chains; learned *row* order provably cannot shrink these trees),
+deployment is blocked on a 2.4× feature-scoring overhead (wall-clock NO-GO as-is; fix
+targeted next). Side results: a new admissible residual bound (`--bound residual`)
+improves the hand-bound stratified beam **902 → 894** at equal width with 10,400
+tablebase-verified admissibility samples and an optimality theorem for the old arc
+bound; field lower bounds moved to **S(6) ≥ 869 / S(7) ≥ 5888** (urdvr/Hunter, Lean).
+Full story: `docs/JOURNAL.md` s19, `analysis/trackc/RESULTS-s19.md`.
+
 **Phases 1–2 complete; phase 3 underway (items 1–4 done)** — Rust search core:
 overlap graph, greedy baseline, beam search with selectable admissible bounds, a
 learned scorer, and per-structural-class width reservation (`--stratify`), a

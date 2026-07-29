@@ -12,24 +12,38 @@ planned learned value function.
 3. `docs/ARCHITECTURE.md` — code map: modules, data structures, where phase-2 plugs in.
 4. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 
-Current state in one line: **phase 3 underway, items 1–4 done, item 5 step 2
-proven out at n=6; the n=7 refutation census is COMPLETE at pass-1 budgets —
-85/223 chains closed, 138 open, both engine families exhausted, farm and Mac
-idle (JOURNAL s17b + s18; `docs/ITEM5-DESIGN.md`, `analysis/cover7/REMOTE-FARM.md`)**
+Current state in one line: **phase 3 underway; n=7 census 85/223 closed / 138
+open (both engine families exhausted at pass-1 budgets); Track C v2 built and
+gated s19 — mechanism proven, wall-clock NO-GO on 2.4× scoring overhead (fix
+first, then re-gate); new admissible `--bound residual` (beam 902→894);
+bounds windows moved by urdvr Lean results: n=6 {869..872}, n=7 [5888,5906];
+farm and Mac idle (JOURNAL s19 is the handoff)**
 — headline: **Egan−1 = 872 is optimal in the gain-one certificate grammar at n=6**
 (skip-priced ledger waste = 148 − K/4 + Σskip/4 + f4 + 2f5; forced-map period 4;
 absolute pivot confinement; max V = 8, all 12 optimal chains fail the cover —
 exhaustive proofs). Sub-872 must leave the grammar. Next: **Track A** (n=7 max-V₇
 campaign — V₇ ≥ 15 + cover beats 5906), **Track B** (sojourn-level out-of-grammar
 search at n=6), **Track C** (learned partial-certificate evaluator — the thesis).
-**Track C v2 GATED s19** (`docs/TRACKC2-DESIGN.md`, `analysis/trackc/RESULTS-s19.md`,
+**Track C v2 COMPLETE s19** (`docs/TRACKC2-DESIGN.md`, `analysis/trackc/RESULTS-s19.md`,
 `analysis/trackc/WORKFLOW-V2.md`, `docs/OPERATIONS.md`): learned COLUMN choice built,
-parity byte-clean, **G2v2 formal GO (median 1.50× at Δ=0, no >2× blowup)** — but the
-mechanism is K-class canonicalization (guided node counts collapse to K-typical
-values), so deployment is PORTFOLIO mode (blind ∥ guided-Δ0, first exhaust wins;
-worst case 1.0× by construction); pw1 Δ=1 finds the n6std cover in **77 nodes** vs
-21,627 blind (SAT-side lead for G1, untested at n=7); farm PC needs manual reboot
-(sweep-1 65/162, resumable; gen2 pairwise sweep fully staged — see JOURNAL s19).
+parity byte-clean, G2v2 formal GO in nodes (median 1.50× at Δ=0) — but the **final
+verdict is wall-clock NO-GO as deployed**: feature scoring costs 2.4–2.6× per node
+(solo probe 495k→208k nodes/s), so the node win nets ~0.6× in wall time. Mechanism
+PROVEN (column choice shrinks exhaustion trees — impossible for rows), deployment
+blocked on overhead; G1/G1b/G3 all negative (no covers at n=7, 0/6 trial closures;
+the pw1 Δ=1 n6std 77-node cover did not transfer). What the model learns is K-class
+CANONICALIZATION, not per-instance insight — confirmed at 53-chain diversity (pw2 ≈
+pw1, cos .9996; equal-size tie-break acc stuck at .52; a separate tie-break head is
+worth ~4pp, optional). Models: `ml/models/trackc2_pw1` (deployed), pw2/reg2
+(artifacts). Farm corpora home at `analysis/trackc/runs/v2/farm/` (6M pairs,
+9M records, 53 chains). **Next lever, in order: cut the 2.4× scoring overhead
+(target ≤1.2×), then re-gate G2v2 in WALL-CLOCK, then portfolio pass-2 over the
+138 open chains.** Side result s19: `--bound residual` (docs/RESIDUAL-BOUND-DESIGN.md)
+— new admissible bound, arc-bound optimality theorem, door terms proven, 10,400
+tablebase states 0 violations, hand-bound stratified beam **902→894**; the Hunter
+q_k root strength is proven NON-localizable; `--bound` and `--model` do not compose
+yet. Counting calibration in `analysis/counting/` (local rules cap at L =
+n+n!+(n−1)!−2 exactly; all 296 known 872s share one weight multiset 575/141/3).
 **Track C v1 landed s17** (`docs/TRACKC-DESIGN.md`, `analysis/trackc/RESULTS-s17.md`):
 guided DLX row ordering works in principle (22× on n=6, real cross-n transfer) but
 NO-GO on the n=7 cover gates at 60 min; v2 lever = learned column choice. Side
@@ -64,8 +78,12 @@ candidate DLX pruning rule in `StandardKernelHighMissingObstruction.lean`).
 
 **Live compute (check this first if picking up cold):** a remote 28-core Windows
 PC (`ssh transcribe`) hosts the n=7 refutation farm — **currently IDLE**, pass 1
-complete. Operating runbook: `analysis/cover7/REMOTE-FARM.md`; scripts:
-`analysis/farm/`. Status in one line:
+complete, and the s19 Track C v2 generation sweeps (trackc2 sweep-1 162/162 +
+gen2 165/165) are DONE with corpora shipped home; farm ops conventions and
+hard-won lessons (OOM wedge, PID recycling, detached-stdout loss) are in
+`docs/OPERATIONS.md` — read it BEFORE launching anything. Operating runbook:
+`analysis/cover7/REMOTE-FARM.md`; scripts: `analysis/farm/` (trackc2 =
+`tc2*.ps1`, status `tc2status.ps1` / `tc2status2.ps1`). Legacy status one-liner:
 `ssh transcribe "powershell -NoProfile -ExecutionPolicy Bypass -File F:\superpermFarm\satstatus.ps1"`
 (`status.ps1` is the retired PermutationChains-era reporter).
 **Pass 1 is COMPLETE (s18): 223/223 chains attempted, 41 unconditionally

@@ -1,6 +1,10 @@
 # Track C v2 design — learned COLUMN choice + dead-end mining in the DLX rooted-cover search
 
-Status: opened session 19 (2026-07-28). Build spec; deviations must be recorded here.
+Status: opened AND closed session 19 (2026-07-28). Build spec; deviations
+recorded inline. **Final gate outcomes: `analysis/trackc/RESULTS-s19.md`** —
+G2v2 GO in nodes (1.50× median, Δ=0) via K-class canonicalization; wall-clock
+NO-GO as deployed (2.4–2.6× scoring overhead); G1/G1b/G3 negative. Next
+lever: overhead reduction, then re-gate in WALL-CLOCK (JOURNAL s19).
 Prereqs: `docs/TRACKC-DESIGN.md` (v1, row ordering), `analysis/trackc/RESULTS-s17.md`
 (v1 verdict). The load-bearing v1 facts: (a) with the column rule fixed at MRV, row
 order only permutes the DFS — the exhaustion tree is the identical node set (G2,
