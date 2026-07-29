@@ -6,7 +6,7 @@ mechanism — read it before touching code.
 
 ---
 
-## 2026-07-29 (field news, no code) — Kristan: a record-TYING 5906 at n=7 that visits one permutation twice; the repeat is a fully CLOSED 1-cycle, i.e. an optimum outside the simple-path class our search assumes
+## 2026-07-29 (field news, no code) — Kristan: a record-TYING 5906 at n=7 that visits one permutation twice; RESOLVED same day — the repeat is bookkeeping (byte-identical to a simple-path reading), simple-path pruning is provably lossless; the string is still genuinely new (only known non-symmetric 5906)
 
 **Source.** Private email from Tomaž Kristan (2026-07-29 06:28), body just "All in
 the zip file included" + a link. The zip never arrived; the material is published
@@ -58,6 +58,31 @@ counterexample to "only non-palindromic" — it fails only the naive
 digit-complement test, is fixed by reversal + relabeling `1234567→5264137`, and
 is equivalent to a published solution (kernel `666466646646664666`).
 Reproduce: `extraDocs/check_corpus_5906.py` (exits 0; downloads the corpus).
+
+**CORRECTION (same day, later) — the "outside the simple-path class" claim
+above is WRONG; the repeat is bookkeeping, not structure.** Deleting the second
+`7324615` visit from the walk and rebuilding with minimal appends gives a
+string **byte-identical** to the original: the weight-3 edge `5732461 →
+2461537` appends `537`, whose interior window re-spells `7324615` on its own.
+The same 5906 string therefore decomposes BOTH as the 5041-visit walk above AND
+as a simple path over first occurrences (5040 distinct visits, gaps `{1: 4197,
+2: 824, 3: 18}`, sum+7 = 5906). General fact worth recording: **every superperm
+string is a simple walk over its first-occurrence windows** (consecutive first
+occurrences at gap g overlap in ≥ 7−g chars, so edge weight ≤ g), hence the
+minimum over all strings is attained by simple paths and **the sub-5906
+question flagged above is CLOSED: revisits can never be required.** No change
+to beam / grammar / cover7 pruning is warranted. The string is even reachable
+by our own beam in principle — the `537` append is the canonical weight-3 move
+from `5732461` to then-unvisited `2461537`, and the incidental repeat window is
+forced and harmless; endpoint-only coverage crediting loses nothing either (an
+edge whose interior spells an unvisited perm decomposes equal-cost as 1 +
+(w−1) through it). What SURVIVES: a genuinely new 84th 5906, the only known one
+without two-fold symmetry, carrying a motif absent from all 83 published
+solutions (a weight-3 edge whose interior re-spells a covered perm — the
+closed-1-cycle reading); whether the kernel/chain grammar spans that motif is
+still a fair question, but about which simple-path optima the grammar reaches,
+not about leaving the class. Reproduce: `extraDocs/shortcut_tk5906.py` (exits
+0).
 
 **Method withheld, deliberately.** He's hunting the record ("if he manages to get
 under 5906 characters, you'll be the first to see it") and this looks like a

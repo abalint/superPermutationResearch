@@ -95,11 +95,15 @@ B=4/x=0 is our 575/141/3 weight multiset**; n=6 window unconditionally still
 is δ≤11 vs our δ=21 target, so **5905 survives** — watch whether n=7 pushes past
 δ≈21; tool `analysis/counting/coords_a6_872_frame.py`), and
 `../extraDocs/2026-07-29-tomaz-kristan-5906-repeat.md` (Kristan: record-TYING
-5906 at n=7 that **visits one permutation twice** — a fully CLOSED 1-cycle,
-length-neutral; the only known non-symmetric 5906, not equivalent to any of the
-83 published ones, i.e. an optimum-tying walk OUTSIDE the simple-path class that
-beam/grammar/cover7 all assume; verify: `../extraDocs/verify_tk5906.py` +
-`../extraDocs/check_corpus_5906.py`, both exit 0).
+5906 at n=7 with a repeated permutation window — RESOLVED: the repeat is
+bookkeeping, the string is **byte-identical to a simple-path reading** (a
+weight-3 edge whose appended `537` re-spells a covered perm), and every
+superperm string is a simple walk over first occurrences, so **simple-path
+pruning is provably lossless and no search change is needed**; the string is
+still genuinely new — the only known non-symmetric 5906, inequivalent to all 83
+published; verify: `../extraDocs/verify_tk5906.py` +
+`../extraDocs/check_corpus_5906.py` + `../extraDocs/shortcut_tk5906.py`, all
+exit 0).
 
 **Live compute (check this first if picking up cold):** a remote 28-core Windows
 PC (`ssh transcribe`) hosts the n=7 refutation farm — **currently IDLE**, pass 1
