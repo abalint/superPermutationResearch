@@ -41,6 +41,7 @@ Usage:
 """
 
 import argparse
+import gzip
 import json
 import math
 import os
@@ -75,11 +76,26 @@ NDEC = 10  # depth buckets (deciles)
 # ------------------------------------------------------------------- data
 
 
+def _open(path):
+    """Corpora are large; farm deliverables arrive gzipped."""
+    return gzip.open(path, "rt") if path.endswith(".gz") else open(path)
+
+
+CHUNK = 250_000  # rows converted to numpy at a time (keeps peak RAM bounded)
+
+
+def _flush(buf, chunks):
+    """Convert a python-list chunk to float64 numpy and drop the list."""
+    if buf:
+        chunks.append(np.asarray(buf, dtype=float))
+        del buf[:]
+
+
 def load(paths):
     """-> (X (n,NF), y (n,), depth (n,), inst (n,) of str)."""
-    X, y, depth, inst = [], [], [], []
+    Xc, X, y, depth, inst = [], [], [], [], []
     for path in paths:
-        with open(path) as fh:
+        with _open(path) as fh:
             for lineno, line in enumerate(fh, 1):
                 line = line.strip()
                 if not line:
@@ -89,13 +105,16 @@ def load(paths):
                 if len(f) != NF:
                     raise SystemExit(f"{path}:{lineno} feature width {len(f)} != {NF}")
                 X.append(f)
+                if len(X) >= CHUNK:
+                    _flush(X, Xc)
                 y.append(math.log1p(d["subtree"]))
                 depth.append(d["depth"])
                 inst.append(d.get("inst", os.path.basename(path)))
-    if not X:
+    _flush(X, Xc)
+    if not Xc:
         raise SystemExit("no records found")
     return (
-        np.asarray(X, dtype=float),
+        np.vstack(Xc),
         np.asarray(y, dtype=float),
         np.asarray(depth, dtype=float),
         np.asarray(inst),
@@ -264,9 +283,10 @@ def train(X, y, depth, inst, holdout, l2_grid, verbose=True):
 
 def load_pairs(paths):
     """-> (Fw (n,NF), Fl (n,NF), inst (n,), src (n,), depth (n,))."""
+    Fwc, Flc = [], []
     Fw, Fl, inst, src, depth = [], [], [], [], []
     for path in paths:
-        with open(path) as fh:
+        with _open(path) as fh:
             for lineno, line in enumerate(fh, 1):
                 line = line.strip()
                 if not line:
@@ -278,14 +298,19 @@ def load_pairs(paths):
                         f"{path}:{lineno} pair feature width != {NF}")
                 Fw.append(fw)
                 Fl.append(fl)
+                if len(Fw) >= CHUNK:
+                    _flush(Fw, Fwc)
+                    _flush(Fl, Flc)
                 inst.append(d.get("inst", os.path.basename(path)))
                 src.append(d.get("src", "?"))
                 depth.append(d.get("depth", 0))
-    if not Fw:
+    _flush(Fw, Fwc)
+    _flush(Fl, Flc)
+    if not Fwc:
         raise SystemExit("no pairs found")
     return (
-        np.asarray(Fw, dtype=float),
-        np.asarray(Fl, dtype=float),
+        np.vstack(Fwc),
+        np.vstack(Flc),
         np.asarray(inst),
         np.asarray(src),
         np.asarray(depth, dtype=float),

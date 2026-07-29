@@ -153,3 +153,25 @@ n=6 window {869..872}, n=7 window [5888, 5906]. Details:
 `../../extraDocs/2026-07-28-urdvr-lean-lower-bound.md`. A further claimed
 (k−5)!-order term is in the author's verification; ~18 more at n=7 would moot
 the 5905 record campaign (census-closure value of Track C is unaffected).
+
+## Farm retrain (s19 final act) — the canonicalization verdict is confirmed
+
+pw2 on the full gen2 corpus (6.0M pairs, 53 train instances, all K classes,
+eval chains verified absent; holdout wl_011/032/085/106/196): held-out pair
+acc .7271 overall — and **equal-size .5191 vs pw1's .5217**: 3.3× more
+diversity moved the Δ=0-relevant number nowhere. Coefficient-level signature:
+cos(pw1,pw2) = .9996, `sz_log` UP (+1.57→+1.71), and `static_sz_log` — the
+only feature carrying per-instance structure — shrank 3× toward zero. Full
+diversity converged the model HARDER onto MRV: K-class canonicalization is
+what this feature set learns, full stop. reg2's R² jump (+.614→+.737) is
+almost entirely the node-level depth anchor — no ranking content.
+
+One crack worth keeping: an equal-size-ONLY refit reaches held-out **.5406**
+(`min_child_load`-driven, clean train/test agreement) — genuine within-band
+signal exists at ~4 pp, but it needs a separate tie-break head, not the joint
+10-feature score (where `sz_log` swamps it).
+
+**Decision: keep pw1 deployed; pw2/reg2 shipped as recorded artifacts. The
+entire next-session budget goes to the 2.4× per-node scoring cost — the only
+thing standing between the measured 1.50× node reduction and a wall-clock
+win.**

@@ -104,7 +104,7 @@ on the v2.1 binary; corpora shipped home. Four more results landed:
 
 **Next session:** (1) dlx7g column-scoring overhead attack (feature caching /
 incremental scores / score-only-on-ties), then re-gate G2v2 in WALL-CLOCK;
-(2) retrain pw on the gen2 55-chain pairwise corpus
+(2) DONE late s19 — pw2 retrain: equal-size acc .5191, canonicalization confirmed at coefficient level; optional lever: separate equal-size tie-break head (.5406 held-out, min_child_load); superseded item was: retrain pw on the gen2 55-chain pairwise corpus
 (`analysis/trackc/runs/v2/farm/`) — offline check only: does equal-size pair
 accuracy move off ~.52?; (3) integrate `--bound residual` with `--model`
 (certified floor + learned residual — the founding-idea composition);
