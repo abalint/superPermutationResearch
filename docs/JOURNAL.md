@@ -6,6 +6,46 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (field news, no code) — Group thread on the Lean soundness bug behind a fake Collatz "disproof"; verdict: our adopted LBs (869/5888) are NOT threatened, but one cheap hygiene task queued (re-check urdvr's proof under the patched toolchain)
+
+**Source.** Superpermutators thread, 2026-07-29 (Gould → Houston → Gould →
+Raudvere → Das). Full thread, exploit details and our analysis in
+`../extraDocs/2026-07-29-lean-soundness-thread.md`.
+
+**The news.** A claimed Collatz disproof turned out to exploit
+leanprover/lean4#14576 — the kernel accepted wrong-structure projections,
+allowing an axiom-free proof of `False` — AND an independent bug in the nanoda
+checker simultaneously, so neither caught it. Gould reads it as an exploit
+chain, not an honest error, and asks how to treat AI-generated Lean proofs;
+Houston's answer is version-survival (confidence accrues as proofs keep passing
+new Lean releases); Raudvere (whose proof is exactly the artifact at stake for
+us) says his real worry is *formalization* error — "correctly proving the wrong
+true theorem" — mitigated by having strong models review a paper generated from
+the Lean proof without the Lean as context; Gould floats a canonical Lean
+formalisation of the problem on the community repo; Das proposes walk-level
+tooling (per-transition overlap annotation, step-by-step kernel diffs, auto-
+locating the "−1").
+
+**Verdict for us (analysis in the extraDocs note).** (1) The soundness-bug
+class needs adversarial kernel-API metaprogramming + an engineered hash
+collision (per the issue: cannot fire accidentally) — no threat to urdvr's
+good-faith proof. (2) The real residual risk, formalization error, is the one
+we already partially covered in s19 *semantically, outside Lean*: their lemmas
+matched forced-map periods we had measured independently BEFORE reading the
+paper, and we recomputed 869/5888/46103 exactly + checked their G(E) against
+our 223 chains. (3) Asymmetry worth remembering: record *strings* are
+self-certifying, *lower bounds* are where Lean trust concentrates — any future
+claimed LB (e.g. urdvr's (k−5)! capacity term) gets this thread's full
+skepticism; any claimed record with a proof attached, we verify the string and
+ignore the proof. (4) Worst case (869→867, 5888→5884) changes framing only —
+no search-side correctness depends on the bounds.
+
+**Queued:** T-lean — when the #14576 fix (PR #14577) ships in a release,
+re-elaborate `extraDocs/superpermutations-hunter` (d452221) under the patched
+toolchain, optionally `lean4checker`; record the version. The s19
+kernelchain7-vs-`rot_j` script stays queued and doubles as a formalization
+cross-check. No change to Track B priority.
+
 ## 2026-07-29 (field news, no code) — Kristan: a record-TYING 5906 at n=7 that visits one permutation twice; RESOLVED same day — the repeat is bookkeeping (byte-identical to a simple-path reading), simple-path pruning is provably lossless; the string is still genuinely new (only known non-symmetric 5906)
 
 **Source.** Private email from Tomaž Kristan (2026-07-29 06:28), body just "All in
