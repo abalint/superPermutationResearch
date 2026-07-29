@@ -144,6 +144,35 @@ pub fn score_state(walk: &Walk, scorer: Scorer) -> f64 {
             };
             ((f64::from(base) + alpha * pred) * 4096.0).round() as i64
         }
+        Scorer::Composed {
+            bound,
+            model,
+            alpha,
+        } => {
+            let f = walk.features();
+            let lb_cycle = walk.lb() as u32;
+            let lb_arc = walk.lb_arc() as u32;
+            let x = [
+                f64::from(f.r),
+                f64::from(f.cycles_remaining),
+                f64::from(f.intact_cycles),
+                f64::from(f.current_cycle_remaining),
+                f64::from(f.arcs),
+                f64::from(f.succ1_unvisited),
+                f64::from(lb_cycle),
+                f64::from(lb_arc),
+                f64::from(f.half_open),
+                f64::from(f.nearly_done),
+                f64::from(f.w2_bridges),
+            ];
+            let pred = model.predict(&x);
+            let lb = match bound {
+                Bound::Cycle => lb_cycle,
+                Bound::Arc => lb_arc,
+                Bound::Residual => walk.lb_residual() as u32,
+            };
+            ((f64::from(len + lb) + alpha * pred) * 4096.0).round() as i64
+        }
     };
     fixed as f64 / 4096.0
 }

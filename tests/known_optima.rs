@@ -2,10 +2,10 @@
 //! the admissibility of the cycle lower bound.
 
 use superperm::beam::{
-    beam_search, beam_search_cutoffs, beam_search_endgame_snapshot, beam_search_jittered,
-    beam_search_multi_seeded, beam_search_multi_seeded_endgame, beam_search_seeded,
-    beam_search_stratified, beam_search_stratified_cutoffs, Bound, Jitter, Scorer, SnapshotCfg,
-    Stratify,
+    beam_search, beam_search_capped, beam_search_cutoffs, beam_search_endgame_snapshot,
+    beam_search_jittered, beam_search_multi_seeded, beam_search_multi_seeded_capped,
+    beam_search_multi_seeded_endgame, beam_search_seeded, beam_search_stratified,
+    beam_search_stratified_cutoffs, Bound, Jitter, Scorer, SnapshotCfg, Stratify,
 };
 use superperm::endgame::{solve_endgame, spell_path};
 use superperm::graph::Graph;
@@ -339,6 +339,108 @@ fn seed_prefix_deep_n5_still_valid() {
 fn seed_prefix_mid_depth_n5_width_2000_still_153() {
     let g = Graph::new(5);
     let b = beam_search_seeded(&g, 2000, Scorer::Bound(Bound::Cycle), None, 60);
+    assert_eq!(b.len, 153);
+    assert!(validate(5, &b.string).complete);
+}
+
+/// T2: `Composed` with `alpha = 0` must score bit-identically to the
+/// bare bound, for every bound.
+#[test]
+fn composed_alpha_zero_matches_bound() {
+    let g = Graph::new(5);
+    let model = Model::Linear {
+        n: 5,
+        coef: vec![1.0; 11],
+        bias: 0.5,
+        target: Target::Absolute,
+    };
+    for bound in [Bound::Cycle, Bound::Arc, Bound::Residual] {
+        let plain = beam_search(&g, 200, Scorer::Bound(bound));
+        let comp = beam_search(
+            &g,
+            200,
+            Scorer::Composed {
+                bound,
+                model: &model,
+                alpha: 0.0,
+            },
+        );
+        assert_eq!(comp.len, plain.len, "{bound:?}");
+        assert_eq!(comp.path, plain.path, "{bound:?}");
+        assert_eq!(comp.string, plain.string, "{bound:?}");
+    }
+}
+
+/// T2: with a residual-target model, `Composed { bound: Arc }` uses the
+/// same anchor (`len + lb_arc`) and the same prediction as `Learned`,
+/// so the two scorers must be bit-identical.
+#[test]
+fn composed_arc_with_residual_model_matches_learned() {
+    let g = Graph::new(5);
+    let model = Model::Linear {
+        n: 5,
+        coef: vec![
+            0.3, -0.2, 0.1, 0.05, -0.4, 0.7, 0.02, -0.03, 0.11, -0.07, 0.19,
+        ],
+        bias: 1.25,
+        target: Target::Residual,
+    };
+    let learned = beam_search(
+        &g,
+        500,
+        Scorer::Learned {
+            model: &model,
+            alpha: 0.8,
+        },
+    );
+    let composed = beam_search(
+        &g,
+        500,
+        Scorer::Composed {
+            bound: Bound::Arc,
+            model: &model,
+            alpha: 0.8,
+        },
+    );
+    assert_eq!(composed.len, learned.len);
+    assert_eq!(composed.path, learned.path);
+    assert_eq!(composed.string, learned.string);
+}
+
+/// T2 admissible cap: with the cap at the known optimum the beam must
+/// still find it (pruning is lossless for completions within the cap);
+/// with the cap one below the proven optimum the beam must die — a
+/// `Some` there would contradict the proven bound.
+#[test]
+fn capped_beam_at_optimum_finds_and_below_optimum_dies() {
+    let g = Graph::new(5);
+    for bound in [Bound::Cycle, Bound::Arc, Bound::Residual] {
+        let hit = beam_search_capped(&g, 2000, Scorer::Bound(bound), None, 0, None, 153);
+        let b = hit.expect("cap at the optimum must still find 153");
+        assert_eq!(b.len, 153, "{bound:?}");
+        assert!(validate(5, &b.string).complete, "{bound:?}");
+        let miss = beam_search_capped(&g, 2000, Scorer::Bound(bound), None, 0, None, 152);
+        assert!(miss.is_none(), "{bound:?}: found < 153 — impossible");
+    }
+}
+
+/// T2 cap composes with multi-seeding: greedy-prefix seeds at n=5 with
+/// the cap at 153 must complete to exactly 153.
+#[test]
+fn capped_multi_seeded_beam_still_optimal_n5() {
+    let g = Graph::new(5);
+    let greedy_path = greedy(&g).path;
+    let seeds: Vec<Vec<u32>> = vec![greedy_path[..=20].to_vec(), greedy_path[..=45].to_vec()];
+    let b = beam_search_multi_seeded_capped(
+        &g,
+        2000,
+        Scorer::Bound(Bound::Cycle),
+        None,
+        &seeds,
+        None,
+        153,
+    )
+    .expect("greedy-prefix seeds lie on an optimal path");
     assert_eq!(b.len, 153);
     assert!(validate(5, &b.string).complete);
 }

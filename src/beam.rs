@@ -63,6 +63,25 @@ pub enum Scorer<'m> {
         /// Blend factor multiplying the prediction.
         alpha: f64,
     },
+    /// `f = len + lb(bound) + alpha * model.predict(child features)` —
+    /// T2 composition: the selected admissible bound anchors the score
+    /// and the model refines the ordering on top of it. With `alpha = 0`
+    /// this scores bit-identically to `Bound(bound)`; with a
+    /// residual-target model, `Composed { bound: Arc, alpha }` scores
+    /// bit-identically to `Learned { alpha }` (same anchor, same
+    /// prediction — both pinned by tests). For absolute-target models
+    /// the score double-counts remaining cost (lb + full prediction);
+    /// that hurts no ranking invariant — the beam orders states, it
+    /// never treats scores as admissible totals — but residual-target
+    /// models are the natural fit.
+    Composed {
+        /// Admissible bound anchoring the score.
+        bound: Bound,
+        /// Learned predictor refining the ordering.
+        model: &'m Model,
+        /// Blend factor multiplying the prediction.
+        alpha: f64,
+    },
 }
 
 /// Width reservation per structural class (stratified beam, phase 3
@@ -401,7 +420,9 @@ pub fn beam_search_seeded(
         None,
         None,
         None,
+        None,
     )
+    .expect("uncapped beam search always completes")
 }
 
 /// Multi-seeded beam (T3 completion machinery): the search starts from
@@ -424,6 +445,63 @@ pub fn beam_search_multi_seeded(
         jitter,
         SeedSpec::Walks(seeds),
         stratify,
+        None,
+        None,
+        None,
+    )
+    .expect("uncapped beam search always completes")
+}
+
+/// [`beam_search_multi_seeded`] with an admissible length cap (T2
+/// residual-bound pruning): every candidate whose `len + lb` exceeds
+/// `max_len` is discarded — lossless for completions of length
+/// ≤ `max_len` because the pruning bound is admissible (the scorer's
+/// own bound for `Bound`/`Composed`, `lb_arc` for `Learned`). The
+/// entire width is thereby spent on states that can still finish
+/// within the cap. Returns `None` when no explored walk completes
+/// within it (the beam died); a `Some` result always has
+/// `len <= max_len`.
+pub fn beam_search_multi_seeded_capped(
+    g: &Graph,
+    width: usize,
+    scorer: Scorer,
+    jitter: Option<Jitter>,
+    seeds: &[Vec<u32>],
+    stratify: Option<Stratify>,
+    max_len: u32,
+) -> Option<BeamResult> {
+    beam_search_impl(
+        g,
+        width,
+        scorer,
+        jitter,
+        SeedSpec::Walks(seeds),
+        stratify,
+        Some(max_len),
+        None,
+        None,
+    )
+}
+
+/// [`beam_search_stratified`] with the admissible length cap of
+/// [`beam_search_multi_seeded_capped`] (greedy-prefix seeding).
+pub fn beam_search_capped(
+    g: &Graph,
+    width: usize,
+    scorer: Scorer,
+    jitter: Option<Jitter>,
+    seed_prefix: usize,
+    stratify: Option<Stratify>,
+    max_len: u32,
+) -> Option<BeamResult> {
+    beam_search_impl(
+        g,
+        width,
+        scorer,
+        jitter,
+        SeedSpec::GreedyPrefix(seed_prefix),
+        stratify,
+        Some(max_len),
         None,
         None,
     )
@@ -458,8 +536,10 @@ pub fn beam_search_multi_seeded_endgame(
         SeedSpec::Walks(seeds),
         stratify,
         None,
+        None,
         Some((cfg, &mut snaps)),
-    );
+    )
+    .expect("uncapped beam search always completes");
     (r, snaps)
 }
 
@@ -484,7 +564,9 @@ pub fn beam_search_stratified(
         stratify,
         None,
         None,
+        None,
     )
+    .expect("uncapped beam search always completes")
 }
 
 /// [`beam_search_stratified`] that additionally captures the top
@@ -517,8 +599,10 @@ pub fn beam_search_endgame_snapshot(
         SeedSpec::GreedyPrefix(seed_prefix),
         stratify,
         None,
+        None,
         Some((cfg, &mut snaps)),
-    );
+    )
+    .expect("uncapped beam search always completes");
     (r, snaps)
 }
 
@@ -557,9 +641,11 @@ pub fn beam_search_stratified_cutoffs(
         jitter,
         SeedSpec::GreedyPrefix(seed_prefix),
         stratify,
+        None,
         Some(&mut cutoffs),
         None,
-    );
+    )
+    .expect("uncapped beam search always completes");
     (r, cutoffs)
 }
 
@@ -624,9 +710,10 @@ fn beam_search_impl(
     jitter: Option<Jitter>,
     seed: SeedSpec,
     stratify: Option<Stratify>,
+    max_len: Option<u32>,
     mut cutoffs: Option<&mut Vec<LevelCutoff>>,
     mut snapshot: Option<(SnapshotCfg, &mut Vec<SnapState>)>,
-) -> BeamResult {
+) -> Option<BeamResult> {
     assert!(width >= 1, "beam width must be at least 1");
     if let Some(st) = stratify {
         assert!(st.bucket >= 1, "stratify bucket granularity must be >= 1");
@@ -638,9 +725,18 @@ fn beam_search_impl(
         .map(|j| JitterCtx::new(j, nfact));
     let jctx = jctx.as_ref();
     // The residual bound's in-neighbour table is built only when that
-    // bound is selected, so every other scorer keeps its exact previous
-    // cost (and the `door`/`long` counters stay at 0, unused).
-    let tab = matches!(scorer, Scorer::Bound(Bound::Residual)).then(|| PredTable::new(g));
+    // bound is selected (alone or composed), so every other scorer
+    // keeps its exact previous cost (and the `door`/`long` counters
+    // stay at 0, unused).
+    let tab = matches!(
+        scorer,
+        Scorer::Bound(Bound::Residual)
+            | Scorer::Composed {
+                bound: Bound::Residual,
+                ..
+            }
+    )
+    .then(|| PredTable::new(g));
     let tab = tab.as_ref();
 
     // Arena node 0 is the root (identity permutation, no parent);
@@ -782,8 +878,11 @@ fn beam_search_impl(
                 if s.visited.get(q as usize) {
                     continue;
                 }
+                // `any` tracks unvisited successors, not surviving
+                // candidates: a state whose every child breaks the cap
+                // dies here, which is the cap's purpose.
                 any = true;
-                cands.push(score_move(
+                if let Some(c) = score_move(
                     g,
                     s,
                     q,
@@ -792,17 +891,21 @@ fn beam_search_impl(
                     scorer,
                     jctx,
                     res_of(pi),
-                ));
+                    max_len,
+                ) {
+                    cands.push(c);
+                }
             }
             if !any {
                 // Weight-n fallback: jump to the lowest unvisited rank so
-                // the state never silently dies.
+                // the state never silently dies (uncapped searches only;
+                // under a cap the fallback is prunable like any move).
                 let q = s
                     .visited
                     .first_clear(nfact)
                     .expect("state with r > 0 must have an unvisited perm")
                     as u32;
-                cands.push(score_move(
+                if let Some(c) = score_move(
                     g,
                     s,
                     q,
@@ -811,7 +914,10 @@ fn beam_search_impl(
                     scorer,
                     jctx,
                     res_of(pi),
-                ));
+                    max_len,
+                ) {
+                    cands.push(c);
+                }
             }
         }
 
@@ -973,10 +1079,10 @@ fn beam_search_impl(
         }
     }
 
-    let best = beam
-        .iter()
-        .min_by_key(|s| s.len)
-        .expect("beam is never empty");
+    // Under an admissible cap the whole beam can die (no explored walk
+    // completes within `max_len`); uncapped searches always keep the
+    // weight-n fallback candidate alive, so `None` is cap-only.
+    let best = beam.iter().min_by_key(|s| s.len)?;
     debug_assert_eq!(best.r, 0);
 
     // Reconstruct the visit order from the arena, then rebuild the
@@ -999,11 +1105,11 @@ fn beam_search_impl(
     }
     debug_assert_eq!(chars.len(), best.len as usize);
 
-    BeamResult {
+    Some(BeamResult {
         string: chars.iter().map(|&v| (b'0' + v) as char).collect(),
         len: chars.len(),
         path: ranks,
-    }
+    })
 }
 
 /// Score the move `parent → q` with edge weight `w` without cloning the
@@ -1013,12 +1119,10 @@ fn beam_search_impl(
 /// bound scoring (exactly the phase-1 ordering), or
 /// `round((len + alpha * pred) * 4096)` for a learned model —
 /// `round((len + lb_arc + alpha * pred) * 4096)` if the model is
-/// residual-target — where `pred` is evaluated on the child's feature
-/// vector (matching [`crate::model::FEATURE_ORDER_V2`]; an 8-feature
-/// model reads only the [`crate::model::FEATURE_ORDER`] prefix, and the
-/// appended deficit-distribution features are then not even computed,
-/// so old models score bit-identically to the pre-phase-3 build)
-/// computed here without materializing the child.
+/// residual-target — or `round((len + lb + alpha * pred) * 4096)` for
+/// the T2 [`Scorer::Composed`] form, where `pred` is evaluated on the
+/// child's feature vector via [`model_pred`] without materializing the
+/// child.
 ///
 /// Both bounds and all learned features are pure functions of the
 /// child's `(cur, visited, len)` (the three deficit-distribution
@@ -1038,10 +1142,11 @@ fn score_move(
     scorer: Scorer,
     jctx: Option<&JitterCtx>,
     res: Option<(&PredTable, &ParentCtx)>,
-) -> (i64, u32, u32, u32) {
+    max_len: Option<u32>,
+) -> Option<(i64, u32, u32, u32)> {
     let len = parent.len + w;
     let r = parent.r - 1;
-    let score = match scorer {
+    let (score, lb) = match scorer {
         Scorer::Bound(bound) => {
             let lb = if r == 0 {
                 0
@@ -1075,66 +1180,132 @@ fn score_move(
                     }
                 }
             };
-            i64::from(len + lb) << 12
+            (i64::from(len + lb) << 12, lb)
         }
         Scorer::Learned { model, alpha } => {
-            let rem = parent.cycle_rem[g.cycle_id[q as usize] as usize] as u32;
-            let k = parent.k - u32::from(rem == 1);
-            let intact = parent.intact - u32::from(rem as usize == g.n);
-            let cur_rem = rem - 1;
-            let arcs = child_arcs(g, parent, q);
-            let succ1_unvis = u32::from(!parent.visited.get(g.succ1(q) as usize));
-            let lb_cycle = if r == 0 {
-                0
-            } else {
-                r + k - u32::from(cur_rem > 0)
-            };
-            let lb_arc = if r == 0 { 0 } else { r + arcs - succ1_unvis };
-            // The appended deficit-distribution features (v2 contract)
-            // are only computed when the model consumes them: an
-            // 8-feature model must stay bit-identical to (and as fast
-            // as) the pre-phase-3 build.
-            let (half_open, nearly_done, w2_bridges) =
-                if model.n_features() > crate::model::FEATURE_ORDER.len() {
-                    let rem_n = rem as usize;
-                    (
-                        parent.half_open + u32::from(rem_n == g.n) - u32::from(rem_n == g.n - 2),
-                        parent.nearly_done + u32::from(rem == 3) - u32::from(rem == 1),
-                        (parent.w2_bridges as i64
-                            + g.w2_bridges_delta(&parent.visited, &parent.cycle_rem, q))
-                            as u32,
-                    )
-                } else {
-                    (0, 0, 0)
-                };
-            let x = [
-                f64::from(r),
-                f64::from(k),
-                f64::from(intact),
-                f64::from(cur_rem),
-                f64::from(arcs),
-                f64::from(succ1_unvis),
-                f64::from(lb_cycle),
-                f64::from(lb_arc),
-                f64::from(half_open),
-                f64::from(nearly_done),
-                f64::from(w2_bridges),
-            ];
-            let pred = model.predict(&x);
+            let p = model_pred(g, parent, q, r, model);
             // Residual models predict cost_to_go − lb_arc: add the
             // admissible anchor back. lb_arc is a pure function of
             // (cur, visited), so the dedup argument is unchanged.
             let base = if model.is_residual() {
-                len + lb_arc
+                len + p.lb_arc
             } else {
                 len
             };
-            ((f64::from(base) + alpha * pred) * 4096.0).round() as i64
+            (
+                ((f64::from(base) + alpha * p.pred) * 4096.0).round() as i64,
+                p.lb_arc,
+            )
+        }
+        Scorer::Composed {
+            bound,
+            model,
+            alpha,
+        } => {
+            let p = model_pred(g, parent, q, r, model);
+            let lb = match bound {
+                Bound::Cycle => p.lb_cycle,
+                Bound::Arc => p.lb_arc,
+                Bound::Residual => {
+                    if r == 0 {
+                        0
+                    } else {
+                        let (tab, ctx) = res.expect("residual bound needs its transition context");
+                        let (door, long) = lb_residual::child_terms(
+                            g,
+                            tab,
+                            &parent.visited,
+                            &parent.cycle_rem,
+                            ctx,
+                            q,
+                        );
+                        r + door + p.intact + long
+                    }
+                }
+            };
+            (
+                ((f64::from(len + lb) + alpha * p.pred) * 4096.0).round() as i64,
+                lb,
+            )
         }
     };
+    // Admissible cap pruning (T2): `lb` never exceeds the true
+    // remaining cost, so discarding `len + lb > cap` loses no
+    // completion of length <= cap.
+    if let Some(cap) = max_len {
+        if len + lb > cap {
+            return None;
+        }
+    }
     let score = match jctx {
         Some(j) => score + j.offset(parent.zhash, q),
         None => score,
     };
-    (score, len, q, parent_idx)
+    Some((score, len, q, parent_idx))
+}
+
+/// Model-prediction output shared by the `Learned` and `Composed`
+/// scoring arms: the prediction on the child's feature vector plus the
+/// child's bounds and intact count (already computed as features).
+struct PredOut {
+    pred: f64,
+    lb_cycle: u32,
+    lb_arc: u32,
+    intact: u32,
+}
+
+/// Evaluate `model` on the child reached by visiting `q` from `parent`
+/// (`r` = the child's remaining count), without materializing the
+/// child. Feature vector matches [`crate::model::FEATURE_ORDER_V2`]; an
+/// 8-feature model reads only the [`crate::model::FEATURE_ORDER`]
+/// prefix, and the appended deficit-distribution features are then not
+/// even computed, so old models score bit-identically to the
+/// pre-phase-3 build. Every feature is a pure function of the child's
+/// `(cur, visited)`, preserving the keep-first dedup argument.
+#[inline]
+fn model_pred(g: &Graph, parent: &State, q: u32, r: u32, model: &Model) -> PredOut {
+    let rem = parent.cycle_rem[g.cycle_id[q as usize] as usize] as u32;
+    let k = parent.k - u32::from(rem == 1);
+    let intact = parent.intact - u32::from(rem as usize == g.n);
+    let cur_rem = rem - 1;
+    let arcs = child_arcs(g, parent, q);
+    let succ1_unvis = u32::from(!parent.visited.get(g.succ1(q) as usize));
+    let lb_cycle = if r == 0 {
+        0
+    } else {
+        r + k - u32::from(cur_rem > 0)
+    };
+    let lb_arc = if r == 0 { 0 } else { r + arcs - succ1_unvis };
+    let (half_open, nearly_done, w2_bridges) = if model.n_features()
+        > crate::model::FEATURE_ORDER.len()
+    {
+        let rem_n = rem as usize;
+        (
+            parent.half_open + u32::from(rem_n == g.n) - u32::from(rem_n == g.n - 2),
+            parent.nearly_done + u32::from(rem == 3) - u32::from(rem == 1),
+            (parent.w2_bridges as i64 + g.w2_bridges_delta(&parent.visited, &parent.cycle_rem, q))
+                as u32,
+        )
+    } else {
+        (0, 0, 0)
+    };
+    let x = [
+        f64::from(r),
+        f64::from(k),
+        f64::from(intact),
+        f64::from(cur_rem),
+        f64::from(arcs),
+        f64::from(succ1_unvis),
+        f64::from(lb_cycle),
+        f64::from(lb_arc),
+        f64::from(half_open),
+        f64::from(nearly_done),
+        f64::from(w2_bridges),
+    ];
+    PredOut {
+        pred: model.predict(&x),
+        lb_cycle,
+        lb_arc,
+        intact,
+    }
 }

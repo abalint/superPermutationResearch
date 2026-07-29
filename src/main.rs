@@ -14,9 +14,9 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::io::Write;
 
 use superperm::beam::{
-    beam_search_endgame_snapshot, beam_search_multi_seeded, beam_search_multi_seeded_endgame,
-    beam_search_stratified, beam_search_stratified_cutoffs, Bound, Jitter, Scorer, SnapshotCfg,
-    Stratify,
+    beam_search_capped, beam_search_endgame_snapshot, beam_search_multi_seeded,
+    beam_search_multi_seeded_capped, beam_search_multi_seeded_endgame, beam_search_stratified,
+    beam_search_stratified_cutoffs, Bound, Jitter, Scorer, SnapshotCfg, Stratify,
 };
 use superperm::beam2::{beam2_search, Scorer2};
 use superperm::endgame::{solve_endgame, spell_path, MAX_REMAINING};
@@ -244,14 +244,17 @@ enum Cmd {
         /// Beam width (states kept per depth level).
         #[arg(long, default_value_t = 1000)]
         width: usize,
-        /// Admissible lower bound used for scoring. The arc bound is
-        /// tighter but empirically no better as a beam ranker (see
-        /// docs/JOURNAL.md 2026-07-27).
-        #[arg(long, value_enum, default_value_t = BoundArg::Cycle)]
-        bound: BoundArg,
+        /// Admissible lower bound used for scoring (default: cycle).
+        /// The arc bound is tighter but empirically no better as a beam
+        /// ranker (see docs/JOURNAL.md 2026-07-27). With --model, an
+        /// explicit --bound composes (T2): score = len + lb + alpha *
+        /// prediction; without it the model scores alone as before.
+        #[arg(long, value_enum)]
+        bound: Option<BoundArg>,
         /// Score candidates with this learned value-function model
-        /// (JSON produced by the training side) instead of a bound.
-        #[arg(long, conflicts_with = "bound")]
+        /// (JSON produced by the training side); alone, or composed
+        /// with an explicit --bound (T2).
+        #[arg(long)]
         model: Option<PathBuf>,
         /// Blend factor for the learned score: len + alpha * prediction.
         #[arg(long, default_value_t = 1.0)]
@@ -322,6 +325,13 @@ enum Cmd {
         /// does not change the search.
         #[arg(long)]
         cutoff_log: Option<PathBuf>,
+        /// Admissible length cap (T2): discard every candidate whose
+        /// len + lb exceeds this — lossless for completions within the
+        /// cap; the whole width is spent on states that can still make
+        /// it. The search reports failure if no explored walk finishes
+        /// within the cap. 0 = off.
+        #[arg(long, default_value_t = 0)]
+        max_len: u32,
     },
     /// Run the two-ended (deque) beam search: moves append a successor
     /// of the string's back or prepend a predecessor of its front,
@@ -647,6 +657,7 @@ fn main() -> ExitCode {
             endgame_top,
             log,
             cutoff_log,
+            max_len,
         } => {
             let g = Graph::new(n);
             if seed_prefix >= g.nfact - 1 {
@@ -658,22 +669,28 @@ fn main() -> ExitCode {
             }
             let seeds = seed_file.as_ref().map(|p| read_seed_file(p, g.nfact));
             let loaded = model.map(|path| load_model(&path, n, allow_n_mismatch));
-            let (scorer, desc) = match &loaded {
-                Some(m) => (
+            let bname = |b: BoundArg| match b {
+                BoundArg::Cycle => "cycle",
+                BoundArg::Arc => "arc",
+                BoundArg::Residual => "residual",
+            };
+            let (scorer, desc) = match (&loaded, bound) {
+                (Some(m), Some(b)) => (
+                    Scorer::Composed {
+                        bound: b.into(),
+                        model: m,
+                        alpha,
+                    },
+                    format!("bound={}+model={} alpha={alpha}", bname(b), m.kind()),
+                ),
+                (Some(m), None) => (
                     Scorer::Learned { model: m, alpha },
                     format!("model={} alpha={alpha}", m.kind()),
                 ),
-                None => (
-                    Scorer::Bound(bound.into()),
-                    format!(
-                        "bound={}",
-                        match bound {
-                            BoundArg::Cycle => "cycle",
-                            BoundArg::Arc => "arc",
-                            BoundArg::Residual => "residual",
-                        }
-                    ),
-                ),
+                (None, b) => {
+                    let b = b.unwrap_or(BoundArg::Cycle);
+                    (Scorer::Bound(b.into()), format!("bound={}", bname(b)))
+                }
             };
             let jit = (jitter > 0.0).then_some(Jitter {
                 eps: jitter,
@@ -723,7 +740,40 @@ fn main() -> ExitCode {
                 eprintln!("--seed-file cannot be combined with --cutoff-log");
                 std::process::exit(1);
             }
+            if max_len > 0 && (endgame > 0 || cutoff_log.is_some()) {
+                eprintln!("--max-len cannot be combined with --endgame or --cutoff-log");
+                std::process::exit(1);
+            }
             let t0 = Instant::now();
+            if max_len > 0 {
+                let capped = match &seeds {
+                    Some(s) => {
+                        beam_search_multi_seeded_capped(&g, width, scorer, jit, s, strat, max_len)
+                    }
+                    None => beam_search_capped(&g, width, scorer, jit, seed_prefix, strat, max_len),
+                };
+                let dt = t0.elapsed();
+                match capped {
+                    Some(b) => {
+                        println!(
+                            "beam n={n} width={width} {desc}{jdesc}{sdesc}{stdesc} max_len={max_len}: length {} ({:.3}s)",
+                            b.len,
+                            dt.as_secs_f64()
+                        );
+                        println!("{}", b.string);
+                        if let Some(path) = log {
+                            write_log(&g, &b.path, &path);
+                        }
+                    }
+                    None => {
+                        println!(
+                            "beam n={n} width={width} {desc}{jdesc}{sdesc}{stdesc} max_len={max_len}: NO completion within cap ({:.3}s)",
+                            dt.as_secs_f64()
+                        );
+                    }
+                }
+                return ExitCode::SUCCESS;
+            }
             let (b, cuts, snaps) = if endgame > 0 {
                 let cfg = SnapshotCfg {
                     remaining: endgame,

@@ -6,6 +6,66 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (session 24) — T2 built (`Scorer::Composed` + admissible `--max-len` cap): composition is the first learned-signal WIN on completion (pipeline 879 → 874, robust plateau); cap proven sound + big speedups on viable searches; capped runs then PROVE the midgame ranking is the sole remaining failure — 872 needs a policy, not width; NRPA is next with three measured motivations
+
+Build order continues; this session landed T2 in two pieces plus the verdict
+experiments. All 105 tests green, clippy/fmt clean.
+
+**Built 1 — `Scorer::Composed { bound, model, alpha }`** (score = `len +
+lb(bound) + α·pred`, `src/beam.rs::model_pred` factored out of the `Learned`
+arm; `trace::score_state` extended to match). CLI: `--bound` became optional;
+`--model` alone = legacy `Learned` (bit-identical), `--bound` + `--model` =
+composed. Pinned: α=0 ≡ `Bound(b)` for every bound; `Composed{Arc}` with a
+residual-target model ≡ `Learned` (same anchor, same prediction).
+
+**Built 2 — admissible length cap `--max-len L`** (T2's "residual-bound
+pruning" from the design): discard any candidate with `len + lb > L` — lb is
+admissible, so this is lossless for completions ≤ L, and the whole width goes
+to states that can still make it. Beam can now die honestly
+(`Option<BeamResult>`; CLI prints "NO completion within cap"). Pinned: n=5
+cap=153 finds 153 under all three bounds, cap=152 dies (consistent with the
+proven optimum); cap composes with multi-seeding.
+
+**Result 1 — composition is the first productive learned signal on
+completion.** Pipeline (24,214 sound d=6 records-class exemplars → beam):
+`--bound residual --model linear_n6_res_boot1 --alpha 0.25` gives **874**
+(vs 879 residual-only, vs the s23 oracle ceiling 878). Robust: α ∈
+[0.15, 0.35] all 874; w8000 = w32000 = 874; 64-exemplars/class = 874; four
+jitter seeds = 874; endgame adds nothing (len 850 + exact 24 every time).
+Res-model magnitudes matter: α ≥ 0.5 degrades (880/889/891 on oracle seeds),
+absolute-target models and the MLP are wall-clock impractical. The 874s are
+DIFFERENT walks across configs (a level set, not one basin) — and
+`verify_identity` shows they all **escape the records class** (S=120
+greedy-shape, waste 149): the seeds force a records opening, the beam reverts
+to greedy-style play and pays 2 chars for the mismatch.
+
+**Result 2 — the cap is sound and fast, and its failures are informative.**
+Every config that found 872 uncapped still finds it capped, faster: oracle
+d500 w8000 3.7s → **0.16s**, d450 w32000 24s → **10s** (byte-identical
+targets). But capped pipeline runs (w8000/w32000, with and without model)
+all DIE at cap 872 — and even cap **873** dies at w8000, consistent with the
+uncapped 874 floor.
+
+**Result 3 — the verdict the two failures jointly prove.** Traced the
+record's own trajectory: `len + lb_residual ≤ 872` at EVERY step (max
+exactly 872, 0 violations) — so on the record's line the bound has no slack
+to prune with until the very end, and in the opening/midgame (level ~60:
+len+lb ≈ 770s) NOTHING is prunable — an admissible cap cannot help selection
+there even in principle. Combined with s23: the ≤872 tree through the
+records-class openings is width-truncated in the midgame because the scorer
+misranks record-style states at levels ~60–450, and no bound, cap, width,
+jitter, exemplar count, or α fixes it. **The midgame RANKING is the sole
+remaining failure mode.** That is a policy problem — NRPA's exact shape.
+
+**Next: NRPA (`src/nrpa.rs`)** over the sojourn move space (ride/skip/door
+grammar of `src/sojourn.rs`), softmax policy on move features, nesting 2–3,
+adapt-toward-best, tablebase/capped-beam finish (the capped beam is now a
+fast completion oracle from depth ≥ ~450 — use it as NRPA's tail solver).
+Then the bandit over frontier classes → re-run C1 → M3. Three measured
+motivations carried in: (a) 879→874 says learned signal composes; (b) the
+874 class-escape says completion must be HELD in-class (NRPA policy can);
+(c) cap-death says only better midgame ordering can reach 872.
+
 ## 2026-07-29 (session 23) — T3 built (`--dump-frontier` + `beam --seed-file`, multi-seed injection); C2 PASS (pipeline finds 153); C1 verdict: oracle PASS (byte-identical 872 re-derived from its own depth-≥450 prefix) but the frontier→beam pipeline is COMPLETION-BLOCKED at 879, quantified ceiling 877–878; learned model + stratification actively HURT record-opening completion — residual bound is the best completion scorer
 
 Build order = TRACKB-DESIGN §9; this session landed T3 → C1/C2. New code:

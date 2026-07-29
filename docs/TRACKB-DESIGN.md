@@ -8,8 +8,13 @@ Status: design note opened session 21 (2026-07-29). **Build status (s22,
 s23 (2026-07-29): T3 DONE (`--dump-frontier` + `beam --seed-file`
 multi-seed injection), C2 PASS, C1 oracle PASS / pipeline NOT PASSED —
 completion-blocked at 879 vs a measured 878 beam-completion ceiling (§6
-blockquote). Next: T2 → NRPA + bandit → re-run C1 → M3. JOURNAL s22/s23 have
-all numbers.** This is the concrete state/move
+blockquote). s24 (2026-07-29): T2 DONE (`Scorer::Composed` + admissible
+`--max-len` cap): pipeline 879 → 874 (first learned-signal win on
+completion; robust plateau), cap proven sound with big viable-search
+speedups, and the capped failures prove the midgame RANKING (levels ~60–450)
+is the sole remaining failure — the record's own line has zero cap slack
+until the end, so no bound/width/cap can fix selection there. Next: NRPA +
+bandit → re-run C1 → M3. JOURNAL s22–s24 have all numbers.** This is the concrete state/move
 design that ITEM5-DESIGN §6.2 named as Track B's missing prerequisite. Inputs:
 (a) the opening-decides-everything evidence chain (s5/s6/s7/s9, §1 below); (b) the
 s11 grammar theorem (sub-872 must leave the certificate grammar); (c) the s19

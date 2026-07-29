@@ -435,10 +435,17 @@ module, do NOT patch `beam_search`.
   policy weights on move features, softmax rollouts, adapt-toward-best per
   nesting level (2–3 levels). `Walk` in `src/walk.rs` is the replay/feature
   substrate; `unvisited_succs` shows the candidate-enumeration pattern.
-- **T2 — `--bound` + `--model` composition**: today `Scorer::Learned` ignores
-  `--bound` (s19 note). Fix in `src/beam.rs::score_move` — keep the score a
-  pure function of `(cur, visited, len)` or the dedup argument breaks; the
-  `lb_arc` anchor in the residual branch shows the pattern.
+- **T2 — DONE s24**, two pieces. (a) `Scorer::Composed { bound, model,
+  alpha }`: score = `len + lb(bound) + α·pred` (`model_pred` shared with the
+  `Learned` arm; still a pure function of `(cur, visited, len)`); CLI
+  `--bound` is now optional and composes with `--model`. Pinned: α=0 ≡ the
+  bare bound; `Composed{Arc}` + residual-target model ≡ `Learned`.
+  (b) admissible cap `beam --max-len L` (`beam_search[_multi_seeded]_capped`
+  → `Option<BeamResult>`): candidates with `len + lb > L` are discarded —
+  lossless within the cap; the beam can die honestly. Best completion
+  config: `--bound residual --model linear_n6_res_boot1 --alpha 0.25`
+  (pipeline 879 → 874, s24); the capped beam from depth ≥ ~450 is a fast
+  exact-target completion oracle (0.16–10 s) for NRPA tails.
 - **T3 — `--seed-file` — DONE s23** (`src/beam.rs::SeedSpec`,
   `beam_search_multi_seeded[_endgame]`): one root state per walk, replayed
   via `replay_walk` (the extracted greedy-prefix replay) and injected into

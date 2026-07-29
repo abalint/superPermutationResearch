@@ -37,10 +37,21 @@ residual w32000+endgame; learned+stratify is the WORST completer there,
 completion-blocked**: even from the TRUE record opening at d=14 the ceiling
 is 878, and 24,214 sound d=6 class exemplars saturate it at 879 (w8000 =
 w32000); the gap to 872 lives in beam completion through levels ~60–450 and
-needs a policy, not width. NEXT = T2 bound/model composition → NRPA
-(`src/nrpa.rs`) + bandit → re-run C1 → M3 verdict; cheap closure probes
-queued: perfect-ride ATSP (closes all 616 S=120 live classes), §7
-tour-merge. Track B downgraded-not-retired s20 (Vlad's preliminary
+needs a policy, not width; s24 landed T2 (`Scorer::Composed` = `len +
+lb(bound) + α·pred`, CLI `--bound`+`--model` composes; admissible cap
+`--max-len L`, lossless, beam can die honestly): **composed residual +
+0.25·linear_n6_res_boot1 lifts the pipeline 879 → 874** (robust plateau
+over α/width/exemplars/jitter; the 874s escape the records class to
+greedy-shape S=120), the cap is proven sound (every uncapped-872 config
+still finds 872, 3.7s→0.16s at d500) and capped pipeline runs die at 872
+AND 873 — with the record's own trajectory having `len+lb_residual ≤ 872`
+at every step (zero slack to prune until the end), this PROVES the midgame
+ranking at levels ~60–450 is the sole remaining failure; capped beam from
+depth ≥450 is now a fast completion oracle for NRPA tails. NEXT = NRPA
+(`src/nrpa.rs`, sojourn move space, softmax policy, nesting 2–3,
+capped-beam/tablebase finish) + bandit → re-run C1 → M3 verdict; cheap
+closure probes queued: perfect-ride ATSP (closes all 616 S=120 live
+classes), §7 tour-merge. Track B downgraded-not-retired s20 (Vlad's preliminary
 a(6)=872 claim; n=6 window unconditionally still {869..872}); n=7 5905
 campaign survives (his conditional a(7) ≥ 5896 is δ≤11 vs our δ=21 bar);
 Track C v2 parked on the 2.4× scoring-overhead fix; farm and Mac idle
@@ -175,6 +186,9 @@ cargo run --release -- sojourn-dfs -n 6 --class 145,3,0,0,0 --records-profile --
 cargo run --release -- sojourn-dfs -n 6 --class 145,3,0,0,0 --records-profile --depth 6 --dedup exact --dump-frontier f.tsv --dump-per-class 16
 cargo run --release -- beam -n 6 --width 8000 --seed-file f.tsv --bound residual --endgame 20 --endgame-top 400
 python3 analysis/trackb/record_to_seed.py data/records872/872.0053cad.txt 6 450 > seed.txt  # any string -> seed line(s); 0 = full path
+# T2 (s24) — composed scorer (best completion config, pipeline 874) + admissible cap (lossless; may report NO completion):
+cargo run --release -- beam -n 6 --width 8000 --seed-file f.tsv --bound residual --model ml/models/linear_n6_res_boot1.json --alpha 0.25
+cargo run --release -- beam -n 6 --width 8000 --seed-file seed.txt --bound residual --max-len 872
 
 # CURRENT BEST FROM SCRATCH — stratified learned beam, validated 873 (n=6), ~8 s (phase-3 item 1, JOURNAL s7):
 cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --alpha 1 --stratify --strat-quota 4 --strat-bucket 1
