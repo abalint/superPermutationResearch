@@ -5,8 +5,11 @@ Status: design note opened session 21 (2026-07-29). **Build status (s22,
 (`analysis/trackb/enumerate_l0.py`, ledger_l0.csv), T1 atlas DONE
 (`atlas` subcommand + `analysis/trackb/door_atlas.py`), L2 sojourn DFS BUILT
 (`src/sojourn.rs`, `sojourn-dfs`) + M2 PASS in book mode (§6 blockquote).
-Next: T3 `--seed-file` → C1/C2 → T2 → bandit + NRPA → M3. JOURNAL s22 has all
-numbers.** This is the concrete state/move
+s23 (2026-07-29): T3 DONE (`--dump-frontier` + `beam --seed-file`
+multi-seed injection), C2 PASS, C1 oracle PASS / pipeline NOT PASSED —
+completion-blocked at 879 vs a measured 878 beam-completion ceiling (§6
+blockquote). Next: T2 → NRPA + bandit → re-run C1 → M3. JOURNAL s22/s23 have
+all numbers.** This is the concrete state/move
 design that ITEM5-DESIGN §6.2 named as Track B's missing prerequisite. Inputs:
 (a) the opening-decides-everything evidence chain (s5/s6/s7/s9, §1 below); (b) the
 s11 grammar theorem (sub-872 must leave the certificate grammar); (c) the s19
@@ -214,6 +217,23 @@ model has to relearn.
 > for T2 residual-bound pruning; the book/bandit layer is unaffected
 > (coverage dial E measured: at d=4, E=1/64/256 → 174/323/334 of 334 true
 > classes). C1/C2 not yet run (need T3 completion machinery).
+>
+> **Gate results s23.** **C2 PASS**: greedy's n=5 class (S=24, d3=4, d4=1) →
+> exact-dedup d=6 frontier, 64 exemplars/class (473 seeds) → multi-seed beam
+> = validated 153 under all three bounds. Abstraction-tier 1/class gives 154:
+> the canonical key is too coarse to pick the right exemplar — in-class
+> exemplar diversity closes the last char. **C1 oracle PASS**: seeded with a
+> known 872's own prefix, the beam re-derives the record byte-identically
+> from depth ≥ 450 (residual w32000 + endgame; ≥ 500 at w8000; the stratified
+> learned config only from ≥ 600 — it is the WORST record-opening completer,
+> 899–917 from shallow prefixes; the residual bound is the best by 15–30
+> chars). **C1 pipeline NOT PASSED, blocker quantified**: from the TRUE
+> record opening at depth 14 the completion ceiling is 878 (w32000 + exact
+> endgame), and pipeline runs saturate it — 24,214 sound d=6 exemplars over
+> all 2,114 classes → 879 at both w8000 and w32000 (width-saturated). The
+> gap to 872 lives entirely in beam completion through levels ~60–450: it
+> needs a *policy* (step 4a NRPA, T2 composition), not a wider beam. The §4
+> step-4b width-taper idea is thereby deprioritized; 4a is the next build.
 
 ## 7. Side probe (independent, one afternoon): tour merging over the 296
 

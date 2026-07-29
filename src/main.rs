@@ -14,8 +14,9 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::io::Write;
 
 use superperm::beam::{
-    beam_search_endgame_snapshot, beam_search_stratified, beam_search_stratified_cutoffs, Bound,
-    Jitter, Scorer, SnapshotCfg, Stratify,
+    beam_search_endgame_snapshot, beam_search_multi_seeded, beam_search_multi_seeded_endgame,
+    beam_search_stratified, beam_search_stratified_cutoffs, Bound, Jitter, Scorer, SnapshotCfg,
+    Stratify,
 };
 use superperm::beam2::{beam2_search, Scorer2};
 use superperm::endgame::{solve_endgame, spell_path, MAX_REMAINING};
@@ -73,6 +74,54 @@ fn load_model(path: &PathBuf, n: usize, allow_n_mismatch: bool) -> Model {
         }
     }
     m
+}
+
+/// Parse a beam `--seed-file`: one walk per line, either a bare
+/// comma-separated first-visit rank list or a `sojourn-dfs
+/// --dump-frontier` TSV row (path in the last tab field); empty and
+/// `#`-prefixed lines are skipped. Exits with a message on any invalid
+/// walk (must start at rank 0, ranks in range, not a complete walk).
+fn read_seed_file(path: &PathBuf, nfact: usize) -> Vec<Vec<u32>> {
+    let text = std::fs::read_to_string(path).unwrap_or_else(|e| {
+        eprintln!("cannot read --seed-file {}: {e}", path.display());
+        std::process::exit(1);
+    });
+    let mut seeds = Vec::new();
+    for (i, line) in text.lines().enumerate() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let field = line.rsplit('\t').next().unwrap();
+        let walk: Vec<u32> = field
+            .split(',')
+            .map(|t| {
+                t.trim().parse().unwrap_or_else(|_| {
+                    eprintln!("--seed-file line {}: invalid rank {t:?}", i + 1);
+                    std::process::exit(1);
+                })
+            })
+            .collect();
+        let bad = if walk.first() != Some(&0) {
+            Some("walk must start at rank 0")
+        } else if walk.len() >= nfact {
+            Some("walk already visits every permutation")
+        } else if walk.iter().any(|&r| r as usize >= nfact) {
+            Some("rank out of range")
+        } else {
+            None
+        };
+        if let Some(msg) = bad {
+            eprintln!("--seed-file line {}: {msg}", i + 1);
+            std::process::exit(1);
+        }
+        seeds.push(walk);
+    }
+    if seeds.is_empty() {
+        eprintln!("--seed-file {} contains no walks", path.display());
+        std::process::exit(1);
+    }
+    seeds
 }
 
 /// Write a visit-order path's feature trajectory to `path` as JSONL.
@@ -168,6 +217,15 @@ enum Cmd {
         /// Abstraction mode only: exact exemplars expanded per class.
         #[arg(long, default_value_t = 1)]
         exemplars: u32,
+        /// Write frontier exemplars to this TSV file (class key, len,
+        /// ledger, first-visit rank path) — beam seeds for
+        /// `beam --seed-file` (T3).
+        #[arg(long)]
+        dump_frontier: Option<PathBuf>,
+        /// Frontier exemplars dumped per canonical class (with
+        /// --dump-frontier).
+        #[arg(long, default_value_t = 1, requires = "dump_frontier")]
+        dump_per_class: u32,
     },
     /// Run the deterministic greedy baseline and print the result.
     Greedy {
@@ -217,6 +275,14 @@ enum Cmd {
         /// < n! - 1). The reported result includes the prefix.
         #[arg(long, default_value_t = 0)]
         seed_prefix: usize,
+        /// Seed the beam from walk prefixes in this file (T3): one walk
+        /// per line, either a comma-separated first-visit rank list
+        /// starting at 0, or a `sojourn-dfs --dump-frontier` TSV row
+        /// (the path is its last field; `#` lines are skipped). Each
+        /// walk is injected at its own depth; a one-line file with the
+        /// greedy prefix is bit-identical to --seed-prefix.
+        #[arg(long, conflicts_with = "seed_prefix")]
+        seed_file: Option<PathBuf>,
         /// Stratified selection: bucket candidates by deficit profile
         /// (quantized intact / half-open / nearly-done cycle counts)
         /// and reserve part of the width per occupied bucket, so
@@ -473,6 +539,8 @@ fn main() -> ExitCode {
             max_nodes,
             dedup,
             exemplars,
+            dump_frontier,
+            dump_per_class,
         } => {
             use superperm::sojourn::{ClassCaps, DedupMode, SojournDfs, SplitProfile};
             assert_eq!(class.len(), 5, "--class needs S,d3,d4,d5,ip");
@@ -496,6 +564,11 @@ fn main() -> ExitCode {
                     DedupArg::Abstraction => DedupMode::Abstraction,
                 },
                 exemplars_per_class: exemplars,
+                dump_per_class: if dump_frontier.is_some() {
+                    dump_per_class
+                } else {
+                    0
+                },
             };
             let t = std::time::Instant::now();
             let st = dfs.run();
@@ -518,6 +591,34 @@ fn main() -> ExitCode {
                 st.oversize
             );
             println!("elapsed           = {:.3}s", t.elapsed().as_secs_f64());
+            if let Some(path) = dump_frontier {
+                use std::io::Write;
+                let f = std::fs::File::create(&path).expect("create frontier dump file");
+                let mut f = std::io::BufWriter::new(f);
+                writeln!(f, "# class_key\tlen\ts\td3\td4\td5\tip\tpath").unwrap();
+                for seed in &st.dump {
+                    let ranks: Vec<String> = seed.path.iter().map(u32::to_string).collect();
+                    writeln!(
+                        f,
+                        "{:032x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                        seed.class_key,
+                        seed.len,
+                        seed.s,
+                        seed.d3,
+                        seed.d4,
+                        seed.d5,
+                        seed.ip,
+                        ranks.join(",")
+                    )
+                    .unwrap();
+                }
+                println!(
+                    "frontier dump     = {} seeds ({} per class) -> {}",
+                    st.dump.len(),
+                    dump_per_class,
+                    path.display()
+                );
+            }
         }
         Cmd::Greedy { n, log } => {
             let g = Graph::new(n);
@@ -538,6 +639,7 @@ fn main() -> ExitCode {
             jitter,
             jitter_seed,
             seed_prefix,
+            seed_file,
             stratify,
             strat_quota,
             strat_bucket,
@@ -554,6 +656,7 @@ fn main() -> ExitCode {
                 );
                 std::process::exit(1);
             }
+            let seeds = seed_file.as_ref().map(|p| read_seed_file(p, g.nfact));
             let loaded = model.map(|path| load_model(&path, n, allow_n_mismatch));
             let (scorer, desc) = match &loaded {
                 Some(m) => (
@@ -580,10 +683,14 @@ fn main() -> ExitCode {
                 Some(j) => format!(" jitter={} jitter_seed={}", j.eps, j.seed),
                 None => String::new(),
             };
-            let sdesc = if seed_prefix > 0 {
-                format!(" seed_prefix={seed_prefix}")
-            } else {
-                String::new()
+            let sdesc = match (&seeds, seed_prefix) {
+                (Some(s), _) => format!(
+                    " seed_file={} seeds={}",
+                    seed_file.as_ref().unwrap().display(),
+                    s.len()
+                ),
+                (None, 0) => String::new(),
+                (None, k) => format!(" seed_prefix={k}"),
             };
             if stratify && strat_bucket == 0 {
                 eprintln!("--strat-bucket must be >= 1");
@@ -598,7 +705,11 @@ fn main() -> ExitCode {
                 None => String::new(),
             };
             if endgame > 0 {
-                let max_m = MAX_REMAINING.min(g.nfact - 1 - seed_prefix);
+                let seeded = match &seeds {
+                    Some(s) => s.iter().map(Vec::len).max().unwrap(),
+                    None => 1 + seed_prefix,
+                };
+                let max_m = MAX_REMAINING.min(g.nfact - seeded);
                 if !(1..=max_m).contains(&endgame) {
                     eprintln!("--endgame must be in 1..={max_m} (got {endgame})");
                     std::process::exit(1);
@@ -608,21 +719,37 @@ fn main() -> ExitCode {
                     std::process::exit(1);
                 }
             }
+            if seeds.is_some() && cutoff_log.is_some() {
+                eprintln!("--seed-file cannot be combined with --cutoff-log");
+                std::process::exit(1);
+            }
             let t0 = Instant::now();
             let (b, cuts, snaps) = if endgame > 0 {
-                let (b, s) = beam_search_endgame_snapshot(
-                    &g,
-                    width,
-                    scorer,
-                    jit,
-                    seed_prefix,
-                    strat,
-                    SnapshotCfg {
-                        remaining: endgame,
-                        top: endgame_top,
-                    },
-                );
+                let cfg = SnapshotCfg {
+                    remaining: endgame,
+                    top: endgame_top,
+                };
+                let (b, s) = match &seeds {
+                    Some(s) => {
+                        beam_search_multi_seeded_endgame(&g, width, scorer, jit, s, strat, cfg)
+                    }
+                    None => beam_search_endgame_snapshot(
+                        &g,
+                        width,
+                        scorer,
+                        jit,
+                        seed_prefix,
+                        strat,
+                        cfg,
+                    ),
+                };
                 (b, None, Some(s))
+            } else if let Some(s) = &seeds {
+                (
+                    beam_search_multi_seeded(&g, width, scorer, jit, s, strat),
+                    None,
+                    None,
+                )
             } else {
                 match &cutoff_log {
                     Some(_) => {

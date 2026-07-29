@@ -3,8 +3,9 @@
 
 use superperm::beam::{
     beam_search, beam_search_cutoffs, beam_search_endgame_snapshot, beam_search_jittered,
-    beam_search_seeded, beam_search_stratified, beam_search_stratified_cutoffs, Bound, Jitter,
-    Scorer, SnapshotCfg, Stratify,
+    beam_search_multi_seeded, beam_search_multi_seeded_endgame, beam_search_seeded,
+    beam_search_stratified, beam_search_stratified_cutoffs, Bound, Jitter, Scorer, SnapshotCfg,
+    Stratify,
 };
 use superperm::endgame::{solve_endgame, spell_path};
 use superperm::graph::Graph;
@@ -340,6 +341,96 @@ fn seed_prefix_mid_depth_n5_width_2000_still_153() {
     let b = beam_search_seeded(&g, 2000, Scorer::Bound(Bound::Cycle), None, 60);
     assert_eq!(b.len, 153);
     assert!(validate(5, &b.string).complete);
+}
+
+/// T3 invariant: a one-walk seed list equal to the greedy prefix must
+/// be bit-identical to `beam_search_seeded` with the same prefix depth
+/// — same code path, same injection level, same arena layout.
+#[test]
+fn seed_file_single_greedy_walk_matches_seed_prefix() {
+    let g = Graph::new(5);
+    let greedy_path = greedy(&g).path;
+    for depth in [1usize, 30, 60] {
+        let walk = greedy_path[..=depth].to_vec();
+        let multi = beam_search_multi_seeded(
+            &g,
+            256,
+            Scorer::Bound(Bound::Cycle),
+            None,
+            std::slice::from_ref(&walk),
+            None,
+        );
+        let seeded = beam_search_seeded(&g, 256, Scorer::Bound(Bound::Cycle), None, depth);
+        assert_eq!(multi.len, seeded.len, "depth {depth}");
+        assert_eq!(multi.path, seeded.path, "depth {depth}");
+        assert_eq!(multi.string, seeded.string, "depth {depth}");
+    }
+}
+
+/// T3: seeds of different lengths are injected at different levels; the
+/// search must still complete every walk and return a valid optimum at
+/// n=5 when one seed lies on the greedy (optimal) path.
+#[test]
+fn seed_file_mixed_depth_walks_n5_still_153() {
+    let g = Graph::new(5);
+    let greedy_path = greedy(&g).path;
+    // Three prefixes of the optimal path plus a deliberately bad walk
+    // (weight-4 fallback start: rank 0 then the second cycle's rep).
+    let mut seeds: Vec<Vec<u32>> = [20usize, 40, 60]
+        .iter()
+        .map(|&d| greedy_path[..=d].to_vec())
+        .collect();
+    let far = (0..g.nfact as u32)
+        .find(|&q| {
+            q != 0
+                && g.succs[0]
+                    .iter()
+                    .all(|&(s, w)| s != q || w >= g.n as u8 - 1)
+        })
+        .unwrap();
+    seeds.push(vec![0, far]);
+    let b = beam_search_multi_seeded(&g, 2000, Scorer::Bound(Bound::Cycle), None, &seeds, None);
+    assert_eq!(b.len, 153);
+    assert!(validate(5, &b.string).complete);
+    assert_eq!(b.path.len(), g.nfact);
+}
+
+/// T3 + stratification + endgame snapshot compose: multi-seeded beam
+/// with the records-style options must return a valid string and a
+/// snapshot whose exact completions never beat the admissible bound's
+/// floor (sanity, not strength).
+#[test]
+fn seed_file_endgame_snapshot_composes_n5() {
+    let g = Graph::new(5);
+    let greedy_path = greedy(&g).path;
+    let seeds: Vec<Vec<u32>> = vec![greedy_path[..=40].to_vec(), greedy_path[..=50].to_vec()];
+    let (b, snaps) = beam_search_multi_seeded_endgame(
+        &g,
+        512,
+        Scorer::Bound(Bound::Cycle),
+        None,
+        &seeds,
+        Some(Stratify {
+            quota: 4,
+            bucket: 1,
+        }),
+        SnapshotCfg {
+            remaining: 12,
+            top: 8,
+        },
+    );
+    assert!(validate(5, &b.string).complete);
+    assert!(!snaps.is_empty());
+    for s in &snaps {
+        assert_eq!(s.remaining.len(), 12);
+        assert_eq!(s.path.len(), g.nfact - 12);
+        let e = solve_endgame(&g, s.cur, &s.remaining);
+        // exact completion appends >= 1 char per missing perm
+        assert!(e.cost >= 12);
+        if let Some(h) = s.best_descendant_len {
+            assert!(s.len + e.cost <= h);
+        }
+    }
 }
 
 /// Jitter must not break correctness — it only reorders near-ties. At

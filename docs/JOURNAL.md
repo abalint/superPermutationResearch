@@ -6,6 +6,80 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (session 23) — T3 built (`--dump-frontier` + `beam --seed-file`, multi-seed injection); C2 PASS (pipeline finds 153); C1 verdict: oracle PASS (byte-identical 872 re-derived from its own depth-≥450 prefix) but the frontier→beam pipeline is COMPLETION-BLOCKED at 879, quantified ceiling 877–878; learned model + stratification actively HURT record-opening completion — residual bound is the best completion scorer
+
+Build order = TRACKB-DESIGN §9; this session landed T3 → C1/C2. New code:
+`sojourn-dfs --dump-frontier <tsv> --dump-per-class K` (states optionally carry
+first-visit rank paths; ≤ K frontier exemplars dumped per L2 canonical class)
+and `beam --seed-file <path>` (`SeedSpec::Walks`: one root state per walk,
+replayed through the survivor-loop counter updates and **injected into the
+level-synchronous loop at its own depth** — walks of different lengths enter at
+different levels, arena chains all hang off node 0 so reconstruction, dedup,
+stratification, jitter, and the endgame snapshot all compose unchanged). A
+one-line seed file equal to the greedy prefix is **bit-identical** to
+`--seed-prefix` (pinned by test). 3 new integration tests + 1 sojourn unit test
+(dump paths replay to exactly `len` by max-overlap concatenation); all 99+4
+tests green, clippy/fmt clean.
+
+**C2 — PASS, with a transferable lesson.** Pipeline = sojourn DFS in greedy's
+n=5 class (S=24, d3=4, d4=1, ip=0, waste 29) → frontier dump → multi-seed
+beam. At `--dump-per-class 1` (abstraction tier): **154**. At exact dedup +
+64 exemplars/class (473 seeds): **153, validated, under all three bounds**
+(cycle/arc/residual, w2000, 0.2 s). The abstraction key is too coarse to pick
+the right exemplar — in-class exemplar diversity is what closes the last char.
+
+**C1 — the machinery control passes; the pipeline control does not, and the
+blocker is now measured, not guessed.** Oracle = seed the beam with a known
+872's own prefix (`872.0053cad`, relabeled to identity; script in scratchpad,
+now `analysis/trackb/record_to_seed.py`). Completion-vs-depth curve:
+
+| seed depth (perms) | learned+strat w2000 | residual w8000 | residual w32000 + endgame |
+|---|---|---|---|
+| 0 (scratch) | 873 | 894 (s19) | — |
+| 14 | 899 | 877 | **878** (128 s) |
+| 100 | 906 | 886 | — |
+| 200 | 917 | 884 | 882 |
+| 400 | 915 | 874 | 874 |
+| 450 | 897 | 874 | **872** ✓ |
+| 500 | 904 | **872** ✓ | — |
+| 550 | 888 | 872 | — |
+| 600 | **872** ✓ | — | — |
+
+The d=600 / d≥450 completions are **byte-identical to the source record** and
+validator-complete — the completion machinery is sound from the late midgame.
+Three findings: (1) **the stratified learned beam — our best from-scratch
+config — is the WORST record-opening completer** (899–917, worse than its own
+873 from scratch, non-monotone in depth): the boot1 model is off-distribution
+on record-class states and stratification protects the wrong states once the
+opening is already record-shaped. The residual bound is the best completion
+scorer by 15–30 chars. (2) The completion horizon is ~level 450 (w32000) /
+500 (w8000): below it the beam abandons the record's line and loses 2–10
+chars through the midgame. (3) From opening depth the ceiling is **878 even
+given the TRUE record opening** (d=14, w32000 + exact endgame) — so no
+frontier, however good, can reach 872 through beam-only completion at
+feasible widths.
+
+**Pipeline C1 runs saturate exactly that ceiling:** records' class, d=6
+sound-exact frontier, 16 exemplars/class = 24,214 seeds over all 2,114
+classes → residual w8000 + endgame = **879** (31 s); w32000 = **879** (136 s;
+width-saturated). d=10 book frontier (13,527 classes × 1) → 883; learned
+config → 893. The frontier layer is fine — the gap to 872 lives entirely in
+beam completion through levels ~60–450. **C1 verdict: NOT PASSED as a
+pipeline; machinery validated; the binding constraint is the completion
+engine, quantified at +6–7 chars.** This is the Track B mirror of s22's
+"bounds don't predict": completion needs a *policy* through the contested
+zone, not a wider beam — exactly what the design's step 4a (NRPA at sojourn
+level) + T2 (bound/model composition) are for. Track C's evaluator target is
+now sharp: rank quality *conditional on record-class openings*, levels
+60–450.
+
+**Next (build order continues):** T2 `--bound` + `--model` composition, then
+NRPA (`src/nrpa.rs`) over the sojourn move space with tablebase finish, then
+bandit over frontier classes → re-run C1 → M3 verdict. The perfect-ride ATSP
+closure probe (616 S=120 classes) and §7 tour-merge stay queued as idle-Mac
+candidates. `record_to_seed.py` turns any record/string into seeds — reusable
+for NRPA warm-starts and Track C training pairs.
+
 ## 2026-07-29 (session 22) — Track B build: T0 identity VERIFIED (806 walks, 0 exceptions, general form found), L0 ledger (78,813 allocations, M1 PASS 66.5%), NEW pass-over lemma (ip ≤ 4·(S−120)), T1 door atlas (150 canonical edges), L2 sojourn DFS built, M2 PASS in book mode (d=10, 746k nodes) with exact-tier infeasibility QUANTIFIED
 
 Build order = TRACKB-DESIGN §9; this session landed T0 → L0+M1 → T1 → L2+M2.

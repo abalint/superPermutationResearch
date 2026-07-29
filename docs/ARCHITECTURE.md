@@ -427,10 +427,10 @@ module, do NOT patch `beam_search`.
   identity start breaks the symmetry), `Abstraction` (L2 canonical key +
   per-class exemplar cap `--exemplars`; book mode, not exhaustion-sound).
   M2 PASS in book mode (d=10, E=16, 746k nodes, 13,527 classes); exact tier
-  sound to d≈6 (5.9M nodes). NOT yet wired: residual-bound pruning (`len +
-  bound > 725 + 146` — waits on T2), `solve_endgame` tails, completion +
-  validation (waits on T3); frontier states are counted/classed but not yet
-  dumped for the bandit layer.
+  sound to d≈6 (5.9M nodes). s23: `--dump-frontier <tsv> --dump-per-class K`
+  emits ≤ K frontier exemplars per canonical class with their first-visit
+  rank paths (`FrontierSeed`; states carry paths only when dumping). NOT yet
+  wired: residual-bound pruning (`len + bound > 725 + 146` — waits on T2).
 - **NRPA rollout engine**: `src/nrpa.rs` over the same sojourn move space —
   policy weights on move features, softmax rollouts, adapt-toward-best per
   nesting level (2–3 levels). `Walk` in `src/walk.rs` is the replay/feature
@@ -439,14 +439,26 @@ module, do NOT patch `beam_search`.
   `--bound` (s19 note). Fix in `src/beam.rs::score_move` — keep the score a
   pure function of `(cur, visited, len)` or the dedup argument breaks; the
   `lb_arc` anchor in the residual branch shows the pattern.
-- **T3 — `--seed-file`**: generalize `beam_search_seeded` (`src/beam.rs`) from
-  greedy-prefix-depth to an arbitrary walk prefix loaded from a file; clap arg
-  in `src/main.rs` alongside `--seed-prefix`.
+- **T3 — `--seed-file` — DONE s23** (`src/beam.rs::SeedSpec`,
+  `beam_search_multi_seeded[_endgame]`): one root state per walk, replayed
+  via `replay_walk` (the extracted greedy-prefix replay) and injected into
+  the level-synchronous loop at its own depth (`pending` map keyed by
+  visited count); arena chains hang off node 0 so reconstruction, dedup,
+  stratify, jitter, and the endgame snapshot compose unchanged. A one-walk
+  greedy prefix is bit-identical to `--seed-prefix` (pinned).
+  `analysis/trackb/record_to_seed.py` converts any superperm string into
+  seed lines (relabeled first-visit rank path).
 - **Gates before any 871 hunting** (TRACKB-DESIGN §6): C1 — re-find a validated
   872 from the records' own class (S=145, #w3=3, 25 splits); C2 — the n=5
   pipeline still finds 153 (hard invariant); M2 — d=10 canonical exhaustion of
   the records' class within ~10⁶ nodes. M3 (independent 872 or out-of-grammar
-  ≤ 873) gates farm spend.
+  ≤ 873) gates farm spend. s23 status: C2 PASS (153 validated, all bounds;
+  needs exact dedup + ≥64 exemplars/class — abstraction-tier 1/class gives
+  154); C1 oracle PASS (byte-identical 872 from its own prefix at depth
+  ≥ 450, residual w32000 + endgame; ≥ 500 at w8000) but pipeline NOT PASSED —
+  879 vs a measured 878 ceiling from even the TRUE opening at d=14; blocked
+  on beam completion through levels ~60–450, residual bound the best
+  completion scorer (learned+stratify is 15–30 chars worse there).
 
 ## Performance notes
 

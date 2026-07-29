@@ -159,6 +159,11 @@ pub struct SojournDfs<'g> {
     /// higher values trade nodes for class coverage — s22 measured the
     /// coverage curve against exact ground truth).
     pub exemplars_per_class: u32,
+    /// Emit up to this many frontier exemplars per canonical class into
+    /// [`DfsStats::dump`], each carrying its full first-visit rank path
+    /// (T3 seeds for `beam --seed-file`). 0 = off (states then carry no
+    /// path and clone as cheaply as before).
+    pub dump_per_class: u32,
 }
 
 /// How DFS states are deduplicated.
@@ -204,6 +209,9 @@ struct State {
     cycle_rem: Vec<u8>,
     /// Cycles with no visited member yet.
     untouched: u16,
+    /// First-visit rank path (starts with rank 0); tracked only when
+    /// frontier dumping is on, `None` otherwise.
+    path: Option<Vec<u32>>,
 }
 
 /// Aggregate results.
@@ -220,6 +228,30 @@ pub struct DfsStats {
     pub dead_ends: u64,
     /// Walks completed inside the horizon (all perms visited).
     pub completed: u64,
+    /// Frontier exemplars (≤ `dump_per_class` per canonical class),
+    /// empty unless dumping is on.
+    pub dump: Vec<FrontierSeed>,
+}
+
+/// One dumped frontier exemplar — a beam seed (T3).
+pub struct FrontierSeed {
+    /// L2 canonical key of its opening class.
+    pub class_key: u128,
+    /// Characters emitted so far.
+    pub len: u32,
+    /// Ledger at the frontier: sojourns started, door counts, priced
+    /// intra-skip waste.
+    pub s: u16,
+    /// Weight-3 doors taken.
+    pub d3: u16,
+    /// Weight-4 doors taken.
+    pub d4: u16,
+    /// Weight-5 doors taken.
+    pub d5: u16,
+    /// Priced intra-skip waste.
+    pub ip: u16,
+    /// First-visit rank path from the identity (starts with rank 0).
+    pub path: Vec<u32>,
 }
 
 /// Precomputed relabeling machinery for [`DedupMode::Orbit`].
@@ -316,6 +348,7 @@ impl SojournDfs<'_> {
             cur_part: 1,
             cycle_rem: vec![g.n as u8; g.cycle_count],
             untouched: g.cycle_count as u16 - 1,
+            path: (self.dump_per_class > 0).then(|| vec![0]),
         };
         st.visited.set(0);
         st.cycle_rem[g.cycle_id[0] as usize] -= 1;
@@ -341,10 +374,12 @@ impl SojournDfs<'_> {
             oversize: false,
             dead_ends: 0,
             completed: 0,
+            dump: Vec::new(),
         };
         let mut seen: HashSet<u128> = HashSet::new();
         let mut class_counts: HashMap<u128, u32> = HashMap::new();
         let mut classes: HashMap<u128, u64> = HashMap::new();
+        let mut dump_counts: HashMap<u128, u32> = HashMap::new();
         let mut stack = vec![st];
         while let Some(st) = stack.pop() {
             if stats.nodes >= self.max_nodes {
@@ -380,7 +415,24 @@ impl SojournDfs<'_> {
             stats.nodes += 1;
             if st.s > self.depth {
                 stats.frontier += 1;
-                *classes.entry(self.canonical_key(&st, &reps)).or_insert(0) += 1;
+                let key = self.canonical_key(&st, &reps);
+                *classes.entry(key).or_insert(0) += 1;
+                if self.dump_per_class > 0 {
+                    let c = dump_counts.entry(key).or_insert(0);
+                    if *c < self.dump_per_class {
+                        *c += 1;
+                        stats.dump.push(FrontierSeed {
+                            class_key: key,
+                            len: st.len,
+                            s: st.s,
+                            d3: st.d3,
+                            d4: st.d4,
+                            d5: st.d5,
+                            ip: st.ip,
+                            path: st.path.clone().expect("dumping implies path tracking"),
+                        });
+                    }
+                }
                 continue;
             }
             let before = stack.len();
@@ -499,6 +551,9 @@ impl SojournDfs<'_> {
         c.len += w as u32;
         c.cur = target;
         c.cur_part = 1;
+        if let Some(p) = c.path.as_mut() {
+            p.push(target);
+        }
         if self.feasible(&c) {
             stack.push(c);
         }
@@ -658,6 +713,9 @@ impl State {
         self.len += w;
         self.cur = target;
         self.cur_part += 1;
+        if let Some(p) = self.path.as_mut() {
+            p.push(target);
+        }
     }
 }
 
@@ -751,12 +809,56 @@ mod tests {
             max_nodes: 5_000_000,
             dedup: DedupMode::Exact,
             exemplars_per_class: 1,
+            dump_per_class: 0,
         };
         let st = dfs.run();
         assert!(!st.oversize);
         assert!(st.frontier > 0);
         assert!(st.canonical_classes > 0);
         assert!(st.canonical_classes as u64 <= st.frontier);
+        assert!(st.dump.is_empty());
+    }
+
+    #[test]
+    fn frontier_dump_paths_are_valid_walks() {
+        // Dumped seeds must start at rank 0, visit distinct ranks, and
+        // rebuild by maximal-overlap concatenation to exactly `len`
+        // characters — the contract `beam --seed-file` relies on.
+        let g = Graph::new(4);
+        let dfs = SojournDfs {
+            g: &g,
+            caps: ClassCaps {
+                s: 12,
+                d3: 6,
+                d4: 0,
+                d5: 0,
+                ip: 4,
+            },
+            profile: None,
+            depth: 3,
+            max_nodes: 5_000_000,
+            dedup: DedupMode::Exact,
+            exemplars_per_class: 1,
+            dump_per_class: 2,
+        };
+        let st = dfs.run();
+        assert!(!st.dump.is_empty());
+        assert!(st.dump.len() as u64 <= 2 * st.canonical_classes as u64);
+        let mut per_class: HashMap<u128, u32> = HashMap::new();
+        for seed in &st.dump {
+            *per_class.entry(seed.class_key).or_insert(0) += 1;
+            assert_eq!(seed.path[0], 0);
+            let distinct: HashSet<u32> = seed.path.iter().copied().collect();
+            assert_eq!(distinct.len(), seed.path.len());
+            let mut len = g.n as u32;
+            for pair in seed.path.windows(2) {
+                let p = &g.perms[pair[0] as usize];
+                let q = &g.perms[pair[1] as usize];
+                len += (g.n - Graph::overlap(p, q)) as u32;
+            }
+            assert_eq!(len, seed.len);
+        }
+        assert!(per_class.values().all(|&c| c <= 2));
     }
 
     #[test]
@@ -778,6 +880,7 @@ mod tests {
             max_nodes: 1_000_000,
             dedup: DedupMode::Exact,
             exemplars_per_class: 1,
+            dump_per_class: 0,
         };
         let st = dfs.run();
         assert!(!st.oversize);

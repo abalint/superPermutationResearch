@@ -25,15 +25,26 @@ door atlas (150 canonical edges, orbit-verified, interior-perm filter data),
 and L2 sojourn DFS (`src/sojourn.rs`, `sojourn-dfs` subcommand, 3 dedup
 tiers) with M2 PASS in book mode (d=10, E=16, 746k nodes, 13,527 classes;
 exact tier sound only to d≈6 = 5.9M nodes; orbit dedup proven worthless —
-identity start breaks symmetry). NEXT = C1 control (re-find a validated 872
-from the records' class; needs T3 `--seed-file` completion machinery first) +
-C2 n=5 → T2 bound/model composition → bandit + NRPA → M3 verdict; cheap
-closure probes queued: perfect-ride ATSP (closes all 616 S=120 live classes),
-§7 tour-merge. Track B downgraded-not-retired s20 (Vlad's preliminary
+identity start breaks symmetry); s23 landed T3 (`sojourn-dfs
+--dump-frontier` + `beam --seed-file` multi-seed depth-injection,
+bit-identical to `--seed-prefix` on one greedy walk;
+`analysis/trackb/record_to_seed.py` turns any record into seeds), C2 PASS
+(n=5 pipeline finds validated 153 — needs exact dedup + ≥64 exemplars/class;
+abstraction 1/class gives 154), and the C1 verdict: **oracle PASS** (beam
+re-derives a known 872 byte-identically from its own prefix at depth ≥ 450,
+residual w32000+endgame; learned+stratify is the WORST completer there,
+899–917 — residual bound best by 15–30 chars) but **pipeline NOT PASSED —
+completion-blocked**: even from the TRUE record opening at d=14 the ceiling
+is 878, and 24,214 sound d=6 class exemplars saturate it at 879 (w8000 =
+w32000); the gap to 872 lives in beam completion through levels ~60–450 and
+needs a policy, not width. NEXT = T2 bound/model composition → NRPA
+(`src/nrpa.rs`) + bandit → re-run C1 → M3 verdict; cheap closure probes
+queued: perfect-ride ATSP (closes all 616 S=120 live classes), §7
+tour-merge. Track B downgraded-not-retired s20 (Vlad's preliminary
 a(6)=872 claim; n=6 window unconditionally still {869..872}); n=7 5905
 campaign survives (his conditional a(7) ≥ 5896 is δ≤11 vs our δ=21 bar);
 Track C v2 parked on the 2.4× scoring-overhead fix; farm and Mac idle
-(JOURNAL s22 is the handoff)**
+(JOURNAL s23 is the handoff)**
 — headline: **Egan−1 = 872 is optimal in the gain-one certificate grammar at n=6**
 (skip-priced ledger waste = 148 − K/4 + Σskip/4 + f4 + 2f5; forced-map period 4;
 absolute pivot confinement; max V = 8, all 12 optimal chains fail the cover —
@@ -160,6 +171,10 @@ cargo run --release -- atlas -n 6 > raw.tsv && python3 analysis/trackb/door_atla
 cargo run --release -- rollouts -n 6 --count 100 --epsilon 0.15 --seed 0 --out f.jsonl --strings f.strings  # rollout strings for T0
 # L2 opening DFS on the records' class; --dedup exact = sound (d<=6), abstraction+--exemplars = book mode (M2 config):
 cargo run --release -- sojourn-dfs -n 6 --class 145,3,0,0,0 --records-profile --depth 10 --dedup abstraction --exemplars 16
+# T3 (s23) — frontier seed dump + multi-seed completion beam (C1/C2 pipeline; residual is the best completion bound):
+cargo run --release -- sojourn-dfs -n 6 --class 145,3,0,0,0 --records-profile --depth 6 --dedup exact --dump-frontier f.tsv --dump-per-class 16
+cargo run --release -- beam -n 6 --width 8000 --seed-file f.tsv --bound residual --endgame 20 --endgame-top 400
+python3 analysis/trackb/record_to_seed.py data/records872/872.0053cad.txt 6 450 > seed.txt  # any string -> seed line(s); 0 = full path
 
 # CURRENT BEST FROM SCRATCH — stratified learned beam, validated 873 (n=6), ~8 s (phase-3 item 1, JOURNAL s7):
 cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --alpha 1 --stratify --strat-quota 4 --strat-bucket 1

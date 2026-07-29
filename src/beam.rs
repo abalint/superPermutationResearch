@@ -364,6 +364,22 @@ pub fn beam_search_jittered(
     beam_search_seeded(g, width, scorer, jitter, 0)
 }
 
+/// How the beam is seeded before the survivor loop starts (T3).
+pub enum SeedSpec<'a> {
+    /// Replay this many deterministic greedy moves into the single root
+    /// state (0 = plain unseeded beam).
+    GreedyPrefix(usize),
+    /// One root state per walk: each walk is a first-visit rank path
+    /// starting at rank 0 (e.g. a `sojourn-dfs` frontier exemplar),
+    /// replayed through the same counter updates as the survivor loop
+    /// and injected into the level-synchronous search at its own depth
+    /// (= number of ranks in the walk). Walks of different lengths are
+    /// injected at different levels; injected states compete on score
+    /// from their first expansion like any other state, and the beam
+    /// may transiently exceed `width` at an injection level.
+    Walks(&'a [Vec<u32>]),
+}
+
 /// [`beam_search_jittered`] with the root state seeded by replaying the
 /// first `seed_prefix` moves of the deterministic greedy path, so the
 /// beam explores continuations of a known-good prefix. `seed_prefix = 0`
@@ -376,7 +392,75 @@ pub fn beam_search_seeded(
     jitter: Option<Jitter>,
     seed_prefix: usize,
 ) -> BeamResult {
-    beam_search_impl(g, width, scorer, jitter, seed_prefix, None, None, None)
+    beam_search_impl(
+        g,
+        width,
+        scorer,
+        jitter,
+        SeedSpec::GreedyPrefix(seed_prefix),
+        None,
+        None,
+        None,
+    )
+}
+
+/// Multi-seeded beam (T3 completion machinery): the search starts from
+/// the given walks instead of the identity root, injecting each at its
+/// own depth. A single walk equal to the greedy prefix is bit-identical
+/// to `beam_search_seeded` with the same prefix length. The reported
+/// result covers the full string (seed prefix included).
+pub fn beam_search_multi_seeded(
+    g: &Graph,
+    width: usize,
+    scorer: Scorer,
+    jitter: Option<Jitter>,
+    seeds: &[Vec<u32>],
+    stratify: Option<Stratify>,
+) -> BeamResult {
+    beam_search_impl(
+        g,
+        width,
+        scorer,
+        jitter,
+        SeedSpec::Walks(seeds),
+        stratify,
+        None,
+        None,
+    )
+}
+
+/// [`beam_search_multi_seeded`] with the endgame snapshot of
+/// [`beam_search_endgame_snapshot`]. `cfg.remaining` must satisfy
+/// `nfact − remaining ≥ max seed length` so every seed is injected
+/// before the snapshot level.
+pub fn beam_search_multi_seeded_endgame(
+    g: &Graph,
+    width: usize,
+    scorer: Scorer,
+    jitter: Option<Jitter>,
+    seeds: &[Vec<u32>],
+    stratify: Option<Stratify>,
+    cfg: SnapshotCfg,
+) -> (BeamResult, Vec<SnapState>) {
+    let max_len = seeds.iter().map(Vec::len).max().unwrap_or(1);
+    assert!(
+        (1..=g.nfact - max_len).contains(&cfg.remaining),
+        "snapshot remaining must be in 1..={} (got {}; longest seed visits {max_len})",
+        g.nfact - max_len,
+        cfg.remaining
+    );
+    let mut snaps = Vec::new();
+    let r = beam_search_impl(
+        g,
+        width,
+        scorer,
+        jitter,
+        SeedSpec::Walks(seeds),
+        stratify,
+        None,
+        Some((cfg, &mut snaps)),
+    );
+    (r, snaps)
 }
 
 /// [`beam_search_seeded`] with optional width reservation per
@@ -391,7 +475,16 @@ pub fn beam_search_stratified(
     seed_prefix: usize,
     stratify: Option<Stratify>,
 ) -> BeamResult {
-    beam_search_impl(g, width, scorer, jitter, seed_prefix, stratify, None, None)
+    beam_search_impl(
+        g,
+        width,
+        scorer,
+        jitter,
+        SeedSpec::GreedyPrefix(seed_prefix),
+        stratify,
+        None,
+        None,
+    )
 }
 
 /// [`beam_search_stratified`] that additionally captures the top
@@ -421,7 +514,7 @@ pub fn beam_search_endgame_snapshot(
         width,
         scorer,
         jitter,
-        seed_prefix,
+        SeedSpec::GreedyPrefix(seed_prefix),
         stratify,
         None,
         Some((cfg, &mut snaps)),
@@ -462,12 +555,65 @@ pub fn beam_search_stratified_cutoffs(
         width,
         scorer,
         jitter,
-        seed_prefix,
+        SeedSpec::GreedyPrefix(seed_prefix),
         stratify,
         Some(&mut cutoffs),
         None,
     );
     (r, cutoffs)
+}
+
+/// Replay a first-visit rank walk (excluding the initial rank 0) into
+/// `root` through the same counter updates the survivor loop applies,
+/// so the state is exactly what the beam would hold had it followed
+/// that path — pushing one arena node per step.
+fn replay_walk(
+    g: &Graph,
+    root: &mut State,
+    arena: &mut Vec<(u32, u32)>,
+    ranks: &[u32],
+    tab: Option<&PredTable>,
+    jctx: Option<&JitterCtx>,
+) {
+    let n = g.n;
+    for &q in ranks {
+        assert!(!root.visited.get(q as usize), "seed walk revisits rank {q}");
+        let w = (n - Graph::overlap(&g.perms[root.cur as usize], &g.perms[q as usize])) as u32;
+        let arcs = child_arcs(g, root, q);
+        let w2d = g.w2_bridges_delta(&root.visited, &root.cycle_rem, q);
+        if let Some(t) = tab {
+            let ctx = ParentCtx::new(
+                g,
+                t,
+                &root.visited,
+                root.cur,
+                &root.cycle_rem,
+                root.door,
+                root.long,
+            );
+            let (door, long) =
+                lb_residual::child_terms(g, t, &root.visited, &root.cycle_rem, &ctx, q);
+            root.door = door;
+            root.long = long;
+        }
+        root.visited.set(q as usize);
+        let cid = g.cycle_id[q as usize] as usize;
+        let rem = root.cycle_rem[cid] as usize;
+        root.intact -= u32::from(rem == n);
+        root.half_open = root.half_open + u32::from(rem == n) - u32::from(rem == n - 2);
+        root.nearly_done = root.nearly_done + u32::from(rem == 3) - u32::from(rem == 1);
+        root.w2_bridges = (root.w2_bridges as i64 + w2d) as u32;
+        root.cycle_rem[cid] -= 1;
+        root.k -= u32::from(root.cycle_rem[cid] == 0);
+        root.r -= 1;
+        root.arcs = arcs;
+        root.len += w;
+        root.zhash = jctx.map_or(0, |j| root.zhash ^ j.zobrist[q as usize]);
+        let node = arena.len() as u32;
+        arena.push((root.node, q));
+        root.node = node;
+        root.cur = q;
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -476,7 +622,7 @@ fn beam_search_impl(
     width: usize,
     scorer: Scorer,
     jitter: Option<Jitter>,
-    seed_prefix: usize,
+    seed: SeedSpec,
     stratify: Option<Stratify>,
     mut cutoffs: Option<&mut Vec<LevelCutoff>>,
     mut snapshot: Option<(SnapshotCfg, &mut Vec<SnapState>)>,
@@ -485,11 +631,6 @@ fn beam_search_impl(
     if let Some(st) = stratify {
         assert!(st.bucket >= 1, "stratify bucket granularity must be >= 1");
     }
-    assert!(
-        seed_prefix < g.nfact - 1,
-        "seed prefix depth must be < n! - 1 = {} (got {seed_prefix})",
-        g.nfact - 1
-    );
     let nfact = g.nfact;
     let n = g.n;
     let jctx = jitter
@@ -502,10 +643,11 @@ fn beam_search_impl(
     let tab = matches!(scorer, Scorer::Bound(Bound::Residual)).then(|| PredTable::new(g));
     let tab = tab.as_ref();
 
-    // Arena node 0 is the root (identity permutation, no parent).
+    // Arena node 0 is the root (identity permutation, no parent);
+    // every seed walk's chain hangs off it.
     let mut arena: Vec<(u32, u32)> = vec![(u32::MAX, 0)];
 
-    let mut beam = {
+    let make_root = |jctx: Option<&JitterCtx>| -> State {
         let mut visited = BitSet::new(nfact);
         visited.set(0);
         let mut cycle_rem = vec![n as u8; g.cycle_count].into_boxed_slice();
@@ -514,7 +656,7 @@ fn beam_search_impl(
         // is 1 and only rank 0's class is touched.
         let door = tab.map_or(0, |t| lb_residual::door_scratch(g, t, &visited, 0));
         let long = tab.map_or(0, |_| lb_residual::long_scratch(g, &visited, 0, &cycle_rem));
-        vec![State {
+        State {
             cur: 0,
             len: n as u32,
             visited,
@@ -534,58 +676,63 @@ fn beam_search_impl(
             long,
             zhash: jctx.map_or(0, |j| j.zobrist[0]),
             node: 0,
-        }]
+        }
     };
 
-    // Replay the greedy prefix through the same counter updates the
-    // survivor loop applies, so the root state is exactly what the beam
-    // would hold had it followed that path.
-    if seed_prefix > 0 {
-        let prefix = crate::greedy::greedy(g).path;
-        let root = &mut beam[0];
-        for &q in &prefix[1..=seed_prefix] {
-            let w = (n - Graph::overlap(&g.perms[root.cur as usize], &g.perms[q as usize])) as u32;
-            let arcs = child_arcs(g, root, q);
-            let w2d = g.w2_bridges_delta(&root.visited, &root.cycle_rem, q);
-            if let Some(t) = tab {
-                let ctx = ParentCtx::new(
+    // Pending seed states keyed by injection depth (= perms visited).
+    let mut pending: HashMap<usize, Vec<State>> = HashMap::new();
+    let (mut beam, start_depth) = match seed {
+        SeedSpec::GreedyPrefix(seed_prefix) => {
+            assert!(
+                seed_prefix < nfact - 1,
+                "seed prefix depth must be < n! - 1 = {} (got {seed_prefix})",
+                nfact - 1
+            );
+            let mut root = make_root(jctx);
+            if seed_prefix > 0 {
+                let prefix = crate::greedy::greedy(g).path;
+                replay_walk(
                     g,
-                    t,
-                    &root.visited,
-                    root.cur,
-                    &root.cycle_rem,
-                    root.door,
-                    root.long,
+                    &mut root,
+                    &mut arena,
+                    &prefix[1..=seed_prefix],
+                    tab,
+                    jctx,
                 );
-                let (door, long) =
-                    lb_residual::child_terms(g, t, &root.visited, &root.cycle_rem, &ctx, q);
-                root.door = door;
-                root.long = long;
             }
-            root.visited.set(q as usize);
-            let cid = g.cycle_id[q as usize] as usize;
-            let rem = root.cycle_rem[cid] as usize;
-            root.intact -= u32::from(rem == n);
-            root.half_open = root.half_open + u32::from(rem == n) - u32::from(rem == n - 2);
-            root.nearly_done = root.nearly_done + u32::from(rem == 3) - u32::from(rem == 1);
-            root.w2_bridges = (root.w2_bridges as i64 + w2d) as u32;
-            root.cycle_rem[cid] -= 1;
-            root.k -= u32::from(root.cycle_rem[cid] == 0);
-            root.r -= 1;
-            root.arcs = arcs;
-            root.len += w;
-            root.zhash = jctx.map_or(0, |j| root.zhash ^ j.zobrist[q as usize]);
-            let node = arena.len() as u32;
-            arena.push((root.node, q));
-            root.node = node;
-            root.cur = q;
+            (vec![root], 1 + seed_prefix)
         }
-    }
+        SeedSpec::Walks(walks) => {
+            assert!(!walks.is_empty(), "seed walk list must be nonempty");
+            let mut min_depth = usize::MAX;
+            for walk in walks {
+                assert!(
+                    walk.first() == Some(&0),
+                    "each seed walk must start at rank 0"
+                );
+                assert!(
+                    walk.len() < nfact,
+                    "a seed walk may not already visit every permutation"
+                );
+                let mut root = make_root(jctx);
+                replay_walk(g, &mut root, &mut arena, &walk[1..], tab, jctx);
+                min_depth = min_depth.min(walk.len());
+                pending.entry(walk.len()).or_default().push(root);
+            }
+            let beam = pending.remove(&min_depth).expect("min depth is occupied");
+            (beam, min_depth)
+        }
+    };
 
     // Candidate = (score, len, succ, parent index in `beam`).
     let mut cands: Vec<(i64, u32, u32, u32)> = Vec::new();
 
-    for depth in (1 + seed_prefix)..nfact {
+    for depth in start_depth..nfact {
+        // Inject seed states whose walks reach exactly this level; they
+        // enter selection through their children like any other state.
+        if let Some(mut inj) = pending.remove(&depth) {
+            beam.append(&mut inj);
+        }
         // Endgame snapshot: states at this point have visited `depth`
         // perms, so `nfact − depth` remain. Read-only capture — the
         // search below is untouched. The frontier is in global score
