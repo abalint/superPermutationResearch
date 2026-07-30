@@ -6,6 +6,49 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 37c) — In-engine cross-check of the s37 sizing (parallel session, reconciled): `tail-atsp --measure` + `analysis/trackb/recomp2_sizing.py` re-ran staging step 2 through the REAL `enumerate_recomps` move space at both n — **§10.7 corroborated (blocks, raw pair space) with two refinements: the exact-B&B ceiling is 75–110 blocks, not ~50 (timed: 55 blk 0.1 s, 75 blk 2.7 s, 111 blk killed at 600 s — the anchor-450 extraction frame is comfortably solvable), and the §10.7 re-solve budgets are full-cycle-only: the real move space is ~5–10× bigger (T1(net−1)+T2 at 450 = 8,370/walk median vs ~900 est.)**; new n=7 measurement (all 87 walks, 4 anchors): at the 4905 band the net−1 in-vocab pair space is MEDIAN ZERO — the S−1 family barely exists in short tails; the d3−1 (net-0) family is the n=7 bulk (6.2k/walk); SURGERY-DESIGN §10.8
+
+Parallel session, same day as s33–s37b; ran concurrently with s37 and
+reconciled after: §10.7's T4 correction (tautological — Λ = waste −
+((n−1)!−2)) is adopted, and this session's door-adjacency tier is
+downgraded to what it really is: the M-R3 door-locality ORDERING
+prior, not a sound prune. All Rust suites green (81+3+7+32) plus the
+new sizing selftest.
+
+**Built:**
+- `tail-atsp --measure [--measure-out f.tsv]` — raw-anchor
+  decomposition + recomp-1 enumeration, counts only, NO solver:
+  anchors far shallower than any solvable band become measurable
+  (anchor 180 = 111 blocks in ms; all 87 n=7 walks at anchor 1260 =
+  625–647 blocks in 10.6 s). Per-cycle move-class aggregates
+  (cycle, door-adjacency, net-split ds, vocabulary flag) to TSV.
+  Regeneration is one command per anchor; TSVs not committed.
+- `analysis/trackb/recomp2_sizing.py` — exact cross-cycle pair
+  counting without enumerating pairs (global class vectors minus
+  same-cycle products, halved); `--selftest` brute-force-verifies the
+  aggregation on a real walk (749,038 pairs, all tiers equal).
+
+**Measured (§10.8):** n=6 8 specimens × anchors 180–585; n=7 all 87
+walks × 4905/4840/4770/1260. Corroborates §10.7's block counts and
+raw pair sizes exactly; refines the solver ceiling upward (75–110
+blocks) and the per-walk re-solve budgets upward (~5–10×, still
+feasible: 585-band 2.0k/walk, 450-band 8.4k/walk at net−1+T2).
+
+**Design deltas for the s38 build (on top of §10.7's green light):**
+budget ~10k re-solves/walk at anchor 450 (or restrict pair members to
+fully-covered cycles first pass, partial-cycle pairs second); at n=7
+run BOTH families at 4905 (net−1 is nearly empty, net-0 = 6.2k/walk —
+the Kristan-seam question is answerable in under an hour); the
+extraction frame's block cost is a non-issue (0.1 s base solves at
+56 blocks).
+
+**a585recomp fold:** [pending at entry time — see addendum below if
+present; the sweep was at 98.4% with RIMP=0, REQN=0, REQS=8.4M when
+this entry was written.]
+
+**Next (s38): unchanged from s37/HANDOFF-S37** — build `--recomp2`
+per §10.7 with the §10.8 budget deltas.
+
 ## 2026-07-30 (session 37) — I3 staging step 2 MEASURED (SURGERY-DESIGN §10.7), build green-lit with a corrected design: **full-tail exactness at compound reach is infeasible (~110 blocks at anchor 180 vs the ~50 exact-B&B ceiling) but the straddle pivot is CHEAP — straddling cycles are rare (mean 2.2/walk at 450/520, one prefix part each), so I3 = tail pair-recomp + single prefix-part extraction at anchor 450 (blocks ≤ ~56)**; prune factors measured on the real variant space: raw pair size 2.0M/walk (520) / 3.7M (450), T1 net−1 cuts to 0.3%, +T2 vocabulary to **0.02% ≈ 470–900 exact re-solves/walk** — far under budget; and an honest correction: **T4 is TAUTOLOGICAL** (the loop-count relation makes Λ = waste − ((n−1)!−2), so Λ-neutrality IS length-neutrality) — downgraded from prune to solver-bug tripwire assertion
 
 Python-only session; 133 tests green; no Rust yet (that is s38).

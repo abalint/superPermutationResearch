@@ -563,3 +563,51 @@ incumbent-seeded exact re-solves, the §10.4 controls plus the §10.6
 natural-compound oracle (softened: the instrument must find AN
 equal-cost (143,5) completion from the A side via the two merges;
 its m3 class vs `d141177d85e1` is reported either way).
+
+### 10.8 s37c — in-engine cross-check of §10.7 (parallel session; corroborates, refines two numbers)
+
+A parallel session ran staging step 2 through the ENGINE's own
+enumerator instead of Python: `tail-atsp --measure [--measure-out]`
+(raw-anchor decomposition + the real `enumerate_recomps` move space,
+counts only, no solver — any anchor measurable), with exact
+cross-cycle pair-tier counting in `analysis/trackb/recomp2_sizing.py`
+(class-aggregation identity, brute-force cross-checked; `--selftest`
+is the pinned verifier). Measured: 8 n=6 specimens at anchors
+180/250/350/450/520/585 and ALL 87 n=7 walks at 4905/4840/4770/1260.
+(The script's built-in tier stack predates the §10.7 T4 correction —
+its "T4" column is the M-R3 door-adjacency ordering prior, not a
+sound prune; use the T1/T2 columns for sizing.)
+
+**Corroborated:** blocks at n=6 anchor 180 = 101–111 (§10.7: ~110,
+max 112); raw cross-cycle pair space 2.0M/walk at 520, 3.6M at 450
+(§10.7: 2.0M/3.7M). The n=7 corpus decomposes to 19–24 blocks at
+4905, 38–46 at 4770, 625–647 at the scaled compound band (1260) —
+same shape as n=6.
+
+**Refinement 1 — the exact-B&B ceiling is HIGHER than ~50.** Timed
+base solves (one specimen, M2 Mac): 55 blocks 0.1 s, 75 blocks 2.7 s,
+111 blocks killed at 600 s. The frontier sits between 75 and 110
+blocks, not at ~50 — the §10.7 extraction frame at anchor 450
+(≤ ~56 blocks) is comfortably inside it (0.1 s base solves), and even
+an anchor-350 frame (~75 blocks) would solve in seconds. The compound
+band itself stays infeasible — 111 blocks does not return in 10 min,
+and pair volume there is 64k+/walk even after pruning.
+
+**Refinement 2 — the §10.7 re-solve budgets are full-cycle-only; the
+REAL move space is ~5–10× bigger.** With recomp-1's actual enumeration
+(partial-run repartitions included), T1(net −1)+T2 pair medians are:
+n=6 585: 1,998/walk; 520: 4,368 (§10.7 est. ~470); 450: 8,370
+(§10.7 est. ~900; max 13,770). Still ms-rate feasible (~30 s/walk at
+450), but the build should either budget for ~10k re-solves/walk at
+450 or restrict pair members to fully-covered cycles (the §10.7
+frame) and sweep partial-cycle pairs as a second pass. The net-0
+family (d3−1 targets) is ~5× the net−1 family everywhere (450:
+40k/walk) — order it after net −1.
+
+**New (n=7 side, not in §10.7):** at the 4905 band the net−1 in-vocab
+pair space is MEDIAN ZERO per walk (max 2,562) — the S−1 compound
+family barely exists in ≤135-perm tails; the 4840 band has it
+(median 2,282). The d3−1 family (net 0 + T2) is the n=7 bulk: 6.2k
+median at 4905, 19.9k at 4840. An n=7 first sweep at 4905 is
+hours-scale for BOTH families; the Kristan-seam existence question
+((844,17)↔(843,18), §10.2) is answerable there.

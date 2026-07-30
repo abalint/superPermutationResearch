@@ -652,6 +652,18 @@ enum Cmd {
         /// Cap on collected tie orders per walk.
         #[arg(long, default_value_t = 64)]
         tie_cap: usize,
+        /// I3 sizing (SURGERY-DESIGN §10.5 step 2): decompose at the
+        /// RAW --anchor (no --max-blocks adaptation) and enumerate
+        /// recomp-1 moves, reporting counts only — NO exact solves.
+        /// Per-walk: anchor depth, tail perms, blocks, cycles, moves.
+        /// With --measure-out, per-cycle move-class aggregates
+        /// (cycle, door-adjacency, net-split delta, vocabulary flag)
+        /// are written as TSV for analysis/trackb/recomp2_sizing.py.
+        #[arg(long)]
+        measure: bool,
+        /// TSV path for --measure per-cycle aggregates.
+        #[arg(long)]
+        measure_out: Option<PathBuf>,
         /// Write improved (and, with --ties, new-allocation tie) walks
         /// here.
         #[arg(long)]
@@ -1913,6 +1925,8 @@ fn main() -> ExitCode {
             merge,
             recomp,
             tie_cap,
+            measure,
+            measure_out,
             out_dir,
             limit,
             quiet,
@@ -1945,7 +1959,69 @@ fn main() -> ExitCode {
                     println!("  written -> {}", path.display());
                 }
             };
+            let mut mrows: Vec<String> = Vec::new();
+            let mut measured = 0u64;
             for rec in &corpus {
+                if measure {
+                    // I3 sizing: raw-anchor decomposition, enumeration
+                    // counts only — the solver never runs, so anchors far
+                    // shallower than any solvable band are measurable.
+                    let Some(inst) = tailatsp::decompose(n, &rec.trace, anchor) else {
+                        skipped += 1;
+                        continue;
+                    };
+                    let tail_perms: usize = inst.blocks.iter().map(|b| b.nperms).sum();
+                    let moves = tailatsp::enumerate_recomps(n, &g, &inst);
+                    // Cycles any w>=3 edge of the WHOLE walk lands in —
+                    // the T4 door-adjacency operationalization (M-R3:
+                    // junction-price deviations are doors entering the
+                    // recomposed cycle).
+                    let mut door_cycles: std::collections::BTreeSet<u32> = Default::default();
+                    for (i, &w) in rec.trace.weights.iter().enumerate() {
+                        if w >= 3 {
+                            door_cycles.insert(tailatsp::cycle_id(&g, rec.trace.path[i + 1]));
+                        }
+                    }
+                    let mut agg: std::collections::BTreeMap<(u32, i64, bool), u64> =
+                        Default::default();
+                    let mut cycles: std::collections::BTreeSet<u32> = Default::default();
+                    for b in &inst.blocks {
+                        cycles.insert(tailatsp::cycle_id(&g, b.entry));
+                    }
+                    for mv in &moves {
+                        let cyc = tailatsp::cycle_id(&g, inst.blocks[mv.remove[0]].entry);
+                        let ds = mv.arcs.len() as i64 - mv.remove.len() as i64;
+                        let vocab = mv.arcs.iter().all(|&(_, l)| l >= 2);
+                        *agg.entry((cyc, ds, vocab)).or_default() += 1;
+                    }
+                    if !quiet {
+                        println!(
+                            "{}: anchor={} tail_perms={} blocks={} cycles={} moves={}",
+                            rec.name,
+                            inst.anchor_depth,
+                            tail_perms,
+                            inst.blocks.len(),
+                            cycles.len(),
+                            moves.len()
+                        );
+                    }
+                    for ((cyc, ds, vocab), k) in &agg {
+                        mrows.push(format!(
+                            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                            rec.name,
+                            inst.anchor_depth,
+                            tail_perms,
+                            inst.blocks.len(),
+                            cyc,
+                            u8::from(door_cycles.contains(cyc)),
+                            ds,
+                            u8::from(*vocab),
+                            k
+                        ));
+                    }
+                    measured += 1;
+                    continue;
+                }
                 // Shallowest anchor whose instance fits max_blocks: cut
                 // deeper until it fits (deeper = fewer blocks).
                 let mut min_depth = anchor;
@@ -2154,6 +2230,24 @@ fn main() -> ExitCode {
                         }
                     }
                 }
+            }
+            if measure {
+                if let Some(path) = &measure_out {
+                    let mut out = String::from(
+                        "name\tanchor_depth\ttail_perms\tblocks\tcycle\tdoor_adj\tds\tvocab\tcount\n",
+                    );
+                    for r in &mrows {
+                        out.push_str(r);
+                        out.push('\n');
+                    }
+                    fs::write(path, out).expect("write measure TSV");
+                    println!("  measure rows -> {}", path.display());
+                }
+                println!(
+                    "tail-atsp --measure: {measured} walks measured, {skipped} skipped, anchor {anchor} ({:.1}s)",
+                    t0.elapsed().as_secs_f64()
+                );
+                return ExitCode::SUCCESS;
             }
             println!(
                 "tail-atsp: {} walks, {optimal} block-order-optimal, {improved} improved, {skipped} skipped, {new_alloc_ties} new-allocation ties ({:.1}s)",

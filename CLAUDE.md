@@ -297,6 +297,14 @@ cargo run --release -- tail-atsp -n 6 --dirs data/upstream872 --anchor 520 --max
 # equal-cost completions are ~48% of moves and (sampled) all equivalent-to-known:
 cargo run --release -- tail-atsp -n 6 --dirs data/upstream872 --anchor 585 --recomp --quiet --out-dir out/
 
+# s37c I3 sizing — --measure decomposes at the RAW anchor and counts recomp-1 moves per
+# cycle class WITHOUT solving (any anchor measurable); recomp2_sizing.py turns the TSVs into
+# exact cross-cycle pair-tier counts (--selftest = pinned brute-force check). Verdicts in
+# SURGERY-DESIGN §10.7-10.8: build GO at 450/520 (n=6) and 4905 (n=7); real move space is
+# ~5-10x the §10.7 full-cycle estimates; B&B ceiling 75-110 blocks (55 blk 0.1s, 111 blk >600s):
+cargo run --release -- tail-atsp -n 6 --dirs data/upstream872_specimens --anchor 450 --measure --measure-out out/measure/n6_a450.tsv
+python3 analysis/trackb/recomp2_sizing.py out/measure/n6_a450.tsv --selftest
+
 # s33 n=7 corpus (committed: data/upstream5906 = 84 known 5906 classes incl. Kristan's,
 # data/upstream5907 = 3 urdvr 5907s; rebuild: analysis/counting/upstream5906_dump.py).
 # The whole instrument ladder is n-generic — anchor bands scale by perm count
