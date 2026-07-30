@@ -138,9 +138,35 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   same-allocation equals (48% — the dense shell, as s31 said). Binary
   reshipped from clean `e286355` (BUILD.txt provenance on the PC).
 - approved: YES (Andrew, 2026-07-30, after being given the ~5 h figure)
-- status: running (farm run `a585recomp`, 24 workers, started 2026-07-30
-  06:15:18 PC time; ETA ~11:00–11:30 PC time)
-- result: —
+- status: **done** (farm run `a585recomp`, 24 workers, 2026-07-30 06:15:18 →
+  09:45:35 PC time, **210.2 min wall / 78.3 core-hours**; slowest worker 210.0
+  min vs 195.8 mean = 1.07× imbalance, the best balance of any sweep so far)
+- result: **The single-edit tier is CLOSED at the 585 band.** Ledger sum over
+  24 workers: `22,062 walks, 22,062 block-order-optimal, 0 improved, 0 skipped`
+  plus `27,873,361 recomp moves tried, 0 improved (871 candidates), 0
+  equal-cost 872s in NEW allocations, 13,441,109 equal-cost same-allocation`
+  (verdicts OK:24, no alarm, 0 candidate files, 0 `recomp-eq-*` files).
+  - **28 million single-cycle recompositions — every alternative arc-partition
+    of every tail cycle of every known 872 — produce no 871 and no walk in any
+    new allocation.** This subsumes the merge result (`a520b40merge`) and the
+    tie result (`a520ties`/`a585ties`) as the general single-edit statement at
+    this band.
+  - The shell is dense but **degenerate**: 48.2% of moves (13.4M) land at equal
+    cost, yet an M3 gate over a **random 200-file sample** of the 44,124
+    emitted same-allocation equals (2/walk sampling, all 24 workers covered)
+    returns **200/200 valid 872 and EQUIVALENT TO KNOWN — and in every one of
+    the 200, equivalent to its OWN source class**, not to some other known
+    class. So the equal-cost neighbourhood reachable by one recomposition is
+    huge in move count but collapses to a single point in class space (up to
+    relabel+reversal). Caveat, stated plainly: that is a 200-sample of a
+    2-per-walk sample: it is strong evidence, not exhaustion.
+  - Sample + gate output: `data/farm_finds/a585recomp_sample/` (200 files,
+    `m3_check` exit 0).
+- next: the same instrument at a deeper anchor is the open question. Scaling
+  the measured 12.8 s/walk at 585 by the plain-sweep ratio 520/585 (≈ 25×)
+  puts a 520-band recomp sweep near **2,000 core-hours ≈ 3.5 days even on 24
+  cores** — so it needs either a cheaper move filter or a sampled corpus, not
+  a bigger budget.
 
 ## tie-census full corpus
 - spec: as probe, without `--limit`, `--out-dir data/surgery_finds`
