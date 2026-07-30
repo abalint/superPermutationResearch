@@ -17,16 +17,38 @@ Entry template:
 - result: <verbatim summary line + verdict>
 ```
 
+## Farm execution (added 2026-07-29 s29-ops) — prefer this over the Mac
+
+`tail-atsp` is single-threaded, so the 22,062-walk corpus shards perfectly:
+the farm PC runs 24 shards on 24 of its 28 cores, turning a ~12 h single-core
+sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
+§"tail-atsp farm harness". Two things a fresh operator must know:
+
+- The PC has **no Rust toolchain**. The binary is cross-compiled on the Mac
+  (`x86_64-pc-windows-gnu`, mingw-w64 linker, `crt-static` → only system DLLs)
+  and scp'd to `F:\superpermFarm\tailatsp\superperm.exe`. **Rebuild and reship
+  after any change to `src/tailatsp.rs` or `src/corpus.rs`.**
+- Quote every farm rate from a **round-robin** probe, never the first-K files:
+  the s28b "0.6 s/walk at anchor 450" was alphabetical-prefix bias; the true
+  corpus mean is 2.0 s/walk (3.3×).
+
 ---
 
 ## anchor-450 sweep (block-order-optimality frontier, third band)
 - spec: `cargo run --release --quiet -- tail-atsp -n 6 --dirs data/upstream872 --anchor 450 --max-blocks 50 --quiet --out-dir data/surgery_finds`
+  — RUN ON THE FARM INSTEAD, 24-way sharded (see "Farm execution" below):
+  `powershell -File F:\superpermFarm\tailatsp\talaunch.ps1 -Anchor 450 -MaxBlocks 50 -Workers 24 -Tag a450b50`
 - product: extends the s28b law ("every known 872 is block-order-optimal")
   to ~270-perm tails, or finds an 871 candidate (exit 2 → alarm path).
-- projected: ~3.5 h (50-walk probe at 0.6 s/walk, s28b; ×1.5 safety ≈ 5 h)
-- approved: NO — was launched s28b and aborted at Andrew's request;
-  re-launch only on his fresh go-ahead.
-- status: pending
+- projected: **REVISED — the s28b 3.5 h figure was sorted-order bias.** A
+  24×40-walk round-robin probe (`runs\probe450`, 960 walks, 0 improvements)
+  measured **2.0 s/walk**, not 0.6 → single-core full corpus is ~12 h. On 24
+  farm cores: 22,062 walks at ~10.2 walks/s aggregate ≈ **36 min** wall
+  (heavy-tail shards may push the last worker to ~1 h).
+- approved: YES (Andrew, 2026-07-29 — "pick up the background execution work
+  that needs to be done. make sure it runs on the pc and you monitor it")
+- status: running (farm run `a450b50`, 24 workers, supervisor pid 10236,
+  started 2026-07-29 20:17:58 local-PC time)
 - result: —
 
 ## tie-census probe (are allocation shells S1-connected?)

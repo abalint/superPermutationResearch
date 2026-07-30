@@ -59,6 +59,66 @@ Current locations:
 - 600 s open-chain run ≈ 1.1M subtree records ≈ 215 MB JSONL — mine/sample on
   the PC, never scp raw sweeps.
 
+## tail-atsp farm harness (added 2026-07-29, s29-ops)
+
+24-way sharded corpus sweeps of `tail-atsp` on the PC. Everything lives under
+`F:\superpermFarm\tailatsp\`; scripts are committed in `analysis/farm/ta*`.
+
+**Why:** the instrument is single-threaded and the corpus is embarrassingly
+parallel — 24 cores turn a ~12 h single-core anchor-450 sweep into ~36 min,
+leaving 4 cores for the transcription service (workers also run at
+BELOW_NORMAL via `detach.exe`).
+
+**Layout.** `superperm.exe` (cross-compiled, see below) · `shards\s00..s23`
+(the 22,062-walk corpus, round-robin split so heavy-tail instances spread
+evenly — 919–920 walks each) · `runs\<tag>\{SPEC.txt,STATUS.txt,ledger.csv,
+logs\wNN.log,pids\wNN.txt,finds\wNN\,ALARM.txt}`.
+
+**Build + ship (the PC has no Rust toolchain).** From the repo root on the Mac:
+```bash
+rustup target add x86_64-pc-windows-gnu     # once; needs mingw-w64 (brew)
+CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc \
+  RUSTFLAGS="-C target-feature=+crt-static" \
+  cargo build --release --target x86_64-pc-windows-gnu
+COPYFILE_DISABLE=1 scp target/x86_64-pc-windows-gnu/release/superperm.exe \
+  analysis/farm/ta*.ps1 analysis/farm/tasuper.bat transcribe:/F:/superpermFarm/tailatsp/
+```
+`crt-static` leaves only system DLL imports, so nothing else needs installing.
+**Always set `COPYFILE_DISABLE=1`** when tarring/scp'ing corpus data from macOS
+— bsdtar silently ships an AppleDouble `._x` twin per file (and hides them from
+`tar -t`), which doubled the shard tree on first transfer and would have been
+parsed as corpus records.
+
+**Launch / status / abort** (all `powershell -NoProfile -ExecutionPolicy Bypass -File`):
+```
+F:\superpermFarm\tailatsp\talaunch.ps1 -Anchor 450 -MaxBlocks 50 -Workers 24 -Tag a450b50
+F:\superpermFarm\tailatsp\tastatus.ps1 -Tag a450b50      # STATUS + ledger + alarm + live procs
+F:\superpermFarm\tailatsp\tastop.ps1   -Tag a450b50      # abort (add -All to sweep up orphans)
+```
+`-Limit K` runs K walks per shard — always probe first (`-Tag probeXXX -Limit 40`)
+and quote the measured rate ×1.5.
+
+**Heartbeat.** `talaunch.ps1` starts `tasuper.ps1` detached; it rewrites
+`STATUS.txt` every 30 s (stage, alive workers, walks/total, rate, ETA,
+improvements, per-worker memory) and appends one `ledger.csv` row per finished
+worker. Session-side watch: `analysis/farm/ta_watch.sh <tag> [interval]` polls
+`tabrief.ps1` and emits only alarms, deciles, crashes, stalls, unreachability.
+Line counting is a streaming `StreamReader` — never `@(Get-Content …).Count`
+(that is what OOM-wedged the box in s19).
+
+**Safety properties built in.** `talaunch.ps1` refuses to start if any
+`superperm.exe` is alive or the run dir exists (the s28 duplicate-launch trap);
+pid files record name + start time and `tastop.ps1` refuses to kill a pid whose
+process name is no longer `superperm` (the s19 PID-recycling trap); python is
+never touched.
+
+**Alarm path.** A worker finding `optimum < actual` prints
+`*** IMPROVEMENT ***`, materializes + validates the walk into `finds\wNN\`, and
+exits 2. Exit codes are lost through `detach.exe`, so the supervisor detects it
+from the summary line instead and writes `ALARM.txt` + flags STATUS. Then:
+`validate -n 6 --file <f> --complete` AND `python3 analysis/counting/m3_check.py <f>`
+(exit 2 = novel) before anything is believed — see `docs/OPS-BACKGROUND-AGENT.md`.
+
 ## Farm lessons appended post-recovery (s19 late)
 
 - **PID files do not survive a reboot**: Windows recycles PIDs; 5 of 96 stale
