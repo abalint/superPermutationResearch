@@ -6,6 +6,19 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 43b) — cross-length tail-conjugacy is a clean NEGATIVE: the 5906 record shell does not tail-connect to the 5907 shell (work-menu item 3 closed)
+
+`--all` over all 95 n=7 walks (92 published 5906s + 3 urdvr 5907s):
+the two 5907s 6f2e8d9df51c ~ 8bfe45cb89f5 share an 802-perm tail with
+EACH OTHER (rr — same construction family, joining the 512–1023 bin),
+but every 5906↔5907 crossing tops out at 129 shared perms — inside
+the generic-endgame bulk of the null distribution (64–255). No
+length-crossing natural move is visible at tail-conjugacy depth; a
+5905 route through the 5907 shell gets no support from this detector.
+TSV superseding note: `data/tailconj/tail_all_n7.tsv` remains the
+92-walk census; the 95-walk run lived in `out/s43/` (disposable), its
+only two above-null facts recorded here.
+
 ## 2026-07-30 (session 43) — the non-census detector EXISTS and it is rich: **tail-conjugacy** (literal relabel-conjugate traversal suffixes between inequivalent classes) confirms the s42 funnel observation exactly, then blows the natural-move vocabulary open — at n=7 the 3 funnel-identical novel pairs share 582/622/413-perm tails, the 92-class census finds **102 tail-conjugate class pairs at the 200-perm anchor (93 NEW vs the 9 known R-K7 edges)** with 9 NEW pairs sharing >1000 perms, and every deep pair carries the same anatomy — **same allocation, ALL doors identical, exactly 8 cycle-disjoint 2-loops swapped for 8 others riding 8 swapped 2-part rotors, both walks tight**; at n=6 the full 22,062-class archive shows tail-conjugacy persisting to 540-perm shared tails (75% of the walk), 108 NEW pairs at ≥480 perms whose anatomy is the scaled move (3-loop door-preserving swaps), and the relabel-canonical **swap-signature census collapses them to 14 rigid rules dominated by TWO with 46 and 20 instances** — an order of magnitude beyond the census-era vocabulary (R-compound 8, R-unit 4), found precisely because the loop-swap move is NOT cover-preserving, i.e. in the exact blind spot the s42 corollary predicted the census could never see
 
 The s42 verdict was "the front needs a detector, not another sweep,"
