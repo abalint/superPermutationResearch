@@ -96,10 +96,25 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
 - approved: YES (Andrew, 2026-07-29 — "the md doc has been updated to add full
   anchor-520 merge sweep in SWEEP-QUEUE.md run it when this operation is
   finished")
-- status: running (farm run `a520b40merge`, 24 workers, started 2026-07-29
-  21:11:14 PC time; probe `probe520merge` already found 1 equal-cost 872 at
-  S−1 in allocation (142,6,0,0))
-- result: —
+- status: **done** (farm run `a520b40merge`, 24 workers, 2026-07-29 21:11:14 →
+  21:34:59 PC time, 23.7 min wall / 7.5 core-hours — the 25 min projection held)
+- result: **0 merge improvements over the full corpus; exactly ONE equal-cost
+  872 at S−1, and it is a rediscovery.** Ledger sum over 24 workers:
+  `22,062 walks, 22,062 block-order-optimal, 0 improved, 0 skipped` plus
+  `488,350 merge moves tried, 0 improved (871 candidates), 1 equal-cost 872 at
+  S-1` (verdicts OK:24, no alarm, 0 skipped). The one find,
+  `merge-eq-872.up-0105a4b77ce8-1`, passed both gates: validator says complete
+  872, and `m3_check.py` returns **exit 0 — EQUIVALENT to known class
+  872.up-b020caf20414**. That is the (142,6) partner of the committed specimen
+  pair, re-derived from its (143,5) side: the s28b tie oracle's result reached
+  again by the merge move, from the full corpus rather than a hand-picked
+  anchor. So the merged-allocation histogram over 22,062 classes is a single
+  cell, `(142,6,0,0): 1`. **The S−1 merge move, applied exhaustively to every
+  known 872's last ~200 perm visits, reaches no 871 and no NOVEL 872** — it
+  only re-finds the one edit nature already performed. Extends the s30
+  anchor-≥585 merge law (240,874 moves, zero completions) to ~200-perm tails at
+  2× the move count.
+  Copy of the find + gate output: `data/farm_finds/a520b40merge/`.
 
 ## tie-census full corpus
 - spec: as probe, without `--limit`, `--out-dir data/surgery_finds`
