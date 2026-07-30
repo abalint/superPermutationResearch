@@ -8,6 +8,8 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
+   **Fresh agent picking up the s28 front: read `docs/HANDOFF-S28.md` right after
+   it** — entry points, traps, and the session-end ritual in two pages.
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
    `docs/RECOMB-DESIGN.md` (s26, read §8 outcomes + §8.4a recalibration FIRST)
@@ -107,9 +109,12 @@ bimodal opening/endgame, extra doors of other allocations are MIDGAME
 edit (S−1 merge or d3−1 demotion) from an open 871 allocation — all 13
 distance-1 targets are s11-subregion-closed (871 must leave the certificate
 grammar), and 3 distance-2 targets need ip=1, which NO known 872 uses.**
-NEXT (s28) = cross-class surgery design (braid-diff (143,5) vs (145,3)
+s27b re-scoped the M3 gate: `analysis/counting/m3_check.py` + committed
+canonical index — every candidate ≤872 must pass it (exit 2 = novel vs all
+22,062 classes up to relabel+reversal). NEXT (s28, see docs/HANDOFF-S28.md) =
+cross-class surgery design (braid-diff (143,5) vs (145,3)
 neighbors around the extra midgame doors), per-allocation M2 +
-union-restricted BEAM, the ip=1 targets, M3 re-scope vs the 22,062 classes;
+union-restricted BEAM, the ip=1 targets;
 cheap closure probes queued: perfect-ride ATSP
 (closes all 616 S=120 live classes). Track B downgraded-not-retired s20 (Vlad's preliminary
 a(6)=872 claim; n=6 window unconditionally still {869..872}); n=7 5905
@@ -254,6 +259,9 @@ cargo run --release -- sojourn-dfs -n 6 --class 143,5,0,0,0 --profile-file analy
 cargo run --release -- grammar-check -n 6 --class 141,7,0,0,0 --profile-file analysis/trackb/profiles/a141_7_0_0_0.txt data/upstream872_specimens/872.up-6dbae421a839.txt
 python3 analysis/counting/upstream872_door_pricing.py data/upstream872     # door-position/freshness census (s27 law)
 python3 analysis/trackb/alloc_neighbors.py                                  # waste-146 targets vs the 8 anchors
+# M3 gate (s27b): EVERY candidate <=872 goes through this + the Rust validator before any claim.
+# Exit 2 = novel vs all 22,062 known classes (relabel+reversal); index is committed, no archive needed:
+python3 analysis/counting/m3_check.py <candidate.txt>
 # T3 (s23) — frontier seed dump + multi-seed completion beam (C1/C2 pipeline; residual is the best completion bound):
 cargo run --release -- sojourn-dfs -n 6 --class 145,3,0,0,0 --records-profile --depth 6 --dedup exact --dump-frontier f.tsv --dump-per-class 16
 cargo run --release -- beam -n 6 --width 8000 --seed-file f.tsv --bound residual --endgame 20 --endgame-top 400

@@ -6,6 +6,37 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (session 27b) — M3 gate re-scoped to the full corpus (`analysis/counting/m3_check.py` + committed 22,062-class canonical index; alarm path proven with a hole-punched index); fresh-agent handoff written (`docs/HANDOFF-S28.md`)
+
+Short hygiene session closing the last s26c queue item before the s28
+surgery work.
+
+**Built — the M3 novelty gate.** `analysis/counting/m3_check.py`:
+canonical form = min(forward-renumber(s), forward-renumber(reverse(s)))
+(the s26b convention), sha256 per class, index committed at
+`analysis/counting/upstream872_canon_index.tsv` (22,062 rows, 2.0 MB) so
+the gate runs on a fresh clone WITHOUT the gitignored archive
+(`--build-index data/upstream872` regenerates it, 20 s). Checker
+validates the candidate first (sliding-window, mirrors validate.rs),
+then classifies: INVALID / valid-but->872 / EQUIVALENT-to-known(names
+the class) / **NOVEL ≤872 → loud banner + exit 2**. Sanity battery all
+correct: committed specimen and raw non-identity-start record and its
+REVERSAL all map to their upstream classes, the s26 hybrid maps to its
+byte-identical upstream class, greedy's 873 is "valid, not an M3
+event", a truncated string is INVALID (686/720). The alarm path is
+proven: hole-punch the specimen's class out of the index and the checker
+fires exit 2 on it. **Every collected ≤872 from any instrument (nrpa
+--collect, union-dfs, surgery) now goes through this gate + the Rust
+validator before any claim.** M3's criterion is now formally
+"inequivalent to all 22,062 community classes", closing the s26c queue.
+
+**Handoff.** `docs/HANDOFF-S28.md` — five-sentence state of the world,
+the s28 items with concrete entry points (surgery design first,
+design-doc-before-code), and the traps (sample-bias ghosts predating
+s26c, calibrated-vs-proven grammar caps, the gitignored archive, NRPA
+cap-at-target, the launch protocol, the M3 ritual). CLAUDE.md reading
+order now fronts it.
+
 ## 2026-07-29 (session 27) — Per-allocation grammar SHIPPED and corpus-validated (all 22,062 classes replay 719/719 through their allocation's caps+profile grammar); NEW corpus law from the door-pricing census: **every weight≥3 door opens an untouched cycle** (66,999/66,999 events → `--fresh-doors` cap, −10/−20% opening classes); waste-146 neighbor map: every anchor is ONE unit edit from an open 871 allocation, and three distance-2 targets need `ip=1` — a move NO known 872 uses
 
 s26c consequence 1 (grammar re-scope) built and validated, plus the two
