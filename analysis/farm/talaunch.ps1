@@ -21,6 +21,7 @@ param(
   [string]$Tag    = "",
   [switch]$Ties,
   [int]$TieCap    = 64,
+  [switch]$Merge,            # I2a: try every single same-cycle block merge too
   [int]$Limit     = 0        # per-shard walk cap; 0 = whole shard (sizing probes)
 )
 $ErrorActionPreference = "Stop"
@@ -34,6 +35,7 @@ $CMD    = "$env:SystemRoot\System32\cmd.exe"   # detach.exe cannot launch powers
 if ($Tag -eq "") {
   $Tag = "a$Anchor" + "b$MaxBlocks"
   if ($Ties)       { $Tag += "-ties" }
+  if ($Merge)      { $Tag += "-merge" }
   if ($Limit -gt 0){ $Tag += "-L$Limit" }
 }
 $run = "$ROOT\runs\$Tag"
@@ -70,6 +72,7 @@ $spec = @(
   "tag:        $Tag",
   "spec:       superperm.exe tail-atsp -n 6 --dirs shards\sNN --anchor $Anchor --max-blocks $MaxBlocks" +
     $(if ($Ties) { " --ties --tie-cap $TieCap" } else { "" }) +
+    $(if ($Merge) { " --merge" } else { "" }) +
     $(if ($Limit -gt 0) { " --limit $Limit" } else { "" }),
   "workers:    $Workers (one shard each, BELOW_NORMAL)",
   "walks:      $total",
@@ -80,7 +83,9 @@ $spec = @(
   "launched:   $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 )
 $spec | Set-Content "$run\SPEC.txt"
-"worker,shard,rc,verdict,walks,optimal,improved,skipped,ties,secs,finished" |
+# Columns are fixed for the life of a run file (s19 lesson: never change ledger
+# column semantics mid-file). merge_* are 0 unless -Merge was passed.
+"worker,shard,rc,verdict,walks,optimal,improved,skipped,ties,merge_moves,merge_improved,merge_equal,secs,finished" |
   Set-Content "$run\ledger.csv"
 
 # --- launch ----------------------------------------------------------------
@@ -90,6 +95,7 @@ foreach ($s in $shards) {
          "--anchor","$Anchor","--max-blocks","$MaxBlocks",
          "--out-dir","$run\finds\w$nn")
   if ($Ties)        { $a += @("--ties","--tie-cap","$TieCap") }
+  if ($Merge)       { $a += @("--merge") }
   if ($Limit -gt 0) { $a += @("--limit","$Limit") }
 
   $res = & $DETACH $ROOT "$run\logs\w$nn.log" "$run\logs\w$nn.err" $EXE @a

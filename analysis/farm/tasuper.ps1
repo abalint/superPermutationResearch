@@ -33,6 +33,10 @@ $ledgered = @{}
 $deadTicks = @{}          # grace period: a worker's last append may not be flushed yet
 $improveTotal = 0
 $tieTotal = 0
+$mergeMovesTotal = 0
+$mergeImpTotal = 0
+$mergeEqTotal = 0
+$mergeAllocs = @{}      # corpus-wide merged-allocation histogram (the I2a product)
 $lastExit = "-"
 
 while ($true) {
@@ -77,18 +81,42 @@ while ($true) {
         $walks=[int]$Matches[1]; $opt=[int]$Matches[2]; $imp=[int]$Matches[3]
         $skip=[int]$Matches[4]; $ties=[int]$Matches[5]; $secs=[double]$Matches[6]
       }
+      # I2a (--merge): the extra summary line, plus its per-allocation histogram.
+      $mMoves=0; $mImp=0; $mEq=0
+      if (Test-Path $log) {
+        $ml = @(Select-String -Path $log -SimpleMatch "merge (I2a):" -ErrorAction SilentlyContinue)
+        if ($ml.Count -gt 0 -and $ml[$ml.Count-1].Line -match 'merge \(I2a\): (\d+) moves tried, (\d+) improved \(871 candidates\), (\d+) equal-cost') {
+          $mMoves=[int]$Matches[1]; $mImp=[int]$Matches[2]; $mEq=[int]$Matches[3]
+        }
+        foreach ($al in @(Select-String -Path $log -SimpleMatch "merged allocation" -ErrorAction SilentlyContinue)) {
+          if ($al.Line -match 'merged allocation \(([^)]*)\): (\d+)') {
+            $k = "(" + $Matches[1] + ")"
+            if (-not $mergeAllocs.ContainsKey($k)) { $mergeAllocs[$k] = 0 }
+            $mergeAllocs[$k] = $mergeAllocs[$k] + [int]$Matches[2]
+          }
+        }
+      }
+      $mergeMovesTotal += $mMoves; $mergeImpTotal += $mImp; $mergeEqTotal += $mEq
+
       $verdict = "OK"
       if ($sum -eq "")   { $verdict = "NO-SUMMARY" }   # crashed / killed mid-shard
       if ($imp -gt 0)    { $verdict = "IMPROVEMENT" }
+      if ($mImp -gt 0)   { $verdict = "MERGE-IMPROVEMENT" }
       $rc = ""
       $improveTotal += $imp
       $tieTotal     += $ties
       $ledgered[$nn] = $true
-      "w$nn,s$nn,$rc,$verdict,$walks,$opt,$imp,$skip,$ties,$secs,$(Get-Date -Format 'HH:mm:ss')" |
+      "w$nn,s$nn,$rc,$verdict,$walks,$opt,$imp,$skip,$ties,$mMoves,$mImp,$mEq,$secs,$(Get-Date -Format 'HH:mm:ss')" |
         Add-Content "$run\ledger.csv"
-      $lastExit = "w$nn $verdict walks=$walks improved=$imp ties=$ties secs=$secs"
-      if ($imp -gt 0) {
-        @("*** ALARM: $imp block-order IMPROVEMENT(S) = 871 CANDIDATE(S) ***",
+      $lastExit = "w$nn $verdict walks=$walks improved=$imp ties=$ties merge_eq=$mEq secs=$secs"
+      if ($mergeAllocs.Count -gt 0) {
+        $ml2 = @("merged-allocation histogram (equal-cost 872s at S-1, summed over finished workers)")
+        foreach ($k in ($mergeAllocs.Keys | Sort-Object)) { $ml2 += ("  {0}  {1}" -f $k, $mergeAllocs[$k]) }
+        $ml2 += "total equal-cost: $mergeEqTotal   moves tried: $mergeMovesTotal   updated: $(Get-Date -Format 'HH:mm:ss')"
+        $ml2 | Set-Content "$run\MERGE-ALLOCS.txt"
+      }
+      if ($imp -gt 0 -or $mImp -gt 0) {
+        @("*** ALARM: $imp block-order + $mImp MERGE IMPROVEMENT(S) = 871 CANDIDATE(S) ***",
           "worker w$nn shard s$nn",
           "log:   $run\logs\w$nn.log",
           "finds: $run\finds\w$nn",
@@ -118,12 +146,15 @@ while ($true) {
     "stage:        $stage ($alive/$Workers workers alive)",
     "walks:        $doneWalks/$Total ($pct%)   rate=$rate walks/s   elapsed=$('{0:n1}m' -f ($elapsed/60))   eta=$eta",
     "improvements: $improveTotal        new-allocation ties: $tieTotal",
+    "merge (I2a):  $mergeImpTotal improved (871 cands)   $mergeEqTotal equal-cost 872s at S-1   $mergeMovesTotal moves tried   allocs=$($mergeAllocs.Count)",
     "worker mem:   sum=$memSum MB  max=$memMax MB",
     "finished:     $($ledgered.Count)/$Workers   last: $lastExit",
     "alive:        $($aliveList -join ' ')",
     "updated:      $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
   )
-  if ($improveTotal -gt 0) { $lines = @("*** ALARM: $improveTotal IMPROVEMENT(S) -- see ALARM.txt ***") + $lines }
+  if (($improveTotal + $mergeImpTotal) -gt 0) {
+    $lines = @("*** ALARM: $($improveTotal + $mergeImpTotal) IMPROVEMENT(S) -- see ALARM.txt ***") + $lines
+  }
   $lines | Set-Content "$run\STATUS.txt"
 
   if ($alive -eq 0 -and $ledgered.Count -ge $Workers) {

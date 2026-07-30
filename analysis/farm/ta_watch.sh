@@ -9,7 +9,7 @@ INTERVAL="${2:-150}"
 PS="powershell -NoProfile -ExecutionPolicy Bypass -File F:\\superpermFarm\\tailatsp\\tabrief.ps1 -Tag $TAG"
 
 prev_stage=""; prev_dec=-1; prev_fin=-1; prev_alive=-1
-fails=0; stall_warned=0; alarmed=0
+fails=0; stall_warned=0; alarmed=0; eq_noted=0
 
 echo "watch armed: tag=$TAG interval=${INTERVAL}s"
 while true; do
@@ -29,11 +29,21 @@ while true; do
   fin=$(echo "$line"   | sed -n 's/.*FIN=\([^ ]*\).*/\1/p')
   age=$(echo "$line"   | sed -n 's/.*AGE=\([^ ]*\).*/\1/p')
   alarm=$(echo "$line" | sed -n 's/.*ALARM=\([^ ]*\).*/\1/p')
+  mimp=$(echo "$line"  | sed -n 's/.*MIMP=\([^ ]*\).*/\1/p')
+  meq=$(echo "$line"   | sed -n 's/.*MEQ=\([^ ]*\).*/\1/p')
 
   # 1. the alarm path: an improvement is an 871 candidate
-  if [ "$alarmed" -eq 0 ] && { [ "$alarm" = "1" ] || { [ -n "$imp" ] && [ "$imp" -gt 0 ] 2>/dev/null; }; }; then
+  if [ "$alarmed" -eq 0 ] && { [ "$alarm" = "1" ] || { [ -n "$imp" ] && [ "$imp" -gt 0 ] 2>/dev/null; } \
+       || { [ -n "$mimp" ] && [ "$mimp" -gt 0 ] 2>/dev/null; }; }; then
     alarmed=1
     echo "*** ALARM: 871 CANDIDATE -- $line  (do not overwrite finds/; gate with validate --complete + m3_check.py) ***"
+  fi
+
+  # 1b. first equal-cost 872 at S-1: not an alarm, but every one needs m3_check
+  #     (a novel class would itself be an M3-class result), so say it once.
+  if [ "$eq_noted" -eq 0 ] && [ -n "$meq" ] && [ "$meq" -gt 0 ] 2>/dev/null; then
+    eq_noted=1
+    echo "merge pipeline producing equal-cost 872s at S-1 (MEQ=$meq) -- gate them with ta_fetch.sh when the run ends: $line"
   fi
 
   # 2. stage transitions (RUNNING -> ALLDONE, or an ERR line)
