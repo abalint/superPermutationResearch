@@ -119,6 +119,24 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   2× the move count.
   Copy of the find + gate output: `data/farm_finds/a520b40merge/`.
 
+## recomp-1 sweep, anchor 585 (full corpus)
+- spec: `cargo run --release --quiet -- tail-atsp -n 6 --dirs data/upstream872 --anchor 585 --recomp --quiet --out-dir data/surgery_finds`
+- product: closes the single-edit tier at the 585 band: every alternative
+  arc-partition of every tail cycle (subsumes merge; adds splits,
+  repartitions, entry rotations, 1|5 arcs), re-solved exactly. Any
+  RECOMP IMPROVEMENT = 871 candidate (exit 2, alarm path). Equal-cost
+  finds in NEW allocations are written (`recomp-eq-*`); same-allocation
+  equals are ~48% of moves (dense shell) and sampled 2/walk
+  (`recomp-sameeq-*`) — m3-check a random subsample only (a 60-sample
+  local check was 100% equivalent-to-known). s31 local evidence (138
+  walks, ~175k moves): 0 improvements, 0 new-allocation equals.
+- projected: 5.4 s/walk on first-100 (alphabetical; bias here was 1.9–3.3×
+  on past sweeps) → single-core 33–100 h; on 24 farm cores ~1.5–4.5 h.
+  **Reship `superperm.exe` first — s31 changed `src/tailatsp.rs`/`main.rs`.**
+- approved: NO
+- status: pending
+- result: —
+
 ## tie-census full corpus
 - spec: as probe, without `--limit`, `--out-dir data/surgery_finds`
 - product: corpus-wide new-allocation tie count + reached-allocation

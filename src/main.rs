@@ -641,6 +641,14 @@ enum Cmd {
         /// walk occupies — reported and written to --out-dir.
         #[arg(long)]
         merge: bool,
+        /// I2a recomp-1 (SURGERY-DESIGN §9, s31): try EVERY single-cycle
+        /// recomposition — all alternative arc-partitions of each cycle's
+        /// tail perm set (subsumes --merge; adds splits, repartitions,
+        /// entry rotations, and out-of-vocabulary 1|5 arcs) — and
+        /// re-solve exactly. Shorter = 871 candidate (exit 2); equal
+        /// length in a different allocation = reported + written.
+        #[arg(long)]
+        recomp: bool,
         /// Cap on collected tie orders per walk.
         #[arg(long, default_value_t = 64)]
         tie_cap: usize,
@@ -1903,6 +1911,7 @@ fn main() -> ExitCode {
             max_blocks,
             ties,
             merge,
+            recomp,
             tie_cap,
             out_dir,
             limit,
@@ -1923,6 +1932,10 @@ fn main() -> ExitCode {
                 (0u64, 0u64, 0u64, 0u64);
             let (mut merge_moves, mut merge_improved, mut merge_equal) = (0u64, 0u64, 0u64);
             let mut merge_allocs: std::collections::BTreeMap<(usize, usize, usize, usize), u64> =
+                std::collections::BTreeMap::new();
+            let (mut rc_moves, mut rc_improved, mut rc_equal_new, mut rc_equal_same) =
+                (0u64, 0u64, 0u64, 0u64);
+            let mut rc_allocs: std::collections::BTreeMap<(usize, usize, usize, usize), u64> =
                 std::collections::BTreeMap::new();
             let emit = |tag: &str, s: &str| {
                 if let Some(dir) = &out_dir {
@@ -2036,6 +2049,84 @@ fn main() -> ExitCode {
                             }
                         }
                     }
+                    if recomp {
+                        // I2a recomp-1: every single-cycle recomposition,
+                        // re-solved with an incumbent one above the
+                        // equal-length junction total (result = inc − 1 ⇔
+                        // equal-length 872, ≤ inc − 2 ⇔ 871 candidate).
+                        let src_alloc = tailatsp::allocation_of(&rec.trace);
+                        let mut emitted = 0usize;
+                        let mut emitted_same = 0usize;
+                        for mv in tailatsp::enumerate_recomps(n, &g, &inst) {
+                            rc_moves += 1;
+                            let inc = opt + mv.arcs.len() + 1 - mv.remove.len();
+                            let m = tailatsp::apply_recomp(n, &g, &inst, &mv, inc);
+                            let (mopt, morder, _) = tailatsp::solve_bb(&m, false, 0);
+                            if mopt >= inc {
+                                continue;
+                            }
+                            let s = tailatsp::materialize(n, &g, &rec.string, &m, &morder);
+                            let v = superperm::validate::validate(n, &s);
+                            if !v.complete {
+                                continue;
+                            }
+                            let t = superperm::trace::trace_string(&g, &s).expect("recomp trace");
+                            let alloc = tailatsp::allocation_of(&t);
+                            if s.len() < rec.string.len() {
+                                rc_improved += 1;
+                                println!(
+                                    "*** RECOMP IMPROVEMENT *** {} anchor={} chars={} (source {}) alloc={:?} valid={}",
+                                    rec.name,
+                                    inst.anchor_depth,
+                                    s.len(),
+                                    rec.string.len(),
+                                    alloc,
+                                    v.complete
+                                );
+                                println!("    NEXT: python3 analysis/counting/m3_check.py + validate --complete before ANY claim");
+                                emit(
+                                    &format!("recomp-cand-{}", rec.name.trim_end_matches(".txt")),
+                                    &s,
+                                );
+                            } else if alloc != src_alloc {
+                                rc_equal_new += 1;
+                                *rc_allocs.entry(alloc).or_default() += 1;
+                                if !quiet || rc_equal_new <= 20 {
+                                    println!(
+                                        "  recomp-equal 872 in NEW allocation: {} -> {:?} (source {:?}, anchor {})",
+                                        rec.name, alloc, src_alloc, inst.anchor_depth
+                                    );
+                                }
+                                if emitted < 8 {
+                                    emit(
+                                        &format!(
+                                            "recomp-eq-{}-{}",
+                                            rec.name.trim_end_matches(".txt"),
+                                            rc_equal_new
+                                        ),
+                                        &s,
+                                    );
+                                    emitted += 1;
+                                }
+                            } else {
+                                rc_equal_same += 1;
+                                // sample for offline m3_check: same-allocation
+                                // equal-cost recompositions may still be NOVEL
+                                // classes (the shell-density question)
+                                if emitted_same < 2 {
+                                    emit(
+                                        &format!(
+                                            "recomp-sameeq-{}-{}",
+                                            rec.name.trim_end_matches(".txt"),
+                                            rc_equal_same
+                                        ),
+                                        &s,
+                                    );
+                                    emitted_same += 1;
+                                }
+                            }
+                        }
+                    }
                     if ties {
                         let src_alloc = tailatsp::allocation_of(&rec.trace);
                         for (ti, ord) in tie_orders.iter().enumerate() {
@@ -2077,7 +2168,15 @@ fn main() -> ExitCode {
                     println!("    merged allocation {alloc:?}: {k}");
                 }
             }
-            if improved > 0 || merge_improved > 0 {
+            if recomp {
+                println!(
+                    "  recomp-1 (I2a): {rc_moves} moves tried, {rc_improved} improved (871 candidates), {rc_equal_new} equal-cost 872s in NEW allocations, {rc_equal_same} equal-cost same-allocation"
+                );
+                for (alloc, k) in &rc_allocs {
+                    println!("    recomposed allocation {alloc:?}: {k}");
+                }
+            }
+            if improved > 0 || merge_improved > 0 || rc_improved > 0 {
                 std::process::exit(2);
             }
         }

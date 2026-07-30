@@ -291,6 +291,10 @@ cargo run --release -- tail-atsp -n 6 --dirs data/surgery_specimens --anchor 580
 # shorter = 871 candidate (exit 2, M3 ritual); equal length = new 872 at S-1 (always a new
 # allocation; every merge-eq-* through m3_check). Law: anchor >= 585 has ZERO merge completions:
 cargo run --release -- tail-atsp -n 6 --dirs data/upstream872 --anchor 520 --max-blocks 40 --merge --quiet --out-dir data/surgery_finds
+# s31 recomp-1 — --recomp tries EVERY single-cycle recomposition (all arc-partitions of each
+# tail cycle; subsumes --merge, ~1300 moves/walk, ~5 s/walk at anchor 585). Same-allocation
+# equal-cost completions are ~48% of moves and (sampled) all equivalent-to-known:
+cargo run --release -- tail-atsp -n 6 --dirs data/upstream872 --anchor 585 --recomp --quiet --out-dir out/
 
 # s26 structural recombination (docs/RECOMB-DESIGN.md; src/recomb.rs + src/unionsearch.rs):
 cargo run --release -- recomb -n 6 --dirs data/records872,data/gain1_872s --emit-dir data/hybrids872   # 0.25s; pins: 298 closure walks, 2 hybrids

@@ -223,6 +223,195 @@ pub fn enumerate_merges(n: usize, g: &Graph, inst: &TailInstance) -> Vec<MergeMo
     out
 }
 
+/// One I2a recomposition move: replace ALL of a cycle's tail blocks
+/// with a different arc-partition of the same perm set. Subsumes merge
+/// (fewer arcs), split (more arcs), and repartition (equal arcs,
+/// different boundaries — the junction-neutral 3|3↔2|4 family). The
+/// enumeration includes 1|5-style singleton arcs even though no natural
+/// recomposition uses them (census M-R1) — a broader negative is a
+/// stronger law, and the extra variants are cheap.
+pub struct RecompMove {
+    /// Indices (into `TailInstance::blocks`) of the cycle's blocks, all
+    /// removed.
+    pub remove: Vec<usize>,
+    /// Replacement arcs as (entry rank, perm count), covering exactly
+    /// the same perm set.
+    pub arcs: Vec<(u32, usize)>,
+}
+
+/// Enumerate every single-cycle recomposition of an instance. For a
+/// cycle fully covered in the tail, the alternatives are all nonempty
+/// sets of arc starts around the n-cycle (2^n − 1 variants, minus the
+/// walk's own). For a partially covered cycle, each maximal contiguous
+/// covered run is independently re-partitioned (2^(len−1) compositions
+/// per run, cartesian across runs) — arcs never cross a prefix-covered
+/// gap (that would need a pass-over, an i2-priced move outside I2a).
+pub fn enumerate_recomps(n: usize, g: &Graph, inst: &TailInstance) -> Vec<RecompMove> {
+    let mut by_cycle: std::collections::HashMap<u32, Vec<usize>> = std::collections::HashMap::new();
+    for (i, b) in inst.blocks.iter().enumerate() {
+        by_cycle.entry(cycle_id(g, b.entry)).or_default().push(i);
+    }
+    let mut out = Vec::new();
+    for (cid, idxs) in &by_cycle {
+        // cycle perm sequence and position lookup
+        let mut seq = Vec::with_capacity(n);
+        let mut p = *cid;
+        for _ in 0..n {
+            seq.push(p);
+            p = g.succ1(p);
+        }
+        let pos_of = |r: u32| seq.iter().position(|&q| q == r).expect("perm in cycle");
+        let mut covered = vec![false; n];
+        for &bi in idxs {
+            let b = &inst.blocks[bi];
+            let mut r = b.entry;
+            for _ in 0..b.nperms {
+                covered[pos_of(r)] = true;
+                r = g.succ1(r);
+            }
+        }
+        let ncov = covered.iter().filter(|&&c| c).count();
+        let cur_starts: std::collections::BTreeSet<usize> = idxs
+            .iter()
+            .map(|&bi| pos_of(inst.blocks[bi].entry))
+            .collect();
+        let mut push = |starts: &std::collections::BTreeSet<usize>, full: bool| {
+            if *starts == cur_starts {
+                return;
+            }
+            // arc lengths: from each start to the next covered boundary
+            let sv: Vec<usize> = starts.iter().copied().collect();
+            let mut arcs = Vec::with_capacity(sv.len());
+            for (k, &s) in sv.iter().enumerate() {
+                let len = if full {
+                    let next = sv[(k + 1) % sv.len()];
+                    (next + n - s - 1) % n + 1
+                } else {
+                    // run to the next start or the end of the covered run
+                    let mut len = 0;
+                    let mut q = s;
+                    loop {
+                        len += 1;
+                        q = (q + 1) % n;
+                        if !covered[q] || starts.contains(&q) {
+                            break;
+                        }
+                    }
+                    len
+                };
+                arcs.push((seq[s], len));
+            }
+            out.push(RecompMove {
+                remove: idxs.clone(),
+                arcs,
+            });
+        };
+        if ncov == n {
+            for mask in 1u32..(1 << n) {
+                let starts: std::collections::BTreeSet<usize> =
+                    (0..n).filter(|i| mask & (1 << i) != 0).collect();
+                push(&starts, true);
+            }
+        } else {
+            // maximal covered runs (cyclic); enumerate cut subsets per
+            // run, cartesian across runs
+            let run_starts: Vec<usize> = (0..n)
+                .filter(|&i| covered[i] && !covered[(i + n - 1) % n])
+                .collect();
+            let run_lens: Vec<usize> = run_starts
+                .iter()
+                .map(|&s| {
+                    let mut len = 0;
+                    let mut q = s;
+                    while covered[q] {
+                        len += 1;
+                        q = (q + 1) % n;
+                        if len == n {
+                            break;
+                        }
+                    }
+                    len
+                })
+                .collect();
+            let total_variants: usize = run_lens.iter().map(|&l| 1usize << (l - 1)).product();
+            for v in 0..total_variants {
+                let mut starts: std::collections::BTreeSet<usize> =
+                    std::collections::BTreeSet::new();
+                let mut rem = v;
+                for (ri, &s) in run_starts.iter().enumerate() {
+                    let l = run_lens[ri];
+                    let cuts = rem % (1 << (l - 1));
+                    rem /= 1 << (l - 1);
+                    starts.insert(s);
+                    for j in 1..l {
+                        if cuts & (1 << (j - 1)) != 0 {
+                            starts.insert((s + j) % n);
+                        }
+                    }
+                }
+                push(&starts, false);
+            }
+        }
+    }
+    out
+}
+
+/// Build the recomposed instance: the cycle's blocks replaced by the
+/// move's arcs, cost matrix re-derived, `intra` adjusted by the part
+/// delta (each arc fewer = one healed boundary = +1 weight-1 move).
+/// `incumbent` seeds the B&B bound exactly as in [`apply_merge`].
+pub fn apply_recomp(
+    n: usize,
+    g: &Graph,
+    inst: &TailInstance,
+    mv: &RecompMove,
+    incumbent: usize,
+) -> TailInstance {
+    let mut blocks: Vec<Block> = inst
+        .blocks
+        .iter()
+        .enumerate()
+        .filter(|(k, _)| !mv.remove.contains(k))
+        .map(|(_, b)| Block {
+            entry: b.entry,
+            exit: b.exit,
+            nperms: b.nperms,
+        })
+        .collect();
+    for &(entry, np) in &mv.arcs {
+        let mut exit = entry;
+        for _ in 1..np {
+            exit = g.succ1(exit);
+        }
+        blocks.push(Block {
+            entry,
+            exit,
+            nperms: np,
+        });
+    }
+    let nb = blocks.len();
+    let mut cost = vec![vec![0u16; nb + 1]; nb + 1];
+    for (j, blk) in blocks.iter().enumerate() {
+        cost[0][j + 1] = junction(n, inst.anchor_cur, blk.entry);
+    }
+    for (i, bi) in blocks.iter().enumerate() {
+        for (j, bj) in blocks.iter().enumerate() {
+            if i != j {
+                cost[i + 1][j + 1] = junction(n, bi.exit, bj.entry);
+            }
+        }
+    }
+    TailInstance {
+        anchor_depth: inst.anchor_depth,
+        anchor_cur: inst.anchor_cur,
+        prefix_chars: inst.prefix_chars,
+        blocks,
+        cost,
+        intra: inst.intra + mv.remove.len() - mv.arcs.len(),
+        actual: incumbent,
+    }
+}
+
 /// Build the merged instance: the two constituent blocks replaced by
 /// one, cost matrix re-derived, `intra` up one (the healed boundary
 /// becomes a weight-1 move). `incumbent` seeds the B&B upper bound —
@@ -747,6 +936,73 @@ mod tests {
             s == c6.string
         });
         assert!(rederived, "merge + tie search must re-derive the partner");
+    }
+
+    /// Recomp-1 control: n=5's 153 is proven optimal, so no single-cycle
+    /// recomposition may complete below it. Also pins the bookkeeping
+    /// identity on every recomposed instance: materialized length =
+    /// prefix + intra' + optimal junction total.
+    #[test]
+    fn n5_no_recomp_beats_proven_optimum() {
+        let g = Graph::new(5);
+        let res = crate::greedy::greedy(&g);
+        let t = trace_string(&g, &res.string).unwrap();
+        let inst = decompose(5, &t, 100).expect("decompose");
+        let (opt, _, _) = solve_bb(&inst, false, 0);
+        assert_eq!(opt, inst.actual);
+        let moves = enumerate_recomps(5, &g, &inst);
+        assert!(!moves.is_empty(), "n=5 tail must admit recompositions");
+        for mv in &moves {
+            let m = apply_recomp(5, &g, &inst, mv, 10_000);
+            let (true_opt, order, _) = solve_bb(&m, false, 0);
+            if let Some(hk) = solve_hk(&m) {
+                assert_eq!(hk, true_opt, "HK/B&B must agree on recomposed instance");
+            }
+            let s = materialize(5, &g, &res.string, &m, &order);
+            assert_eq!(
+                s.len(),
+                m.prefix_chars + m.intra + true_opt,
+                "length bookkeeping must be exact"
+            );
+            assert!(s.len() >= 153, "a sub-153 would be a solver bug");
+            let v = crate::validate::validate(5, &s);
+            assert!(v.complete, "recomposed walks must stay complete covers");
+        }
+    }
+
+    /// Recomp-1 subsumes the seam merge: from the shallow anchor, the
+    /// whole-6 recomposition of cycle 135462 entered at 462135 must
+    /// re-price to exactly one junction unit below the unmerged optimum
+    /// (the equal-length S−1 edit the merge oracle pins byte-exactly).
+    #[test]
+    fn recomp_finds_the_seam_edit() {
+        let g = Graph::new(6);
+        let dir = std::path::Path::new("data/surgery_specimens");
+        let corpus = crate::corpus::load_corpus(&g, &[dir]).expect("pair");
+        let c5 = corpus
+            .iter()
+            .find(|r| r.name.contains("0105a4b77ce8"))
+            .expect("(143,5) side");
+        let inst = decompose(6, &c5.trace, 570).expect("decompose");
+        let (opt, _, _) = solve_bb(&inst, false, 0);
+        let seam_entry: Vec<u8> = vec![4, 6, 2, 1, 3, 5];
+        let mv = enumerate_recomps(6, &g, &inst)
+            .into_iter()
+            .find(|m| {
+                m.arcs.len() == 1
+                    && m.arcs[0].1 == 6
+                    && unrank(6, m.arcs[0].0 as usize) == seam_entry
+            })
+            .expect("whole-6 seam variant must be enumerated");
+        assert_eq!(mv.remove.len(), 2, "seam cycle has two tail parts");
+        let inc = opt + mv.arcs.len() + 1 - mv.remove.len();
+        let m = apply_recomp(6, &g, &inst, &mv, inc);
+        let (mopt, _, _) = solve_bb(&m, false, 0);
+        assert_eq!(
+            mopt,
+            inc - 1,
+            "seam recomposition re-prices to equal length"
+        );
     }
 
     /// Committed specimen pins (one per L0 allocation, s27): every

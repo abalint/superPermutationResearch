@@ -6,6 +6,74 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 31) — Recomp-1 BUILT (`tail-atsp --recomp`, the COMPLETE single-cycle recomposition move — subsumes merge, adds splits/repartitions/entry rotations/1|5 arcs); both farm sweeps folded (a450b50: block-order-optimality extends to ~270-perm tails, 22,062/22,062; a520b40merge: 488,350 merge moves, the ONLY completion is the specimen-pair rediscovery); recomp probes at anchor 585: **~175k moves over 138 walks — 0 improvements, 0 new-allocation equals, but the shell is DENSE under same-allocation repartition (48% of moves complete at equal cost) and a 60-sample M3 batch says ALL are equivalent-to-known** — tentative law: the corpus is RECOMPOSITION-CLOSED at the 585 band
+
+Research-agent session under the new engine-first premise (ROADMAP
+"Premise", Andrew 2026-07-29). All 133 tests green (+2), clippy/fmt
+clean. **Farm: reship `superperm.exe` before running the queued recomp
+sweep — s31 changed `src/tailatsp.rs` and `src/main.rs`.**
+
+**Folded farm results (operator, SWEEP-QUEUE):**
+- **a450b50 (I1 reorder, anchor ≥ 450 / ≤ 50 blocks): all 22,062
+  classes block-order-optimal, 0 skipped, 48.8 min on 24 cores.** With
+  s28b and s9: reordering is dead as a route to 871 across every known
+  872's last ~270 perm visits.
+- **a520b40merge (I2a merge, anchor ≥ 520): 488,350 merge moves, 0
+  improvements, exactly ONE equal-cost 872 at S−1 — the (142,6)
+  partner-class rediscovery** (m3-gated). The S−1 merge, exhaustively
+  applied to every known 872's last ~200 perms, only re-finds the one
+  edit nature performed.
+
+**Built — recomp-1 (`enumerate_recomps`/`apply_recomp` in
+`src/tailatsp.rs`, `tail-atsp --recomp`).** The complete single-cycle
+move: for each cycle, every alternative arc-partition of its tail perm
+set — full cycles get all 2⁶−1 arc-start sets (63 variants), partial
+cycles get per-run compositions (arcs never cross a prefix-covered gap
+— that would be an i2-priced pass-over, outside I2a). Includes
+out-of-vocabulary 1|5 singleton arcs deliberately (census M-R1 says
+nature never uses them; a broader negative is a stronger law). Each
+variant re-solved exactly with incumbent = equal-length junction total
++ 1: result one below = equal-length 872 (reported by allocation;
+same-allocation samples emitted 2/walk for offline M3), two below = 871
+candidate (banner, exit 2). Pins: n=5 proven-optimum control with
+HK cross-check AND the length-bookkeeping identity (materialized length
+= prefix + intra′ + J′) on every recomposed instance; the seam-edit pin
+(recomp finds the specimen pair's whole-6 variant at exactly inc − 1).
+
+**Probe verdicts (anchor 585, ~136-perm tails):**
+- 8 specimens: 10,640 moves, 0 improved, 0 new-allocation, 4,979
+  equal-cost same-allocation (47%).
+- First-100 corpus walks: 126,815 moves (~1,270/walk, 5.4 s/walk), 0
+  improved, 0 new-allocation, 60,736 equal-cost same-allocation (48%).
+- **M3 batch over 60 sampled same-allocation equals: 60/60
+  equivalent-to-known, 0 novel.**
+
+**Reading: the 872 shell is locally DENSE but CLOSED.** Half of all
+single-cycle recompositions complete at equal length — the
+junction-neutral 2|4↔3|3 family the census priced at 0 — yet every
+sampled product is a known class, no allocation ever changes, and
+nothing improves. This extends splice-closure (s26b) to the
+recomposition move at the 585 band: the corpus looks closed under
+every local move we have built. The missing char is not adjacent to
+the known corpus under single edits of its last ~136–270 perms.
+
+**Queued (SWEEP-QUEUE):** full-corpus recomp-585 on the farm (~1.5–4.5
+h on 24 cores; binary reship required first) — the exhaustive version
+of the tentative law plus the 871/new-allocation alarm paths.
+
+**Next session, concretely (s32):**
+- **n=7 corpus assembly (engine premise item):** gather the 83
+  published 5906s + Kristan's + the three 5907s into `data/` with the
+  corpus loader conventions, then point `tail-atsp` (I1 reorder →
+  merge → recomp, all n-generic) at 5906-class tails — first engine
+  generality test where the record-to-bound gap is 18 chars, not 3.
+- **Multi-move tier design** (if the farm recomp sweep is negative):
+  two-cycle compensated edits (split+demote / merge+demote for the
+  d3−1 targets), guided by the census conservation law — design doc
+  section first per the standing directive.
+- **Still open:** tie census (pending approval), ip=1 study,
+  per-allocation NRPA/beam.
+
 ## 2026-07-29 (session 30) — I2a BUILT same-day (`tail-atsp --merge`): the merge oracle passes (from a shallow anchor the instrument re-derives the (142,6) partner from the (143,5) side BYTE-IDENTICALLY via merge + tie re-solve); full-corpus merge sweep at anchor ≥ 585: **240,874 merge moves over all 22,062 classes, 0 improvements AND 0 equal-cost completions** — in ≤136-perm tails a single merge cannot even re-price to EQUAL length; at anchor 520 the first instrument-created cross-allocation 872 appears in the wild (a rediscovery of the specimen pair's partner class — the full find→materialize→validate→M3-gate path proven in sweep mode)
 
 Same-day continuation of s29 (the s26/s28b precedent: design §9 in the
