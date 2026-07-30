@@ -640,3 +640,12 @@ novel finds at other walks/anchors): sweeps queued in SWEEP-QUEUE
 (n=7 first per §10.5). Reaching the compound tier itself needs a
 midgame-order instrument — out of I3's scope, and the same wall the
 policy/completion work (s23–s25) already faces from the search side.
+
+**s38b — the n=7 corpus sweep ran (operator, `n7a4840recomp2`): the
+pair-compound tier is CLOSED at 4840 with an EMPTY equal-cost shell.**
+1.57B raw pairs → 9.67M post-T1 (0.61%) → 7,321,635 exact re-solves
+over all 87 walks: 0 improved, 0 equal-cost in ANY allocation, 0
+Λ-tripwire violations, no Kristan seam. Against recomp-1's dense
+48.5% equal plateau, compounds strictly cost — at this band the tier
+is closed to equality itself, corpus-wide. Verbatim ledgers in
+SWEEP-QUEUE; fold in JOURNAL s38b.

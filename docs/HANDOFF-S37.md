@@ -10,7 +10,13 @@ compound is not expressible at anchored reach even with extraction
 tier lives in midgame ORDER). Read JOURNAL s38 + SURGERY-DESIGN §10.8
 before item 1's sweeps; three recomp2 queue entries await approval in
 SWEEP-QUEUE. The farm binary is STALE for recomp2 until reshipped
-(s38 changed `src/tailatsp.rs`).
+(s38 changed `src/tailatsp.rs`). **s38b:** the n=7 sweeps all ran
+(operator, farm) — pair-compound tier CLOSED at 4840 with an EMPTY
+equal-cost shell (7.3M solves, 0 equal, 0 Λ violations), Kristan seam
+absent everywhere, merge+ties closed to ~410-perm tails (block ceiling
+binds at n=7, not the anchor — quote observed anchors). Binary
+`bdc9625` is shipped. Remaining queue: n=6 recomp2 520 tight (probe
+first) and the 450 probe-only entry.
 
 ## State of the world in six sentences
 

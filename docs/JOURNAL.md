@@ -6,6 +6,42 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 38b) — three farm sweeps folded (operator ran the queue back-to-back, Andrew-approved): **the n=7 pair-compound tier is CLOSED at the 4840 band — and unlike every earlier tier its equal-cost shell is EMPTY: 7,321,635 exact re-solves (from 1.57B raw pairs, 189 extractions), 0 improved, 0 equal-cost in ANY allocation, 0 Λ violations** — single recompositions sit on a dense equal plateau (48.5% at n=7, 48.2% at n=6: n-generic) but compounding two moves leaves the plateau entirely and strictly costs, so at this band the compound tier is closed to EQUALITY, not merely to improvement; recomp-1 closure extends 4905→4840 (297,232 moves, 0 events) and merge+ties extend to ~410-perm tails (NOT the ~440 the anchor implies — max-blocks 60 binds at n=7, observed anchors 4629–4689); **the Kristan seam (844,17)↔(843,18) is absent from all three sweeps**; and the loop-count relation now stands on 7.3M independent exact re-solves with zero violations
+
+Fold-only entry (results verbatim in SWEEP-QUEUE, ops details in the
+three `ops:` commits). What each run settles:
+
+- **`n7a4840recomp`** (recomp-1, 87 walks, 47.3 s/walk): the n=7
+  single-recomposition closure law extends from ~136-perm to ~200-perm
+  tails — 297,232 moves, 0 improved, 0 new-allocation equals, Kristan
+  seam never appears. Equal-cost rate 48.5% vs n=6's 48.2%
+  (`a585recomp`): the dense-but-degenerate shell is not an n=6
+  artifact. (The 585-band 200-sample M3 precedent — every sampled
+  equal is its own source class — was not re-run at this band.)
+- **`n7a4600seam` + `n7a4600seamfull`** (merge+ties): no S1 tie and no
+  S−1 merge produces a cross-allocation walk anywhere in the n=7
+  corpus down to ~410-perm tails; the Kristan unit-trade stays
+  unrealized. **Operator's caveat adopted as a standing trap: at n=7
+  the BLOCK CEILING binds, not the anchor** — every walk hit
+  `--max-blocks 60` and cut deeper than requested (4629–4689 vs 4600),
+  so band claims must quote observed anchors, and a true ~440-perm
+  band needs 70–80 blocks = a different exact-solve regime.
+- **`n7a4840recomp2`** (I3, 8.5 min wall on 12 workers): the headline
+  above. Funnel: 1,574,583,671 raw pairs → 9,673,573 post-T1 (0.61%)
+  → 7,321,635 exact re-solves (net −2/−1/0 = 49,735/943,145/6,328,755).
+  All three tripwires silent (no candidate, no Kristan banner, no Λ
+  violation). The zero-equal result sharpens s38's §10.6 refutation
+  from one walk to the whole n=7 corpus: pair compounds don't explore
+  a wider equal plateau, they strictly cost — consistent with the
+  natural compound pricing +6, and further evidence that equal-length
+  compound crossings need midgame ORDER, which no anchored instrument
+  offers. THEORY §6's loop-relation entry now cites the 7.3M-solve
+  calibration.
+
+**Still queued (approval pending):** n=6 recomp2 520-band tight
+(round-robin probe first, reshipped binary `bdc9625` already on the
+PC) and the 450-band probe-only entry.
+
 ## 2026-07-30 (session 38) — I3 BUILT (`tail-atsp --recomp2`, SURGERY-DESIGN §10.8) and its first measurement KILLS the extraction hope: **the natural 2-compound is NOT expressible at anchored reach — extraction AND absorption of the `126354`@181 part both price exactly +6 over equal (the part is entered by a w2 edge; any local seam repair re-spells a full window), while nature's compound enters both whole-6s through w3 doors that exist only under a globally different midgame order** — the compound tier lives in midgame ORDER, not midgame depth (M-2b′ sharpened; the s24 blocked zone indicted a third time, now at certificate level); first sweeps: A side @520 = 111,216 exact re-solves, **zero equal-cost completions of any kind**, zero Λ violations, 6 min/walk; n=7 @4840 = 75,201 solves, 89 s/walk, zero events — the whole-corpus n=7 sweep (~2.2 h) is queued
 
 Rust session; 139 tests green (133 + 6 new pins); clippy/fmt clean.

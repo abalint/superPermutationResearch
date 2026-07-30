@@ -125,4 +125,7 @@ regression data.
   (`analysis/counting/loop_census.py`, exit-0 verifier). One char = one Λ-unit on the
   record shell: an 871 is a Λ=28 object, a 5905 is Λ=141. If derived, this becomes the
   cycle-level restatement of the waste identity; SURGERY-DESIGN §10.1 builds the I3
-  prune tier T4 on it either way.
+  prune tier T4 on it either way. s37 showed T4 is tautological as a PRUNE (Λ-neutral =
+  length-neutral), so it runs as a tripwire assertion instead — and as of the s38 n=7
+  recomp2 farm sweep it has survived 7,321,635 independent exact re-solves with zero
+  violations, the strongest calibration the relation has.
