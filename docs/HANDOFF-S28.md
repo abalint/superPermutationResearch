@@ -1,12 +1,16 @@
 # Handoff: the s28 front → now the s29 front
 
-**Updated end of s28 (2026-07-29).** Items 1 (surgery design) and 2
-(per-allocation M2 pass) are DONE — read JOURNAL s28 and
-`docs/SURGERY-DESIGN.md`. The s29 front is: build the `tail-atsp` Rust
-subcommand (SURGERY-DESIGN §4, controls first) and run the full-corpus
-anchor sweep; then the ip=1 study and per-allocation NRPA/beam over the
-new frontier dumps (`data/frontiers_s28/`, gitignored). Items below kept
-for the traps section, which still applies verbatim.
+**Updated end of s28b (2026-07-29).** Items 1 (surgery design) and 2
+(per-allocation M2 pass) are DONE, and instrument I1 is BUILT and swept —
+read JOURNAL s28/s28b and `docs/SURGERY-DESIGN.md` (§8 has the build
+outcomes: tie oracle passed across an allocation boundary; NEW law — all
+22,062 classes block-order-optimal at anchors ≥ 585 and ≥ 520). The s29
+front is: tie CENSUS over the corpus (which allocations do S1 ties
+reach? is (144,4) or any ip=1 target ever hit?), the 3.5 h anchor-450
+sweep (launch protocol — needs Andrew's go-ahead), the I2 design pass
+(SURGERY-DESIGN §5), then the ip=1 study and per-allocation NRPA/beam
+over the frontier dumps (`data/frontiers_s28/`, gitignored). Items below
+kept for the traps section, which still applies verbatim.
 
 Written at the end of s27b (2026-07-29) for a fresh agent. Read
 `docs/JOURNAL.md` s27/s27b first; this note only adds the entry points and

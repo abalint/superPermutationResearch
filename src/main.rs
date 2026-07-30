@@ -608,6 +608,45 @@ enum Cmd {
     /// Record-pair splice closure over the braid state-DAG (s26 Probe
     /// R1, docs/RECOMB-DESIGN.md §4): glue all corpus record paths at
     /// shared states, count/enumerate the closure, emit new hybrids.
+    /// I1 tail block-ATSP (docs/SURGERY-DESIGN.md §4): per walk, cut the
+    /// tail at the shallowest block boundary that yields at most
+    /// --max-blocks blocks, then EXACTLY optimize the block order
+    /// (junction re-pricing; block set and split compositions fixed).
+    /// optimum < actual = an 871 candidate (materialized, validated,
+    /// written to --out-dir; STILL goes through m3_check + validate
+    /// before any claim). Exit code 2 iff any improvement was found.
+    TailAtsp {
+        /// Number of symbols (3..=8).
+        #[arg(short, long)]
+        n: usize,
+        /// Record directories, comma-separated.
+        #[arg(long, value_delimiter = ',')]
+        dirs: Vec<PathBuf>,
+        /// Anchor: smallest first-visit depth eligible as the cut.
+        #[arg(long, default_value_t = 585)]
+        anchor: usize,
+        /// Widest instance to solve exactly; walks needing more blocks
+        /// at --anchor are cut DEEPER (fewer blocks) instead of skipped.
+        #[arg(long, default_value_t = 27)]
+        max_blocks: usize,
+        /// Also collect equal-cost orders (ties) and report those whose
+        /// implied L0 allocation differs from the source walk's.
+        #[arg(long)]
+        ties: bool,
+        /// Cap on collected tie orders per walk.
+        #[arg(long, default_value_t = 64)]
+        tie_cap: usize,
+        /// Write improved (and, with --ties, new-allocation tie) walks
+        /// here.
+        #[arg(long)]
+        out_dir: Option<PathBuf>,
+        /// Process only the first K records (sweep sizing runs).
+        #[arg(long)]
+        limit: Option<usize>,
+        /// Print only the summary and any improvements.
+        #[arg(long)]
+        quiet: bool,
+    },
     Recomb {
         /// Number of symbols (3..=8).
         #[arg(short, long)]
@@ -1847,6 +1886,120 @@ fn main() -> ExitCode {
                     "DISCREPANCY: at least one claim disagrees with this clean-room verification."
                 );
                 return ExitCode::FAILURE;
+            }
+        }
+        Cmd::TailAtsp {
+            n,
+            dirs,
+            anchor,
+            max_blocks,
+            ties,
+            tie_cap,
+            out_dir,
+            limit,
+            quiet,
+        } => {
+            use superperm::tailatsp;
+            let g = Graph::new(n);
+            let dir_refs: Vec<&std::path::Path> = dirs.iter().map(|p| p.as_path()).collect();
+            let mut corpus = superperm::corpus::load_corpus(&g, &dir_refs).unwrap_or_else(|e| {
+                eprintln!("{e}");
+                std::process::exit(1);
+            });
+            if let Some(k) = limit {
+                corpus.truncate(k);
+            }
+            let t0 = Instant::now();
+            let (mut optimal, mut improved, mut skipped, mut new_alloc_ties) =
+                (0u64, 0u64, 0u64, 0u64);
+            let emit = |tag: &str, s: &str| {
+                if let Some(dir) = &out_dir {
+                    fs::create_dir_all(dir).expect("create out dir");
+                    let path = dir.join(format!("{tag}.txt"));
+                    fs::write(&path, format!("{s}\n")).expect("write find");
+                    println!("  written -> {}", path.display());
+                }
+            };
+            for rec in &corpus {
+                // Shallowest anchor whose instance fits max_blocks: cut
+                // deeper until it fits (deeper = fewer blocks).
+                let mut min_depth = anchor;
+                let inst = loop {
+                    match tailatsp::decompose(n, &rec.trace, min_depth) {
+                        None => break None,
+                        Some(i) if i.blocks.len() <= max_blocks => break Some(i),
+                        Some(i) => min_depth = i.anchor_depth + 1,
+                    }
+                };
+                let Some(inst) = inst else {
+                    skipped += 1;
+                    continue;
+                };
+                let (opt, order, tie_orders) = tailatsp::solve_bb(&inst, ties, tie_cap);
+                if opt < inst.actual {
+                    improved += 1;
+                    let s = tailatsp::materialize(n, &g, &rec.string, &inst, &order);
+                    let v = superperm::validate::validate(n, &s);
+                    println!(
+                        "*** IMPROVEMENT *** {} anchor={} blocks={} {} -> {} chars={} valid={} ({}/{})",
+                        rec.name,
+                        inst.anchor_depth,
+                        inst.blocks.len(),
+                        inst.actual,
+                        opt,
+                        s.len(),
+                        v.complete,
+                        v.distinct,
+                        v.total
+                    );
+                    println!("    NEXT: python3 analysis/counting/m3_check.py + validate --complete before ANY claim");
+                    emit(&format!("cand-{}", rec.name.trim_end_matches(".txt")), &s);
+                } else {
+                    optimal += 1;
+                    if !quiet {
+                        println!(
+                            "{}: anchor={} blocks={} cost={} block-order-optimal",
+                            rec.name,
+                            inst.anchor_depth,
+                            inst.blocks.len(),
+                            inst.actual
+                        );
+                    }
+                    if ties {
+                        let src_alloc = tailatsp::allocation_of(&rec.trace);
+                        for (ti, ord) in tie_orders.iter().enumerate() {
+                            let s = tailatsp::materialize(n, &g, &rec.string, &inst, ord);
+                            if s == rec.string {
+                                continue;
+                            }
+                            let v = superperm::validate::validate(n, &s);
+                            if !v.complete || s.len() != rec.string.len() {
+                                continue;
+                            }
+                            let t = superperm::trace::trace_string(&g, &s).expect("tie trace");
+                            let alloc = tailatsp::allocation_of(&t);
+                            if alloc != src_alloc {
+                                new_alloc_ties += 1;
+                                println!(
+                                    "  tie in NEW allocation {:?} (source {:?}): {} tie#{}",
+                                    alloc, src_alloc, rec.name, ti
+                                );
+                                emit(
+                                    &format!("tie-{}-{}", rec.name.trim_end_matches(".txt"), ti),
+                                    &s,
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            println!(
+                "tail-atsp: {} walks, {optimal} block-order-optimal, {improved} improved, {skipped} skipped, {new_alloc_ties} new-allocation ties ({:.1}s)",
+                corpus.len(),
+                t0.elapsed().as_secs_f64()
+            );
+            if improved > 0 {
+                std::process::exit(2);
             }
         }
         Cmd::Recomb {

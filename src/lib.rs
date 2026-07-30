@@ -69,6 +69,7 @@ pub mod nrpa;
 pub mod recomb;
 pub mod rollout;
 pub mod sojourn;
+pub mod tailatsp;
 pub mod trace;
 pub mod unionsearch;
 pub mod validate;

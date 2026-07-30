@@ -278,6 +278,15 @@ cargo run --release -- nrpa -n 5 --class 60,10,0,0,10 --level 2 --iters 10 --swi
 # reps 20 re-derives the seed 872 at rollout 1 (cold start plateaus at 883 — don't bother without --warm-start):
 cargo run --release -- nrpa -n 6 --class 145,3,0,0,0 --records-profile --level 2 --iters 12 --switch-depth 500 --tail-width 8000 --max-len 874 --prior 3 --early-tail --warm-start data/records872/872.0053cad.txt --warm-reps 20 --collect 872 --seed 3
 
+# s28 surgery instrument I1 — tail block-ATSP (docs/SURGERY-DESIGN.md §4/§8; src/tailatsp.rs).
+# Exact block-order optimization of every walk tail; anchor adapts deeper until <= --max-blocks.
+# optimum < actual = 871 candidate (auto-materialized+validated, exit 2; STILL run m3_check).
+# Corpus law (s28): ALL 22,062 classes are block-order-optimal at anchor >= 585:
+cargo run --release -- tail-atsp -n 6 --dirs data/upstream872 --anchor 585 --quiet
+# --ties collects equal-cost orders landing in a DIFFERENT allocation (oracle: re-derives the
+# (142,6) partner of the committed pair at data/surgery_specimens/ from its (143,5) side):
+cargo run --release -- tail-atsp -n 6 --dirs data/surgery_specimens --anchor 580 --ties --out-dir out/
+
 # s26 structural recombination (docs/RECOMB-DESIGN.md; src/recomb.rs + src/unionsearch.rs):
 cargo run --release -- recomb -n 6 --dirs data/records872,data/gain1_872s --emit-dir data/hybrids872   # 0.25s; pins: 298 closure walks, 2 hybrids
 # union-edge DFS — enumeration mode truncates at any feasible budget (design §8.2); --tt = decision/optimality mode:

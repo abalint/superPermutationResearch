@@ -181,6 +181,41 @@ measurement 5 actually use? — that census bounds I2's branching).
 4. **I2 design pass** (recomposition census on the 15 cycles + the s27
    door-pricing bands) — separate doc section, conditional on 3.
 
+## 8. s28 build outcomes (same day — I1 is BUILT and the first sweeps ran)
+
+`src/tailatsp.rs` + `tail-atsp` CLI landed with all §4 controls as tests
+(n=5 proven-optimum control, mangled-order repair, materialize identity
+round-trip, HK/B&B agreement, the 8 committed allocation specimens
+pinned block-order-optimal at anchor ≥ 585). Implementation notes: the
+anchor adapts per walk (cut moves DEEPER until the instance fits
+`--max-blocks` — nothing is skipped); B&B bound is two-tier (min-in-edge,
+then Hungarian assignment relaxation only where the cheap tier fails to
+prune); ~1000× the Python prototype (300 walks: 0.3 s vs 346 s).
+
+**The oracle passed end-to-end, crossing an allocation boundary.**
+`tail-atsp --ties` anchored at the natural cut of the specimen pair
+(committed at `data/surgery_specimens/`), run from the (143,5) side,
+re-derives the (142,6) partner BYTE-IDENTICALLY as an equal-cost tie,
+and `m3_check.py` classifies the product as equivalent-to-known — the
+full surgery pipeline (anchor → blocks → exact search → materialize →
+validate → M3 gate) is proven on the one edit nature performed. Pinned
+in `tailatsp::tests::tie_oracle_rederives_partner_across_allocations`.
+
+**Sweep verdicts (fixed-decomposition caveat always):**
+
+- Anchor ≥ 585 (≤ 27 blocks, ~136-perm tails): **all 22,062 community
+  classes are block-order-optimal, 0 improvements** (23 s).
+- Anchor ≥ 520 (≤ 40 blocks, ~200-perm tails): **all 22,062 classes
+  block-order-optimal, 0 improvements** (875 s, ties not collected; the
+  early 27 ms/walk probe underestimated — hard instances have a heavy
+  tail, mean ≈ 40 ms).
+- Anchor ≥ 450 (≤ 50 blocks): ~0.6 s/walk → full corpus ≈ 3.5 h; a
+  launch-protocol run, queued for Andrew's go-ahead.
+
+Next-step queue after the sweeps: tie CENSUS mode (count/collect
+new-allocation ties corpus-wide — measures how connected the allocation
+shells are under S1 alone), then the I2 design pass per §5.
+
 ## 7. Anti-goals
 
 - **No unconditional impossibility claims from I1.** Fixed decomposition

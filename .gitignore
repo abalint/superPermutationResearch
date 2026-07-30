@@ -7,6 +7,9 @@
 # specimen-backed L0 allocation (the full 22,062-class archive stays local in
 # /data/upstream872/), pinned by tests/alloc_grammar.rs.
 !/data/upstream872_specimens/
+# s28 natural cross-allocation surgery pair (docs/SURGERY-DESIGN.md §2.3-2.4),
+# the tail-atsp --ties oracle control; pinned by src/tailatsp.rs tests.
+!/data/surgery_specimens/
 *.jsonl
 .DS_Store
 __pycache__/

@@ -6,6 +6,66 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (session 28b) — Surgery instrument I1 BUILT same-day (`src/tailatsp.rs` + `tail-atsp` CLI): the tie oracle re-derives the (142,6) partner of the natural specimen pair from its (143,5) side BYTE-IDENTICALLY (full pipeline proven across an allocation boundary); NEW corpus law from two full sweeps — **every one of the 22,062 known 872 classes is block-order-optimal at anchor ≥ 585 (23 s) AND at anchor ≥ 520 / ≤ 40 blocks (875 s), 0 improvements** — the missing char is NOT won by reordering ≤ 200-perm tails
+
+Same-day continuation of s28: with SURGERY-DESIGN.md written, I1 was
+built per its §4 (the s26 precedent — design and build in one session,
+doc first). All 129 tests green, clippy `-D warnings` clean, fmt clean.
+
+**Built — `src/tailatsp.rs` + `tail-atsp` subcommand.** Decompose any
+walk tail at an anchor into blocks (maximal w1-runs), price junctions by
+overlap weight, solve the block-order ATSP-path exactly: Held–Karp ≤ 20
+blocks (cross-check tier), B&B above it with a two-tier bound (min-in
+edge, then Hungarian assignment relaxation only where the cheap tier
+fails to prune). The anchor ADAPTS per walk — the cut moves deeper until
+the instance fits `--max-blocks`, so no walk is skipped. ~1000× the s28
+Python prototype (300 walks: 0.3 s vs 346 s). `--ties` collects
+equal-cost orders and reports/writes those whose implied L0 allocation
+differs from the source's. Improvements are materialized, validated, and
+written with a loud banner + exit 2 (the M3 ritual still applies).
+Controls pinned as tests: n=5 greedy-153 tails must be block-order-
+optimal (proven optimum), mangled-order repair, materialize identity
+round-trip, HK/B&B agreement, all 8 committed allocation specimens
+optimal at anchor ≥ 585.
+
+**The oracle passed — across an allocation boundary.** The natural
+specimen pair is now committed at `data/surgery_specimens/` (NOTE.md has
+the anatomy). From the (143,5) side, anchored at the natural cut,
+`tail-atsp --ties` re-derives the (142,6) partner **byte-identically**
+as an equal-cost tie, and `m3_check.py` correctly classifies the product
+as equivalent-to-known. Anchor → blocks → exact search → materialize →
+validate → M3 gate, end-to-end, on the one edit nature performed.
+Pinned in `tie_oracle_rederives_partner_across_allocations`.
+
+**NEW corpus law (fixed-decomposition caveat always attached): all
+22,062 known 872 classes are block-order-optimal.** Two full-corpus
+sweeps: anchor ≥ 585 (≤ 27 blocks, ~136-perm tails, 23 s) and anchor
+≥ 520 (≤ 40 blocks, ~200-perm tails, 875 s) — **zero improvements**.
+Combined with s9 (all record tails ≤ 25 perms are tablebase-optimal),
+the picture sharpens: the missing character cannot be won by REORDERING
+the cover blocks of any known 872's last ~200 perms — an 871 tail must
+RECOMPOSE cycles (different split compositions), which is exactly
+instrument I2's question (SURGERY-DESIGN §5). The law is also thesis
+fuel for Track C: block order is a solved dimension; composition choice
+is where the evaluator's signal must live.
+
+**Also this session (ops):** anchor-450/≤50-block sweeps cost ~0.6
+s/walk → ≈ 3.5 h full-corpus — queued behind the launch protocol for
+Andrew's go-ahead. Tie CENSUS mode (`--ties` corpus-wide: how connected
+are the allocation shells under S1 reordering alone?) is the other cheap
+next probe.
+
+**Next session, concretely (s29):**
+- **Tie census** over the corpus at a few anchor bands — count
+  new-allocation ties, which allocations they reach, whether (144,4) or
+  any ip=1 target is EVER hit by an S1-reachable tie.
+- **The 450 sweep** (3.5 h, launch protocol) if Andrew green-lights.
+- **I2 design pass** per SURGERY-DESIGN §5: recomposition census on the
+  w4 specimen's 15 recomposed cycles; anchored re-cover under the 13
+  distance-1 waste-146 target caps.
+- Still open from HANDOFF-S28: the ip=1 ε-rollout study; per-allocation
+  NRPA/beam over `data/frontiers_s28/`.
+
 ## 2026-07-29 (session 28) — Cross-class surgery DESIGNED from corpus evidence (docs/SURGERY-DESIGN.md): cross-allocation braid sharing is real (22,266 states, all 28 allocation pairs) with ZERO unequal-length reconvergence corpus-wide; a natural specimen pair is byte-identical to depth 584 and shows the (S+1,d3−1) unit trade is a pure BLOCK REORDERING with junction re-pricing; block-ATSP prototype: both specimen tails and 249/249 sampled corpus tails are block-order-optimal at anchor ≈585; per-allocation M2 pass run for all 6 untested allocations (d4=0 complete ≤25M nodes; d4-bearing + 1|5-bearing truncate at 60M)
 
 Two of the four s28 items (HANDOFF-S28) landed: the flagship surgery
