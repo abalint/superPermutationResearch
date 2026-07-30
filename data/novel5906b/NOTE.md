@@ -1,12 +1,14 @@
 # novel5906b — the s44 loop-swap discoveries (102 novel 5906 classes)
 
-**SUBMITTED as superpermutators/superperm PR #51 (Andrew, 2026-07-30;
-branch `102-new-5906s` on the fork, files
-`superpermutations/7/7_5906_derived_<sha12>.txt`) — awaiting merge.**
-Pre-submission re-check against the freshly pulled community master
-(unchanged since PR #50): 102/102 validator-complete, novel vs all 92
-published classes and mutually inequivalent, filename↔canon-sha
-consistent, 142 distinct 2-cycles each.
+**PUBLISHED: merged into superpermutators/superperm on 2026-07-30
+(PR #51, upstream commit `235a074`, files
+`superpermutations/7/7_5906_derived_<sha12>.txt`). The published n=7
+5906 count is now 194 classes across 8 allocations, 110 of them
+(57%) from this project (8 s41 + 102 s44).** Pre-submission re-check
+against the freshly pulled community master: 102/102
+validator-complete, novel vs all 92 then-published classes and
+mutually inequivalent, filename↔canon-sha consistent, 142 distinct
+2-cycles each.
 
 s44 (2026-07-30). 102 distinct 5906 classes, each INEQUIVALENT
 (relabel+reversal) to all 92 published classes and to each other —

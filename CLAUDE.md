@@ -11,9 +11,10 @@ planned learned value function.
    **Fresh agent: read `docs/HANDOFF-S44.md` right after it** — state of the
    world, the engine-first premise, the executable natural-move tiers
    (cover-preserving rules via i4a; the s43/s44 loop-swap tier via
-   loopswap_apply = I5, which produced the 102 unpublished novel 5906
-   classes in `data/novel5906b/`), traps, and the session-end ritual
-   (supersedes HANDOFF-S43).
+   loopswap_apply = I5, which produced the 102 novel 5906 classes in
+   `data/novel5906b/`, PUBLISHED as superpermutators/superperm PR #51 —
+   the published n=7 shell is 194 classes, 110 of them ours), traps,
+   and the session-end ritual (supersedes HANDOFF-S43).
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
    `docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; §9 has the M-R laws;
@@ -22,7 +23,8 @@ planned learned value function.
    loop-cover frame: s39 theorem (THEORY §7) + cover census, s40 M-4a
    (the three rigid rewrite rules, §11.6), s41 I4-A applier + as-built
    results (§11.7): 8 novel 5906 classes in 2 new allocations, PUBLISHED
-   as superpermutators/superperm PR #50, merged by Houston; next: iterate
+   as superpermutators/superperm PR #50, merged by Houston; s44's 102
+   loop-swap classes merged as PR #51 — published shell 194; next: iterate
    rule-closure on the new classes, M-4b/M-4d)**;
    `docs/RECOMB-DESIGN.md` (s26, §8 outcomes + §8.4a recalibration) for
    what closed before it, and `docs/TRACKB-DESIGN.md` for the underlying

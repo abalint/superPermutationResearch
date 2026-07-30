@@ -11,10 +11,11 @@ two-page version with entry points and traps.
    record-shell structure validate the engine; the program ends only
    at full solution or maximal conclusion.
 2. **A record is a TIGHT LOOP COVER** (s39 theorem, THEORY §7). The
-   n=7 record shell is now **194 classes / 8 allocations**: 92
-   published (incl. our 8 s41 discoveries, PR #50) + **102 UNPUBLISHED
-   s44 discoveries in `data/novel5906b/`** (validator-complete,
-   M3-novel, closure-complete; Andrew decides publication).
+   n=7 record shell is **194 published classes / 8 allocations** —
+   ALL merged into superpermutators/superperm: 84 pre-project +
+   our 8 (s41, PR #50) + our 102 (s44, PR #51, merged 2026-07-30).
+   110 of the 194 (57%) are this project's discoveries
+   (`data/novel5906/` + `data/novel5906b/`).
 3. **The natural-move vocabulary is now THREE tiers, all executable:**
    cover-preserving rules (R-compound/R-unit/R-K7, `i4a_apply.py`,
    s40/s41); the s43/s44 cover-changing door-preserving **loop-swap
@@ -56,22 +57,21 @@ two-page version with entry points and traps.
 2. **The queued n=6 expanded sweep** (SWEEP-QUEUE, pending approval,
    ~2 h local): 30 shallow-tier rules, 31.2M candidate replays.
    After it: n=6 second-generation census (enlarged-graph pairs).
-3. **Publication of the 102** (Andrew's call): re-pull
-   superpermutators/superperm, re-gate novelty against CURRENT
-   contents, then the PR #50 pattern.
-4. **Pending approvals, unchanged**: n=6 forward conjugated i4a
+3. **Pending approvals, unchanged**: n=6 forward conjugated i4a
    R-sweep (~100 min); n=6 recomp2 520/450 bands.
-5. **Still open, untouched**: run-losing-pair fine anatomy;
+4. **Still open, untouched**: run-losing-pair fine anatomy;
    R-compound/R-unit lift to n=7; M-4b/M-4d; ip=1; per-allocation
    NRPA/beam; Track C v2's 2.4× overhead cut.
+   (Publication of the 102 is DONE — PR #51 merged 2026-07-30.)
 
 ## Traps (s44 additions first; each older one has bitten at least once)
 
-- **The 102 are UNPUBLISHED.** m3_check now gates against them
-  (SUPPLEMENTARY includes `novel5906b_canon_index.tsv`) — so "novel"
-  from any instrument means novel vs published AND ours. At
-  publication time re-verify against CURRENT upstream; only Andrew
-  decides when to publish.
+- **The 102 are PUBLISHED (PR #51 merged).** m3_check's coverage of
+  the 194 published classes = upstream index (84) + novel5906 index
+  (8) + novel5906b index (102, via SUPPLEMENTARY) — complete, no
+  rebuild needed. But any FUTURE "novel" claim still means re-pulling
+  upstream first (new community solutions can land any time); only
+  Andrew decides publications.
 - **Frontier-only closure iteration is valid** (instances are fixed;
   old sources were fully swept), but the edge TSVs it produces are
   per-iteration — union them for graph analyses
@@ -91,8 +91,9 @@ two-page version with entry points and traps.
   per-entry approval (the s44 n=6 expanded sweep is queued, NOT run).
   < 5 min just run; between, time-box and watch.
 - **The n=7 corpus now spans THREE local dirs**
-  (`data/upstream5906` + `data/novel5906` + `data/novel5906b`;
-  published = 92, total = 194). Quoting "84" or "92 total" is stale.
+  (`data/upstream5906` + `data/novel5906` + `data/novel5906b`),
+  published union = **194**. Quoting "84", "92", or "unpublished 102"
+  is stale.
 - **Tail-conjugacy depth tiers:** the deep tier is rigid; ≥256-perm
   cuts include distant relatives (up to 82 loops, door changes) —
   those extract and oracle fine (s44) but are composites, not the

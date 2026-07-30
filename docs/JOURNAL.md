@@ -6,6 +6,24 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 44c) — PR #51 MERGED: the 102 are published; the n=7 record shell is 194 classes / 8 allocations, 110 of them (57%) this project's
+
+Upstream commit `235a074` on superpermutators/superperm master; the
+community `superpermutations/7/` now carries all 110 `7_5906_derived_*`
+files (8 from PR #50 + 102 from PR #51). Local `../superperm` clone
+pulled and confirmed; working branch deleted. Doc state flushed for a
+fresh s45: NOTE.md (novel5906b) flipped SUBMITTED → PUBLISHED,
+HANDOFF-S44 state/menu/traps updated (publication item DONE; "novel"
+still requires a fresh upstream pull first — new community solutions
+can land any time), CLAUDE.md corpus lines repointed to 194/PR #51.
+M3-gate coverage of the published 194 is exactly upstream index (84) +
+novel5906 index (8) + novel5906b index (102 via SUPPLEMENTARY) — no
+index rebuild needed. The s45 front is unchanged and loaded:
+second-generation rule extraction from the 1,520-pair census of the
+(now fully published) 194-class corpus
+(`data/tailconj/tail_pairs_n7_a4840_194.tsv`), then the queued n=6
+expanded sweep (SWEEP-QUEUE, pending approval).
+
 ## 2026-07-30 (session 44b) — the 102 are SUBMITTED: superpermutators/superperm PR #51 (Andrew's go), following the PR #50 pattern
 
 Community master re-pulled (unchanged since PR #50 — our gate index
