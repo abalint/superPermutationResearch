@@ -6,6 +6,100 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 43) — the non-census detector EXISTS and it is rich: **tail-conjugacy** (literal relabel-conjugate traversal suffixes between inequivalent classes) confirms the s42 funnel observation exactly, then blows the natural-move vocabulary open — at n=7 the 3 funnel-identical novel pairs share 582/622/413-perm tails, the 92-class census finds **102 tail-conjugate class pairs at the 200-perm anchor (93 NEW vs the 9 known R-K7 edges)** with 9 NEW pairs sharing >1000 perms, and every deep pair carries the same anatomy — **same allocation, ALL doors identical, exactly 8 cycle-disjoint 2-loops swapped for 8 others riding 8 swapped 2-part rotors, both walks tight**; at n=6 the full 22,062-class archive shows tail-conjugacy persisting to 540-perm shared tails (75% of the walk), 108 NEW pairs at ≥480 perms whose anatomy is the scaled move (3-loop door-preserving swaps), and the relabel-canonical **swap-signature census collapses them to 14 rigid rules dominated by TWO with 46 and 20 instances** — an order of magnitude beyond the census-era vocabulary (R-compound 8, R-unit 4), found precisely because the loop-swap move is NOT cover-preserving, i.e. in the exact blind spot the s42 corollary predicted the census could never see
+
+The s42 verdict was "the front needs a detector, not another sweep,"
+and the cheap-first candidate was the relabel-conjugate funnel
+observation. Built (`analysis/counting/tail_conjugacy_census.py` +
+`tail_pair_anatomy.py`, Python only, all local, minutes):
+
+**The instrument.** For depth d, a walk's d-tail is the substring from
+the first char of its (d+1)-th first-visit perm to the end; two walks
+share a d-tail iff the first-occurrence renumberings agree (per
+orientation — each walk contributes forward and reversed tails).
+Sharing is monotone in d (a relabel bijection restricts to suffixes),
+so every pair has a well-defined deepest shared tail found by binary
+search — and every pair trivially matches at the last perm, so the
+full pairwise distribution is computable (`--all`). Modes: anchored
+census (`--anchor`), pair summary annotated vs the natural-move graph
+(`--pairs`), full distribution (`--all`); anatomy tool aligns a pair
+under the tail relabeling (shared loops become literally identical
+objects) and diffs in theorem coordinates; `--signature` canonicalizes
+each pair's swap bundle over all n! relabelings × side order — equal
+signatures = the same rigid move.
+
+**n=7 (92 classes, seconds).** (1) The s42 observation is CONFIRMED
+EXACTLY: the 3 byte-identical-funnel pairs are the only shared-tail
+groups among the 8 novels at anchor 4840, sharing 582 ({29c55ed5,
+c1080e26}), 622 ({50d865ca, b99b1d60} — the two (835,26)s), and 413
+perms ({66637a3b, 7f46c814}). Their R-K7 SOURCES pair up the same way
+(890b6674~d0b9281c at 622, 56126e72~bd458e7f at 582, 1206598d~6a142cb8
+at 413) — tail-conjugacy is inherited through R-K7, and rule
+applicability correlates with tail-conjugate sources. (2) Anchored
+census over all 92: 102 tail-conjugate pairs, 93 NEW. The 9 known
+R-K7/Kristan edges sit isolated at EXACTLY 2520 shared perms (half the
+walk, mixed orientation). (3) Null model (`--all`, 4186 pairs): bulk
+sharing < 256 perms (generic endgame modes at 64–127), then a discrete
+far tail — 39 pairs at 256–511, 23 at 512–1023, 8 at 1024–2047, the
+rule edges alone at 2520. The deep NEW pairs are real structure, not a
+continuum tail. (4) Anatomy of every ≥500-perm NEW pair: same (S,D)
+both sides, doors IDENTICAL (0 diff in all), cover differs by exactly
+8 loops each way (16 = double application in two clique pairs), 8+8
+swapped rotors all 2-part ((2,5)/(3,4) compositions, sometimes 2
+recomposed), swapped loops cycle-disjoint (8×6=48 cycles, 40-cycle
+overlap between sides), both tight. Shared head = shared tail EXACTLY
+per pair (these walks are relabel-palindromes) — the swap lives in a
+symmetric midgame window, depths ~1000–4200: **the unanchorable band,
+again**. (5) Signature census: n=7 swaps are mostly distinct objects
+(top recurrence 4) — expected with 92 classes and 8-loop objects.
+
+**n=6 (all 22,062 classes, ~30 s/anchor).** Collisions by anchor:
+5,450 groups at 200-perm tails → 3,061 at 270 → 1,114 at 360 → 437 at
+420 → 109 at 480 → **12 at 540 → 0 at 600**. The single deepest pair
+is the KNOWN compound edge 0105a4b7~b020caf2 at 584 perms (the
+detector re-finds the old vocabulary first — cross-validation), then
+11 NEW pairs at 543–563. Anatomy of the ≥480 tier (108 NEW pairs):
+the same move scaled — 3 of 29 cover loops swapped, 3⟷3 (sometimes
+2⟷3) rotors with (2,4)/(3,3)/(2,2,2) compositions, doors identical,
+allocation preserved, loops cycle-disjoint (3×5=15 cycles, overlap
+12), both sides tight. Unlike n=7 these pairs share ONE end only
+(heads 2–10 perms) — the swap sits in the first ~175 depths of one
+orientation. **Signature census: 14 rigid rules; the top two have 46
+and 20 pair-instances** (`bde3b0b76807`, `aafe48b4401a` — provisional
+names R-L6a/R-L6b), vs the census-found vocabulary of 2 rules with
+8+4. Committed: `data/tailconj/` (n=6/n=7 swap-signature TSVs, the
+108-pair n=6 census, the full n=7 pairwise distribution).
+
+**Why the census never saw any of this:** the loop-swap move CHANGES
+the cover (that is what it does), so cover-collision census can only
+find cover-PRESERVING moves — s42's corollary said the census is the
+wrong detector for R-K7 products; s43 shows the complement: the whole
+door-preserving loop-swap tier was sitting in the census's constitutive
+blind spot. The two detectors are exactly complementary.
+
+**Caveats carried forward.** (1) The rule tier is the DEEP end: at the
+≥256-perm cut the n=7 list includes distant relatives (up to 82 loops
+swapped, 14 pairs with door changes) — quote the door-identical
+invariant only for the local tier (164/178 signature rows). (2)
+Signature equality is up to relabeling+side; it does not yet pin the
+seam context (what makes the swap fire HERE) — that's the applier's
+job. (3) n=6 signature census ran on the ≥400-perm tier only; the
+shallower tiers (109→5,450 groups) are uncensused and may hold more
+rule instances.
+
+**Next session, concretely (s44).** (1) **Make the swap executable**
+(i4a mode): doors are identical, so in replay coordinates the edit is
+pure entry-set replacement on ≤18 cycles (n=6: ≤8) — oracle = re-derive
+all 108 n=6 + 31 n=7 pairs byte-identically, then the conjugated sweep
+over both archives is a novel-class generator with a genuinely NEW
+move vocabulary (46-instance R-L6a first). The unreached (144,4)
+allocation question gets re-asked with the new vocabulary. (2) Census
+the shallower n=6 tiers' signatures (109 groups at 480 done; 437/1,114
+next) — how big is the full rule table? (3) Cross-length: do 5907s
+tail-pair with 5906s? (cheap, `--all` on the 95). (4) Still open from
+s42: run-losing-pair anatomy, R-compound/R-unit lift to n=7, and the
+two pending approvals (n=6 forward conjugated sweep; recomp2 520/450).
+
 ## 2026-07-30 (session 42) — the ladder is pointed at the 8 new classes and every instrument returns the same verdict: **the loop-cover front is SATURATED as currently instrumented.** Rule-closure hits its FIXED POINT after one step (conjugated R-K7 from the 8 novel sources: 336 forward firings ALL killed by replay, 8 reverse firings → 8 rediscoveries each mapping a novel class back to its OWN s41 source, so conjugated R-K7 is an INVOLUTION on the corpus — the 92-class published n=7 shell is CLOSED under the single-rule vocabulary, n=7 joins n=6 in saturation); the cover census over all 92 finds 83 distinct covers and **NO new rule candidates** — the 9 sharing pairs are the Kristan seam plus the 8 discovery pairs, and m4a re-anatomizes all of them as the SAME rigid R-K7 object-for-object, which yields the structural corollary that **R-K7 is exactly cover-preserving, so the census can NEVER detect an R-K7 product** (new-rule discovery needs a different signal); the anchored ladder on the 8 is indistinguishable from the old 84 (block-order-optimal at 4905/4840/4770, recomp 48.46% same-allocation equals vs the ~48.5% law, recomp2 at 4840 reproduces the ZERO-equal pair-compound shell over 628,663 exact re-solves, 0 events anywhere); the L0 map refreshes to **92 classes / 8 allocations, all pure-w3, T0 waste identity 92/92**; and **two live bugs in `i4a_apply.py`'s conjugated sweep were found and fixed (novelty gate ignored our own discovery indexes; product dedup keyed on FILENAME not content) — the audit re-run of the 84-source s41 sweep under fixed code returns 0 novel, so s41's "8 novel" claim was COMPLETE and nothing was ever dropped**
 
 HANDOFF-S41 work-menu item 1 (a–d) executed in one session, three

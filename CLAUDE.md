@@ -8,9 +8,10 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S41.md` right after it** — state of the
-   world, the engine-first premise, the loop-cover front (I4, the published
-   discoveries), traps, and the session-end ritual (supersedes HANDOFF-S39).
+   **Fresh agent: read `docs/HANDOFF-S43.md` right after it** — state of the
+   world, the engine-first premise, the TWO natural-move tiers
+   (cover-preserving rules via i4a; the s43 tail-conjugacy/loop-swap
+   discovery), traps, and the session-end ritual (supersedes HANDOFF-S41).
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
    `docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; §9 has the M-R laws;
@@ -353,6 +354,18 @@ python3 analysis/counting/i4a_apply.py apply-sym data/upstream5906 data/novel590
 python3 analysis/counting/i4a_apply.py apply-sym data/upstream872 --only rev --out out/
 # n=7 novelty gate covers published + our discoveries (two committed indexes):
 python3 analysis/counting/m3_check.py -n 7 <candidate.txt>
+
+# s43 tail-conjugacy detector — the non-census signal (JOURNAL s43, HANDOFF-S43):
+# inequivalent classes sharing literal relabel-conjugate traversal suffixes. Anchored
+# census is O(N); --pairs annotates vs the natural-move graph; --all = full pairwise
+# null distribution (n=7-sized corpora only); --deep binary-searches deepest shares:
+python3 analysis/counting/tail_conjugacy_census.py -n 7 data/upstream5906 data/novel5906 --anchor 4840 --pairs out/pairs.tsv
+python3 analysis/counting/tail_conjugacy_census.py -n 6 data/upstream872 --anchor 180 --pairs out/pairs_n6.tsv
+python3 analysis/counting/tail_conjugacy_census.py -n 7 data/upstream5906 data/novel5906 --all out/all_n7.tsv
+# pair anatomy in theorem coordinates (aligned frame; doors/rotors/loops diff) +
+# relabel-canonical swap signatures (equal = same rigid move; committed censuses
+# at data/tailconj/tail_swap_sigs_n{6,7}.tsv — n=6: 14 rules, top two 46+20 pairs):
+python3 analysis/counting/tail_pair_anatomy.py -n 6 out/pairs_n6.tsv --dirs data/upstream872 --min-perms 400 --signature --sig-out sigs.tsv
 
 # s26 structural recombination (docs/RECOMB-DESIGN.md; src/recomb.rs + src/unionsearch.rs):
 cargo run --release -- recomb -n 6 --dirs data/records872,data/gain1_872s --emit-dir data/hybrids872   # 0.25s; pins: 298 closure walks, 2 hybrids

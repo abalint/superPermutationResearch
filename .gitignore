@@ -24,6 +24,10 @@
 # n=7 sweep reproducible from a fresh clone; see upstream5906_dump.py).
 !/data/upstream5906/
 !/data/upstream5907/
+# s43 tail-conjugacy censuses: swap-signature TSVs + the pair censuses they
+# were computed from (~280 KB; makes the s43 discovery reproducible/checkable
+# from a fresh clone without re-running the 22k-walk sweeps).
+!/data/tailconj/
 *.jsonl
 .DS_Store
 __pycache__/
