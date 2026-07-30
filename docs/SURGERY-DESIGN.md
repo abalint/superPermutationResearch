@@ -759,3 +759,79 @@ concrete: **given a cover, enumerate its tight traversals.**
   the two walks are order-variants; NOT sharing one does not prove
   edit-distance — compound edits that change the cover exist (any
   Λ-neutral loop swap).
+
+### 11.6 M-4a RESULTS (s40 — measured; the compound tier's vocabulary is TWO rigid rewrite rules)
+
+`analysis/counting/m4a_pair_anatomy.py` diffs each cover-sharing pair
+in tight-cover coordinates (verifies: all 13 pairs same-cover, all 26
+walks tight). The verdict is stronger than hoped: the vocabulary is
+not a FAMILY of moves — it is exactly two rules at n=6 and one at n=7,
+each object-for-object identical across every instantiation.
+
+- **R-compound, (145,3) ⟷ (143,5), all 8 pairs identical:** rotors
+  `123654`=[3,3] + `126354`=[2,4] with loops `132546`,`135246` FULL
+  (the (145,3) side) ⟷ those two loops demoted to chains, killed by
+  new doors w3 `136254→135264` + w3 `162354→132654`, with shared
+  partial `123546` re-chained (the (143,5) side). 6 cycles touched,
+  the demoted loops span 10, overlap 3. This is s36's natural
+  2-compound — now known to be THE compound move, not one of many:
+  the corpus contains no other cover-preserving compound crossing.
+- **R-unit, (143,5) ⟷ (142,6), all 4 pairs identical:** rotor
+  `135462` (compositions [2,4] or [3,3]) with loop `135426` FULL ⟷
+  the loop demoted, killed by new door w3 `135624→135426`. 3 cycles
+  touched, the loop spans 5, overlap 2. This is s29's unit trade,
+  certified at cover level.
+- **R-K7, the Kristan seam (844,17) ⟷ (843,18):** rotor
+  `1573246`=[1,6] (a SINGLETON arc — the 1|6 split type nature never
+  uses at n=6) + door w3 `1324675→1573246`, loop `1732465` FULL ⟷
+  cycle ridden whole, loop demoted to a chain, doors w3
+  `1324675→1753246` + w3 `1573246→1537246`. 4 cycles touched. And the
+  two walks' time-ordered RUN SEQUENCES are identical (258 = 258,
+  common prefix 258): the seam is pure local surgery in loop
+  coordinates, invisible at run granularity.
+
+**Depths (why every anchored instrument was blind).** Moved objects
+span depths 108–717 of 720 for R-compound (rotors in the midgame,
+one door at ~717 — ALL needed simultaneously), 339–672 for R-unit,
+2520–4137 of 5040 for R-K7. Consistency check: the ONE unit pair
+whose objects all sit ≥ 582 (`0105a4b77ce8`, depths 582–672) is
+exactly the pair the s30 anchored merge instrument found; every other
+pair has at least one object below its band's anchor.
+
+**Run-order footprint.** R-unit preserves most of the run order
+(common prefixes 25–41 of ~49); R-compound reorders nearly the whole
+midgame run sequence (common prefixes 4–13); R-K7 preserves it
+entirely. So cover-preserving crossings range from pure-local (R-K7)
+to globally order-scrambling (R-compound) — I4-A must not assume
+run-order locality.
+
+**Rule-context headroom (`m4a_pair_anatomy.py scan`; coarse = rotor
+compositions / door (w,from,to) triples only — upper bounds, finer
+seam conditions unchecked):**
+
+| context | carriers (by allocation) | rule image |
+|---|---|---|
+| R-compound rotors | 773 × (145,3), 1 × (138,9) | → (143,5) [470 known] / → (136,11) NEW ALLOCATION |
+| R-compound doors | 470 × (143,5) = the WHOLE shell, 6 × (142,6), 2 × (141,7), 9 × (140,8) | → (145,3) / **→ (144,4) — THE unoccupied allocation** / → (143,5) / → (142,6) |
+| R-unit rotor | 3,236 × (145,3), 43 × (143,5), 34 × (140,7)*, 4 × (142,6), 4 × (135,11)* | (143,5) side → (142,6) [19 known] |
+| R-unit door | 6 × (142,6), 2 × (141,7), 9 × (140,8) | → (143,5) / (142,6) / (141,7) |
+
+(*) w4-bearing allocations quoted by total door count in the scan.
+Only 8 + 4 of these carriers have their images in the corpus. The
+finer conditions (full-loop status, seam perms, chain anatomy) will
+cut the counts — but the (143,5) sides of ALL 12 pairs share
+byte-identical chain anatomy for the demoted loops (`132546` m=4
+stopping at 254136/killed by door 136254→135264; `135246` m=4
+stopping at 241356/killed by END), so the finer structure recurs too.
+Even a small yield expands the known shells substantially, and a
+single successful reverse-compound application on a (142,6) carrier
+would occupy (144,4) — a certificate-level event.
+
+**Design consequence for I4-A.** Before any traversal SEARCH, build
+the REWRITE-RULE instrument: formalize R-compound/R-unit/R-K7 as
+exact local surgeries (the anatomy above pins every object), scan the
+corpus for classes carrying a rule's context, apply, validate,
+m3_check. Every application to a class whose partner is NOT in the
+corpus is a new 872/5906 (rediscovery-vs-novel decided by the M3
+gate). This is mode 0 of I4-A: nature's own moves, replayed
+everywhere they fit.

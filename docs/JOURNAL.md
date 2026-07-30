@@ -6,6 +6,57 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 40) — M-4a MEASURED (SURGERY-DESIGN §11.6, `analysis/counting/m4a_pair_anatomy.py`): **the compound tier's move vocabulary is TWO rigid rewrite rules at n=6 and one at n=7 — all 8 compound pairs perform the object-for-object IDENTICAL move (rotors `123654`[3,3]+`126354`[2,4] with full loops `132546`,`135246` ⟷ those loops demoted to chains killed by new doors w3 `136254→135264` + w3 `162354→132654`), all 4 unit pairs the identical s29 trade (rotor `135462` ⟷ door w3 `135624→135426`, loop `135426` demoted), and the Kristan seam is a 1|6-rotor⟷2-door local surgery whose run sequences are BYTE-IDENTICAL (258=258)** — object depths explain every anchored miss (compound spans 108–717 of 720, Kristan 2520–4137 of 5040; the one unit pair with all objects ≥582 is exactly the one s30 found); and the coarse context scan sizes the rewrite instrument: **773 (145,3) classes carry the compound rotor context (8 imaged), ALL 470 (143,5) classes carry the compound doors, 43 (143,5) carry the unit rotor (→ up to ~39 new (142,6)s against 19 known) — and 6 (142,6) classes carry the compound doors, whose reverse application lands on (144,4), THE never-occupied allocation**
+
+Python-only session (measurement + docs; no Rust). HANDOFF-S39 menu
+item 1 (M-4a) is DONE; the design consequence is pinned in §11.6:
+before any traversal search, build the REWRITE-RULE instrument
+(I4-A mode 0) — formalize R-compound / R-unit / R-K7 as exact local
+surgeries, scan for carriers, apply, validate, m3_check.
+
+**Measured (all 13 pairs verify: same cover, all 26 walks tight):**
+- **Rigidity.** Not a move FAMILY — the identical objects recur in
+  every instantiation, across unrelated classes: the corpus contains
+  exactly one compound move, one unit move (n=6), one seam move
+  (n=7). Even the finer anatomy recurs: all 12 pair-side (143,5)
+  walks share byte-identical demoted-loop chains (`132546` m=4 →
+  killed by door `136254→135264`; `135246` m=4 → killed by END).
+- **Locality.** R-compound touches 6 cycles (demoted loops span 10,
+  overlap 3); R-unit 3 (span 5, overlap 2); R-K7 4 (span 6, overlap
+  2). All three are LOCAL surgeries in loop coordinates.
+- **Order footprint.** R-unit preserves most of the run order
+  (common prefixes 25–41 of ~49 runs); R-compound scrambles nearly
+  the whole midgame (prefixes 4–13); R-K7 preserves it exactly. The
+  Kristan seam is invisible at run granularity — pure fine-structure
+  surgery.
+- **Depths = the blindness theorem, empirically.** Every pair that
+  anchored instruments missed has ≥1 moved object below the swept
+  band; the single pair fully inside a band (582–672 ≥ anchor 520)
+  is the s30 merge rediscovery. Nothing anchored could ever have
+  found R-compound (one object sits at depth ~108) or R-K7 (2520).
+- **Headroom (coarse upper bounds).** Carriers without corpus
+  images: ~765 compound-rotor (145,3)s (image (143,5): would expand
+  a 470-class shell), ~39 unit-rotor (143,5)s (image (142,6): 19
+  known), plus cross-shell carriers — 1 (138,9) → (136,11) NEW
+  allocation, and **6 (142,6) compound-door carriers → (144,4)**,
+  the allocation s32 proved unreachable by single edits and no known
+  872 occupies. Finer seam conditions will cut these; any nonzero
+  yield is an event (every product goes through validate + m3_check;
+  a (144,4) or (136,11) product is certificate-level).
+
+**Next session, concretely (s41): build the rule applier** —
+represent R-compound/R-unit both directions (R-K7 at n=7) as exact
+string surgeries (the anatomy pins every perm involved), verify on
+the 13 pairs (must re-derive each partner byte-identically or
+class-equivalently), then run over the carrier lists: first the 6
+(142,6) compound-door carriers (the (144,4) shot), then the 43
+unit-rotor (143,5)s, then the 773/470 compound lists. Every product:
+validator + m3_check; new-class products are corpus events; log
+per-carrier failure reasons (they refine the rule's true
+precondition). Still queued for Andrew: the two n=6 recomp2 entries
+(unaffected). Still open: M-4b/M-4c/M-4d, per-allocation NRPA/beam,
+ip=1, Track C overhead.
+
 ## 2026-07-30 (session 39) — the loop-count relation is PROVEN (THEORY §7: `length ≥ n!+(n−1)!+(n−3)+Λ` for every pure complete walk, deficit = (splits−Φ) + (D+1−P) with both terms ≥ 0; equality = the TIGHT LOOP COVER class, and every known record is tight) — and the theorem's census instrument immediately finds the midgame front's missing object: **the used-loop set is a near-perfect class invariant (22,050 distinct covers over 22,062 n=6 classes) whose ONLY collisions are the natural edit boundaries — 8× (145,3)↔(143,5) compound pairs (s36 knew 2; we now hold 8) + 4× (143,5)↔(142,6) unit pairs — and at n=7 the single collision in 84 classes is THE KRISTAN SEAM: (844,17) `a30c7c517d7b` ↔ (843,18) Kristan share one 142-loop cover** — the seam absent from every anchored sweep down to ~410-perm tails exists as a cover-preserving global reordering, found by census with no search; SURGERY-DESIGN §11 written (work-menu item 1): the midgame-order instrument is I4 = tight-traversal search of a FIXED cover, with 13 pinned oracle pairs and an M-4 measurement pass specced before any build
 
 Python-only session (probe + docs; no Rust). Both HANDOFF-S38 work-menu

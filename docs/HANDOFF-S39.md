@@ -48,11 +48,17 @@ traps.
 
 ## The work menu (in priority order)
 
-1. **M-4a — anatomy of the 13 cover-sharing pairs** (Python, cheap):
-   diff rotor placements (which cycles split, where), door
-   bridge-forests, and chain assignments between the two traversals of
-   each shared cover. Output = the compound tier's move vocabulary as
-   nature performs it. This is the direct design input for I4-A.
+1. **Build the rewrite-rule applier (I4-A mode 0)** — s40's M-4a
+   (SURGERY-DESIGN §11.6) found the compound tier's vocabulary is
+   THREE rigid rules (R-compound, R-unit at n=6; R-K7 at n=7), each
+   object-for-object identical across all its instantiations, and the
+   coarse scan (`m4a_pair_anatomy.py scan`) found hundreds of carrier
+   classes without corpus images — including **6 (142,6)
+   compound-door carriers whose reverse application lands on (144,4),
+   the never-occupied allocation**. Build: exact string surgery for
+   each rule/direction, oracle = re-derive all 13 pairs, then apply
+   over the carrier lists (products → validator + m3_check; log
+   per-carrier failure reasons).
 2. **M-4b / M-4d** — traversal count of one known cover (exhaustive
    I4-A vs. guided); 871-cover combinatorial feasibility (a NO closes
    the 871 within the tight class, certificate-level).
