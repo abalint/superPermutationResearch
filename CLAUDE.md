@@ -305,9 +305,13 @@ cargo run --release -- tail-atsp -n 6 --dirs data/upstream872 --anchor 585 --rec
 # recomp-closed at 4905 (199,391 moves, 49% equal-cost, all rediscoveries):
 cargo run --release -- tail-atsp -n 7 --dirs data/upstream5906,data/upstream5907 --anchor 4905 --recomp --quiet --out-dir data/surgery_finds
 python3 analysis/counting/upstream5906_structure.py    # L0 census: 6 pure-w3 allocations, Kristan's (843,18) alone
-# M3 gate is n-generic since s33 — EVERY n=7 candidate <=5906 (caveat: index = published
-# strings only; the twoCycles extension-set files are NOT decoded yet):
+# M3 gate is n-generic since s33 — EVERY n=7 candidate <=5906 goes through it. The index
+# covers ALL published data: s34 decoded the twoCycles files (annotations, not solutions):
 python3 analysis/counting/m3_check.py -n 7 <candidate.txt>
+# s34 2-loop laws (upstream5906_twocycles.py re-verifies, exit 0): every known 5906 uses
+# EXACTLY 142 distinct 2-loops (all 6 allocations, Kristan incl.), 5907s use 143, and
+# length = 5764 + #2loops on all 87 — a 5905 in this frame is a 141-2-loop cover:
+python3 analysis/counting/upstream5906_twocycles.py
 
 # s26 structural recombination (docs/RECOMB-DESIGN.md; src/recomb.rs + src/unionsearch.rs):
 cargo run --release -- recomb -n 6 --dirs data/records872,data/gain1_872s --emit-dir data/hybrids872   # 0.25s; pins: 298 closure walks, 2 hybrids

@@ -13,10 +13,10 @@ Per-n corpora (committed canonical indexes; archives stay local):
   n=6: 22,062 classes (superpermutators/superperm, 50,009 strings),
        record 872, index upstream872_canon_index.tsv
   n=7: 84 classes (the 83 published 5906s + Kristan's), record 5906,
-       index upstream5906_canon_index.tsv — CAVEAT: the community
-       twoCycles_* extension-set files are NOT decoded yet, so the n=7
-       index may undercount the known corpus (the n=6 lesson); treat
-       an n=7 "novel" verdict as novel-vs-published-strings.
+       index upstream5906_canon_index.tsv. The s33 twoCycles caveat is
+       RESOLVED (s34, upstream5906_twocycles.py): those files are
+       per-string annotations (each group = its string's 142 2-loops,
+       7/7 files bijective), so the index covers ALL published data.
 
 Canonical form (s26b convention): min(renumber(s), renumber(reverse(s)))
 where renumber = first-occurrence forward renumbering. The committed

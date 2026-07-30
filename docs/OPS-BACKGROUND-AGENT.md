@@ -55,12 +55,15 @@ queue entry: start time, PID, log path, projected end.
 ## The alarm path — read this twice
 
 `tail-atsp` exits **2** and prints `*** IMPROVEMENT ***` if any walk's
-tail beats its own cost — that is an **871 candidate**. If it happens:
+tail beats its own cost — that is an **871 candidate** at n=6, a
+**5905/new-5906 candidate** at n=7. If it happens:
 
 1. Do NOT celebrate, do NOT publish, do NOT let anything overwrite
    `data/surgery_finds/`.
-2. Verify: `cargo run --release -- validate -n 6 --file <cand> --complete`
-   AND `python3 analysis/counting/m3_check.py <cand>` (exit 2 = novel).
+2. Verify: `cargo run --release -- validate -n <n> --file <cand> --complete`
+   AND `python3 analysis/counting/m3_check.py [-n 7] <cand>` (exit 2 =
+   novel; the `-n 7` gate exists since s33 and its caveat — index =
+   published strings only — goes verbatim into any n=7 claim).
 3. Both pass → copy the candidate + the log into a NEW committed
    directory (add a `.gitignore` exception), commit on a branch, and
    notify Andrew immediately. The M3 ritual (docs/HANDOFF-S28.md traps)
@@ -76,11 +79,29 @@ tail beats its own cost — that is an **871 candidate**. If it happens:
   commits should only ever contain SWEEP-QUEUE.md updates (and, on the
   alarm path, candidate artifacts on a branch).
 
-## Current known rates (measured s28b, one core of Andrew's Mac)
+## Current known rates (one core of Andrew's Mac)
+
+n=6 (corpus `data/upstream872`, 22,062 walks):
 
 | run | rate | full corpus (22,062) |
 |---|---|---|
 | tail-atsp anchor ≥ 585 (≤ 27 blocks) | ~1 ms/walk | 23 s |
 | tail-atsp anchor ≥ 520 (≤ 40 blocks) | ~40 ms/walk | 15 min |
-| tail-atsp anchor ≥ 450 (≤ 50 blocks) | ~0.6 s/walk | ~3.5 h |
-| tail-atsp --ties (any band) | UNMEASURED — probe first | ? |
+| tail-atsp anchor ≥ 450 (≤ 50 blocks) | **2.0 s/walk** (the s28b 0.6 s figure was sorted-order bias — quote round-robin probes only) | ~12 h (farm: ~49 min) |
+| tail-atsp --ties, 585 / 520 band | 6.6 ms / 0.26 s per walk (farm-measured) | 40 s / ~1.6 h |
+| tail-atsp --recomp, 585 band | ~5.4 s/walk (s31 probe) | ~33 h (farm: ~5 h) |
+
+n=7 (corpus `data/upstream5906` + `data/upstream5907`, 87 walks, COMMITTED
+— s33; anchor bands scale by perm count: 4905/5040 ≈ n=6's 585/720,
+4840 ≈ 520, 4770 ≈ 450; always `--max-blocks 40` at 4840, `50` at 4770):
+
+| run | rate | full corpus (87) |
+|---|---|---|
+| tail-atsp 4905 / 4840 / 4770 (I1, ties, merge) | ≤ 0.6 s/walk | seconds–1 min |
+| tail-atsp --recomp, 4905 band | 3.9 s/walk | 5.6 min |
+| tail-atsp --recomp, 4840 band | **51.7 s/walk** (s33 4-walk probe) | ~75 min |
+
+The n=7 corpus is 87 files, so most n=7 runs are NOT farm jobs — run
+locally, watch the > 30 min approval line. The e286355 farm binary
+already has `--recomp` and n-generic support; no reship is needed for
+n=7 work unless the Rust changes again.
