@@ -236,12 +236,26 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   4905/4770 bands) says the (844,17)↔(843,18) Kristan unit-trade — the n=7
   analog of the n=6 natural pair — is NOT realizable in the last ~270 perms.
   This probes whether it (or any S1/S−1 shell edge) appears by ~440 perms.
-- projected: unknown — block counts grow fast below 4770; the probe itself
-  sizes the band (that is its point). If probe > 5 min/walk, stop and report
-  instead of sweeping.
-- approved: NO
-- status: pending
-- result: —
+- projected: **MEASURED** — 12-walk round-robin probe (`n7a4600seam`): mean
+  **59.1 s/walk**, slowest 422.7 s. Far under the 5 min/walk stop threshold,
+  so the full corpus was swept too (`n7a4600seamfull`): 57.6 core-min,
+  **16.6 min wall** on 12 workers.
+- approved: YES (Andrew, 2026-07-30 — "run the three cheap ones back to back")
+- status: **done** (probe `n7a4600seam` 12 walks, then full `n7a4600seamfull`
+  87 walks; both 12 workers, 0 skipped, no alarm)
+- result: **The Kristan unit-trade does not appear at this band either.** Full
+  corpus: `87 walks, 87 block-order-optimal, 0 improved, 0 skipped, 0
+  new-allocation ties` plus `2,954 merge moves, 0 improved, 0 equal-cost`. No
+  S1 tie and no S−1 merge anywhere in the n=7 corpus produces a
+  cross-allocation walk; (844,17)↔(843,18) stays unrealized.
+- **IMPORTANT caveat — the band is NOT what the anchor says.** Every walk hit
+  the `--max-blocks 60` ceiling, so the adaptive anchor cut DEEPER than
+  requested: observed anchors 4629–4689 against the requested 4600, i.e. tails
+  of ~350–410 perms, not the ~440 the entry's title claims. At n=7 the block
+  ceiling, not the anchor, is what binds. Reaching a true 440-perm tail needs
+  ~70–80 blocks, which is a different (and much more expensive) exact-solve
+  regime — so "merge+ties are closed to ~440 perms" is NOT yet supported; what
+  is supported is ~410.
 
 ## n=7 recomp2, 4840 band — I3 pair-compound closure over the whole n=7 corpus
 - spec: `cargo run --release --quiet -- tail-atsp -n 7 --dirs data/upstream5906,data/upstream5907 --anchor 4840 --max-blocks 56 --recomp2 --quiet --out-dir data/surgery_finds`
