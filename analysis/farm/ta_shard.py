@@ -29,19 +29,26 @@ DEFAULT_SRC = pathlib.Path("data/upstream872")
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--src", type=pathlib.Path, default=DEFAULT_SRC)
+    ap.add_argument("--src", type=pathlib.Path, nargs="+", default=[DEFAULT_SRC],
+                    help="one or more corpus dirs (n=7 lives in two: upstream5906 + upstream5907)")
     ap.add_argument("--out", type=pathlib.Path, required=True,
                     help="destination dir; a 'shards/' subtree is created inside")
     ap.add_argument("--shards", type=int, default=24)
     ap.add_argument("--tar", action="store_true", help="also build shards.tgz")
     a = ap.parse_args()
 
-    if not a.src.is_dir():
-        print(f"no corpus at {a.src} — rebuild with analysis/counting/upstream872_dump.py",
-              file=sys.stderr)
-        return 1
+    for d in a.src:
+        if not d.is_dir():
+            print(f"no corpus at {d} — for n=6 rebuild with "
+                  f"analysis/counting/upstream872_dump.py", file=sys.stderr)
+            return 1
 
-    files = sorted(p.name for p in a.src.iterdir() if p.is_file() and not p.name.startswith("._"))
+    # (dir, name) pairs, sorted by name so the round-robin is deterministic
+    files = sorted(
+        ((d, p.name) for d in a.src for p in d.iterdir()
+         if p.is_file() and not p.name.startswith("._")),
+        key=lambda t: t[1],
+    )
     root = a.out / "shards"
     if root.exists():
         shutil.rmtree(root)
@@ -49,9 +56,9 @@ def main() -> int:
         (root / f"s{i:02d}").mkdir(parents=True)
 
     counts = [0] * a.shards
-    for k, name in enumerate(files):
+    for k, (src, name) in enumerate(files):
         d = k % a.shards
-        os.link(a.src / name, root / f"s{d:02d}" / name)   # hardlink: no copy cost
+        os.link(src / name, root / f"s{d:02d}" / name)     # hardlink: no copy cost
         counts[d] += 1
     print(f"{len(files)} walks -> {a.shards} shards ({min(counts)}..{max(counts)} each) at {root}")
 

@@ -48,6 +48,13 @@ $rcImpTotal = 0
 $rcEqNewTotal = 0
 $rcEqSameTotal = 0
 $rcAllocs = @{}         # recomposed-allocation histogram (the recomp-1 product)
+$r2SolvedTotal = 0
+$r2ImpTotal = 0
+$r2EqNewTotal = 0
+$r2EqSameTotal = 0
+$r2LambdaTotal = 0
+$r2Allocs = @{}         # compound-allocation histogram (the recomp2/I3 product)
+$seamTotal = 0          # *** KRISTAN SEAM FOUND *** banners
 $lastExit = "-"
 
 while ($true) {
@@ -130,16 +137,43 @@ while ($true) {
       $rcMovesTotal += $rMoves; $rcImpTotal += $rImp
       $rcEqNewTotal += $rEqNew; $rcEqSameTotal += $rEqSame
 
+      # recomp2 (I3, s38): pair compounds. Three things can fire here -- an
+      # improvement, the Kristan seam, and a loop-relation (Lambda) violation,
+      # which means a solver bug or a counterexample to the s35 law. All three
+      # are alarms; the seam and Lambda are NOT exit-2 conditions in the tool,
+      # so they must be detected from the banners.
+      $r2Solved=0; $r2Imp=0; $r2EqNew=0; $r2EqSame=0; $r2Lambda=0; $seam=0
+      if (Test-Path $log) {
+        $r2l = @(Select-String -Path $log -SimpleMatch "recomp2 (I3):" -ErrorAction SilentlyContinue)
+        if ($r2l.Count -gt 0 -and $r2l[$r2l.Count-1].Line -match '(\d+) exact re-solves .*?, (\d+) improved \(candidates\), (\d+) equal-cost in NEW allocations, (\d+) equal-cost same-allocation, (\d+) loop-relation violations') {
+          $r2Solved=[int]$Matches[1]; $r2Imp=[int]$Matches[2]
+          $r2EqNew=[int]$Matches[3]; $r2EqSame=[int]$Matches[4]; $r2Lambda=[int]$Matches[5]
+        }
+        $seam = @(Select-String -Path $log -SimpleMatch "*** KRISTAN SEAM FOUND ***" -ErrorAction SilentlyContinue).Count
+        foreach ($al in @(Select-String -Path $log -SimpleMatch "compound allocation" -ErrorAction SilentlyContinue)) {
+          if ($al.Line -match 'compound allocation \(([^)]*)\): (\d+)') {
+            $k = "(" + $Matches[1] + ")"
+            if (-not $r2Allocs.ContainsKey($k)) { $r2Allocs[$k] = 0 }
+            $r2Allocs[$k] = $r2Allocs[$k] + [int]$Matches[2]
+          }
+        }
+      }
+      $r2SolvedTotal += $r2Solved; $r2ImpTotal += $r2Imp; $r2EqNewTotal += $r2EqNew
+      $r2EqSameTotal += $r2EqSame; $r2LambdaTotal += $r2Lambda; $seamTotal += $seam
+
       $verdict = "OK"
       if ($sum -eq "")   { $verdict = "NO-SUMMARY" }   # crashed / killed mid-shard
       if ($imp -gt 0)    { $verdict = "IMPROVEMENT" }
       if ($mImp -gt 0)   { $verdict = "MERGE-IMPROVEMENT" }
       if ($rImp -gt 0)   { $verdict = "RECOMP-IMPROVEMENT" }
+      if ($r2Imp -gt 0)  { $verdict = "RECOMP2-IMPROVEMENT" }
+      if ($seam -gt 0)   { $verdict = "KRISTAN-SEAM" }
+      if ($r2Lambda -gt 0) { $verdict = "LAMBDA-VIOLATION" }
       $rc = ""
       $improveTotal += $imp
       $tieTotal     += $ties
       $ledgered[$nn] = $true
-      "w$nn,s$nn,$rc,$verdict,$walks,$opt,$imp,$skip,$ties,$mMoves,$mImp,$mEq,$rMoves,$rImp,$rEqNew,$rEqSame,$secs,$(Get-Date -Format 'HH:mm:ss')" |
+      "w$nn,s$nn,$rc,$verdict,$walks,$opt,$imp,$skip,$ties,$mMoves,$mImp,$mEq,$rMoves,$rImp,$rEqNew,$rEqSame,$r2Solved,$r2Imp,$r2EqNew,$r2EqSame,$r2Lambda,$secs,$(Get-Date -Format 'HH:mm:ss')" |
         Add-Content "$run\ledger.csv"
       $lastExit = "w$nn $verdict walks=$walks improved=$imp ties=$ties merge_eq=$mEq secs=$secs"
       if ($mergeAllocs.Count -gt 0) {
@@ -154,8 +188,26 @@ while ($true) {
         $rl2 += "new-alloc equals: $rcEqNewTotal   same-alloc equals: $rcEqSameTotal   moves tried: $rcMovesTotal   updated: $(Get-Date -Format 'HH:mm:ss')"
         $rl2 | Set-Content "$run\RECOMP-ALLOCS.txt"
       }
-      if ($imp -gt 0 -or $mImp -gt 0 -or $rImp -gt 0) {
-        @("*** ALARM: $imp block-order + $mImp MERGE + $rImp RECOMP IMPROVEMENT(S) = 871 CANDIDATE(S) ***",
+      if ($r2Allocs.Count -gt 0) {
+        $r2l2 = @("compound-allocation histogram (equal-cost in NEW allocations, summed over finished workers)")
+        foreach ($k in ($r2Allocs.Keys | Sort-Object)) { $r2l2 += ("  {0}  {1}" -f $k, $r2Allocs[$k]) }
+        $r2l2 += "new-alloc equals: $r2EqNewTotal   same-alloc equals: $r2EqSameTotal   re-solves: $r2SolvedTotal   updated: $(Get-Date -Format 'HH:mm:ss')"
+        $r2l2 | Set-Content "$run\RECOMP2-ALLOCS.txt"
+      }
+      if ($seam -gt 0 -or $r2Lambda -gt 0) {
+        $hdr = '*** '
+        if ($seam -gt 0)     { $hdr += "KRISTAN SEAM ($seam) " }
+        if ($r2Lambda -gt 0) { $hdr += "LOOP-RELATION VIOLATION ($r2Lambda) " }
+        $hdr += '***'
+        @($hdr,
+          "worker w$nn shard s$nn -- log: $run\logs\w$nn.log",
+          "A seam = the first n=7 cross-allocation compound. A loop-relation",
+          "violation = solver bug OR a counterexample to the s35 law: STOP and",
+          "report before drawing any conclusion from this run.",
+          "found: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')") | Add-Content "$run\ALARM.txt"
+      }
+      if ($imp -gt 0 -or $mImp -gt 0 -or $rImp -gt 0 -or $r2Imp -gt 0) {
+        @("*** ALARM: $imp block-order + $mImp MERGE + $rImp RECOMP + $r2Imp RECOMP2 IMPROVEMENT(S) = CANDIDATE(S) ***",
           "worker w$nn shard s$nn",
           "log:   $run\logs\w$nn.log",
           "finds: $run\finds\w$nn",
@@ -187,13 +239,14 @@ while ($true) {
     "improvements: $improveTotal        new-allocation ties: $tieTotal",
     "merge (I2a):  $mergeImpTotal improved (871 cands)   $($mergeEqTotal + $liveEq) equal-cost 872s at S-1   $mergeMovesTotal moves tried   allocs=$($mergeAllocs.Count)",
     "recomp-1:     $rcImpTotal improved (871 cands)   $rcEqNewTotal equal-cost in NEW allocs   $rcEqSameTotal same-alloc equals   $rcMovesTotal moves tried   allocs=$($rcAllocs.Count)",
+    "recomp2 (I3): $r2ImpTotal improved   $r2EqNewTotal equal-cost in NEW allocs   $r2EqSameTotal same-alloc equals   $r2SolvedTotal re-solves   SEAM=$seamTotal   LAMBDA_BAD=$r2LambdaTotal",
     "worker mem:   sum=$memSum MB  max=$memMax MB",
     "finished:     $($ledgered.Count)/$Workers   last: $lastExit",
     "alive:        $($aliveList -join ' ')",
     "updated:      $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
   )
-  if (($improveTotal + $mergeImpTotal + $rcImpTotal) -gt 0) {
-    $lines = @("*** ALARM: $($improveTotal + $mergeImpTotal + $rcImpTotal) IMPROVEMENT(S) -- see ALARM.txt ***") + $lines
+  if (($improveTotal + $mergeImpTotal + $rcImpTotal + $r2ImpTotal + $seamTotal + $r2LambdaTotal) -gt 0) {
+    $lines = @("*** ALARM: $($improveTotal + $mergeImpTotal + $rcImpTotal + $r2ImpTotal) improvement(s), $seamTotal seam(s), $r2LambdaTotal loop-relation violation(s) -- see ALARM.txt ***") + $lines
   }
   $lines | Set-Content "$run\STATUS.txt"
 

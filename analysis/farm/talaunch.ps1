@@ -15,6 +15,7 @@
 #   powershell -NoProfile -ExecutionPolicy Bypass -File F:\superpermFarm\tailatsp\talaunch.ps1 `
 #     -Anchor 450 -MaxBlocks 50 -Workers 24
 param(
+  [int]$N         = 6,       # symbols; picks the shard set (shards = n6, shards7 = n7)
   [int]$Anchor    = 450,
   [int]$MaxBlocks = 50,
   [int]$Workers   = 24,
@@ -23,6 +24,9 @@ param(
   [int]$TieCap    = 64,
   [switch]$Merge,            # I2a: try every single same-cycle block merge too
   [switch]$Recomp,           # recomp-1: every single-cycle recomposition (subsumes merge)
+  [switch]$Recomp2,          # I3 pair-compound recomposition (s38)
+  [switch]$Recomp2Tight,     # restrict recomp2 to the S-1 family (~4x cheaper)
+  [switch]$Recomp2Wide,      # lift T2 (singleton 1|k arcs in)
   [int]$Limit     = 0        # per-shard walk cap; 0 = whole shard (sizing probes)
 )
 $ErrorActionPreference = "Stop"
@@ -34,12 +38,17 @@ $DETACH = "$FARM\detach.exe"
 $CMD    = "$env:SystemRoot\System32\cmd.exe"   # detach.exe cannot launch powershell.exe directly
 
 if ($Tag -eq "") {
-  $Tag = "a$Anchor" + "b$MaxBlocks"
+  $Tag = "n$N" + "a$Anchor" + "b$MaxBlocks"
   if ($Ties)       { $Tag += "-ties" }
   if ($Merge)      { $Tag += "-merge" }
   if ($Recomp)     { $Tag += "-recomp" }
+  if ($Recomp2)    { $Tag += "-recomp2" }
+  if ($Recomp2Tight) { $Tag += "-tight" }
+  if ($Recomp2Wide)  { $Tag += "-wide" }
   if ($Limit -gt 0){ $Tag += "-L$Limit" }
 }
+$SHARDROOT = "$ROOT\shards"
+if ($N -ne 6) { $SHARDROOT = "$ROOT\shards$N" }
 $run = "$ROOT\runs\$Tag"
 
 foreach ($f in @($EXE, $DETACH, "$ROOT\tasuper.ps1", "$ROOT\tasuper.bat")) {
@@ -62,7 +71,7 @@ $total = 0
 $shards = @()
 for ($i = 0; $i -lt $Workers; $i++) {
   $nn = "{0:d2}" -f $i
-  $sd = "$ROOT\shards\s$nn"
+  $sd = "$SHARDROOT\s$nn"
   if (-not (Test-Path $sd)) { throw "missing shard $sd" }
   $c = @(Get-ChildItem $sd -File).Count
   if ($Limit -gt 0 -and $Limit -lt $c) { $c = $Limit }
@@ -72,10 +81,13 @@ for ($i = 0; $i -lt $Workers; $i++) {
 
 $spec = @(
   "tag:        $Tag",
-  "spec:       superperm.exe tail-atsp -n 6 --dirs shards\sNN --anchor $Anchor --max-blocks $MaxBlocks" +
+  "spec:       superperm.exe tail-atsp -n $N --dirs $SHARDROOT\sNN --anchor $Anchor --max-blocks $MaxBlocks" +
     $(if ($Ties) { " --ties --tie-cap $TieCap" } else { "" }) +
     $(if ($Merge) { " --merge" } else { "" }) +
     $(if ($Recomp) { " --recomp" } else { "" }) +
+    $(if ($Recomp2) { " --recomp2" } else { "" }) +
+    $(if ($Recomp2Tight) { " --recomp2-tight" } else { "" }) +
+    $(if ($Recomp2Wide) { " --recomp2-wide" } else { "" }) +
     $(if ($Limit -gt 0) { " --limit $Limit" } else { "" }),
   "workers:    $Workers (one shard each, BELOW_NORMAL)",
   "walks:      $total",
@@ -88,18 +100,21 @@ $spec = @(
 $spec | Set-Content "$run\SPEC.txt"
 # Columns are fixed for the life of a run file (s19 lesson: never change ledger
 # column semantics mid-file). merge_* are 0 unless -Merge was passed.
-"worker,shard,rc,verdict,walks,optimal,improved,skipped,ties,merge_moves,merge_improved,merge_equal,rc_moves,rc_improved,rc_eq_new,rc_eq_same,secs,finished" |
+"worker,shard,rc,verdict,walks,optimal,improved,skipped,ties,merge_moves,merge_improved,merge_equal,rc_moves,rc_improved,rc_eq_new,rc_eq_same,r2_solved,r2_improved,r2_eq_new,r2_eq_same,r2_lambda_bad,secs,finished" |
   Set-Content "$run\ledger.csv"
 
 # --- launch ----------------------------------------------------------------
 foreach ($s in $shards) {
   $nn = $s.nn
-  $a = @("tail-atsp","-n","6","--dirs","$ROOT\shards\s$nn",
+  $a = @("tail-atsp","-n","$N","--dirs","$SHARDROOT\s$nn",
          "--anchor","$Anchor","--max-blocks","$MaxBlocks",
          "--out-dir","$run\finds\w$nn")
   if ($Ties)        { $a += @("--ties","--tie-cap","$TieCap") }
   if ($Merge)       { $a += @("--merge") }
   if ($Recomp)      { $a += @("--recomp") }
+  if ($Recomp2)     { $a += @("--recomp2") }
+  if ($Recomp2Tight){ $a += @("--recomp2-tight") }
+  if ($Recomp2Wide) { $a += @("--recomp2-wide") }
   if ($Limit -gt 0) { $a += @("--limit","$Limit") }
 
   $res = & $DETACH $ROOT "$run\logs\w$nn.log" "$run\logs\w$nn.err" $EXE @a

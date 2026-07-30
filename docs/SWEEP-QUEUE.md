@@ -207,14 +207,28 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   any improvement = 5905/5906-candidate (exit 2 → validate + `m3_check -n 7`),
   any new-allocation equal = first instrument-created n=7 cross-allocation
   walk (the Kristan-seam watch: does (844,17)→(843,18) ever appear?).
-- projected: measured 4-walk probe (round-robin not needed at 87 files) =
-  51.7 s/walk → **~75 min single-core on the Mac**. Farm alternative: 24-way
-  sharding is overkill for 87 files; if the farm is idle after `a585recomp`,
-  6-way sharding ≈ 13 min (binary: the e286355 reship already has --recomp
-  and n=7 support — NO new reship needed, no Rust changed in s33).
-- approved: NO
-- status: pending
-- result: —
+- projected: measured 4-walk probe = 51.7 s/walk → ~75 min single-core. Farm
+  (12-way shard of the 87-walk corpus): **actual 47.3 s/walk, 68.6 core-min,
+  slowest worker 9.5 min** — the estimate held (no sorted-order bias here,
+  since 87 files is effectively the whole corpus either way).
+- approved: YES (Andrew, 2026-07-30 — "run the three cheap ones back to back")
+- status: **done** (farm run `n7a4840recomp`, 12 workers, 2026-07-30)
+- result: **0 improvements, 0 new-allocation equals — the n=7 recomposition
+  closure law extends from ~136-perm tails to ~200-perm tails.** Ledger sum
+  over 12 workers: `87 walks, 87 block-order-optimal, 0 improved, 0 skipped`
+  plus `297,232 recomp moves tried, 0 improved (5905/5906 candidates), 0
+  equal-cost in NEW allocations, 144,092 equal-cost same-allocation`
+  (verdicts OK:12, no alarm). The Kristan-seam watch is negative at this band:
+  **(844,17)→(843,18) never appears.** Same-allocation equal rate is 48.5%
+  (144,092/297,232) — within a whisker of the n=6 figure (48.2% in
+  `a585recomp`), so the dense-but-degenerate shell is not an n=6 artifact.
+  Corpus note: run over the combined 87-walk corpus (84 × 5906 + 3 × 5907).
+- ops note: the supervisor crashed at startup on this run (a PowerShell parse
+  error in freshly-added recomp2 banner code — nested double quotes inside an
+  interpolated string). The WORKERS were unaffected and completed normally;
+  only STATUS/ledger aggregation was lost, and it was rebuilt afterwards by
+  re-running `tasuper.ps1` against the finished logs. Fix + a mandatory
+  post-ship parse check are in `docs/OPERATIONS.md`.
 
 ## n=7 deep-seam probe: merge+ties at anchor 4600 (~440-perm tails)
 - spec: probe first: `cargo run --release --quiet -- tail-atsp -n 7 --dirs data/upstream5906 --anchor 4600 --max-blocks 60 --merge --ties --tie-cap 256 --limit 8 --quiet --out-dir data/surgery_finds`

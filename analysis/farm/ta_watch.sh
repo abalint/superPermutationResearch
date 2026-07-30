@@ -9,7 +9,7 @@ INTERVAL="${2:-150}"
 PS="powershell -NoProfile -ExecutionPolicy Bypass -File F:\\superpermFarm\\tailatsp\\tabrief.ps1 -Tag $TAG"
 
 prev_stage=""; prev_dec=-1; prev_fin=-1; prev_alive=-1
-fails=0; stall_warned=0; alarmed=0; eq_noted=0
+fails=0; stall_warned=0; alarmed=0; eq_noted=0; seam_noted=0; lam_noted=0
 
 echo "watch armed: tag=$TAG interval=${INTERVAL}s"
 while true; do
@@ -33,11 +33,16 @@ while true; do
   meq=$(echo "$line"   | sed -n 's/.*MEQ=\([^ ]*\).*/\1/p')
   rimp=$(echo "$line"  | sed -n 's/.*RIMP=\([^ ]*\).*/\1/p')
   reqn=$(echo "$line"  | sed -n 's/.*REQN=\([^ ]*\).*/\1/p')
+  r2imp=$(echo "$line" | sed -n 's/.*R2IMP=\([^ ]*\).*/\1/p')
+  r2eqn=$(echo "$line" | sed -n 's/.*R2EQN=\([^ ]*\).*/\1/p')
+  seam=$(echo "$line"  | sed -n 's/.*SEAM=\([^ ]*\).*/\1/p')
+  lam=$(echo "$line"   | sed -n 's/.*LAMBDA=\([^ ]*\).*/\1/p')
 
   # 1. the alarm path: an improvement is an 871 candidate
   if [ "$alarmed" -eq 0 ] && { [ "$alarm" = "1" ] || { [ -n "$imp" ] && [ "$imp" -gt 0 ] 2>/dev/null; } \
        || { [ -n "$mimp" ] && [ "$mimp" -gt 0 ] 2>/dev/null; } \
-       || { [ -n "$rimp" ] && [ "$rimp" -gt 0 ] 2>/dev/null; }; }; then
+       || { [ -n "$rimp" ] && [ "$rimp" -gt 0 ] 2>/dev/null; } \
+       || { [ -n "$r2imp" ] && [ "$r2imp" -gt 0 ] 2>/dev/null; }; }; then
     alarmed=1
     echo "*** ALARM: 871 CANDIDATE -- $line  (do not overwrite finds/; gate with validate --complete + m3_check.py) ***"
   fi
@@ -45,9 +50,21 @@ while true; do
   # 1b. first equal-cost 872 at S-1: not an alarm, but every one needs m3_check
   #     (a novel class would itself be an M3-class result), so say it once.
   if [ "$eq_noted" -eq 0 ] && { { [ -n "$meq" ] && [ "$meq" -gt 0 ] 2>/dev/null; } \
-       || { [ -n "$reqn" ] && [ "$reqn" -gt 0 ] 2>/dev/null; }; }; then
+       || { [ -n "$reqn" ] && [ "$reqn" -gt 0 ] 2>/dev/null; } \
+       || { [ -n "$r2eqn" ] && [ "$r2eqn" -gt 0 ] 2>/dev/null; }; }; then
     eq_noted=1
     echo "equal-cost 872s appearing in NEW allocations (MEQ=$meq REQN=$reqn) -- gate them with ta_fetch.sh when the run ends: $line"
+  fi
+
+  # 1c. recomp2-only alarms: the Kristan seam, and a loop-relation violation
+  #     (solver bug OR a counterexample to the s35 law). Neither exits 2.
+  if [ "$seam_noted" -eq 0 ] && [ -n "$seam" ] && [ "$seam" -gt 0 ] 2>/dev/null; then
+    seam_noted=1
+    echo "*** KRISTAN SEAM FOUND -- first n=7 cross-allocation compound: $line ***"
+  fi
+  if [ "$lam_noted" -eq 0 ] && [ -n "$lam" ] && [ "$lam" -gt 0 ] 2>/dev/null; then
+    lam_noted=1
+    echo "*** LOOP-RELATION (LAMBDA) VIOLATION -- solver bug or counterexample to the s35 law; STOP and report: $line ***"
   fi
 
   # 2. stage transitions (RUNNING -> ALLDONE, or an ERR line)
