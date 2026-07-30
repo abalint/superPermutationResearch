@@ -66,6 +66,26 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
 - status: pending
 - result: —
 
+## I2a merge sweep, anchor 520 (full corpus)
+- spec: `cargo run --release --quiet -- tail-atsp -n 6 --dirs data/upstream872 --anchor 520 --max-blocks 40 --merge --quiet --out-dir data/surgery_finds`
+- product: extends the s30 merge law to ~200-perm tails. Any "MERGE
+  IMPROVEMENT" banner = an 871 candidate (exit 2 → m3_check + validate,
+  alarm path). Equal-cost 872s at S−1 are also written (`merge-eq-*`)
+  and each goes through m3_check — a NOVEL class (exit 2) or a first
+  872 in an unoccupied allocation would be an M3-class event. The
+  300-walk probe already found 1 equal-cost 872 (a rediscovery of the
+  committed specimen pair's partner class — pipeline proven in the
+  wild).
+- projected: ~2.1 h single-core from a first-300 probe (104 s) — but that
+  probe is ALPHABETICAL-PREFIX biased (see Farm execution note: ×3.3 at
+  anchor 450), so plan for up to ~7 h single-core; re-probe round-robin
+  or run on the farm (~20–40 min on 24 cores). **Farm caveat: s30
+  changed `src/tailatsp.rs` (merge machinery) — cross-compile and reship
+  `superperm.exe` BEFORE any farm run of this entry.**
+- approved: NO
+- status: pending
+- result: —
+
 ## tie-census full corpus
 - spec: as probe, without `--limit`, `--out-dir data/surgery_finds`
 - product: corpus-wide new-allocation tie count + reached-allocation

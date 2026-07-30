@@ -287,6 +287,10 @@ cargo run --release -- tail-atsp -n 6 --dirs data/upstream872 --anchor 585 --qui
 # --ties collects equal-cost orders landing in a DIFFERENT allocation (oracle: re-derives the
 # (142,6) partner of the committed pair at data/surgery_specimens/ from its (143,5) side):
 cargo run --release -- tail-atsp -n 6 --dirs data/surgery_specimens --anchor 580 --ties --out-dir out/
+# s30 I2a — --merge tries every single same-cycle block merge (the S-1 unit edit) exactly:
+# shorter = 871 candidate (exit 2, M3 ritual); equal length = new 872 at S-1 (always a new
+# allocation; every merge-eq-* through m3_check). Law: anchor >= 585 has ZERO merge completions:
+cargo run --release -- tail-atsp -n 6 --dirs data/upstream872 --anchor 520 --max-blocks 40 --merge --quiet --out-dir data/surgery_finds
 
 # s26 structural recombination (docs/RECOMB-DESIGN.md; src/recomb.rs + src/unionsearch.rs):
 cargo run --release -- recomb -n 6 --dirs data/records872,data/gain1_872s --emit-dir data/hybrids872   # 0.25s; pins: 298 closure walks, 2 hybrids

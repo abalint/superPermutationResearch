@@ -633,6 +633,14 @@ enum Cmd {
         /// implied L0 allocation differs from the source walk's.
         #[arg(long)]
         ties: bool,
+        /// I2a merge moves (SURGERY-DESIGN §9): additionally try every
+        /// single same-cycle block merge (the S−1 unit edit) and re-solve
+        /// exactly. A merged walk SHORTER than the source is an 871
+        /// candidate (banner, exit 2); an EQUAL-length one is a new 872
+        /// at S−1 with one extra door-unit — an allocation no source
+        /// walk occupies — reported and written to --out-dir.
+        #[arg(long)]
+        merge: bool,
         /// Cap on collected tie orders per walk.
         #[arg(long, default_value_t = 64)]
         tie_cap: usize,
@@ -1894,6 +1902,7 @@ fn main() -> ExitCode {
             anchor,
             max_blocks,
             ties,
+            merge,
             tie_cap,
             out_dir,
             limit,
@@ -1912,6 +1921,9 @@ fn main() -> ExitCode {
             let t0 = Instant::now();
             let (mut optimal, mut improved, mut skipped, mut new_alloc_ties) =
                 (0u64, 0u64, 0u64, 0u64);
+            let (mut merge_moves, mut merge_improved, mut merge_equal) = (0u64, 0u64, 0u64);
+            let mut merge_allocs: std::collections::BTreeMap<(usize, usize, usize, usize), u64> =
+                std::collections::BTreeMap::new();
             let emit = |tag: &str, s: &str| {
                 if let Some(dir) = &out_dir {
                     fs::create_dir_all(dir).expect("create out dir");
@@ -1965,6 +1977,65 @@ fn main() -> ExitCode {
                             inst.actual
                         );
                     }
+                    if merge {
+                        // I2a: every single-merge move, re-solved with the
+                        // unmerged optimum as incumbent — a result of
+                        // opt − 1 is an equal-length 872 at S−1 (always a
+                        // new allocation vs the source), ≤ opt − 2 an 871.
+                        let mut emitted = 0usize;
+                        for mv in tailatsp::enumerate_merges(n, &g, &inst) {
+                            merge_moves += 1;
+                            let m = tailatsp::apply_merge(n, &g, &inst, &mv, opt);
+                            let (mopt, morder, _) = tailatsp::solve_bb(&m, false, 0);
+                            if mopt >= opt {
+                                continue;
+                            }
+                            let s = tailatsp::materialize(n, &g, &rec.string, &m, &morder);
+                            let v = superperm::validate::validate(n, &s);
+                            if !v.complete {
+                                continue;
+                            }
+                            let t = superperm::trace::trace_string(&g, &s).expect("merge trace");
+                            let alloc = tailatsp::allocation_of(&t);
+                            if s.len() < rec.string.len() {
+                                merge_improved += 1;
+                                println!(
+                                    "*** MERGE IMPROVEMENT *** {} anchor={} chars={} (source {}) alloc={:?} valid={}",
+                                    rec.name,
+                                    inst.anchor_depth,
+                                    s.len(),
+                                    rec.string.len(),
+                                    alloc,
+                                    v.complete
+                                );
+                                println!("    NEXT: python3 analysis/counting/m3_check.py + validate --complete before ANY claim");
+                                emit(
+                                    &format!("merge-cand-{}", rec.name.trim_end_matches(".txt")),
+                                    &s,
+                                );
+                            } else {
+                                merge_equal += 1;
+                                *merge_allocs.entry(alloc).or_default() += 1;
+                                if !quiet || merge_equal <= 20 {
+                                    println!(
+                                        "  merge-equal 872 at S-1: {} -> alloc {:?} (anchor {})",
+                                        rec.name, alloc, inst.anchor_depth
+                                    );
+                                }
+                                if emitted < 8 {
+                                    emit(
+                                        &format!(
+                                            "merge-eq-{}-{}",
+                                            rec.name.trim_end_matches(".txt"),
+                                            merge_equal
+                                        ),
+                                        &s,
+                                    );
+                                    emitted += 1;
+                                }
+                            }
+                        }
+                    }
                     if ties {
                         let src_alloc = tailatsp::allocation_of(&rec.trace);
                         for (ti, ord) in tie_orders.iter().enumerate() {
@@ -1998,7 +2069,15 @@ fn main() -> ExitCode {
                 corpus.len(),
                 t0.elapsed().as_secs_f64()
             );
-            if improved > 0 {
+            if merge {
+                println!(
+                    "  merge (I2a): {merge_moves} moves tried, {merge_improved} improved (871 candidates), {merge_equal} equal-cost 872s at S-1"
+                );
+                for (alloc, k) in &merge_allocs {
+                    println!("    merged allocation {alloc:?}: {k}");
+                }
+            }
+            if improved > 0 || merge_improved > 0 {
                 std::process::exit(2);
             }
         }

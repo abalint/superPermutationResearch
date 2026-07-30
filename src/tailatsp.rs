@@ -42,6 +42,8 @@ pub struct TailInstance {
     /// 1-indexed first-visit depth of the LAST prefix perm (the anchor
     /// state's `cur`); the tail starts at depth `anchor_depth + 1`.
     pub anchor_depth: usize,
+    /// Rank of the anchor state's `cur` (junction source for `cost[0]`).
+    pub anchor_cur: u32,
     /// Characters of the source string covered by the prefix.
     pub prefix_chars: usize,
     /// Tail blocks in the walk's own order.
@@ -130,12 +132,157 @@ pub fn decompose(n: usize, trace: &Trace, min_depth: usize) -> Option<TailInstan
 
     Some(TailInstance {
         anchor_depth: d0,
+        anchor_cur,
         prefix_chars,
         blocks,
         cost,
         intra,
         actual,
     })
+}
+
+/// Canonical cycle id of a rank: the minimum rank over its rotation
+/// orbit (n perms — a permutation of distinct symbols is never
+/// rotation-symmetric).
+pub fn cycle_id(g: &Graph, r: u32) -> u32 {
+    let mut m = r;
+    let mut c = g.succ1(r);
+    while c != r {
+        m = m.min(c);
+        c = g.succ1(c);
+    }
+    m
+}
+
+/// One I2a merge move (SURGERY-DESIGN §9): replace two same-cycle tail
+/// blocks whose perm arcs are contiguous with a single block riding
+/// their union. Net −1 sojourn part — the S−1 unit edit. When the pair
+/// covers the whole cycle (complementary arcs), every cyclic entry is a
+/// valid ride and each is a separate variant.
+pub struct MergeMove {
+    /// Indices (into `TailInstance::blocks`) of the two merged blocks.
+    pub bi: usize,
+    pub bj: usize,
+    /// Entry perm of the merged block.
+    pub entry: u32,
+    /// Perms in the merged block (= the two constituents' sum).
+    pub nperms: usize,
+}
+
+/// Enumerate all single-merge moves of an instance. Only pairs whose
+/// arc union is a single contiguous ride are expressible without
+/// pass-overs (an i2-priced move — out of I2a's vocabulary): partial
+/// unions need arc adjacency (1 variant); complementary pairs covering
+/// the whole cycle admit all `n` rotations as entries (`n` variants).
+pub fn enumerate_merges(n: usize, g: &Graph, inst: &TailInstance) -> Vec<MergeMove> {
+    let mut by_cycle: std::collections::HashMap<u32, Vec<usize>> = std::collections::HashMap::new();
+    for (i, b) in inst.blocks.iter().enumerate() {
+        by_cycle.entry(cycle_id(g, b.entry)).or_default().push(i);
+    }
+    let mut out = Vec::new();
+    for idxs in by_cycle.values() {
+        if idxs.len() < 2 {
+            continue;
+        }
+        for x in 0..idxs.len() {
+            for y in x + 1..idxs.len() {
+                let (i, j) = (idxs[x], idxs[y]);
+                let (a, b) = (&inst.blocks[i], &inst.blocks[j]);
+                let total = a.nperms + b.nperms;
+                if total == n {
+                    // complementary arcs tile the cycle: whole-6 ride
+                    // from any entry
+                    let mut e = a.entry;
+                    for _ in 0..n {
+                        out.push(MergeMove {
+                            bi: i,
+                            bj: j,
+                            entry: e,
+                            nperms: n,
+                        });
+                        e = g.succ1(e);
+                    }
+                } else if g.succ1(a.exit) == b.entry {
+                    out.push(MergeMove {
+                        bi: i,
+                        bj: j,
+                        entry: a.entry,
+                        nperms: total,
+                    });
+                } else if g.succ1(b.exit) == a.entry {
+                    out.push(MergeMove {
+                        bi: i,
+                        bj: j,
+                        entry: b.entry,
+                        nperms: total,
+                    });
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Build the merged instance: the two constituent blocks replaced by
+/// one, cost matrix re-derived, `intra` up one (the healed boundary
+/// becomes a weight-1 move). `incumbent` seeds the B&B upper bound —
+/// pass the UNMERGED optimum to search only for strictly cheaper
+/// junction totals (`solve_bb` result < incumbent ⇔ merged walk is
+/// shorter than `unmerged_total − 1 + (result − incumbent + 1)`… in
+/// plain terms: result = incumbent − 1 ⇒ equal length at S−1; result ≤
+/// incumbent − 2 ⇒ an 871 candidate). Pass a large incumbent to recover
+/// the merged instance's true optimum (tests do).
+pub fn apply_merge(
+    n: usize,
+    g: &Graph,
+    inst: &TailInstance,
+    mv: &MergeMove,
+    incumbent: usize,
+) -> TailInstance {
+    let mut exit = mv.entry;
+    for _ in 1..mv.nperms {
+        exit = g.succ1(exit);
+    }
+    let mut blocks: Vec<Block> = Vec::new();
+    for (k, b) in inst.blocks.iter().enumerate() {
+        if k == mv.bj {
+            continue;
+        }
+        if k == mv.bi {
+            blocks.push(Block {
+                entry: mv.entry,
+                exit,
+                nperms: mv.nperms,
+            });
+        } else {
+            blocks.push(Block {
+                entry: b.entry,
+                exit: b.exit,
+                nperms: b.nperms,
+            });
+        }
+    }
+    let nb = blocks.len();
+    let mut cost = vec![vec![0u16; nb + 1]; nb + 1];
+    for (j, blk) in blocks.iter().enumerate() {
+        cost[0][j + 1] = junction(n, inst.anchor_cur, blk.entry);
+    }
+    for (i, bi) in blocks.iter().enumerate() {
+        for (j, bj) in blocks.iter().enumerate() {
+            if i != j {
+                cost[i + 1][j + 1] = junction(n, bi.exit, bj.entry);
+            }
+        }
+    }
+    TailInstance {
+        anchor_depth: inst.anchor_depth,
+        anchor_cur: inst.anchor_cur,
+        prefix_chars: inst.prefix_chars,
+        blocks,
+        cost,
+        intra: inst.intra + 1,
+        actual: incumbent,
+    }
 }
 
 /// Exact Held–Karp optimum (junction total) for instances with ≤
@@ -532,6 +679,74 @@ mod tests {
             s == c6.string
         });
         assert!(rederived, "tie search must re-derive the (142,6) partner");
+    }
+
+    /// I2a control: n=5's 153 is PROVEN optimal, so no merge move may
+    /// complete below it — a merged junction total ≤ optimum − 2 would
+    /// be a 152, i.e. a solver bug. Equal-cost merges (optimum − 1) are
+    /// legal (equal-length walks in an S−1 allocation). Also cross-check
+    /// every merged instance against Held–Karp at a loose incumbent.
+    #[test]
+    fn n5_no_merge_beats_proven_optimum() {
+        let g = Graph::new(5);
+        let res = crate::greedy::greedy(&g);
+        for min_depth in [60, 80, 100] {
+            let t = trace_string(&g, &res.string).unwrap();
+            let Some(inst) = decompose(5, &t, min_depth) else {
+                continue;
+            };
+            let (opt, _, _) = solve_bb(&inst, false, 0);
+            assert_eq!(opt, inst.actual);
+            for mv in enumerate_merges(5, &g, &inst) {
+                let loose = apply_merge(5, &g, &inst, &mv, 10_000);
+                let (true_opt, _, _) = solve_bb(&loose, false, 0);
+                if let Some(hk) = solve_hk(&loose) {
+                    assert_eq!(hk, true_opt, "HK/B&B must agree on merged instance");
+                }
+                assert!(
+                    true_opt + 2 > opt,
+                    "merge at anchor {min_depth} would give a 152 — solver bug"
+                );
+            }
+        }
+    }
+
+    /// I2a oracle: anchored SHALLOWER than the natural seam (so both
+    /// parts of cycle 135462 are in the tail), merging the (143,5)
+    /// side's 2|4 into a whole-6 and re-solving with ties must re-derive
+    /// the (142,6) partner BYTE-IDENTICALLY at equal length — the s29
+    /// census's unit trade, now driven by the instrument end-to-end.
+    #[test]
+    fn merge_oracle_rederives_partner_from_shallow_anchor() {
+        let g = Graph::new(6);
+        let dir = std::path::Path::new("data/surgery_specimens");
+        let corpus = crate::corpus::load_corpus(&g, &[dir]).expect("pair");
+        let c5 = corpus
+            .iter()
+            .find(|r| r.name.contains("0105a4b77ce8"))
+            .expect("(143,5) side");
+        let c6 = corpus
+            .iter()
+            .find(|r| r.name.contains("b020caf20414"))
+            .expect("(142,6) side");
+        let inst = decompose(6, &c5.trace, 570).expect("decompose");
+        assert!(inst.anchor_depth < 583, "seam parts must both be in-tail");
+        let (opt, _, _) = solve_bb(&inst, false, 0);
+        assert_eq!(opt, inst.actual, "specimen is block-order-optimal");
+        // The seam merge: whole-cycle variant entered at 462135.
+        let seam_entry: Vec<u8> = vec![4, 6, 2, 1, 3, 5];
+        let mv = enumerate_merges(6, &g, &inst)
+            .into_iter()
+            .find(|m| m.nperms == 6 && unrank(6, m.entry as usize) == seam_entry)
+            .expect("seam merge variant must exist");
+        let merged = apply_merge(6, &g, &inst, &mv, opt - 1);
+        let (mopt, _, ties) = solve_bb(&merged, true, 4096);
+        assert_eq!(mopt, opt - 1, "seam merge re-prices to equal length");
+        let rederived = ties.iter().any(|ord| {
+            let s = materialize(6, &g, &c5.string, &merged, ord);
+            s == c6.string
+        });
+        assert!(rederived, "merge + tie search must re-derive the partner");
     }
 
     /// Committed specimen pins (one per L0 allocation, s27): every

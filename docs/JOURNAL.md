@@ -6,6 +6,74 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (session 30) — I2a BUILT same-day (`tail-atsp --merge`): the merge oracle passes (from a shallow anchor the instrument re-derives the (142,6) partner from the (143,5) side BYTE-IDENTICALLY via merge + tie re-solve); full-corpus merge sweep at anchor ≥ 585: **240,874 merge moves over all 22,062 classes, 0 improvements AND 0 equal-cost completions** — in ≤136-perm tails a single merge cannot even re-price to EQUAL length; at anchor 520 the first instrument-created cross-allocation 872 appears in the wild (a rediscovery of the specimen pair's partner class — the full find→materialize→validate→M3-gate path proven in sweep mode)
+
+Same-day continuation of s29 (the s26/s28b precedent: design §9 in the
+morning, instrument by evening). All 131 tests green (+2), clippy `-D
+warnings` clean, fmt clean. **Farm note: `src/tailatsp.rs` changed —
+reship `superperm.exe` before any farm run of the new entry** (the
+running a450b50 I1 sweep uses the old binary and is unaffected).
+
+**Built — merge machinery in `src/tailatsp.rs` + `tail-atsp --merge`.**
+`cycle_id`, `enumerate_merges` (pairs of same-cycle tail blocks whose
+arc union is one contiguous ride: complementary pairs → all n entry
+rotations, partial unions → arc-adjacency, 1 variant; pass-over merges
+are OUT of vocabulary — they'd be i2-priced), `apply_merge` (blocks
+replaced, cost matrix re-derived from the new `anchor_cur` field,
+`intra`+1 for the healed boundary, incumbent-seeded B&B). Sweep mode
+re-solves each merged instance with the unmerged optimum as incumbent:
+result = opt−1 ⇔ equal-length 872 at S−1 (by the waste identity this
+carries one extra door-unit — ALWAYS a different allocation than the
+source; from (145,3) it would be the unoccupied (144,4)); result ≤
+opt−2 ⇔ 871 candidate (banner, exit 2, M3 ritual). Controls pinned:
+n=5 (153 proven optimal) admits no merge below optimum − 1 with HK
+cross-check on every merged instance; **the merge oracle** — anchored
+at 570 (shallower than the natural seam at 583 so BOTH parts of cycle
+135462 are in-tail), the seam-merge variant entered at 462135 re-prices
+to exactly opt−1 and the tie search re-derives the (142,6) partner
+byte-identically. Nature's one edit, now driven by the instrument.
+
+**Corpus sweep verdicts (single-merge vocabulary caveat attached):**
+
+- **Anchor ≥ 585 (~136-perm tails): 240,874 merge moves over all
+  22,062 classes — 0 improvements, 0 equal-cost completions** (192 s).
+  Stronger than I1's law: in this band a merge can't even break even.
+  The rigid −2 junction pricing (M-R3) is geometrically unrealizable in
+  the last ~136 perms of every known 872 — the freed junction weight
+  cannot be re-absorbed by any reordering.
+- **Anchor ≥ 520, first-300 probe (alphabetical, biased): 6,579 moves,
+  0 improvements, 1 equal-cost 872 at S−1** — source
+  `872.up-0105a4b77ce8` (the committed specimen pair's (143,5) side!),
+  merged at anchor 522 into allocation (142,6,0,0). `m3_check`:
+  equivalent to `872.up-b020caf20414` — the natural partner's class,
+  REDISCOVERED by the instrument in sweep mode. Not an M3 event, but
+  the entire pipeline (find → materialize → validate → M3 gate →
+  correct classification) is now proven outside the pinned oracle.
+- Full anchor-520 merge sweep (~2–7 h single-core; probe bias caveat)
+  queued in SWEEP-QUEUE.md for the operator/farm — reship the binary
+  first.
+
+**Reading of the day:** deep tails are merge-dead; the first live merge
+appears exactly when the anchor drops below a natural seam (583). The
+contested zone for S−1 surgery is the same midgame band everything else
+points at — and the anchor-520/450 merge sweeps are the first
+instruments that can actually search it exactly.
+
+**Next session, concretely (s31):**
+- **Operator results:** fold in a450b50 (I1 anchor-450) and, once
+  approved+reshipped, the anchor-520 merge sweep; every `merge-eq-*`
+  goes through m3_check (a novel class or unoccupied allocation is the
+  event to watch for).
+- **Split moves** (the reverse edit, 6→3|3 etc.): same machinery,
+  branching 3–6 per cycle; interesting for the d3−1 waste-146 targets
+  where a door demotion must be paid by +1 split — design the
+  compensated two-move (merge+demote / split+demote) pass on top.
+- **Multi-merge**: net −1 via k merges + (k−1) splits; the census says
+  natural pairs use up to 29 canceling events — the instrument should
+  search small k first.
+- **Still open:** ip=1 ε-rollout study; per-allocation NRPA/beam over
+  `data/frontiers_s28/`.
+
 ## 2026-07-29 (session 29) — Recomposition census over 1,071 controlled pairs (I2's design inputs, SURGERY-DESIGN §9): NEW conservation law **net splits = ΔS exactly, 1,071/1,071 pairs** (composition diffs fully account for the sojourn trade); vocabulary is 6 edit types inside {6, 2|4, 3|3, 2|2|2} — 1|5 NEVER naturally recomposed; junction pricing rigid (~96% of 28,664 events at one extra w2 per extra part; every deviation is a door entering the recomposed cycle); doors are DELOCALIZED from recompositions (39/43 tail doors land elsewhere) with recurring targets — the (142,6)↔(143,5) unit trade is ONE specific object (same cycle `135462` recomposed, same door `w3→135426` demoted, all four natural pairs); I2a designed = the merge-move instrument (single tail-cycle merge + exact block-ATSP re-solve → the S−1 waste-146 edit directly)
 
 Research-agent session per `docs/RESEARCH-AGENT-S29.md`; the queued
