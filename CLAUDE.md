@@ -12,15 +12,16 @@ planned learned value function.
    it** — entry points, traps, and the session-end ritual in two pages.
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
-   `docs/RECOMB-DESIGN.md` (s26, read §8 outcomes + §8.4a recalibration FIRST)
-   for what just closed, and `docs/TRACKB-DESIGN.md` for the underlying Track B
-   frame (its M3/§7 carry s26 corrections inline; §2 L1 carries the s27
-   per-allocation-profile update).** s27 landed the per-allocation grammar
-   (profiles from census data, corpus-validated 22,062/22,062) + the
-   fresh-doors corpus law; the s28 front is JOURNAL s27 "Next session":
-   cross-class surgery design on the 918 non-records specimens,
-   per-allocation M2, the ip=1 targets, M3 re-scope. ARCHITECTURE.md's
-   "Track B implementation map" says where each task lands in the code.
+   `docs/SURGERY-DESIGN.md` (s28: cross-class surgery designed from corpus
+   evidence; the s29 front is its §4 `tail-atsp` build + corpus sweep)**;
+   `docs/RECOMB-DESIGN.md` (s26, §8 outcomes + §8.4a recalibration) for
+   what closed before it, and `docs/TRACKB-DESIGN.md` for the underlying
+   Track B frame (its M3/§7 carry s26 corrections inline; §2 L1 carries
+   the s27 per-allocation-profile update). s27 landed the per-allocation
+   grammar + the fresh-doors corpus law; s28 landed the surgery design
+   (block-reordering law, natural specimens, block-ATSP prototype) and the
+   per-allocation M2 pass. ARCHITECTURE.md's "Track B implementation map"
+   says where each task lands in the code.
 4. `docs/ARCHITECTURE.md` — code map: modules, data structures, extension points.
 5. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 

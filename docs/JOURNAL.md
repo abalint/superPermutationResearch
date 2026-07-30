@@ -6,6 +6,112 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (session 28) — Cross-class surgery DESIGNED from corpus evidence (docs/SURGERY-DESIGN.md): cross-allocation braid sharing is real (22,266 states, all 28 allocation pairs) with ZERO unequal-length reconvergence corpus-wide; a natural specimen pair is byte-identical to depth 584 and shows the (S+1,d3−1) unit trade is a pure BLOCK REORDERING with junction re-pricing; block-ATSP prototype: both specimen tails and 249/249 sampled corpus tails are block-order-optimal at anchor ≈585; per-allocation M2 pass run for all 6 untested allocations (d4=0 complete ≤25M nodes; d4-bearing + 1|5-bearing truncate at 60M)
+
+Two of the four s28 items (HANDOFF-S28) landed: the flagship surgery
+design (measurements → `docs/SURGERY-DESIGN.md`, Andrew's
+design-before-code directive) and the per-allocation M2 pass. Tests
+stay green (124), no Rust changes this session.
+
+**Measured 1 — cross-allocation braid census
+(`analysis/trackb/surgery_feasibility.py`, full 22,062-class corpus,
+~4 min).** The corpus braid has 10,034,458 (visited, cur) states;
+**22,266 are shared by ≥2 L0 allocations, and every one of the 28
+allocation pairs shares states** — braid-diff across allocations is
+viable, not hypothetical. (143,5)×(145,3) share 8,011 states to depth
+231. Depth profile is opening-trunk-dominated (deciles 0–2 hold 21,040)
+with a thin tail to depth 584. **Zero unequal-length reconvergences,
+corpus-wide, cross-allocation included** — s26's "no free splice
+improvement" measurement now holds at 75× the corpus across allocations:
+an 871 must create states no known 872 visits. Corollary worth keeping:
+equal length + equal depth at a shared state forces equal partial WASTE
+but not equal partial LEDGER — allocation identity is not fixed by a
+shared prefix.
+
+**Measured 2 — natural surgery specimens exist
+(`analysis/trackb/surgery_pairs.py`).** 11 cross-allocation walk pairs
+share a state at depth ≥250. The deepest: `872.up-b020caf20414`
+(142,6,0,0,0) × `872.up-0105a4b77ce8` (143,5,0,0,0) are **byte-identical
+for their first 584 perm visits**, then re-cover the same 136 residual
+perms at equal cost (163 chars). Four pairs realize the (142,6)↔(143,5)
+door-demotion trade; five realize (140,6,1)↔(145,3) — the w4 trade
+against the records class, whose char accounting closes exactly (4 heavy
+doors ↔ 5 extra sojourn boundaries ↔ 5 extra w1 rides).
+
+**Found — the unit trade is a BLOCK REORDERING
+(`analysis/trackb/tail_autopsy.py`).** The deepest specimen's two tails
+cover the SAME 24 cycles with the SAME per-cycle split compositions —
+the same three block-runs A,B,C in different orders: (142,6) plays
+`(w1-entry) A ·w3· B ·w3· C` (the w1 entry merges with the prefix's last
+sojourn), (143,5) plays `(w2-entry) C ·w2· A ·w3· B`. One door demoted
+to a w2 crossing, one extra sojourn boundary, chars equal. **The
+(S+1,d3−1) unit edit of the waste-146 neighbor map, realized by nature
+as pure order + junction re-pricing.** The deeper trade is NOT
+order-only: the w4 specimen pair (anchor 283, 75-cycle residual)
+recomposes 15/75 cycles (whole-6 ↔ 3|3 ↔ 2|4) — so surgery has two move
+tiers (S1 reorder / S2 recompose), and S2 needs grammar-level search.
+
+**Built (prototype) + measured 3 — tail block-ATSP
+(`analysis/trackb/tail_block_atsp.py`, `tail_block_sweep.py`).** Cut a
+tail at an anchor into blocks (maximal w1-runs), price junctions by
+overlap weight, solve the block-order ATSP-path EXACTLY (B&B, min-in
+bound; Held–Karp cross-check at ≤20 blocks). Key property: junction
+pricing is allocation-blind — a cheaper order lands wherever its
+junctions imply, including specimen-free allocations ((144,4), ip=1
+targets) that every grammar instrument must fix upfront. Results: both
+specimen tails are block-order-optimal (optimum = actual = 163; the two
+distinct optimal orders ARE the two specimens); **corpus mini-sweep at
+anchor ≈ depth 585: 249/249 solvable walks block-order-optimal, 0
+improvements** (51/300 skipped at >27 blocks; Python ceiling ~26 blocks,
+min-in bound too weak past that — the Rust build gets an
+assignment-relaxation bound, target ~40 blocks). Verdict semantics per
+the design doc: any improvement = 871 candidate → M3 gate; corpus-wide
+none = a new law ("block-order-optimal from depth D", always with the
+fixed-decomposition caveat).
+
+**Per-allocation M2 pass (exact d=6, `--fresh-doors`, census profiles,
+60M-node cap, frontier dumps at `data/frontiers_s28/`, 16/class).**
+With (145,3) 5.79M and (143,5) 21.72M from s27:
+
+| class | verdict | nodes | classes |
+|---|---|---|---|
+| (142,6,0,0,0) | COMPLETE, 35 s | 24,776,155 | 3,328 |
+| (140,8,0,0,0) | COMPLETE | 24,776,155 | 3,328 |
+| (140,6,1,0,0) | TRUNCATED @60M | — | ≥3,945 |
+| (138,8,1,0,0) | TRUNCATED @60M | — | ≥3,945 |
+| (135,9,2,0,0) | TRUNCATED @60M | — | ≥3,283 |
+| (141,7,0,0,0) | TRUNCATED @60M | — | ≥13,959 |
+
+Structure discovered: at depth 6 the opening tree depends only on the
+caps that can BIND at 6 sojourns — (142,6) ≡ (140,8) byte-identical
+(d3 ∈ {6,8} never binds; identical profiles), (140,6,1) ≡ (138,8,1)
+identical to the cap. (141,7) explodes (4× the classes) because its
+census profile carries the **1|5 / 5|1 singleton splits** — the sound
+tier's real enemy at d=6 is profile richness, not door count. The
+d4/1|5-bearing exhaustions need the farm or stronger pruning; 16 GB
+local RAM rules out materially bigger exact runs (s26 TT thrash lesson).
+
+**Ops note (self-inflicted):** two "failed" zsh batch loops actually
+survived their error and kept spawning duplicate sojourn-dfs runs
+alongside the retry batch — caught via `ps` (three-fold duplication of
+(140,8)/(138,8,1)), killed; dumps verified deterministic-identical.
+Lesson: after a batch "fails", check for surviving children before
+relaunching.
+
+**Next session, concretely (s29):**
+- **Build I1 (`tail-atsp` Rust subcommand)** per SURGERY-DESIGN §4:
+  assignment-relaxation bound, controls (specimen pin 163, n=5 records
+  must be optimal, mangled-tail repair, HK cross-check), then the
+  full-corpus anchor-band sweep — collect improvements (871 candidates →
+  M3 ritual) AND ties that land in NEW allocations (a first (144,4) or
+  ip=1 872 would be an M3-class event).
+- **I2 design pass** (conditional on I1's verdict): recomposition census
+  over the 15 recomposed cycles of the w4 specimen; anchored re-cover
+  under the 13 distance-1 waste-146 target caps.
+- **Still open from HANDOFF-S28:** the ip=1 ε-rollout study; per-
+  allocation NRPA warm-starts + union-restricted beam over the new
+  frontier dumps.
+
 ## 2026-07-29 (session 27b) — M3 gate re-scoped to the full corpus (`analysis/counting/m3_check.py` + committed 22,062-class canonical index; alarm path proven with a hole-punched index); fresh-agent handoff written (`docs/HANDOFF-S28.md`)
 
 Short hygiene session closing the last s26c queue item before the s28

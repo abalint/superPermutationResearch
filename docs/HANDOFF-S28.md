@@ -1,4 +1,12 @@
-# Handoff: the s28 front
+# Handoff: the s28 front → now the s29 front
+
+**Updated end of s28 (2026-07-29).** Items 1 (surgery design) and 2
+(per-allocation M2 pass) are DONE — read JOURNAL s28 and
+`docs/SURGERY-DESIGN.md`. The s29 front is: build the `tail-atsp` Rust
+subcommand (SURGERY-DESIGN §4, controls first) and run the full-corpus
+anchor sweep; then the ip=1 study and per-allocation NRPA/beam over the
+new frontier dumps (`data/frontiers_s28/`, gitignored). Items below kept
+for the traps section, which still applies verbatim.
 
 Written at the end of s27b (2026-07-29) for a fresh agent. Read
 `docs/JOURNAL.md` s27/s27b first; this note only adds the entry points and
