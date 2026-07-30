@@ -66,7 +66,7 @@ tail beats its own cost — that is an **871 candidate** at n=6, a
    published strings only — goes verbatim into any n=7 claim).
 3. Both pass → copy the candidate + the log into a NEW committed
    directory (add a `.gitignore` exception), commit on a branch, and
-   notify Andrew immediately. The M3 ritual (docs/HANDOFF-S28.md traps)
+   notify Andrew immediately. The M3 ritual (docs/HANDOFF-S37.md traps)
    governs every further step.
 4. Either fails → record the failure in the queue entry (a solver bug is
    ALSO news — the controls in `src/tailatsp.rs` should have caught it).

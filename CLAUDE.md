@@ -8,9 +8,9 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S32.md` right after it** — state of the
-   world, the engine-first premise, entry points, traps, and the session-end
-   ritual in two pages (supersedes HANDOFF-S28).
+   **Fresh agent: read `docs/HANDOFF-S37.md` right after it** — state of the
+   world, the engine-first premise, the s38 build spec pointers, traps, and the
+   session-end ritual in two pages (supersedes HANDOFF-S32).
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
    `docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; s29 ran the

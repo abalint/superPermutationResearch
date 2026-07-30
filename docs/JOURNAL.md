@@ -44,6 +44,14 @@ change `src/tailatsp.rs` — reship before any farm run after it lands.
 **Still open:** fold `a585recomp` (operator); the two pending n=7
 queue entries; ip=1 study; per-allocation NRPA/beam; Track C overhead.
 
+**Handoff refreshed (s37b):** `docs/HANDOFF-S37.md` written (supersedes
+HANDOFF-S32) — six-sentence state of the world, the n-generic
+instrument stack, the s38 build-first work menu with spec pointers
+into SURGERY-DESIGN §10, and the trap list (now including s37's
+tautology-check lesson). CLAUDE.md reading order and the stale
+HANDOFF-S28 references in OPS-BACKGROUND-AGENT.md /
+RESEARCH-AGENT-S29.md now point at it.
+
 ## 2026-07-30 (session 36) — M-2 co-occurrence census RUN (`analysis/trackb/recomp_cooccur.py`, 1,071 controlled pairs, 7 s): **T5 is dead (zero bulk joint-locality: used-loop 14.2% vs null 14.4%), but nature exhibits exactly TWO minimal 2-compounds and they are the SAME object mirrored — (145,3)↔(143,5), the two LARGEST shells (S1-disconnected per s32), bridged by two merges + two door promotions on the SAME two cycles `126354`(2|4↔6) + `123654`(3|3↔6) with the same part entries, recurring across independent controlled pairs** — the compound tier's existence proof, its first pinned oracle, and a hard anchor-reach constraint: the compound's parts span depths 181–718, so `--recomp2` at anchor ≥ 520 could NEVER find it — the compound tier lives across the midgame (the same band s24 indicted)
 
 Continuation session (same day as s33–s35). Python only; 133 tests
