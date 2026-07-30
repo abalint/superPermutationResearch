@@ -8,17 +8,19 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S39.md` right after it** — state of the
-   world, the engine-first premise, the loop-cover front (I4/M-4), traps, and
-   the session-end ritual in two pages (supersedes HANDOFF-S38).
+   **Fresh agent: read `docs/HANDOFF-S41.md` right after it** — state of the
+   world, the engine-first premise, the loop-cover front (I4, the published
+   discoveries), traps, and the session-end ritual (supersedes HANDOFF-S39).
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
    `docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; §9 has the M-R laws;
    §10 is the compound tier: s38 built I3 `--recomp2` and §10.8 records its
    as-built truth + the oracle refutation; §11 is the OPEN FRONT — the
-   midgame-order instrument I4 in loop-cover coordinates, designed s39 on
-   the loop-count THEOREM (THEORY §7) and the cover census: 13 pinned
-   cover-sharing oracle pairs incl. the Kristan seam; next step M-4a)**;
+   loop-cover frame: s39 theorem (THEORY §7) + cover census, s40 M-4a
+   (the three rigid rewrite rules, §11.6), s41 I4-A applier + as-built
+   results (§11.7): 8 novel 5906 classes in 2 new allocations, PUBLISHED
+   as superpermutators/superperm PR #50, merged by Houston; next: iterate
+   rule-closure on the new classes, M-4b/M-4d)**;
    `docs/RECOMB-DESIGN.md` (s26, §8 outcomes + §8.4a recalibration) for
    what closed before it, and `docs/TRACKB-DESIGN.md` for the underlying
    Track B frame (its M3/§7 carry s26 corrections inline; §2 L1 carries
@@ -335,6 +337,22 @@ python3 analysis/counting/upstream5906_twocycles.py
 python3 analysis/counting/loop_ledger_probe.py walk 6 data/upstream872_specimens/*.txt
 python3 analysis/counting/loop_ledger_probe.py cover 7 data/upstream5906
 python3 analysis/counting/loop_ledger_probe.py random 4 3000 1 4
+
+# s40 M-4a — anatomy of the cover-sharing pairs (the three rigid rewrite rules,
+# SURGERY-DESIGN §11.6) + coarse rule-context census over the n=6 archive:
+python3 analysis/counting/m4a_pair_anatomy.py            # all 13 pairs, exit 0 = verified
+python3 analysis/counting/m4a_pair_anatomy.py scan       # carrier counts by allocation
+
+# s41 I4-A mode 0 — the rewrite-rule applier (§11.7). oracle = re-derive all 13
+# pairs byte-identically; apply = literal rules; apply-sym = all n! relabelings ×
+# both orientations, products canon-gated inline (novel classes written+bannered,
+# rediscoveries become edges of the natural-move graph). THIS is what produced the
+# 8 published novel 5906s (data/novel5906/, PR #50). --only fwd/rev filters:
+python3 analysis/counting/i4a_apply.py oracle
+python3 analysis/counting/i4a_apply.py apply-sym data/upstream5906 data/novel5906 --out out/
+python3 analysis/counting/i4a_apply.py apply-sym data/upstream872 --only rev --out out/
+# n=7 novelty gate covers published + our discoveries (two committed indexes):
+python3 analysis/counting/m3_check.py -n 7 <candidate.txt>
 
 # s26 structural recombination (docs/RECOMB-DESIGN.md; src/recomb.rs + src/unionsearch.rs):
 cargo run --release -- recomb -n 6 --dirs data/records872,data/gain1_872s --emit-dir data/hybrids872   # 0.25s; pins: 298 closure walks, 2 hybrids

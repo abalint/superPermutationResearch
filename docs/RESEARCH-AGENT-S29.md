@@ -12,7 +12,7 @@ speed without coordinating anything else.
 2. `docs/SURGERY-DESIGN.md` — the active design doc; §8 has what is
    already built and proven (I1 `tail-atsp`, its oracle, the
    block-order-optimality law).
-3. `docs/HANDOFF-S39.md` (current; S38's successor) — traps section (sample-bias ghosts, calibrated
+3. `docs/HANDOFF-S41.md` (current; S39's successor) — traps section (sample-bias ghosts, calibrated
    vs proven, the M3 ritual, cap-at-target). All still apply.
 4. `CLAUDE.md` — commands, hard invariants, session workflow.
 

@@ -25,6 +25,14 @@ applied under all 5040 relabelings), the two new profiles
 (839,22)/(835,26), the 142 2-cycle invariant, and reproduction
 pointers to this repo.
 
+**Handoff refreshed (s41c):** `docs/HANDOFF-S41.md` written
+(supersedes HANDOFF-S39) — the loop-cover front as-built, the s42
+work menu (rule-closure iteration on the 8 new classes first), and
+the new traps (--build-index clobbers the committed index; the n=7
+corpus now spans two local dirs; replay-sufficiency ≫ precondition;
+publishing runbook). CLAUDE.md reading order + commands and both
+agent docs repointed.
+
 **MERGED same-day: Robin Houston merged PR #50 at 2026-07-30 20:09
 UTC.** The 8 classes are now canonical community corpus — published
 n=7 5906s: 92 classes across 8 allocations, 10 of them (8 walks + the
