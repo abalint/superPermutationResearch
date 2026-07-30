@@ -835,3 +835,49 @@ m3_check. Every application to a class whose partner is NOT in the
 corpus is a new 872/5906 (rediscovery-vs-novel decided by the M3
 gate). This is mode 0 of I4-A: nature's own moves, replayed
 everywhere they fit.
+
+### 11.7 s41 — I4-A mode 0 BUILT and RUN: first novel classes, two new n=7 allocations, and the (144,4) negative
+
+`analysis/counting/i4a_apply.py` (oracle: all 13 pairs re-derived
+BYTE-IDENTICALLY in both directions). A tight walk is replayed
+deterministically from (start, per-cycle entry sets, doors) — so a
+rule application is a ~6-perm structure edit + replay; the replay
+itself is the finer precondition (failures logged by reason).
+
+- **Literal (canonical-frame) sweep, both corpora:** corpus CLOSED (34
+  products, all rediscoveries) — but 8 compound edges surfaced that
+  the s39 cover census could not see (partners are relabel-equivalent,
+  not literal-frame cover-equal): the true compound-edge count is 16,
+  not 8. The applier supersedes the census as the edge detector.
+- **Conjugated sweep (all n! relabelings × both orientations), n=7
+  complete:** R-K7 fired off-shell on (840,21)/(836,25) sources and
+  produced **8 NOVEL 5906 classes — the first record-length walks this
+  project has generated** (s26's hybrids were all known). All
+  Rust-validated complete, all inequivalent to the 84 published
+  classes, all pure-w3 and L=142 (the s34 invariant extends), and they
+  occupy **(839,22) and (835,26) — two allocations never seen at n=7**
+  (map: 6 → 8 allocations). Archived `data/novel5906/` (NOTE.md);
+  `m3_check -n 7` now also loads the committed supplementary index
+  `novel5906_canon_index.tsv`, so future novelty claims are vs
+  published + our discoveries automatically.
+- **Conjugated REVERSE sweep, full n=6 archive (22,062 classes, 24
+  min):** CLOSED — 20 edges (16 R-compound + 4 R-unit, exactly the
+  literal set: conjugation adds no reverse edges at n=6), 0 novel, and
+  **0 (144,4) products from 1,046 conjugated reverse-compound + 1,058
+  reverse-unit replays**: the unoccupied (144,4) resists nature's own
+  moves under full symmetry — a certificate-level strengthening of the
+  s32 closure picture. Edge census committed:
+  `data/i4a_products_sym_rev/i4a_sym_edges.tsv` (the natural-move
+  graph of the known n=6 corpus).
+- **Forward conjugated n=6 sweep queued** (SWEEP-QUEUE, ~100 min
+  local, probe-calibrated): the promiscuous directions
+  ((145,3)→(143,5), (143,5)→(142,6) + off-shell). Given the n=7
+  precedent, novel (143,5)/(142,6) classes are a live possibility.
+
+**Reading.** The rule vocabulary is real, executable, and productive
+exactly where the corpus is thin (n=7: 92 classes now known). At n=6
+the reverse directions are saturated — consistent with a 22k-class
+corpus having exhausted its own move-closure — while n=7's 84-class
+corpus was NOT closed under its own single seam move. Every new class
+is fresh ground for the whole instrument ladder (tail sweeps, cover
+census, edge detection between the new classes themselves).

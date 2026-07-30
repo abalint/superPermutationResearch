@@ -329,3 +329,25 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
 - approved: NO
 - status: pending
 - result: —
+
+## n=6 I4-A conjugated sweep, FORWARD directions (full archive) — local, ~90 min
+- spec: `python3 analysis/counting/i4a_apply.py apply-sym data/upstream872 --only fwd --out data/i4a_products_sym_fwd`
+  (the rev directions ran s41 — see JOURNAL; fwd = R-compound-fwd +
+  R-unit-fwd, the promiscuous-precondition directions that dominate
+  runtime: 500-walk round-robin probe measured 278 ms/walk total with
+  fwd replays ~99% of cost → full archive ≈ 100 min single-core
+  local Python; RAM trivial).
+- product: closure of the known n=6 corpus under the SYMMETRY-
+  CONJUGATED forward rules (rotor→door direction: (145,3)→(143,5) and
+  (143,5)→(142,6) plus off-shell firings). At n=7 the analogous sweep
+  produced 8 NOVEL classes in 2 never-seen allocations
+  (data/novel5906/) — the n=6 fwd sweep is the same question for the
+  (143,5)/(142,6) shells. Alarm paths: any product shorter than 872
+  (exit banner, M3 ritual), any NOVEL class (auto-written + bannered;
+  gate with m3_check afterward as a double-check).
+- projected: ≈ 100 min local single-core (probe-calibrated,
+  round-robin). No farm, no reship. Heartbeats per the launch
+  protocol if run by the operator.
+- approved: NO
+- status: pending
+- result: —

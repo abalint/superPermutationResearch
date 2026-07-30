@@ -48,17 +48,16 @@ traps.
 
 ## The work menu (in priority order)
 
-1. **Build the rewrite-rule applier (I4-A mode 0)** — s40's M-4a
-   (SURGERY-DESIGN §11.6) found the compound tier's vocabulary is
-   THREE rigid rules (R-compound, R-unit at n=6; R-K7 at n=7), each
-   object-for-object identical across all its instantiations, and the
-   coarse scan (`m4a_pair_anatomy.py scan`) found hundreds of carrier
-   classes without corpus images — including **6 (142,6)
-   compound-door carriers whose reverse application lands on (144,4),
-   the never-occupied allocation**. Build: exact string surgery for
-   each rule/direction, oracle = re-derive all 13 pairs, then apply
-   over the carrier lists (products → validator + m3_check; log
-   per-carrier failure reasons).
+1. **I4-A mode 0 is BUILT and productive (s41, SURGERY-DESIGN §11.7,
+   `analysis/counting/i4a_apply.py`)** — oracle 13/13 byte-identical;
+   the conjugated sweep produced the project's FIRST NOVEL
+   record-length classes: 8 new 5906s in two never-seen allocations
+   ((839,22), (835,26); archived `data/novel5906/`, supplementary m3
+   index committed). n=6 is closed under the conjugated REVERSE rules
+   incl. a hard (144,4) negative (2,104 replays, 0 products). NOW: run
+   the queued n=6 FORWARD sweep when approved; iterate rule-closure on
+   the 8 new classes (do R-K7/tail instruments fire from them?);
+   refresh the n=7 structure census for the new allocations.
 2. **M-4b / M-4d** — traversal count of one known cover (exhaustive
    I4-A vs. guided); 871-cover combinatorial feasibility (a NO closes
    the 871 within the tight class, certificate-level).

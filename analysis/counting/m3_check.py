@@ -48,6 +48,15 @@ PER_N = {
     7: {"record": 5906, "index": "upstream5906_canon_index.tsv"},
 }
 
+# Supplementary indexes: classes DISCOVERED BY THIS PROJECT (s41+, see
+# data/novel5906/NOTE.md). Loaded in addition to the published index so
+# a novelty claim is always vs published + our own archive; missing
+# files are skipped (fresh clones have them committed).
+SUPPLEMENTARY = {
+    6: [],
+    7: ["novel5906_canon_index.tsv"],
+}
+
 
 def renumber(s):
     m, nxt, out = {}, 0, []
@@ -130,6 +139,11 @@ def main():
     if args[0] == "--build-index":
         return build_index(args[1], n, record, index_path)
     idx = load_index(index_path)
+    for supp in SUPPLEMENTARY.get(n, []):
+        p = os.path.join(HERE, supp)
+        if os.path.exists(p):
+            extra = load_index(p)
+            idx.update({h: f"{f} [project discovery]" for h, f in extra.items()})
     print(f"known-{record} index: {len(idx)} classes (relabel+reversal canonical)")
     nfact = math.factorial(n)
     novel = 0
