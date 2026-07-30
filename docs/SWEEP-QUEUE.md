@@ -130,11 +130,16 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   (`recomp-sameeq-*`) — m3-check a random subsample only (a 60-sample
   local check was 100% equivalent-to-known). s31 local evidence (138
   walks, ~175k moves): 0 improvements, 0 new-allocation equals.
-- projected: 5.4 s/walk on first-100 (alphabetical; bias here was 1.9–3.3×
-  on past sweeps) → single-core 33–100 h; on 24 farm cores ~1.5–4.5 h.
-  **Reship `superperm.exe` first — s31 changed `src/tailatsp.rs`/`main.rs`.**
-- approved: NO
-- status: pending
+- projected: **MEASURED** — round-robin probe `probe585recomp` (24×25 = 600
+  walks, 7,695 core-s) gives **12.8 s/walk**, 2.4× the entry's alphabetical
+  5.4. Full corpus = 78 core-hours → ~3.3 h mean, **~4.5–5 h wall** on 24
+  cores at the 1.4× shard imbalance measured on a450b50. Probe itself:
+  763,546 moves, 0 improvements, 0 new-allocation equals, 367,292
+  same-allocation equals (48% — the dense shell, as s31 said). Binary
+  reshipped from clean `e286355` (BUILD.txt provenance on the PC).
+- approved: YES (Andrew, 2026-07-30, after being given the ~5 h figure)
+- status: running (farm run `a585recomp`, 24 workers, started 2026-07-30
+  06:15:18 PC time; ETA ~11:00–11:30 PC time)
 - result: —
 
 ## tie-census full corpus
