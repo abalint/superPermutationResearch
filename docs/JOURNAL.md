@@ -6,6 +6,116 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 33) — n=7 CORPUS ASSEMBLED (84 known 5906 classes + 3 urdvr 5907s, all validator-complete; `data/upstream5906/` + `data/upstream5907/`, committed) and the ENGINE-GENERALITY TEST PASSED: every s28–s31 instrument runs at n=7 unchanged — I1 reorder (3 bands to ~270-perm tails), ties (2 bands), merge (3 bands), recomp-1 (full corpus, 199,391 moves) — verdict **the n=7 corpus is closed under every local move exactly like n=6's** (0 improvements, 0 cross-allocation products anywhere, 49% equal-cost same-allocation density, 174/174 recomp samples gate as rediscoveries); NEW structural map: **all 84 known 5906s are PURE-w3 over exactly 6 allocations** (waste 860 = (S−1)+#w3, no w4+, no intra), the dominant shell is (S=844, 17×w3) with 61 classes, and **Kristan's 5906 is the SOLE occupant of (843,18) — one S↔door unit-trade from the dominant shell, the precise n=7 echo of the n=6 natural pair — yet NO single tail edit connects them in the anchorable zone** (unlike n=6, where the seam surfaced at the 520 band); M3 gate now n-generic (`m3_check.py -n 7`, committed 84-class index)
+
+Research-agent session; the operator's `a585recomp` n=6 farm sweep runs
+in parallel (untouched). No Rust changes — the entire session is new
+Python + data + sweeps, and that is itself the headline: `tail-atsp`
+and the whole instrument ladder are n-generic AS BUILT. 133 tests
+green, clippy/fmt clean.
+
+**Built — n=7 corpus (`analysis/counting/upstream5906_dump.py`,
+template upstream872_dump.py).** Sources, all local in `../extraDocs`:
+the 83 published 5906 strings (community `known5906_corpus/7_5906_nsk*`,
+7 files), Kristan's 5906 (`tk-5906-repeat.txt`, filtered to digits —
+its "repeat" is bookkeeping, see 2026-07-29 note), and the three urdvr
+5907s (`superpermutation-examples/n7/`). Canonicalization
+(relabel+reversal, s26b convention): **84 strings → 84 classes** — the
+83 published are pairwise inequivalent AND Kristan's is a genuine 84th.
+All 87 files pass `validate -n 7 --complete`; corpus loader traces all
+tight (Kristan's included — the simple-path reading is tight). The
+archives are COMMITTED (530 KB; unlike n=6's 22,062-class archive) so
+every n=7 sweep reproduces from a fresh clone. **Completeness caveat
+(carry on every n=7 novelty claim): the community `twoCycles_*` files
+are two-cycle EXTENSION SETS (set-of-tuples notation, thousands of
+rows), not strings — undecoded, they may hide a much larger known
+corpus (the n=6 lesson: our 296-string sample hid 22,062 classes).
+Decoding them is queued work; until then "novel" at n=7 means
+novel-vs-published-strings.**
+
+**Built — M3 gate n-generic (`m3_check.py -n {6,7}`).** Per-n record
+(872/5906) and committed canonical index
+(`upstream5906_canon_index.tsv`, 84 classes). n=6 path regression-checked:
+rebuilt index byte-identical to the committed one, specimens still gate
+as rediscoveries, default invocation unchanged. Self-test: all 84 n=7
+reps gate as rediscoveries (exit 0), 5907s report over-record.
+
+**Built — n=7 structure census
+(`analysis/counting/upstream5906_structure.py` →
+`upstream5906_structure.tsv`).** T0 general identity holds 87/87
+(verify_identity.py, exit 0). The L0 map:
+
+| allocation (S, #w3) | classes |
+|---|---|
+| (844, 17) | 61 (73%) |
+| (838, 23) | 9 |
+| (840, 21) | 9 |
+| (842, 19) | 2 |
+| (836, 25) | 2 |
+| **(843, 18)** | **1 — Kristan's, alone** |
+
+All pure-w3 (no w4+, no intra) — cleaner than n=6's 8-allocation map
+with its w4/w5 bearers. Waste 860 = (S−1)+#w3 throughout; the 5907s sit
+at (858, 4): treelike, door-sparse, sojourn-heavy — a different design
+regime entirely. **Kristan's class sits exactly one S↔door unit-trade
+from the dominant shell — the same edit that forms n=6's one natural
+edge (143,5)↔(142,6).**
+
+**Sweeps (all local, minutes each — the n=7 corpus is 87 files, not
+22,062).** Anchor bands scaled by perm count: 4905/5040 ≈ n=6's
+585/720 (~136-perm tails), 4840 ≈ 520 (~200), 4770 ≈ 450 (~270).
+
+- **I1 reorder: block-order-optimal corpus-wide at every band** —
+  4905, 4840/b40, 4770/b50 (84+3 walks each, 0 improved, 0 skipped).
+  The 5907s are also block-order-optimal (an improvement there would
+  have been a new 5906).
+- **Ties (4905, 4840): 0 cross-allocation ties.** The 6 allocation
+  shells are S1-disconnected in these bands — at n=6 the one edge
+  surfaced at 520-band depth; here NOTHING surfaces by ~200 perms.
+- **Merge (4905: 595 moves; 4840: 1,141; 4770: 1,778): 0 improved, 0
+  equal-cost completions at any band.** Stricter than n=6, where the
+  520 band produced the specimen-pair rediscovery. **The Kristan
+  unit-trade is NOT realizable as a single tail merge within the last
+  ~270 perm visits of any known 5906.** If that edge exists it lives
+  deeper — or the two shells arose by genuinely disjoint construction.
+- **Recomp-1 full corpus at 4905 (5.6 min, 87 walks): 199,391 moves, 0
+  improved, 0 new-allocation equals, 97,446 equal-cost same-allocation
+  (49% — the same dense-but-closed shell as n=6's 48%).** All 174
+  emitted samples (2/walk, the complete emission) gate through
+  `m3_check -n 7` as rediscoveries of their own source class. 4840-band
+  probe (4 walks, 51.7 s/walk): same verdict, sweep queued.
+
+**Reading: the engine generalizes; so does the wall.** Every
+instrument built for n=6 ran at n=7 unchanged and returned the same
+closure picture: locally dense (half of all recompositions are free)
+but closed (every product is a known class, no shell edge anywhere).
+With an 18-char record-to-bound gap (5906 vs LB 5888) versus n=6's 3,
+the negative space is telling us the same thing at both n: known
+records are not single-edit-adjacent to anything new in their tails.
+The n=7 differences worth exploiting: 6 shells not 8, pure-w3
+vocabulary, a 61-class dominant shell, an unpaired 1-class shell
+(Kristan's), and the 5907s' (858,4) treelike regime as a structurally
+different seed population.
+
+**Queued (SWEEP-QUEUE, both pending approval):** n=7 recomp-4840 full
+(~75 min single-core; farm binary needs NO reship — e286355 already
+has --recomp and n-generic support) and the n=7 deep-seam probe
+(merge+ties at 4600, self-sizing).
+
+**Next session, concretely (s34):**
+- **Decode the twoCycles extension sets** (the corpus-completeness
+  hole): map the set-of-tuples notation onto the tree-like
+  kernel+2-cycle construction, materialize the implied 5906s, re-index.
+  The n=6 lesson says the known corpus may be orders of magnitude
+  bigger than 84 classes — every closure law gains power with corpus
+  size.
+- **Multi-move tier design doc** (handoff menu item 2, standing
+  directive: design before code) — now with the n=7 numbers in hand:
+  compound-edit budgets from the conservation law at both n.
+- Fold the operator's `a585recomp` n=6 result when done; the two n=7
+  queue entries if approved.
+- Still open: ip=1 study, per-allocation NRPA/beam, Track C overhead.
+
 ## 2026-07-30 (session 32) — Tie census folded and the CLOSURE PICTURE written (SURGERY-DESIGN §"closure picture"): **the 8 allocation shells are S1-disconnected except for exactly ONE edge — the natural (143,5)↔(142,6) pair — and (144,4)/ip=1 are NEVER reached**; every local move now agrees the corpus is closed (splice, reorder ≤270 perms, merge ≤200, ties, recomp sampled) ⇒ an 871 is a COMPOUND edit or diverges before ~depth 450; fresh-agent handoff written (`docs/HANDOFF-S32.md`, supersedes S28)
 
 Documentation/synthesis session at Andrew's request: fold the operator's

@@ -12,6 +12,11 @@
 # s28 natural cross-allocation surgery pair (docs/SURGERY-DESIGN.md §2.3-2.4),
 # the tail-atsp --ties oracle control; pinned by src/tailatsp.rs tests.
 !/data/surgery_specimens/
+# s33 n=7 corpus: 84 known 5906 classes + 3 urdvr 5907s (~530 KB total —
+# unlike the 22,062-class n=6 archive, small enough to commit; makes every
+# n=7 sweep reproducible from a fresh clone; see upstream5906_dump.py).
+!/data/upstream5906/
+!/data/upstream5907/
 *.jsonl
 .DS_Store
 __pycache__/

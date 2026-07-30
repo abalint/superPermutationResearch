@@ -173,3 +173,32 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
 - next band (NOT run — needs approval, > 30 min tier): ties at anchor 450 /
   ≤ 50 blocks. Extrapolating the 6.4× tie overhead onto the measured 2.0
   s/walk plain rate gives ~13 s/walk → **~3.5–4 h wall even on 24 cores**.
+
+## n=7 recomp, 4840 band (~200-perm tails) — first deep n=7 recomposition sweep
+- spec: `cargo run --release --quiet -- tail-atsp -n 7 --dirs data/upstream5906,data/upstream5907 --anchor 4840 --max-blocks 40 --recomp --quiet --out-dir data/surgery_finds`
+- product: extends the s33 n=7 recomposition-closure law from the 4905 band
+  (~136-perm tails, 199,391 moves, closed) to ~200-perm tails; alarm paths:
+  any improvement = 5905/5906-candidate (exit 2 → validate + `m3_check -n 7`),
+  any new-allocation equal = first instrument-created n=7 cross-allocation
+  walk (the Kristan-seam watch: does (844,17)→(843,18) ever appear?).
+- projected: measured 4-walk probe (round-robin not needed at 87 files) =
+  51.7 s/walk → **~75 min single-core on the Mac**. Farm alternative: 24-way
+  sharding is overkill for 87 files; if the farm is idle after `a585recomp`,
+  6-way sharding ≈ 13 min (binary: the e286355 reship already has --recomp
+  and n=7 support — NO new reship needed, no Rust changed in s33).
+- approved: NO
+- status: pending
+- result: —
+
+## n=7 deep-seam probe: merge+ties at anchor 4600 (~440-perm tails)
+- spec: probe first: `cargo run --release --quiet -- tail-atsp -n 7 --dirs data/upstream5906 --anchor 4600 --max-blocks 60 --merge --ties --tie-cap 256 --limit 8 --quiet --out-dir data/surgery_finds`
+- product: the s33 negative (0 equal-cost merges, 0 cross-allocation ties at
+  4905/4770 bands) says the (844,17)↔(843,18) Kristan unit-trade — the n=7
+  analog of the n=6 natural pair — is NOT realizable in the last ~270 perms.
+  This probes whether it (or any S1/S−1 shell edge) appears by ~440 perms.
+- projected: unknown — block counts grow fast below 4770; the probe itself
+  sizes the band (that is its point). If probe > 5 min/walk, stop and report
+  instead of sweeping.
+- approved: NO
+- status: pending
+- result: —

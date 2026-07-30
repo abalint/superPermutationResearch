@@ -297,6 +297,18 @@ cargo run --release -- tail-atsp -n 6 --dirs data/upstream872 --anchor 520 --max
 # equal-cost completions are ~48% of moves and (sampled) all equivalent-to-known:
 cargo run --release -- tail-atsp -n 6 --dirs data/upstream872 --anchor 585 --recomp --quiet --out-dir out/
 
+# s33 n=7 corpus (committed: data/upstream5906 = 84 known 5906 classes incl. Kristan's,
+# data/upstream5907 = 3 urdvr 5907s; rebuild: analysis/counting/upstream5906_dump.py).
+# The whole instrument ladder is n-generic — anchor bands scale by perm count
+# (4905/5040 ~ n=6's 585/720; 4840 ~ 520; 4770 ~ 450). s33 laws: block-order-optimal
+# at all 3 bands; 0 cross-allocation ties; 0 equal-cost merges (stricter than n=6);
+# recomp-closed at 4905 (199,391 moves, 49% equal-cost, all rediscoveries):
+cargo run --release -- tail-atsp -n 7 --dirs data/upstream5906,data/upstream5907 --anchor 4905 --recomp --quiet --out-dir data/surgery_finds
+python3 analysis/counting/upstream5906_structure.py    # L0 census: 6 pure-w3 allocations, Kristan's (843,18) alone
+# M3 gate is n-generic since s33 — EVERY n=7 candidate <=5906 (caveat: index = published
+# strings only; the twoCycles extension-set files are NOT decoded yet):
+python3 analysis/counting/m3_check.py -n 7 <candidate.txt>
+
 # s26 structural recombination (docs/RECOMB-DESIGN.md; src/recomb.rs + src/unionsearch.rs):
 cargo run --release -- recomb -n 6 --dirs data/records872,data/gain1_872s --emit-dir data/hybrids872   # 0.25s; pins: 298 closure walks, 2 hybrids
 # union-edge DFS — enumeration mode truncates at any feasible budget (design §8.2); --tt = decision/optimality mode:
