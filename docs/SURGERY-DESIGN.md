@@ -309,6 +309,32 @@ caveat stated always). Split moves (6→3|3 etc., 3–6 rotations per
 cycle) and door demotion enter only as compensating moves for net-0
 targets — staged behind the merge sweep's verdict.
 
+### The closure picture (s30–s32 sweep verdicts, read together)
+
+Every exact single-edit instrument has now swept the corpus, and they
+agree. With the fixed caveats stated once here (anchored tails only;
+single edits; recomposition class-novelty sampled, not exhaustive —
+full sweep queued):
+
+| move type | band swept | moves | product |
+|---|---|---|---|
+| S1 reorder (I1) | ≥ 450 (~270-perm tails) | all orders, exact | 0 improvements |
+| S1 ties | ≥ 520 | all equal-cost orders | **1** cross-allocation 872 — the specimen pair |
+| S−1 merge (I2a) | ≥ 520 | 488,350 | 0 improvements; **1** equal 872 — the same pair |
+| recomp-1 (I2a) | ≥ 585 (probes, 138 walks) | ~175k | 0 improvements; 48% equal-cost, all sampled M3-known |
+| S1 ties, deep | ≥ 585 | full corpus | 0 cross-allocation ties (the known one sits at 580) |
+| splice (s26b) | whole walks | full braid | closed up to symmetry |
+
+**The known-872 corpus is closed under every local move built so far,
+and the 8 allocation shells are connected by exactly ONE edge — the
+(143,5)↔(142,6) door-demotion the natural pair performs.** (144,4) is
+never reached; no ip=1 allocation is ever reached; the equal-length
+shell is locally dense (half of all recompositions re-complete at 872)
+but every sampled product is a known class. An 871 therefore differs
+from every known 872 by a COMPOUND edit — at least two coordinated
+recompositions (the census conservation law fixes the budget arithmetic)
+— or by divergence earlier than the anchorable zone (~depth 450).
+
 ### I2b — grammar re-cover (staged behind I2a)
 
 Unchanged from §5 (sojourn-dfs from a mid-walk state under target

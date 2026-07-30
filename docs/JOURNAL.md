@@ -6,6 +6,54 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 32) — Tie census folded and the CLOSURE PICTURE written (SURGERY-DESIGN §"closure picture"): **the 8 allocation shells are S1-disconnected except for exactly ONE edge — the natural (143,5)↔(142,6) pair — and (144,4)/ip=1 are NEVER reached**; every local move now agrees the corpus is closed (splice, reorder ≤270 perms, merge ≤200, ties, recomp sampled) ⇒ an 871 is a COMPOUND edit or diverges before ~depth 450; fresh-agent handoff written (`docs/HANDOFF-S32.md`, supersedes S28)
+
+Documentation/synthesis session at Andrew's request: fold the operator's
+tie-census results, write the closure analysis, prepare the handoff.
+No code changes; 133 tests stay green.
+
+**Folded — tie census (operator, farm runs `a585ties`/`a520ties` +
+probes; SWEEP-QUEUE has the ledgers).** Probe first killed a fear: tie
+collection costs only 4.7–6.4× the plain sweep (6.6 ms/walk at 585,
+0.26 s/walk at 520), not the feared blowup. Full corpus, both bands:
+
+- Anchor ≥ 585: **0 new-allocation ties** in 22,062 walks (nearly
+  vacuous in hindsight — the one known tie sits at anchor 580, just
+  below the cut; the deeper band was the real question).
+- Anchor ≥ 520: **exactly 1 new-allocation tie corpus-wide** —
+  `872.up-0105a4b77ce8` (143,5) → (142,6), and it m3-gates as
+  equivalent to `872.up-b020caf20414`: **the committed specimen pair,
+  again**. The reached-allocation histogram is one cell, one member.
+
+**The synthesis (now SURGERY-DESIGN §"closure picture", read that
+table):** three independent move types — S1 reordering (ties), the S−1
+merge, and (sampled) single-cycle recomposition — each produce exactly
+zero improvements and at most one cross-allocation product over the
+full corpus, and it is the SAME natural pair every time. Combined with
+splice-closure and block-order-optimality to ~270-perm tails: **the
+known-872 corpus is closed under every local move built so far; the
+allocation shells are connected by exactly one edge; (144,4) and every
+ip=1 target are unreachable by single edits of known tails.** The
+missing character requires a compound edit (≥ 2 coordinated
+recompositions — the s29 conservation law fixes each target's budget)
+or a divergence earlier than the anchorable zone (~depth 450). This is
+the sharpest negative space the project has had: the 871, if it
+exists, is now known NOT to be adjacent to anything we hold.
+
+**Handoff — `docs/HANDOFF-S32.md`** (supersedes HANDOFF-S28):
+five-sentence state of the world, the engine-first premise, the
+instrument stack, the s32+ work menu (n=7 corpus assembly first, then
+the multi-move design pass, the two unapproved queue entries, the
+untouched ip=1/NRPA/Track-C-overhead items), and the trap list
+(launch protocol, farm reship, alphabetical bias, calibrated-vs-proven,
+equal-cost flood semantics, cap-at-target, RAM ceiling, session
+ritual). CLAUDE.md reading order now fronts it.
+
+**Next session, concretely (s33):** the handoff's menu item 1 — n=7
+corpus assembly and the first n=7 tail sweeps (the engine-generality
+test with an 18-char gap); item 2 (multi-move design pass,
+measurements first) if sweeps queue-block.
+
 ## 2026-07-30 (session 31) — Recomp-1 BUILT (`tail-atsp --recomp`, the COMPLETE single-cycle recomposition move — subsumes merge, adds splits/repartitions/entry rotations/1|5 arcs); both farm sweeps folded (a450b50: block-order-optimality extends to ~270-perm tails, 22,062/22,062; a520b40merge: 488,350 merge moves, the ONLY completion is the specimen-pair rediscovery); recomp probes at anchor 585: **~175k moves over 138 walks — 0 improvements, 0 new-allocation equals, but the shell is DENSE under same-allocation repartition (48% of moves complete at equal cost) and a 60-sample M3 batch says ALL are equivalent-to-known** — tentative law: the corpus is RECOMPOSITION-CLOSED at the 585 band
 
 Research-agent session under the new engine-first premise (ROADMAP
