@@ -54,7 +54,8 @@ PER_N = {
 # files are skipped (fresh clones have them committed).
 SUPPLEMENTARY = {
     6: [],
-    7: ["novel5906_canon_index.tsv"],
+    7: ["novel5906_canon_index.tsv",
+        "novel5906b_canon_index.tsv"],  # s44 loop-swap discoveries
 }
 
 

@@ -127,17 +127,23 @@ def deepest_shared(wa, oa, wb, ob, d_hi):
 
 
 def load_known_edges(n):
-    """Undirected natural-move edges from the committed i4a censuses."""
+    """Undirected natural-move edges from the committed censuses:
+    i4a (cover-preserving rules, s41) + loop-swap (s44)."""
     here = os.path.dirname(os.path.abspath(__file__))
     fn = "i4a_sym_edges_n7.tsv" if n == 7 else "i4a_sym_edges.tsv"
-    path = os.path.join(here, "..", "..", "data", "i4a_products_sym_rev", fn)
+    paths = [
+        os.path.join(here, "..", "..", "data", "i4a_products_sym_rev", fn),
+        os.path.join(here, "..", "..", "data", "loopswap",
+                     f"lswap_sym_edges_n{n}.tsv"),
+    ]
     edges = set()
-    if os.path.exists(path):
-        with open(path) as f:
-            next(f)
-            for line in f:
-                _, a, b, _ = line.rstrip("\n").split("\t")
-                edges.add(frozenset((a, b)))
+    for path in paths:
+        if os.path.exists(path):
+            with open(path) as f:
+                next(f)
+                for line in f:
+                    _, a, b, *_ = line.rstrip("\n").split("\t")
+                    edges.add(frozenset((a, b)))
     return edges
 
 

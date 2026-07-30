@@ -351,3 +351,25 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
 - approved: NO
 - status: pending
 - result: —
+
+## n=6 loop-swap conjugated sweep, EXPANDED rule table (30 shallow-tier rules) — local, ~2 h
+- spec: `python3 analysis/counting/loopswap_apply.py apply-sym -n 6 --rules data/loopswap/rules_n6_a360.tsv --dirs data/upstream872 --out data/loopswap/products_n6_expanded --skip-rules 9a9c0f8835c0,47c49d109d2f,7a94c5053e55`
+- product: closure (or novel n=6 classes) under the 30 loop-swap rules
+  extracted from the shallow tail-conjugacy tiers (≥360 shared perms)
+  that are NOT covered by the already-swept 3 deep rules (those ran s44
+  local: 7.0M replays, 0 novel, 9,654 edges). At n=7 the expanded-table
+  sweep produced **60 novel 5906 classes from one shallow-tier rule** —
+  this is the same question at n=6, where the corpus is 240× bigger and
+  the deep tier alone was closed. Alarm paths: any product < 872 (M3
+  ritual, drop everything); any NOVEL class (auto-written + bannered,
+  re-gate with m3_check).
+- projected: dry-run MEASURED (s44): 31,174,285 candidate replays for
+  the 30 rules (vs 7.0M for the deep 3, which took ~20 min end-to-end
+  local). At the measured ~5.8k replays/s: ~90 min replay + ~8 min
+  index build ≈ **~2 h local single-core**; RAM ~1.5 GB (fits beside
+  normal work). Two rules dominate (5.6M candidates each — the 5-entry
+  atoms); `--skip-rules` can defer them for a 3× cheaper first pass if
+  preferred.
+- approved: NO
+- status: pending
+- result: —

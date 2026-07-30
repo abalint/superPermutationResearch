@@ -6,6 +6,122 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 44) — the loop-swap move is EXECUTABLE and it is the most productive instrument the project has built: entry-level extraction collapses the s43 vocabulary to a handful of rigid rules (n=6: **3** directed rules explain all 108 deep pairs AND 1,226 of 1,230 shallow-tier pairs; the swap = exactly **n−1 entry replacements per swapped loop**, doors untouched), the oracle re-derives **1,300/1,300 extractable pairs byte-identically**, the conjugated n=6 sweep is CLOSED but multiplies the natural-move graph ~90× (9,654 undirected edges, 54% of the 22,062-class archive touched), and at n=7 ONE shallow-tier rule (`ab88abce72ba`, a pure 4-loop swap from a single 409-shared-perm pair) generates **102 NOVEL 5906 classes — the record shell grows 92 → 194** (fixed point at iteration 4: 60→34→8→0; every product validator-complete and M3-novel; 5 known allocations, no new allocation; R-K7 closed over all of them) — and the enlarged corpus's tail-conjugacy census explodes to **1,520 NEW pairs** (was 93), so a second generation of rules is sitting there un-extracted
+
+The s43 handoff's work-menu item 1, executed end-to-end, plus items 2
+and 3's shallow tiers at entry level. New instrument:
+`analysis/counting/loopswap_apply.py` (I5) — extract / oracle /
+apply-sym modes. All local Python; the one >30 min item went to
+SWEEP-QUEUE instead of being run.
+
+**The applier design (why it works).** In i4a replay coordinates a
+tight walk = deterministic replay of (start perm, per-cycle entry
+sets, door list). The s43 anatomy says deep pairs have ALL doors
+identical, and each pair's aligned frame (orientation + tail
+relabeling, `tail_pair_anatomy.aligned_strings`) shares at least one
+head perm — so both sides replay from the SAME start and the A→B edit
+is pure entry-set replacement: rule = (entries removed, entries
+added, door edits), literal perms, extracted by diffing the two
+aligned structures. Replay only ever tests membership of perms on the
+current cycle, so a FLAT entry set is equivalent to the per-cycle
+dict — walks compress to (frozenset of perm-ids, door dict, start id)
+and the conjugated sweep runs instance-major over an inverted posting
+index (entry perm → walks), progressive intersection per instance.
+That turns the i4a-style walk-major sweep (~50 h at this rule count)
+into minutes-to-tens-of-minutes locally.
+
+**Extraction + oracle (the collapse).** Every anatomized pair
+extracts and re-derives its partner BYTE-IDENTICALLY (edit + replay):
+108/108 n=6 deep (≥400 perms), 1,230/1,230 n=6 shallow (≥360; the
+other 4 of 1,234 share no head perm — unextractable in this frame,
+the only gap), 70/70 n=7 (≥256, including the four door-changing
+composites and the 82-loop "distant relatives"). Structure of the
+edits: |entries replaced| = (n−1) × (loops swapped), EXACTLY, in
+every door-identical pair at both n (n=6: 5·k for k=1..6; n=7: 6·k
+for several k); the four n=7 door-changing pairs are composites with
+a ±6-entry asymmetry matching their 3-out/9-in door diff
+(allocation-crossing seams, R-K7-flavored). Canonicalized over all
+n! relabelings the vocabulary COLLAPSES: n=6 deep tier = 3 directed
+rules (self-reverse; `9a9c0f8835c0` alone covers 104/108 pairs in
+both directions and spans 12 of the 14 s43 signatures — the
+14-signature census was counting context shadows: rotor compositions
+depend on the carrier's shared entries, not the move), n=6 full ≥360
+tier = 33 directed rules (`9a9c0f` covers 1,115 pairs = 91%), n=7
+full tier = 81 directed rules. Committed:
+`data/loopswap/rules_n{6,7}*.tsv` (rule tables with provenance),
+`data/tailconj/tail_pairs_n6_a{300,360}.tsv` (the shallow censuses:
+445 and 1,237 pairs). NOT confirmed: the big rules are cycle-CONNECTED
+(mostly 1-out/1-in per cycle, ~12 shared + 6 one-sided cycles), not
+disjoint unions of the 1-loop atom — the 5·k count is structural, not
+compositional.
+
+**n=6 conjugated sweep: CLOSED, but the move graph is transformed.**
+The 3 deep rules × 720 relabelings × 44,124 walk-orientations = 7.0M
+surviving-precondition replays (99.4% replay-killed —
+replay-sufficiency ≫ precondition, one tier up, again), 0 novel, 0
+shorter, and **38,616 firings survive as rediscovery edges: 9,654
+undirected class pairs, touching 11,937 of the 22,062 classes**
+(`data/loopswap/lswap_sym_edges_n6.tsv`). All 108 source pairs
+re-found (cross-validation). Graph shape: 3,909 components, largest
+44 — no giant component; adding the old i4a cover-preserving edges
+changes almost nothing (they're nearly redundant against the swap
+tier). The 30 shallow-only rules were dry-run sized at **31.2M
+candidate replays ≈ 2 h local** → queued in SWEEP-QUEUE (pending
+approval), not run. (144,4) re-ask: swaps are allocation-preserving
+and the archive is closed, so the answer at this vocabulary is a
+clean negative.
+
+**n=7: the discovery event.** The 81-rule conjugated sweep over the
+92-class published corpus: all 31 deep source pairs re-found + 1 new
+edge (a 375-perm shallow pair — deep rules fire below their
+extraction tier), and **60 products that are validator-complete
+5906s and M3-NOVEL vs published + our own 8**. Iterating on each
+round's novels (frontier-only sweeps): +34, then +8, then 0 —
+**fixed point at iteration 4, 102 novel classes total**, ALL from the
+single rule `ab88abce72ba` (602/602 provenance rows) — a pure 4-loop
+swap (24 entries, zero door edits) extracted from ONE shallow-tier
+pair sharing 409 perms. Archive: `data/novel5906b/` (102 walks,
+NOTE.md, provenance.tsv), canon index registered in m3_check
+SUPPLEMENTARY (the M3 gate now covers them). Allocations: (844,17)×82,
+(838,23)×12, (839,22)×4, (840,21)×3, (842,19)×1 — five KNOWN
+allocations, none new (the rule preserves its source's allocation).
+Conjugated R-K7 over all 102: closed, 4 undirected edges, all
+INTERNAL to the new classes (none connect back to the old corpus).
+The record shell is now **194 classes / 8 allocations**.
+
+**The next front is already visible.** Tail-conjugacy census over the
+enlarged 194-class corpus (anchor 4840): **1,561 colliding pairs,
+1,520 NEW** vs the (updated) natural-move graph — versus 102/93 on
+the 92-class corpus — with pairs sharing up to 4,363/5,040 perms
+(86% of the walk, deeper than the old rule edges at 2520). Committed:
+`data/tailconj/tail_pairs_n7_a4840_194.tsv`. Second-generation rule
+extraction from these pairs is the obvious next multiplier and is
+NOT done. (`tail_conjugacy_census.load_known_edges` now also loads
+the committed loop-swap edge TSVs, so KNOWN-EDGE annotations include
+the swap tier.)
+
+**Caveats.** (1) The 102 are gated against the CURRENT published
+corpus + our archives; re-verify against upstream at publication time
+(only Andrew decides). (2) The 4 unextractable n=6 shallow pairs
+(no shared head perm) mark the aligned-frame limit — a start-perm-
+free rule form would cover them. (3) The n=6 expanded sweep and any
+second-generation n=7 extraction are UNRUN; do not quote n=6 shallow
+closure. (4) Signature ≠ rule, still: equal entry-level rules across
+different signatures is the collapse direction; the firing condition
+remains replay (99%+ of preconditioned firings die).
+
+**Next session, concretely (s45).** (1) **Second-generation n=7
+extraction**: extract + oracle rules from the 1,520-pair census of
+the 194-class corpus, dedupe against the 81 known rules, sweep to
+fixed point — if one first-generation rule made 102 classes, this is
+the highest-expected-value instrument in the project. (2) The queued
+n=6 expanded sweep (~2 h, needs approval). (3) Publication decision
+on the 102 (Andrew; PR #50 precedent — re-pull upstream and re-gate
+first). (4) n=6 second generation: after (2), census the enlarged
+n=6 graph the same way. (5) Still open: run-losing-pair anatomy,
+R-compound/R-unit lift to n=7, M-4b/M-4d, ip=1, per-allocation
+NRPA/beam, Track C v2 overhead.
+
 ## 2026-07-30 (session 43b) — cross-length tail-conjugacy is a clean NEGATIVE: the 5906 record shell does not tail-connect to the 5907 shell (work-menu item 3 closed)
 
 `--all` over all 95 n=7 walks (92 published 5906s + 3 urdvr 5907s):

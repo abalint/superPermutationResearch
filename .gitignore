@@ -47,3 +47,10 @@ __pycache__/
 !/data/novel5906/
 # s41 conjugated-rule edge census (the natural-move graph of the n=6 corpus)
 !/data/i4a_products_sym_rev/
+# s44 loop-swap tier: entry-level rule tables + conjugated-sweep edge censuses
+# (~1.6 MB, dominated by the 19k-row n=6 edge TSV; makes I5 reproducible)
+!/data/loopswap/
+# s44 I5 discoveries: 102 novel 5906 classes (UNPUBLISHED — Andrew decides;
+# NOTE.md has provenance + verification; gate index
+# analysis/counting/novel5906b_canon_index.tsv is in m3_check SUPPLEMENTARY)
+!/data/novel5906b/
