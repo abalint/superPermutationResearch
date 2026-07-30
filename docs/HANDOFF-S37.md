@@ -1,4 +1,4 @@
-# Handoff — the s38+ front (fresh agent, start here)
+# Handoff — the s38+ front — SUPERSEDED by HANDOFF-S38.md (kept as history)
 
 Supersedes `HANDOFF-S32.md`. Read JOURNAL s33–s37 for the full story;
 this is the two-page version with entry points and traps.

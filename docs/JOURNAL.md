@@ -42,6 +42,14 @@ three `ops:` commits). What each run settles:
 (round-robin probe first, reshipped binary `bdc9625` already on the
 PC) and the 450-band probe-only entry.
 
+**Handoff refreshed (s38c):** `docs/HANDOFF-S38.md` written (supersedes
+HANDOFF-S37) — the midgame-order front as work-menu item 1, the
+as-built instrument stack, the new traps (block ceiling binds at n=7;
+single-walk probe bias; §10.8 wins over §10.4 where they disagree;
+extraction is provably lossy — don't re-hope it), and the cold-start
+reading order. CLAUDE.md, OPS-BACKGROUND-AGENT.md and
+RESEARCH-AGENT-S29.md repointed.
+
 ## 2026-07-30 (session 38) — I3 BUILT (`tail-atsp --recomp2`, SURGERY-DESIGN §10.8) and its first measurement KILLS the extraction hope: **the natural 2-compound is NOT expressible at anchored reach — extraction AND absorption of the `126354`@181 part both price exactly +6 over equal (the part is entered by a w2 edge; any local seam repair re-spells a full window), while nature's compound enters both whole-6s through w3 doors that exist only under a globally different midgame order** — the compound tier lives in midgame ORDER, not midgame depth (M-2b′ sharpened; the s24 blocked zone indicted a third time, now at certificate level); first sweeps: A side @520 = 111,216 exact re-solves, **zero equal-cost completions of any kind**, zero Λ violations, 6 min/walk; n=7 @4840 = 75,201 solves, 89 s/walk, zero events — the whole-corpus n=7 sweep (~2.2 h) is queued
 
 Rust session; 139 tests green (133 + 6 new pins); clippy/fmt clean.

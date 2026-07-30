@@ -8,14 +8,15 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S37.md` right after it** — state of the
-   world, the engine-first premise, the s38 build spec pointers, traps, and the
-   session-end ritual in two pages (supersedes HANDOFF-S32).
+   **Fresh agent: read `docs/HANDOFF-S38.md` right after it** — state of the
+   world, the engine-first premise, the midgame-order front, traps, and the
+   session-end ritual in two pages (supersedes HANDOFF-S37).
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
-   `docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; s29 ran the
-   recomposition census — its §9 has the M-R laws and the I2a merge-move
-   design; the s30 front is the I2a build)**;
+   `docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; §9 has the M-R laws;
+   §10 is the compound tier: s38 built I3 `--recomp2` and §10.8 records its
+   as-built truth + the oracle refutation — the open front is the
+   midgame-order design question, HANDOFF-S38 item 1)**;
    `docs/RECOMB-DESIGN.md` (s26, §8 outcomes + §8.4a recalibration) for
    what closed before it, and `docs/TRACKB-DESIGN.md` for the underlying
    Track B frame (its M3/§7 carry s26 corrections inline; §2 L1 carries
