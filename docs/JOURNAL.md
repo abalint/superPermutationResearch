@@ -6,6 +6,50 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 36) — M-2 co-occurrence census RUN (`analysis/trackb/recomp_cooccur.py`, 1,071 controlled pairs, 7 s): **T5 is dead (zero bulk joint-locality: used-loop 14.2% vs null 14.4%), but nature exhibits exactly TWO minimal 2-compounds and they are the SAME object mirrored — (145,3)↔(143,5), the two LARGEST shells (S1-disconnected per s32), bridged by two merges + two door promotions on the SAME two cycles `126354`(2|4↔6) + `123654`(3|3↔6) with the same part entries, recurring across independent controlled pairs** — the compound tier's existence proof, its first pinned oracle, and a hard anchor-reach constraint: the compound's parts span depths 181–718, so `--recomp2` at anchor ≥ 520 could NEVER find it — the compound tier lives across the midgame (the same band s24 indicted)
+
+Continuation session (same day as s33–s35). Python only; 133 tests
+green. Design doc updated in place: SURGERY-DESIGN §10.6 (M-2 results,
+revising §10.3–10.5 where measured).
+
+**Built — `recomp_cooccur.py`** (imports recomp_census machinery; walk
+cache): M-2a locality flags per recomposed-cycle pair (static 2-loop
+sharing, USED 2-loop sharing, w2 adjacency, door links, depth
+distance) against a non-recomposed tail-cycle-pair null; M-2b
+minimal-flux table; M-2c unit-pair autopsies. Pairs TSV regenerated
+with `surgery_pairs.py 150` (54 s, not committed — regeneration is one
+command).
+
+**Verdicts (each now in SURGERY-DESIGN §10.6):**
+- **M-2a: no bulk locality.** 389,218 recomposed-cycle pairs sit at
+  the null on every measure; static-loop sharing is actually BELOW
+  null (20.3% vs 38.2%). The canceling flux is delocalized — T5 has
+  no support; I3 prunes are T1–T4 only.
+- **M-2b: the minimal-compound population is different.** recomps=2
+  pairs: 2 (both |net|=|ΔS|=2, both (145,3)×(143,5), both the same
+  two cycles + entries, cycle pair locally linked 1/1); recomps=6/8
+  pairs: ~40% local. Minimal compounds are local and SPECIFIC —
+  exactly like the s29 unit trade, the natural 2-compound is one
+  recurring object.
+- **M-2b′: anchor reach.** Parts at depths 181–718 ⇒ the compound
+  tier is invisible to deep-anchored tail instruments; --recomp2
+  needs anchor ~180 (measure block counts first) or straddling-cycle
+  support. This RESOLVES why the closure picture holds while shells
+  are provably compound-connected.
+- **M-2c: 12 unit-type controlled pairs** (4 deep = clean single-seam
+  `135462`, as s29 said; 8 shallow bundle it with 6–11 canceling
+  events).
+- **New pinned oracle for the I3 build:** from `55088ebb4107`
+  ((145,3)), anchor ≤ 180, the two merges must re-derive
+  `d141177d85e1`'s class at equal length (mirror from `00c66faaa43f`).
+
+**Next session, concretely (s37):** staging step 2 — T1/T2/T4 prune
+factors + block-count measurement at anchor ~180 on the 8 n=6
+specimens (is exact block-ATSP even feasible at ~540-perm tails? if
+not, the I3 design pivots to straddling-cycle support at moderate
+anchors before any build); fold `a585recomp` when the operator lands
+it; the two n=7 queue entries if approved.
+
 ## 2026-07-30 (session 35) — Multi-move tier DESIGNED (SURGERY-DESIGN §10: I3 = `tail-atsp --recomp2`, pair compounds with prune tiers T1 budget / T2 vocabulary / T3 admissible price / T4 Λ-neutrality / T5 co-occurrence, M-2 measurement pass specced BEFORE build per the standing directive) on top of a NEW conservation law found while designing: **the loop-count relation `L = S + #doors − ((n−1)!−1)`** — equivalently `length = n! + (n−1)! + (n−3) + Λ`, `Λ = L + Σ(w−3)·heavy doors` — **exceptionless on 22,062 n=6 872s (Λ=29: pure-w3 classes L=29, the 397 single-w4 L=28, the 18 double-w4 L=27), 4 off-shell 873s (Λ=30, incl. a wild 23-door allocation), and all 87 n=7 walks (Λ=142/143)** ⇒ one char = one Λ-unit: an 871 is a Λ=28 object, a 5905 is Λ=141, and NO Λ-neutral edit can shorten a walk — the cheap new prune for every compound enumerator
 
 Continuation session (same day as s33/s34). No Rust changes; 133 tests

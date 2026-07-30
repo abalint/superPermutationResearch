@@ -469,3 +469,53 @@ Anti-goals: no k ≥ 3 compounds until k = 2 is swept closed; no learned
 ordering inside I3 (Track C stays quarantined until its overhead fix);
 no vocabulary widening and no ip=1 moves here (ip=1 remains I2b/grammar
 territory — a compound of recompositions cannot express it).
+
+### 10.6 M-2 RESULTS (s36 — measured; revises 10.3–10.5 where noted)
+
+`analysis/trackb/recomp_cooccur.py` over the regenerated 1,071
+controlled pairs (`surgery_pairs.py 150`; ~7 s):
+
+- **M-2a — NO bulk joint locality; T5 is DEAD as designed.** Over
+  389,218 recomposed-cycle pairs: used-loop sharing 14.2% vs null
+  14.4%, w2-adjacency 7.3% vs 7.0%, door links 0.1% both, depth
+  distance slightly WIDER than null, static-loop sharing BELOW null
+  (20.3% vs 38.2%). The canceling bulk flux is delocalized (M-R4
+  extended to pairs). T5 as a locality prior has no measured support
+  — I3 relies on T1–T4 only.
+- **M-2b — nature exhibits exactly TWO minimal 2-compounds, and they
+  are the SAME object mirrored.** The recomps=2 controlled pairs
+  (both |net| = |ΔS| = 2, both between (145,3) and (143,5) — the two
+  LARGEST shells, which the s32 tie census proved S1-disconnected):
+  `55088ebb4107×d141177d85e1` (anchor 180) and
+  `00c66faaa43f×138d980ad903` (anchor 228) recompose the SAME two
+  cycles with the SAME part entries — `126354` (2|4↔6, entries
+  354126/263541) and `123654` (3|3↔6, entries 541236/236541) — two
+  merges + two door promotions. As with the s29 unit trade, the
+  natural 2-compound is ONE specific recurring object, not a family.
+  And its cycle pair IS locally linked (1/1 in both) — minimal
+  compounds are local even though bulk flux is not (recomps=6/8 pairs:
+  ~40% local vs 14% bulk).
+- **M-2b′ — anchor-reach constraint (revises 10.4).** The natural
+  compound's parts sit at depths 181–718: an in-tail pair enumerator
+  anchored at ≥ 520 could never have found it. --recomp2 must either
+  run at anchors ~180 (block counts permitting — measure first) or
+  handle straddling cycles (one part in-tail, one in-prefix), which
+  single-edit I2a deliberately excluded. This is the concrete reason
+  the closure picture holds: the compound tier lives across the
+  midgame, exactly where s24 located the ranking failure.
+- **M-2c — the unit-pair set widens 4 → 12.** All 12 (142,6)×(143,5)
+  controlled pairs confirm the s29 story at depth ≥ 250 (single seam
+  cycle `135462`); the 8 shallower ones bundle the unit trade with
+  6–11 canceling recompositions — more evidence that only the deep
+  pairs isolate minimal edits.
+- **New pinned control for the I3 build (extends 10.4 controls): the
+  natural-compound oracle.** From `872.up-55088ebb4107` ((145,3)) with
+  anchor ≤ 180, --recomp2 applying the two merges on `126354` and
+  `123654` must re-price to exactly equal length and re-derive
+  `872.up-d141177d85e1`'s class ((143,5)) — nature's 2-compound,
+  driven by the instrument. (Mirror: `00c66faaa43f` from the (143,5)
+  side.)
+- **Target arithmetic unchanged:** the natural compound is
+  equal-length (net −2, +2 doors); an 871 needs net −1 at fixed doors
+  (or net 0 with a demotion) — I3 searches a vocabulary nature uses,
+  toward budgets nature doesn't exhibit. State this in every verdict.
