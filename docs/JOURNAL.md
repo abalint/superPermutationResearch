@@ -6,6 +6,73 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (session 29) — Recomposition census over 1,071 controlled pairs (I2's design inputs, SURGERY-DESIGN §9): NEW conservation law **net splits = ΔS exactly, 1,071/1,071 pairs** (composition diffs fully account for the sojourn trade); vocabulary is 6 edit types inside {6, 2|4, 3|3, 2|2|2} — 1|5 NEVER naturally recomposed; junction pricing rigid (~96% of 28,664 events at one extra w2 per extra part; every deviation is a door entering the recomposed cycle); doors are DELOCALIZED from recompositions (39/43 tail doors land elsewhere) with recurring targets — the (142,6)↔(143,5) unit trade is ONE specific object (same cycle `135462` recomposed, same door `w3→135426` demoted, all four natural pairs); I2a designed = the merge-move instrument (single tail-cycle merge + exact block-ATSP re-solve → the S−1 waste-146 edit directly)
+
+Research-agent session per `docs/RESEARCH-AGENT-S29.md`; the queued
+sweeps (anchor-450, tie census) remain pending Andrew's go-ahead, so
+this session did the unblocked flagship: the I2 design measurement pass.
+No Rust changes; tests stay green (129).
+
+**Built — `analysis/trackb/recomp_census.py` + `recomp_doors.py`.**
+A controlled pair = two walks byte-identical to a shared depth
+(`surgery_pairs.py`, re-run at min-depth 250 → the 11 s28 pairs, then
+150 → **1,071 pairs covering 11 of 28 allocation-pair types**; (141,7)
+has none at depth ≥ 150, so 1|5 edits stay unmeasured). Full-walk
+per-cycle composition diff, junction pricing, net-split accounting,
+door locality. 28,664 recomposition events censused.
+
+**The findings are SURGERY-DESIGN §9 (M-R1..M-R7), headline four:**
+
+- **Conservation (M-R2):** net splits over recomposed cycles = ΔS
+  exactly, zero violations in 1,071 pairs — an I2 edit toward any
+  target allocation has a known net-split budget (−1 for every S−1
+  waste-146 target).
+- **Vocabulary (M-R1):** 6 edit types, compositions closed over
+  {6, 2|4, 3|3, 2|2|2}. I2 branches over 4 compositions per cycle,
+  not 545 profiles.
+- **Rigid pricing (M-R3):** ≈96% of events price at exactly one extra
+  w2 entry per extra part; ALL deviations are door-couplings.
+  Composition edits are cost-predictable before search.
+- **Door delocalization + recurrence (M-R4):** doors move on their own
+  cycles (39/43 off the recomposed set), and surplus door targets
+  recur across unrelated pairs — every (140,6,1) side spends
+  `w4→145623, w3→{142563, 142356, 156423}`; the unit trade always
+  demotes `w3→135426` and recomposes `135462`.
+
+**Correction to s28's §2.4 reading:** the (142,6)↔(143,5) unit trade is
+NOT composition-preserving — the full-walk diff shows exactly one
+recomposed cycle, the anchor-SEAM cycle (the in-tail autopsy was blind
+to it). S1 block reordering can recompose exactly the seam cycle and
+nothing else (the entry merge); that is why the tie oracle crossed the
+allocation boundary. Interior recomposition (the w4 pairs: 14–29
+cycles, net 5) is strictly I2 territory. Also: natural pairs are far
+from minimal edits (median 28 recomposed cycles for net ≤ 5, M-R5) —
+whether a MINIMAL net−1 edit can complete is exactly I2's question,
+and nature doesn't answer it either way.
+
+**Designed — I2a, the merge-move instrument (SURGERY-DESIGN §9).** For
+each tail cycle with a split composition, merge it whole and re-solve
+the block ATSP exactly: net −1 part = the S−1 unit edit = waste 146 =
+**an 871 candidate directly**. One move tier on top of I1, per-solve
+cost ≈ I1's; verdict semantics mirror §4 (any −1 completion → M3
+ritual; none corpus-wide → "no single-merge 871 within anchored
+tails", caveat always). Split/demote moves staged behind its verdict;
+I2b (grammar re-cover under target caps) stays staged for the ip=1
+targets.
+
+**Next session, concretely (s30):**
+- **Build I2a** (`tail-atsp --merge` or a sibling subcommand): merge
+  enumeration + modified-block ATSP; controls: n=5 records must admit
+  NO improving merge (proven optimum), the unit-pair seam must
+  round-trip (merging the (143,5) split re-derives the (142,6) partner
+  at equal cost), HK cross-check on modified block sets. Then the
+  corpus sweep at anchor ≥ 585 (≈ 15× I1's 23 s — minutes) and ≥ 520.
+- **Still queued for Andrew:** the anchor-450 I1 sweep (3.5 h) and the
+  tie-census probe/full run (SWEEP-QUEUE.md).
+- **Still open:** the ip=1 ε-rollout study; per-allocation NRPA/beam
+  over `data/frontiers_s28/`; (141,7) pair hunt at shallower depth if
+  1|5 edits ever matter.
+
 ## 2026-07-29 (session 28b) — Surgery instrument I1 BUILT same-day (`src/tailatsp.rs` + `tail-atsp` CLI): the tie oracle re-derives the (142,6) partner of the natural specimen pair from its (143,5) side BYTE-IDENTICALLY (full pipeline proven across an allocation boundary); NEW corpus law from two full sweeps — **every one of the 22,062 known 872 classes is block-order-optimal at anchor ≥ 585 (23 s) AND at anchor ≥ 520 / ≤ 40 blocks (875 s), 0 improvements** — the missing char is NOT won by reordering ≤ 200-perm tails
 
 Same-day continuation of s28: with SURGERY-DESIGN.md written, I1 was

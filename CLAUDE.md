@@ -12,8 +12,9 @@ planned learned value function.
    it** — entry points, traps, and the session-end ritual in two pages.
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
-   `docs/SURGERY-DESIGN.md` (s28: cross-class surgery designed from corpus
-   evidence; the s29 front is its §4 `tail-atsp` build + corpus sweep)**;
+   `docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; s29 ran the
+   recomposition census — its §9 has the M-R laws and the I2a merge-move
+   design; the s30 front is the I2a build)**;
    `docs/RECOMB-DESIGN.md` (s26, §8 outcomes + §8.4a recalibration) for
    what closed before it, and `docs/TRACKB-DESIGN.md` for the underlying
    Track B frame (its M3/§7 carry s26 corrections inline; §2 L1 carries

@@ -227,3 +227,92 @@ shells are under S1 alone), then the I2 design pass per §5.
 - **Don't sweep anchors in the tablebase zone** (last ~25 perms, s9) or
   past the ~40-block ceiling; both waste exactness where it's already
   spent or can't be had.
+
+## 9. s29 measurement pass — the recomposition census (I2's design inputs)
+
+Scripts: `analysis/trackb/recomp_census.py` (full-walk per-cycle
+composition diff over controlled pairs, junction pricing, net-split
+accounting), `analysis/trackb/recomp_doors.py` (door locality). A
+controlled pair = two walks byte-identical to a shared depth
+(`surgery_pairs.py`), so every composition diff is attributable to the
+tails and both tails re-cover the SAME residual set. Sample: 11 deep
+pairs (anchor ≥ 250) and the widened 1,071-pair set (anchor ≥ 150,
+11 of the 28 allocation-pair types; (141,7) — the only 1|5-bearing
+allocation, 4 classes — has no pair at depth ≥ 150 and is unmeasured).
+28,664 recomposition events total. Findings, each a design constraint:
+
+- **M-R1 (vocabulary).** Exactly 6 edit types occur: 6↔2|4 (17,202),
+  6↔3|3 (8,797), 2|4↔3|3 (2,295), 2|2|2↔6 (218), 2|2|2↔2|4 (131),
+  2|2|2↔3|3 (21). Compositions stay inside {6, 2|4, 3|3, 2|2|2} —
+  **1|5 never participates in a natural recomposition.** I2's per-cycle
+  move set is 4 compositions, not the 545-profile universe.
+- **M-R2 (conservation).** Net splits over recomposed cycles = ΔS
+  **exactly, 1,071/1,071 pairs**. Composition diffs fully account for
+  the sojourn-count trade; doors balance the waste identity on top. So
+  an I2 edit toward a target allocation has a KNOWN net-split budget:
+  S_target − S_anchor (e.g. −1 for every S−1 waste-146 target).
+- **M-R3 (rigid junction pricing).** Per event, the junction-weight
+  delta is modal at 2× the part difference — one extra w2 entry per
+  extra part — in ≈96% of events (16,630/17,202 at −2 for 6↔2|4;
+  8,407/8,797 for 6↔3|3; 215/218 at −4 for 2|2|2↔6; 2,199/2,295 at 0
+  for 2|4↔3|3). Every deviation is a door entering a part of the
+  recomposed cycle. Composition edits are cost-predictable BEFORE
+  search; doors are the only pricing wildcard.
+- **M-R4 (door delocalization + target recurrence).** In the 11 deep
+  pairs, 39 of 43 tail doors land on cycles that are NOT recomposed —
+  door edits and composition edits are separable moves. And surplus
+  door targets recur across unrelated pairs of the same allocation
+  type: every (140,6,1) side spends `w4→145623, w3→142563, w3→142356,
+  w3→156423`; every (142,6)×(143,5) unit pair demotes `w3→135426` and
+  recomposes the SAME cycle `135462` (second part re-entered at
+  `213546`, all four pairs). The unit trade is one specific recurring
+  object, not a family.
+- **M-R5 (natural ≠ minimal).** Median 28 recomposed cycles per
+  controlled pair (max 40) against net budgets ≤ 5 — opposite-direction
+  events mostly cancel. Nature does not exhibit minimal edits; whether
+  a MINIMAL edit (net −1 in one or few events) can complete at all is
+  exactly the open question I2 tests.
+- **M-R6 (spread).** 114/120 cycles participate corpus-wide; no global
+  concentration (top cycle 514/28,664). Per-family concentration is
+  real (M-R4) but I2 cannot restrict its cycle set a priori. (The 6
+  never-recomposed cycles are opening-trunk cycles covered inside the
+  shared prefixes — a control artifact, not structure.)
+- **M-R7 (entry reuse, partial).** In ~65% of events the coarser
+  side's part-entry perms are a subset of the finer side's — split
+  points prefer to reuse the whole cover's entry — but 35% introduce
+  new entries. I2 must allow new entry perms (door-atlas edges), with
+  reuse as a search-order heuristic, not a constraint.
+
+**Also sharpened by this pass (corrects §2.4's reading):** the
+(142,6)↔(143,5) unit trade is NOT composition-preserving. The full-walk
+diff shows exactly ONE recomposed cycle — the anchor-seam cycle, whose
+entry merge/split is the S±1 — which the in-tail autopsy could not see.
+Block reordering reaches it because reordering changes which block
+merges with the prefix sojourn: **S1 can recompose exactly the seam
+cycle and nothing else.** That is why the tie oracle crossed the
+allocation boundary, and why interior recompositions (the w4 pairs,
+14–29 cycles) are strictly I2 territory.
+
+### I2a — the merge-move instrument (build first)
+
+The cheapest I2 move with a direct 871 payoff: for each (walk, anchor),
+for each tail cycle covered with a SPLIT composition (both parts inside
+the tail; straddling cycles need a shallower anchor), merge it whole —
+replace its parts with one 6-block (entry at either part's entry, exit
+re-priced) — and re-solve the block-order ATSP exactly on the modified
+block set. Net −1 part = the S−1 unit edit = **waste 146 = an 871
+candidate** if the ATSP completes at tail cost −1. This extends I1 with
+one move tier while keeping exactness; per-solve cost ≈ I1's. Verdict
+semantics mirror §4: any completion at −1 → M3 ritual; none corpus-wide
+→ "no single-merge 871 within anchored tails" (vocabulary-and-anchor
+caveat stated always). Split moves (6→3|3 etc., 3–6 rotations per
+cycle) and door demotion enter only as compensating moves for net-0
+targets — staged behind the merge sweep's verdict.
+
+### I2b — grammar re-cover (staged behind I2a)
+
+Unchanged from §5 (sojourn-dfs from a mid-walk state under target
+caps), now with measured bounds: branching from M-R1's 4 compositions,
+budget pruning from M-R2, cost model from M-R3. Required for the ip=1
+targets, which no composition edit can express (i2 is a move-class
+change, not a recomposition).
