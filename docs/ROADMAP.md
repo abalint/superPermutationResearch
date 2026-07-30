@@ -1,5 +1,31 @@
 # Roadmap
 
+## Premise (Andrew, 2026-07-29 — governs everything below)
+
+This is an **engineering project: build the best superpermutation engine
+possible.** New minimum lengths are how the engine is *validated*, not
+the terminus. Concretely:
+
+- A first 871 is a great result — and then the engine finds MORE 871s,
+  then attacks 870. A single find is a proof of the engine, not a
+  finish line.
+- The engine must generalize to higher n: the same move generators,
+  bounds, exact solvers, laws, and (eventually) evaluator, applied at
+  n=7 and beyond to find new minimum lengths there.
+- We keep tuning until the game is fully solved (found lengths meet
+  proven lower bounds, remaining candidates proven impossible) or taken
+  to its maximal conclusion.
+
+Consequences for prioritization: instruments are built n-generic and
+composable, not as one-off n=6 probes; negative results are engine
+components (pruning laws), not dead ends; Track C's evaluator is core
+engine architecture (the chess analogy is literal: move generation +
+search + evaluation + tablebases + the corpus as an opening book +
+a tuning loop), parked only until its overhead blocker is cut; and
+every n=6 instrument that matures should be pointed at the n=7 corpus,
+where the record-to-bound gap (5906 vs 5888) is far wider than n=6's
+(872 vs 869).
+
 ## Phase 1 — search infrastructure & baselines (n ≤ 5 testbed)
 
 - [x] Permutation overlap graph: lex ranking, weight-w successor generation, 1-cycle decomposition
