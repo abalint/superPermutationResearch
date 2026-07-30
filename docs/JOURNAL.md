@@ -6,6 +6,22 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 44b) — the 102 are SUBMITTED: superpermutators/superperm PR #51 (Andrew's go), following the PR #50 pattern
+
+Community master re-pulled (unchanged since PR #50 — our gate index
+was current), then the full pre-submission double-check on all 102:
+validator-complete, novel vs all 92 published classes AND mutually
+inequivalent (canon-sha re-derived, filename-consistent), 142 distinct
+2-cycles each. Files staged as
+`superpermutations/7/7_5906_derived_<sha12>.txt` (one line + trailing
+newline, byte-verified against `data/novel5906b/`), branch
+`102-new-5906s` on the fork, PR body in community language
+(sojourns/weight-3 links; the 409-perm source pair; the 60→34→8→0
+closure; five existing profiles; 92→194 count). NOTE.md updated to
+SUBMITTED. If merged, the published corpus becomes 194 classes — the
+s45 second-generation extraction should then treat the whole 194 as
+published sources when re-gating.
+
 ## 2026-07-30 (session 44) — the loop-swap move is EXECUTABLE and it is the most productive instrument the project has built: entry-level extraction collapses the s43 vocabulary to a handful of rigid rules (n=6: **3** directed rules explain all 108 deep pairs AND 1,226 of 1,230 shallow-tier pairs; the swap = exactly **n−1 entry replacements per swapped loop**, doors untouched), the oracle re-derives **1,300/1,300 extractable pairs byte-identically**, the conjugated n=6 sweep is CLOSED but multiplies the natural-move graph ~90× (9,654 undirected edges, 54% of the 22,062-class archive touched), and at n=7 ONE shallow-tier rule (`ab88abce72ba`, a pure 4-loop swap from a single 409-shared-perm pair) generates **102 NOVEL 5906 classes — the record shell grows 92 → 194** (fixed point at iteration 4: 60→34→8→0; every product validator-complete and M3-novel; 5 known allocations, no new allocation; R-K7 closed over all of them) — and the enlarged corpus's tail-conjugacy census explodes to **1,520 NEW pairs** (was 93), so a second generation of rules is sitting there un-extracted
 
 The s43 handoff's work-menu item 1, executed end-to-end, plus items 2
