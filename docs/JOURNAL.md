@@ -111,10 +111,11 @@ pure-w3, T0 waste identity 92/92** — (844,17)=61, (838,23)=9,
 (840,21)=9, **(839,22)=6 NEW, all novel**, (842,19)=2, (836,25)=2,
 **(835,26)=2 NEW, all novel**, (843,18)=1 (Kristan).
 `analysis/counting/upstream5906_structure.tsv` refreshed 87→95 rows.
-The script's docstring said "84 classes / 6 allocations" — corrected,
-logic untouched, and the usage note now spells out that the committed
-TSV needs all three dirs passed explicitly (the bare default still
-covers only the stale 84, which is a live clobber trap).
+The script's docstring said "84 classes / 6 allocations" — corrected.
+Its bare-default dirs were also still the pre-s41 pair, so a no-arg run
+would have silently regenerated the committed TSV back down to the
+stale 84 (**s42b**: fixed — the default is now all three dirs, and a
+bare run reproduces the committed 95-row TSV byte-identically).
 
 **Reading.** Work-menu item 1 is DONE in one session and every
 instrument agrees: the 8 discoveries are ordinary citizens of the
@@ -128,8 +129,11 @@ all three of our detectors are exhausted on it simultaneously, and for
 three different reasons.
 
 **Ritual notes:** no Rust touched (Python-only session, no farm
-reship); `out/` and job-dir artifacts deliberately NOT committed (`out/`
-is untracked, not ignored — check `git status` before any `git add -A`).
+reship); `out/` and job-dir artifacts deliberately NOT committed —
+`out/` turned out to be merely untracked rather than ignored, so a
+`git add -A` would have swept the whole job tree in (**s42b**: `/out/`
+added to `.gitignore`; nothing under it was ever tracked). Results that
+matter get promoted into `/data/` or `/analysis/`; `out/` is disposable.
 The n=7 edge census is committed alongside the n=6 one; the refreshed
 structure TSV, the two `i4a_apply.py` fixes and the docstring fix are
 in the same commit. `cargo test --release` green (139), clippy

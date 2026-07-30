@@ -18,11 +18,10 @@ R-K7 off-shell from a (840,21)/(836,25) source. The three 5907s sit at
 (858,4): treelike, door-sparse, sojourn-heavy.
 
 Usage: python3 upstream5906_structure.py [dir ...]
-       The committed TSV covers the WHOLE published n=7 corpus, which
-       since s41 spans two dirs — regenerate with all three explicitly:
-       python3 upstream5906_structure.py data/upstream5906 \\
-           data/novel5906 data/upstream5907
-       (bare default: data/upstream5906 data/upstream5907 = the stale 84)
+       (default: data/upstream5906 data/novel5906 data/upstream5907 —
+       the whole published n=7 corpus, which has spanned two 5906 dirs
+       since s41/PR #50; a bare run regenerates the committed TSV
+       byte-identically)
 """
 import os
 import sys
@@ -64,7 +63,11 @@ def fmt_hist(h):
 
 def main():
     dirs = sys.argv[1:] or [
+        # s42: the published n=7 corpus spans TWO dirs since s41 (PR #50).
+        # The bare default must cover the whole of it, or a no-arg run
+        # regenerates the committed TSV back down to the stale 84.
         os.path.join(ROOT, "data", "upstream5906"),
+        os.path.join(ROOT, "data", "novel5906"),
         os.path.join(ROOT, "data", "upstream5907"),
     ]
     rows = []

@@ -2,6 +2,10 @@
 /target-analysis
 # operator agent's run logs + pid files (docs/OPS-BACKGROUND-AGENT.md)
 /logs/
+# scratch output of analysis runs (sweep products, ladder samples, edge dumps).
+# Results that matter get PROMOTED into /data/ or /analysis/ and committed
+# there; /out/ itself is disposable and must never be swept in by `git add -A`.
+/out/
 /data/*
 # s26 splice-closure hybrids (docs/RECOMB-DESIGN.md §8.1): results, tiny, committed.
 !/data/hybrids872/
