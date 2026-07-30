@@ -67,13 +67,16 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   landing in a different L0 allocation measure how connected the
   allocation shells are under S1 alone — does (144,4) or any ip=1
   target EVER appear?)
-- projected: unmeasured; tie collection weakens B&B pruning (strict-only)
-  so this may be much slower than the plain sweep — that is what the
-  probe measures. Abort the probe itself if it passes 15 min.
-- approved: NO (probe is < 30 min tier, but Andrew declined the first
-  launch attempt s28b — confirm with him before running anything here).
-- status: pending
-- result: —
+- projected: **MEASURED — the fear was wrong.** Farm probe `probe585ties`
+  (24×40 = 960 walks): 6.3 core-s = **6.6 ms/walk**, only 4.7× the plain
+  anchor-585 sweep, not the 100× that "tie collection weakens B&B pruning"
+  suggested. Deeper band `probe520ties` (960 walks): 247 core-s =
+  **0.26 s/walk**, 6.4× the plain anchor-520 sweep.
+- approved: YES (Andrew, 2026-07-30 — "run it")
+- status: **done** (both bands, farm runs `probe585ties` / `probe520ties`)
+- result: 585 band: 960 walks, 0 ties. 520 band: 960 walks, **1 new-allocation
+  tie** — so the deeper band is where the question lives, and the full census
+  below was run at both.
 
 ## I2a merge sweep, anchor 520 (full corpus)
 - spec: `cargo run --release --quiet -- tail-atsp -n 6 --dirs data/upstream872 --anchor 520 --max-blocks 40 --merge --quiet --out-dir data/surgery_finds`
@@ -120,7 +123,30 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
 - spec: as probe, without `--limit`, `--out-dir data/surgery_finds`
 - product: corpus-wide new-allocation tie count + reached-allocation
   histogram (S1 shell-connectivity map; SURGERY-DESIGN §8 next-step).
-- projected: probe × 220 — fill in after the probe.
-- approved: NO
-- status: pending (blocked by probe)
-- result: —
+- projected: 585 band ~150 core-s (<1 min wall); 520 band ~5,700 core-s
+  (~6 min wall on 24 cores).
+- approved: YES (Andrew, 2026-07-30 — "run it")
+- status: **done** — farm runs `a585ties` (0.5 min wall) and `a520ties`
+  (5.6 min wall / 1.8 core-hours), both 24 workers, 0 skipped, no alarm.
+- result: **The allocation shells are S1-disconnected except for the one edge
+  nature already made.**
+  - anchor ≥ 585: `22,062 walks, 22,062 block-order-optimal, 0 improved,
+    0 skipped, 0 new-allocation ties`. Expected in hindsight and nearly
+    vacuous: the one tie known to exist (the s28b oracle) sits at anchor 580,
+    just BELOW this cut — which is why the deeper band was run.
+  - anchor ≥ 520 / ≤ 40 blocks: `22,062 walks, 0 improved, 0 skipped,
+    **1 new-allocation tie**`. The single tie is
+    `872.up-0105a4b77ce8` (143,5,0,0) → **(142,6,0,0)**, and it gates as a
+    rediscovery: validator complete 872, `m3_check` **exit 0 — equivalent to
+    known class 872.up-b020caf20414**. That is the committed specimen pair
+    again, found from the full corpus instead of a hand-picked anchor.
+  - So the reached-allocation histogram over 22,062 classes is one cell with
+    one member. **(144,4) is never reached; no ip=1 target is ever reached** —
+    consistent with "no known 872 uses a priced skip". Read alongside the
+    `a520b40merge` result, this is the same conclusion by a second, independent
+    move type: S1 reordering AND the S−1 merge each produce exactly one
+    cross-allocation product corpus-wide, and it is the same known pair.
+  - Copy of the find + gate output: `data/farm_finds/a520ties/`.
+- next band (NOT run — needs approval, > 30 min tier): ties at anchor 450 /
+  ≤ 50 blocks. Extrapolating the 6.4× tie overhead onto the measured 2.0
+  s/walk plain rate gives ~13 s/walk → **~3.5–4 h wall even on 24 cores**.
