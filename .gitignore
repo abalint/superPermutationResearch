@@ -3,6 +3,10 @@
 /data/*
 # s26 splice-closure hybrids (docs/RECOMB-DESIGN.md §8.1): results, tiny, committed.
 !/data/hybrids872/
+# s27 per-allocation grammar specimens: one community class representative per
+# specimen-backed L0 allocation (the full 22,062-class archive stays local in
+# /data/upstream872/), pinned by tests/alloc_grammar.rs.
+!/data/upstream872_specimens/
 *.jsonl
 .DS_Store
 __pycache__/

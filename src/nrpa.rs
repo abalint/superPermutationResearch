@@ -45,6 +45,9 @@ pub struct NrpaCfg<'g, 'm> {
     pub g: &'g Graph,
     pub caps: ClassCaps,
     pub profile: Option<SplitProfile>,
+    /// Restrict weight-3/4/5 doors to untouched cycles (see
+    /// [`Grammar::fresh_doors`]; corpus-calibrated, off by default).
+    pub fresh_doors: bool,
     /// Nesting depth (1 = adapt over plain rollouts; 2–3 typical).
     pub level: u32,
     /// Iterations per nesting level (`iters^level` rollouts total).
@@ -437,7 +440,8 @@ impl Ctx<'_, '_, '_> {
 
 /// Run NRPA; deterministic given the config.
 pub fn nrpa_search(cfg: &NrpaCfg) -> NrpaResult {
-    let grammar = Grammar::new(cfg.g, cfg.caps, cfg.profile.clone());
+    let mut grammar = Grammar::new(cfg.g, cfg.caps, cfg.profile.clone());
+    grammar.fresh_doors = cfg.fresh_doors;
     let mut ctx = Ctx {
         grammar,
         rng: StdRng::seed_from_u64(cfg.seed),
@@ -522,6 +526,7 @@ mod tests {
             g: &g,
             caps: generous_caps_n4(),
             profile: None,
+            fresh_doors: false,
             level: 2,
             iters: 10,
             adapt_alpha: 1.0,
@@ -552,6 +557,7 @@ mod tests {
             g: &g,
             caps: generous_caps_n4(),
             profile: None,
+            fresh_doors: false,
             level: 1,
             iters: 6,
             adapt_alpha: 1.0,
@@ -590,6 +596,7 @@ mod tests {
                 ip: 10,
             },
             profile: None,
+            fresh_doors: false,
             level: 2,
             iters: 10,
             adapt_alpha: 1.0,
@@ -629,6 +636,7 @@ mod tests {
                 ip: 0,
             },
             profile: Some(SplitProfile::records_n6()),
+            fresh_doors: false,
             level: 1,
             iters: 2,
             adapt_alpha: 1.0,
@@ -661,6 +669,7 @@ mod tests {
             g: &g,
             caps: generous_caps_n4(),
             profile: None,
+            fresh_doors: false,
             level: 1,
             iters: 4,
             adapt_alpha: 1.0,

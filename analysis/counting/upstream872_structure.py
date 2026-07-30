@@ -8,6 +8,17 @@ per-cycle split profile — the quantities every Track B scoping decision
 was calibrated to on the biased 296-sample.
 
 Usage: python3 analysis/counting/upstream872_structure.py data/upstream872 [out.tsv]
+           [--alloc-profiles alloc.tsv] [--profiles-dir dir]
+
+--alloc-profiles: per-allocation composition census (s26c consequence 1):
+    for each specimen-backed L0 allocation, every observed per-cycle
+    composition with its cycle-visit count and the number of classes it
+    appears in. This is the data the per-allocation sojourn grammar
+    loads instead of the hard-coded records profile.
+--profiles-dir: additionally write one grammar-consumable profile file
+    per allocation (one composition per line, parts space-separated),
+    named a<S>_<d3>_<d4>_<d5>_<ip>.txt — the --profile-file input of
+    `sojourn-dfs` / `nrpa`.
 """
 import os
 import sys
@@ -81,8 +92,18 @@ def census(s):
     }
 
 def main():
-    d = sys.argv[1]
-    out = open(sys.argv[2], "w") if len(sys.argv) > 2 else None
+    argv = list(sys.argv[1:])
+    alloc_profiles_path = profiles_dir = None
+    if "--alloc-profiles" in argv:
+        i = argv.index("--alloc-profiles")
+        alloc_profiles_path = argv[i + 1]
+        del argv[i:i + 2]
+    if "--profiles-dir" in argv:
+        i = argv.index("--profiles-dir")
+        profiles_dir = argv[i + 1]
+        del argv[i:i + 2]
+    d = argv[0]
+    out = open(argv[1], "w") if len(argv) > 1 else None
     if out:
         out.write("file\tS\td3\td4\td5\tip\tmult\twaste_ok\n")
     alloc = Counter()
@@ -91,6 +112,11 @@ def main():
     bad_waste = []
     intra_hi = 0
     alloc_example = {}
+    # per-allocation composition census: visits, classes containing,
+    # and distinct whole-walk profiles
+    alloc_comp_visits = defaultdict(Counter)
+    alloc_comp_classes = defaultdict(Counter)
+    alloc_profiles = defaultdict(set)
     files = sorted(f for f in os.listdir(d) if f.endswith(".txt"))
     for f in files:
         s = open(os.path.join(d, f)).read().strip()
@@ -101,6 +127,10 @@ def main():
         mults[c["mult"]] += 1
         profiles[c["profile"]] += 1
         intra_hi += c["intra_hi"]
+        alloc_profiles[key].add(c["profile"])
+        for comp, cnt in c["profile_c"].items():
+            alloc_comp_visits[key][comp] += cnt
+            alloc_comp_classes[key][comp] += 1
         if not c["waste_ok"]:
             bad_waste.append(f)
         if out:
@@ -121,6 +151,40 @@ def main():
     for p, n in profiles.most_common(5):
         pretty = ", ".join(f"{'|'.join(map(str, t))}×{c}" for t, c in sorted(p))
         print(f"  {n} classes: {pretty[:120]}")
+    print("\nper-allocation composition census "
+          "(allowed-set = union over the allocation's classes):")
+    for k, _ in alloc.most_common():
+        comps = alloc_comp_visits[k]
+        pretty = ", ".join(
+            f"{'|'.join(map(str, comp))}×{comps[comp]}"
+            for comp in sorted(comps, key=lambda c: -comps[c])
+        )
+        print(f"  S={k[0]} d3={k[1]} d4={k[2]} d5={k[3]} ip={k[4]}: "
+              f"{len(comps)} compositions, {len(alloc_profiles[k])} whole-walk "
+              f"profiles over {alloc[k]} classes\n    {pretty[:160]}")
+    if alloc_profiles_path:
+        with open(alloc_profiles_path, "w") as ap:
+            ap.write("S\td3\td4\td5\tip\tclasses\tcomposition\t"
+                     "cycle_visits\tclasses_with\n")
+            for k, _ in alloc.most_common():
+                for comp in sorted(alloc_comp_visits[k],
+                                   key=lambda c: -alloc_comp_visits[k][c]):
+                    ap.write(f"{k[0]}\t{k[1]}\t{k[2]}\t{k[3]}\t{k[4]}\t"
+                             f"{alloc[k]}\t{'|'.join(map(str, comp))}\t"
+                             f"{alloc_comp_visits[k][comp]}\t"
+                             f"{alloc_comp_classes[k][comp]}\n")
+        print(f"\nwrote {alloc_profiles_path}")
+    if profiles_dir:
+        os.makedirs(profiles_dir, exist_ok=True)
+        for k in alloc:
+            name = f"a{'_'.join(map(str, k))}.txt"
+            with open(os.path.join(profiles_dir, name), "w") as pf:
+                pf.write(f"# n=6 allocation S={k[0]} d3={k[1]} d4={k[2]} "
+                         f"d5={k[3]} ip={k[4]} — union of compositions over "
+                         f"{alloc[k]} community classes (s27 census)\n")
+                for comp in sorted(alloc_comp_visits[k]):
+                    pf.write(" ".join(map(str, comp)) + "\n")
+        print(f"wrote {len(alloc)} profile files to {profiles_dir}")
     if out:
         out.close()
 

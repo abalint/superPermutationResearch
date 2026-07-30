@@ -12,10 +12,13 @@ planned learned value function.
 3. The active design doc named by the journal's latest entry — **currently
    `docs/RECOMB-DESIGN.md` (s26, read §8 outcomes + §8.4a recalibration FIRST)
    for what just closed, and `docs/TRACKB-DESIGN.md` for the underlying Track B
-   frame (its M3/§7 carry s26 corrections inline).** The s27 front is defined
-   by JOURNAL s26c "Consequences queued": per-allocation grammar + cross-class
-   door pricing from the 918 non-records specimens. ARCHITECTURE.md's "Track B
-   implementation map" says where each task lands in the code.
+   frame (its M3/§7 carry s26 corrections inline; §2 L1 carries the s27
+   per-allocation-profile update).** s27 landed the per-allocation grammar
+   (profiles from census data, corpus-validated 22,062/22,062) + the
+   fresh-doors corpus law; the s28 front is JOURNAL s27 "Next session":
+   cross-class surgery design on the 918 non-records specimens,
+   per-allocation M2, the ip=1 targets, M3 re-scope. ARCHITECTURE.md's
+   "Track B implementation map" says where each task lands in the code.
 4. `docs/ARCHITECTURE.md` — code map: modules, data structures, extension points.
 5. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 
@@ -86,12 +89,28 @@ w4-bearing 872s EXIST; 8 Vlad cells in 1:1 correspondence (his 11 tests
 pass corpus-wide; s20's 'single cell' was sample bias); 545 split profiles
 (grammar hard-codes 1) and split types 1|5, 5|1 exist (4 classes); the
 community corpus is SPLICE-CLOSED up to symmetry (5 closure walks, all
-equivalent to known).** NEXT = re-scope Track B to the 8 specimen-backed
-allocations (grammar caps/profile per allocation; the 918 non-records
-classes are the cross-class surgery specimens we thought didn't exist),
-union-restricted BEAM (width sidesteps DFS's shallowest-divergence-last
-pathology), warm-depth curriculum → M3 verdict (now judged vs the 22,062
-classes up to equivalence); cheap closure probes queued: perfect-ride ATSP
+equivalent to known).** **s27 landed the re-scope:
+per-allocation grammars are DATA (`analysis/trackb/profiles/a*.txt` from the
+census, `--profile-file` on sojourn-dfs/nrpa, `SplitProfile::from_file`), the
+new `grammar-check` subcommand replays any string through a class grammar
+(`Grammar::replay` public), and ALL 22,062 community classes replay 719/719
+through their own allocation's grammar (29 s; 8 specimens committed at
+`data/upstream872_specimens/`, 3 pins in `tests/alloc_grammar.rs`). NEW
+corpus law (door-pricing census, `upstream872_door_pricing.py`): every
+weight≥3 door in every known 872 opens an UNTOUCHED cycle (66,999/66,999) —
+the opt-in `--fresh-doors` cap (calibrated, not a theorem); −10%/−20%
+opening classes at exact d=6 on (145,3)/(143,5), and (143,5) exact d=6 now
+completes (22M nodes, 28 s). Door placement: records-class w3 doors are
+bimodal opening/endgame, extra doors of other allocations are MIDGAME
+(levels ~60–450, the blocked zone); w4 strictly midgame. Waste-146 map
+(`alloc_neighbors.py` → `waste146_neighbors.tsv`): every anchor is 1 unit
+edit (S−1 merge or d3−1 demotion) from an open 871 allocation — all 13
+distance-1 targets are s11-subregion-closed (871 must leave the certificate
+grammar), and 3 distance-2 targets need ip=1, which NO known 872 uses.**
+NEXT (s28) = cross-class surgery design (braid-diff (143,5) vs (145,3)
+neighbors around the extra midgame doors), per-allocation M2 +
+union-restricted BEAM, the ip=1 targets, M3 re-scope vs the 22,062 classes;
+cheap closure probes queued: perfect-ride ATSP
 (closes all 616 S=120 live classes). Track B downgraded-not-retired s20 (Vlad's preliminary
 a(6)=872 claim; n=6 window unconditionally still {869..872}); n=7 5905
 campaign survives (his conditional a(7) ≥ 5896 is δ≤11 vs our δ=21 bar);
@@ -228,6 +247,13 @@ cargo run --release -- atlas -n 6 > raw.tsv && python3 analysis/trackb/door_atla
 cargo run --release -- rollouts -n 6 --count 100 --epsilon 0.15 --seed 0 --out f.jsonl --strings f.strings  # rollout strings for T0
 # L2 opening DFS on the records' class; --dedup exact = sound (d<=6), abstraction+--exemplars = book mode (M2 config):
 cargo run --release -- sojourn-dfs -n 6 --class 145,3,0,0,0 --records-profile --depth 10 --dedup abstraction --exemplars 16
+# s27 per-allocation grammars: profile files are census data (regenerate with upstream872_structure.py
+# --profiles-dir); --fresh-doors = corpus law (all heavy doors open untouched cycles), calibrated not proven:
+cargo run --release -- sojourn-dfs -n 6 --class 143,5,0,0,0 --profile-file analysis/trackb/profiles/a143_5_0_0_0.txt --depth 6 --dedup exact --fresh-doors --max-nodes 30000000
+# grammar-check: replay strings through a class grammar (forward-renumbers; exit 0 iff all replay fully):
+cargo run --release -- grammar-check -n 6 --class 141,7,0,0,0 --profile-file analysis/trackb/profiles/a141_7_0_0_0.txt data/upstream872_specimens/872.up-6dbae421a839.txt
+python3 analysis/counting/upstream872_door_pricing.py data/upstream872     # door-position/freshness census (s27 law)
+python3 analysis/trackb/alloc_neighbors.py                                  # waste-146 targets vs the 8 anchors
 # T3 (s23) — frontier seed dump + multi-seed completion beam (C1/C2 pipeline; residual is the best completion bound):
 cargo run --release -- sojourn-dfs -n 6 --class 145,3,0,0,0 --records-profile --depth 6 --dedup exact --dump-frontier f.tsv --dump-per-class 16
 cargo run --release -- beam -n 6 --width 8000 --seed-file f.tsv --bound residual --endgame 20 --endgame-top 400

@@ -1,0 +1,6 @@
+# n=6 allocation S=140 d3=8 d4=0 d5=0 ip=0 — union of compositions over 10 community classes (s27 census)
+2 2 2
+2 4
+3 3
+4 2
+6

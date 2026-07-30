@@ -6,6 +6,96 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-29 (session 27) — Per-allocation grammar SHIPPED and corpus-validated (all 22,062 classes replay 719/719 through their allocation's caps+profile grammar); NEW corpus law from the door-pricing census: **every weight≥3 door opens an untouched cycle** (66,999/66,999 events → `--fresh-doors` cap, −10/−20% opening classes); waste-146 neighbor map: every anchor is ONE unit edit from an open 871 allocation, and three distance-2 targets need `ip=1` — a move NO known 872 uses
+
+s26c consequence 1 (grammar re-scope) built and validated, plus the two
+queued analyses. All 115 tests green (72 lib + 3 new pins in
+`tests/alloc_grammar.rs`), clippy `-D warnings` clean, fmt clean.
+
+**Built 1 — profiles are data now.** `upstream872_structure.py
+--alloc-profiles/--profiles-dir` emits the per-allocation composition
+census (`analysis/counting/upstream872_alloc_profiles.tsv`) and one
+grammar-consumable profile file per specimen-backed allocation
+(`analysis/trackb/profiles/a<S>_<d3>_<d4>_<d5>_<ip>.txt`);
+`SplitProfile::from_file` + `--profile-file` on `sojourn-dfs`/`nrpa`
+load them (`--records-profile` kept; the census-generated records file
+equals the constant, pinned). The corpus-wide composition vocabulary is
+exactly **7 types** — every allocation uses ⊆ {6, 2|4, 3|3, 4|2, 2|2|2}
+except (141,7) which adds the 1|5/5|1 singletons; (135,9,2) drops 2|2|2
+and is completely rigid (ONE whole-walk profile across its 18 classes).
+Whole-walk profile counts per allocation: 314/121/77/14/1/10/8/4 — the
+records class's 21,144 classes use only 314 profiles.
+
+**Built 2 — `grammar-check` (the replay instrument) + corpus-scale
+validation.** New subcommand: forward-renumbers any string to identity
+start, replays its first-visit path through `Grammar::replay` (public
+now), reports k-of-719, exits nonzero on failure. **All 22,062 community
+classes replay 719/719 through their own allocation's caps + census
+profile — 29 s for the whole corpus.** The check has teeth: the
+1|5-bearing (141,7) specimen dies at move 414 under the records profile
+(pinned). One specimen per allocation is committed at
+`data/upstream872_specimens/` (NOTE.md has the table) so the pins run
+without the gitignored archive.
+
+**Found — a NEW corpus law (door-pricing census,
+`analysis/counting/upstream872_door_pricing.py` → `.tsv`): every
+weight-3/4/5 door in every known 872 lands on a completely untouched
+cycle.** 66,999/66,999 door events across all 22,062 classes have
+target-freshness 0; re-entries into split cycles ALWAYS use `w2x`.
+Heavy doors are cycle-openers, exclusively. This is far from forced
+(records class: ~0.56 chance per walk if doors were placed blindly among
+entries; corpus-wide it is astronomical). Implemented as the opt-in
+`--fresh-doors` cap on `sojourn-dfs`/`nrpa`/`grammar-check`
+(`Grammar::fresh_doors`; calibrated-not-theorem, off by default,
+exhaustion claims made with it must say so). With it ON the whole corpus
+still replays 22,062/22,062 (pinned for the 8 specimens). Prune value at
+exact d=6: records class 5.90M → 5.79M nodes and **2,114 → 1,898
+classes (−10%)**; (143,5) 22.59M → 21.72M nodes and **4,041 → 3,245
+classes (−20%)**. And feasibility news: **(143,5) exact d=6 exhaustion
+completes at all** (~22M nodes, 28 s) — a second allocation is now
+within the sound tier's reach.
+
+**Door placement (the pricing picture).** Records class w3 doors are
+bimodal — 26% in the first depth-decile, 30% in the last, thin midgame;
+the extra doors of the other allocations sit exactly in that midgame
+(near-uniform deciles for (143,5)/(140,6,1)). w4 doors are strictly
+midgame instruments (depth 120–600, never first/last decile). Doors
+overwhelmingly exit COMPLETED whole-6 sojourns (79–96% exit-part 6;
+(141,7) is the outlier at 60% — the 1|5 walks). So cross-class surgery
+must insert/remove doors in the midgame band levels ~60–450 — the same
+contested zone every search instrument (s23/s25/s26) is blocked on.
+
+**Waste-146 (871) target map
+(`analysis/trackb/alloc_neighbors.py` → `waste146_neighbors.tsv`).**
+4,932 open d6=0 waste-146 allocations; min unit-edit distance (L1 on
+(S,d3,d4,d5,ip)) to the 8 specimen anchors: **13 at distance 1** —
+every anchor has an `S−1` (sojourn merge) and/or `d3−1` (door demotion)
+target — 6 at distance 2, the rest spread to 41. Two structural reads:
+(1) ALL 13 distance-1 targets carry the s11-grammar-subregion-closed
+annotation — an 871 there must leave the certificate grammar, consistent
+with s19; (2) **three distance-2 targets have `ip=1`** ((135,9,1,0,1),
+(138,8,0,0,1), (140,6,0,0,1); edit `d4−1 ip+1` from the w4-bearing
+anchors) — outside the s11-closed subregion entirely, and no known 872
+uses a priced pass-over skip (i2 never fires corpus-wide, s26c). Also
+notable: the waste-NEUTRAL trade `(S−1, d3+1)` from the records anchor
+lands on (144,4,0,0,0) — **zero known 872s live there**; the
+specimen-backed allocations are sparse even within waste 147, so
+"which allocations can host an 872" is itself a nontrivial constraint.
+
+**Next session, concretely (s28):**
+- **Cross-class surgery design proper** — braid-level diff of (143,5)
+  walks against (145,3) neighbors: what re-covers the merged sojourns
+  around the two extra midgame doors (the door-pricing TSV + the s26
+  braid machinery are the inputs; 918 real specimens to learn from).
+- **Per-allocation M2 pass** — exact/book exhaustion + frontier dumps
+  per specimen-backed allocation with `--fresh-doors`; then
+  union-restricted beam / NRPA warm-started per allocation.
+- **The ip=1 targets** — what does a pass-over-bearing 871 look like?
+  ε-rollout walks are the only i2 exercisers; seed a study there.
+- **M3 re-scope (still queued from s26c)** — collector cross-check
+  against all 22,062 classes up to relabel+reversal
+  (`upstream872_census.py` has the machinery).
+
 ## 2026-07-29 (session 26c) — Full-corpus recalibration census (all 22,062 community classes): waste identity 22,062/22,062; exactly **8 specimen-backed L0 allocations** in 1:1 correspondence with the 8 weight multisets AND with **8 Vlad-frame cells** (his 11 identities pass corpus-wide — the s20 "single cell" was OUR sample bias, not his structure); **545 split profiles** vs the 1 the grammar hard-codes, including split types `1|5`/`5|1` the grammar never allowed; every "all known 872s…" note is now corrected in place (README, CLAUDE.md, TRACKB-DESIGN M3/§7)
 
 Andrew's question — "do we need to analyse the new corpus now, all of our

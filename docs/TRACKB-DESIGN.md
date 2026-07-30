@@ -120,6 +120,15 @@ The class hierarchy (each level is an "opening book" chapter; chess = ECO codes)
   once independently re-derived (his frame is corroborated 299/299 on our corpus;
   his kills are untested here). Each filter that closes an L1 class is a lemma;
   publishable in aggregate regardless of search outcome.
+  **s27 update:** profiles are per-allocation DATA now, not the hard-coded
+  records constant — `analysis/counting/upstream872_structure.py --profiles-dir`
+  generates the allowed-composition set per specimen-backed allocation
+  (`analysis/trackb/profiles/a<S>_<d3>_<d4>_<d5>_<ip>.txt`, loaded via
+  `--profile-file`), and `grammar-check` validated all 22,062 community classes
+  against their allocation grammars (719/719 moves each). Two corpus laws worth
+  pruning with (both calibrated, not theorems): the composition vocabulary is
+  just {6, 2|4, 3|3, 4|2, 2|2|2, 1|5, 5|1}, and every weight≥3 door opens an
+  untouched cycle (66,999/66,999 events — the `--fresh-doors` cap).
 - **L2 — canonical opening prefixes.** Concrete first-d-sojourn walks, deduped up
   to symbol relabeling: canonical key = (per-cycle visit-pattern multiset, waste
   ledger so far, current-cycle pattern), hashed Zobrist-style (Track C's `shash`

@@ -124,6 +124,24 @@ fn read_seed_file(path: &PathBuf, nfact: usize) -> Vec<Vec<u32>> {
     seeds
 }
 
+/// Resolve the split-profile CLI pair shared by the sojourn-grammar
+/// subcommands: `--records-profile` (the hard-coded n=6 constant) or
+/// `--profile-file` (per-allocation census data); clap forbids both.
+fn load_profile(
+    records_profile: bool,
+    profile_file: Option<&PathBuf>,
+    n: usize,
+) -> Option<superperm::sojourn::SplitProfile> {
+    use superperm::sojourn::SplitProfile;
+    match profile_file {
+        Some(path) => Some(SplitProfile::from_file(path, n as u8).unwrap_or_else(|e| {
+            eprintln!("--profile-file {e}");
+            std::process::exit(1);
+        })),
+        None => records_profile.then(SplitProfile::records_n6),
+    }
+}
+
 /// Write a visit-order path's feature trajectory to `path` as JSONL.
 fn write_log(g: &Graph, ranks: &[u32], path: &PathBuf) {
     let file = fs::File::create(path).unwrap_or_else(|e| {
@@ -203,6 +221,17 @@ enum Cmd {
         /// Enforce the records' n=6 split profile (6|2,4|3,3|4,2|2,2,2).
         #[arg(long)]
         records_profile: bool,
+        /// Enforce a split profile loaded from a file (one composition
+        /// per line, parts space-separated; per-allocation files live
+        /// in analysis/trackb/profiles/, from the s27 corpus census).
+        #[arg(long, conflicts_with = "records_profile")]
+        profile_file: Option<PathBuf>,
+        /// Restrict weight-3/4/5 doors to untouched cycles (s27
+        /// corpus law: all 66,999 heavy doors in the 22,062 community
+        /// classes open a fresh cycle; corpus-calibrated prune, not a
+        /// theorem — exhaustion claims made with it must say so).
+        #[arg(long)]
+        fresh_doors: bool,
         /// Opening depth in completed sojourns.
         #[arg(long, default_value_t = 10)]
         depth: u16,
@@ -241,6 +270,17 @@ enum Cmd {
         /// Enforce the records' n=6 split profile (6|2,4|3,3|4,2|2,2,2).
         #[arg(long)]
         records_profile: bool,
+        /// Enforce a split profile loaded from a file (one composition
+        /// per line, parts space-separated; per-allocation files live
+        /// in analysis/trackb/profiles/, from the s27 corpus census).
+        #[arg(long, conflicts_with = "records_profile")]
+        profile_file: Option<PathBuf>,
+        /// Restrict weight-3/4/5 doors to untouched cycles (s27
+        /// corpus law: all 66,999 heavy doors in the 22,062 community
+        /// classes open a fresh cycle; corpus-calibrated prune, not a
+        /// theorem — exhaustion claims made with it must say so).
+        #[arg(long)]
+        fresh_doors: bool,
         /// Nesting depth (1 = adapt over plain rollouts; 2-3 typical).
         #[arg(long, default_value_t = 2)]
         level: u32,
@@ -306,6 +346,41 @@ enum Cmd {
         #[arg(long, default_value_t = 0)]
         collect: u32,
         /// Suppress per-iteration progress lines.
+        #[arg(long)]
+        quiet: bool,
+    },
+    /// Replay superpermutation strings through the sojourn grammar of
+    /// an L0/L1 class and report how far each stays in-grammar (s27:
+    /// validates per-allocation grammars against corpus specimens; a
+    /// full-length replay = the walk lives in that caps+profile
+    /// grammar). Strings are forward-renumbered to identity start
+    /// first, so raw records are accepted. Exits nonzero if any input
+    /// fails to replay fully.
+    GrammarCheck {
+        /// Number of symbols (3..=8).
+        #[arg(short, long)]
+        n: usize,
+        /// Class caps as S,d3,d4,d5,ip (e.g. "145,3,0,0,0" = records).
+        #[arg(long, value_delimiter = ',')]
+        class: Vec<u16>,
+        /// Enforce the records' n=6 split profile (6|2,4|3,3|4,2|2,2,2).
+        #[arg(long)]
+        records_profile: bool,
+        /// Enforce a split profile loaded from a file (one composition
+        /// per line, parts space-separated; per-allocation files live
+        /// in analysis/trackb/profiles/, from the s27 corpus census).
+        #[arg(long, conflicts_with = "records_profile")]
+        profile_file: Option<PathBuf>,
+        /// Restrict weight-3/4/5 doors to untouched cycles (s27
+        /// corpus law: all 66,999 heavy doors in the 22,062 community
+        /// classes open a fresh cycle; corpus-calibrated prune, not a
+        /// theorem — exhaustion claims made with it must say so).
+        #[arg(long)]
+        fresh_doors: bool,
+        /// Superpermutation string files to check.
+        #[arg(required = true)]
+        files: Vec<PathBuf>,
+        /// Print only the summary line and failures.
         #[arg(long)]
         quiet: bool,
     },
@@ -681,6 +756,8 @@ fn main() -> ExitCode {
             n,
             class,
             records_profile,
+            profile_file,
+            fresh_doors,
             depth,
             max_nodes,
             dedup,
@@ -688,7 +765,7 @@ fn main() -> ExitCode {
             dump_frontier,
             dump_per_class,
         } => {
-            use superperm::sojourn::{ClassCaps, DedupMode, SojournDfs, SplitProfile};
+            use superperm::sojourn::{ClassCaps, DedupMode, SojournDfs};
             assert_eq!(class.len(), 5, "--class needs S,d3,d4,d5,ip");
             let g = Graph::new(n);
             let caps = ClassCaps {
@@ -701,7 +778,8 @@ fn main() -> ExitCode {
             let dfs = SojournDfs {
                 g: &g,
                 caps,
-                profile: records_profile.then(SplitProfile::records_n6),
+                profile: load_profile(records_profile, profile_file.as_ref(), n),
+                fresh_doors,
                 depth,
                 max_nodes,
                 dedup: match dedup {
@@ -719,13 +797,14 @@ fn main() -> ExitCode {
             let t = std::time::Instant::now();
             let st = dfs.run();
             println!(
-                "sojourn-dfs n={n} class=(S={},d3={},d4={},d5={},ip={}) waste={} depth={depth}",
+                "sojourn-dfs n={n} class=(S={},d3={},d4={},d5={},ip={}) waste={} depth={depth}{}",
                 caps.s,
                 caps.d3,
                 caps.d4,
                 caps.d5,
                 caps.ip,
                 caps.waste(),
+                if fresh_doors { " fresh-doors" } else { "" },
             );
             println!("nodes             = {}", st.nodes);
             println!("frontier states   = {}", st.frontier);
@@ -770,6 +849,8 @@ fn main() -> ExitCode {
             n,
             class,
             records_profile,
+            profile_file,
+            fresh_doors,
             level,
             iters,
             adapt,
@@ -790,7 +871,7 @@ fn main() -> ExitCode {
             quiet,
         } => {
             use superperm::nrpa::{nrpa_search, NrpaCfg};
-            use superperm::sojourn::{ClassCaps, SplitProfile};
+            use superperm::sojourn::ClassCaps;
             assert_eq!(class.len(), 5, "--class needs S,d3,d4,d5,ip");
             let g = Graph::new(n);
             let caps = ClassCaps {
@@ -850,7 +931,8 @@ fn main() -> ExitCode {
             let cfg = NrpaCfg {
                 g: &g,
                 caps,
-                profile: records_profile.then(SplitProfile::records_n6),
+                profile: load_profile(records_profile, profile_file.as_ref(), n),
+                fresh_doors,
                 level,
                 iters,
                 adapt_alpha: adapt,
@@ -903,6 +985,87 @@ fn main() -> ExitCode {
                 _ => {
                     println!("nrpa: NO completion found (all rollouts dead)");
                 }
+            }
+        }
+        Cmd::GrammarCheck {
+            n,
+            class,
+            records_profile,
+            profile_file,
+            fresh_doors,
+            files,
+            quiet,
+        } => {
+            use superperm::sojourn::{ClassCaps, Grammar};
+            assert_eq!(class.len(), 5, "--class needs S,d3,d4,d5,ip");
+            let g = Graph::new(n);
+            let caps = ClassCaps {
+                s: class[0],
+                d3: class[1],
+                d4: class[2],
+                d5: class[3],
+                ip: class[4],
+            };
+            let profile = load_profile(records_profile, profile_file.as_ref(), n);
+            let mut grammar = Grammar::new(&g, caps, profile.clone());
+            grammar.fresh_doors = fresh_doors;
+            println!(
+                "grammar-check n={n} class=(S={},d3={},d4={},d5={},ip={}) waste={} profile={}{}",
+                caps.s,
+                caps.d3,
+                caps.d4,
+                caps.d5,
+                caps.ip,
+                caps.waste(),
+                match (&profile, &profile_file) {
+                    (None, _) => "none".to_string(),
+                    (Some(_), None) => "records".to_string(),
+                    (Some(p), Some(f)) =>
+                        format!("{} ({} compositions)", f.display(), p.allowed.len()),
+                },
+                if fresh_doors { " fresh-doors" } else { "" },
+            );
+            let mut failures = 0u32;
+            for path in &files {
+                let text = std::fs::read_to_string(path).unwrap_or_else(|e| {
+                    eprintln!("cannot read {}: {e}", path.display());
+                    std::process::exit(1);
+                });
+                // forward-renumber to identity start: relabel symbols so
+                // the first window reads 12..n (the grammar roots at the
+                // identity permutation)
+                let s = text.trim();
+                let mut sigma = [0u8; 256];
+                for (i, b) in s.bytes().take(n).enumerate() {
+                    sigma[b as usize] = b'1' + i as u8;
+                }
+                let renum: String = s.bytes().map(|b| sigma[b as usize] as char).collect();
+                let tr = trace_string(&g, &renum).unwrap_or_else(|e| {
+                    eprintln!("{}: {e}", path.display());
+                    std::process::exit(1);
+                });
+                let seq = &tr.path[1..];
+                let done = grammar.replay(seq);
+                let ok = done == seq.len();
+                if !ok {
+                    failures += 1;
+                }
+                if !quiet || !ok {
+                    println!(
+                        "  {}: {done} of {} moves in-grammar{}",
+                        path.display(),
+                        seq.len(),
+                        if ok { "" } else { "  OUT-OF-GRAMMAR" },
+                    );
+                }
+            }
+            println!(
+                "grammar-check: {} of {} files replay fully",
+                files.len() as u32 - failures,
+                files.len(),
+            );
+            if failures > 0 {
+                return ExitCode::FAILURE;
             }
         }
         Cmd::Greedy { n, log } => {

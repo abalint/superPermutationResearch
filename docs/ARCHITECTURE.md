@@ -129,10 +129,16 @@ bitset ──→ no crate deps
   the emergent-edge filter). Dedup tiers documented on `DedupMode` (exact /
   orbit via the O(1) cur-inverse relabeling / abstraction with exemplar cap).
   s25: the move generator is factored into `Grammar { g, caps, profile,
-  interiors }` (`root(track_path)` / `children(&State) ->
+  fresh_doors, interiors }` (`root(track_path)` / `children(&State) ->
   Vec<(SojournMove, State)>` / `feasible`) — the ONE source of legal moves,
   shared by the DFS and the NRPA rollouts; `children` preserves the DFS push
   order exactly (exemplar caps are order-sensitive; the M2 pin reproduces).
+  s27: profiles load from census files (`SplitProfile::from_file`,
+  `--profile-file`, per-allocation data in `analysis/trackb/profiles/`);
+  `Grammar::replay(&[u32]) -> usize` is the public replay instrument behind
+  the `grammar-check` subcommand (corpus-validated 22,062/22,062);
+  `fresh_doors` = the s27 corpus law (heavy doors open untouched cycles
+  only; opt-in, calibrated-not-proven, pinned in `tests/alloc_grammar.rs`).
 - **`src/nrpa.rs`** — NRPA over the sojourn grammar (s25, TRACKB §4 step 4a):
   `nrpa_search(&NrpaCfg) -> NrpaResult`. Softmax policy = `HashMap<u64, f64>`
   over three feature codes per move (species / door context / exact `(cur,
@@ -183,8 +189,8 @@ bitset ──→ no crate deps
   total, complete }`. Sliding-window checker; the only accepted proof that a string is
   a superpermutation.
 - **`src/main.rs`** — clap CLI (`struct Cli`, `enum Cmd`): subcommands `info`, `atlas`,
-  `sojourn-dfs`, `nrpa`, `recomb`, `union-dfs`, `greedy`, `beam`, `beam2`,
-  `trace`, `endgame`, `rollouts`, `cert-verify`, `validate`.
+  `sojourn-dfs`, `nrpa`, `grammar-check`, `recomb`, `union-dfs`, `greedy`, `beam`,
+  `beam2`, `trace`, `endgame`, `rollouts`, `cert-verify`, `validate`.
 
 ## Core data structures
 
