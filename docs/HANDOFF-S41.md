@@ -57,6 +57,13 @@ points and traps.
 
 ## The work menu (in priority order)
 
+**s42 addendum (2026-07-30): item 1 (a–d) EXECUTED — see JOURNAL s42.**
+The front is saturated as instrumented: rule closure is a fixed point
+(conjugated R-K7 is an involution; the 92-class n=7 corpus is closed),
+the cover census yields no new rule candidates and provably cannot see
+R-K7 products, and the anchored ladder finds the 8 indistinguishable
+from the old 84. Items 2–5 stand; item 2's approval is still pending.
+
 1. **Point the ladder at the 8 new classes — iterate rule-closure to
    a fixed point.** The s41 conjugated n=7 sweep ran on the OLD 84
    only: the new 8 have never been touched by ANY instrument. (a)
@@ -134,6 +141,11 @@ points and traps.
   results — the operator never writes the JOURNAL),
   `cargo test --release` green (139), clippy `-D warnings`, fmt,
   commit → `git pull --rebase` → push (never rewrite pushed history).
+  **Then leave the repo cold-start ready:** the JOURNAL entry carries
+  concrete next steps, and when the front has moved enough that this
+  handoff is stale (menu items done, new traps, corpus changed), write
+  `HANDOFF-S<new>.md` superseding it and repoint CLAUDE.md + the agent
+  docs. Assume the next session starts from zero context.
 - **Publishing:** upstream contributions go via the
   `../superperm` clone (fork remote `fork` = abalint/superperm,
   branch + PR; PR #50 is the precedent — one-line file per solution

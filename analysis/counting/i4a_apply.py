@@ -261,7 +261,7 @@ def run_oracle():
 def run_apply_sym(dirs, outdir, only=None):
     from itertools import permutations as _perms
 
-    from m3_check import canon, load_index
+    from m3_check import SUPPLEMENTARY, canon, load_index
     import hashlib
 
     os.makedirs(outdir, exist_ok=True)
@@ -270,6 +270,15 @@ def run_apply_sym(dirs, outdir, only=None):
         6: load_index(os.path.join(here, "upstream872_canon_index.tsv")),
         7: load_index(os.path.join(here, "upstream5906_canon_index.tsv")),
     }
+    # s42: the novelty gate must match m3_check's — published index PLUS
+    # this project's own discovery indexes, or a re-derivation of one of
+    # our archived classes would be bannered as novel (and the edge to it
+    # lost). Missing supplementary files are skipped.
+    for nn, supps in SUPPLEMENTARY.items():
+        for supp in supps:
+            p = os.path.join(here, supp)
+            if os.path.exists(p):
+                idx[nn].update(load_index(p))
 
     # precompute every relabeled rule instance, with cycles attached
     def relab(p, sig):
@@ -293,6 +302,8 @@ def run_apply_sym(dirs, outdir, only=None):
     stats = Counter()
     edges = set()  # (n, source class file, target class file, rule)
     novel = []
+    novel_shas = set()
+    novel_src = {}  # sha -> [(source file, rule, orientation, length)]
     for d in dirs:
         files = sorted(f for f in os.listdir(d) if f.endswith(".txt"))
         for fi, f in enumerate(files):
@@ -334,12 +345,20 @@ def run_apply_sym(dirs, outdir, only=None):
                             stats[f"{rname}:edge"] += 1
                     else:
                         tag = "SHORTER" if L < record else "NOVEL"
-                        name = f"i4a-sym-{tag}-{L}-{rname}-{orient}-{f}"
+                        # s42: dedupe by canonical sha, not by file name —
+                        # one (rule, orientation, source) can yield SEVERAL
+                        # distinct products across the n! conjugates, and
+                        # name-only dedup silently dropped all but the first.
+                        name = (f"i4a-sym-{tag}-{L}-{rname}-{orient}-"
+                                f"{sha[:12]}-{f}")
                         p = os.path.join(outdir, name)
-                        if not os.path.exists(p):
+                        if sha not in novel_shas:
+                            novel_shas.add(sha)
                             open(p, "w").write(prod)
                             novel.append(name)
                             print(f"*** {tag} {L} *** {rname} on {d}/{f} -> {name}")
+                        novel_src.setdefault(sha, []).append(
+                            (f, rname, orient, L))
             if (fi + 1) % 2000 == 0:
                 print(f"[{d}] {fi + 1}/{len(files)} walks; "
                       f"{len(edges)} edges, {len(novel)} novel/shorter so far",
@@ -353,6 +372,14 @@ def run_apply_sym(dirs, outdir, only=None):
             out.write(f"{n}\t{a}\t{b}\t{r}\n")
     # undirected unique edges for the headline
     und = {(n, frozenset((a, b)), r) for n, a, b, r in edges}
+    if novel_src:
+        pp = os.path.join(outdir, "i4a_sym_novel_provenance.tsv")
+        with open(pp, "w") as out:
+            out.write("product_sha256\tsource_class\trule\torientation\tlength\n")
+            for sha, rows in sorted(novel_src.items()):
+                for f, rname, orient, L in sorted(set(rows)):
+                    out.write(f"{sha}\t{f}\t{rname}\t{orient}\t{L}\n")
+        print(f"provenance of {len(novel_src)} distinct products -> {pp}")
     print(f"\n{len(edges)} directed edges ({len(und)} undirected) -> {ep}")
     print(f"{len(novel)} NOVEL/SHORTER products in {outdir}" if novel
           else "corpus CLOSED under the conjugated rule vocabulary "

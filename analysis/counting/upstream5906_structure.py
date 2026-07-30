@@ -6,15 +6,23 @@ histogram — the L0 allocation in the T0 waste identity
     waste = (S-1) + sum_{w>=3}(w-2)*inter[w] + sum_{w>=2}(w-1)*intra[w].
 
 Writes upstream5906_structure.tsv (one row per class file) and prints the
-allocation histogram. s33 headline: all 84 known 5906 classes are PURE-w3
-(no w4+, no intra) over exactly 6 allocations, S+#w3 = 861 in every case;
+allocation histogram. s42 headline (refreshed after PR #50): all 92
+PUBLISHED 5906 classes are PURE-w3 (no w4+, no intra) over exactly 8
+allocations, S+#w3 = 861 in every case — (844,17)=61, (838,23)=9,
+(840,21)=9, (839,22)=6, (842,19)=2, (836,25)=2, (835,26)=2, (843,18)=1.
 Kristan's class is the sole occupant of (S=843,#w3=18), one S<->door
-unit-trade from the dominant (844,17) shell of 61 classes — the n=7 echo
-of the n=6 natural pair (143,5)<->(142,6). The three 5907s sit at
+unit-trade from the dominant (844,17) shell — the n=7 echo of the n=6
+natural pair (143,5)<->(142,6); the two allocations added in s42,
+(839,22) and (835,26), are this project's 8 novel classes, each one
+R-K7 off-shell from a (840,21)/(836,25) source. The three 5907s sit at
 (858,4): treelike, door-sparse, sojourn-heavy.
 
 Usage: python3 upstream5906_structure.py [dir ...]
-       (default: data/upstream5906 data/upstream5907)
+       The committed TSV covers the WHOLE published n=7 corpus, which
+       since s41 spans two dirs — regenerate with all three explicitly:
+       python3 upstream5906_structure.py data/upstream5906 \\
+           data/novel5906 data/upstream5907
+       (bare default: data/upstream5906 data/upstream5907 = the stale 84)
 """
 import os
 import sys

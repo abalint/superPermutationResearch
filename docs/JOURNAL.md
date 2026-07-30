@@ -6,6 +6,155 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 42) — the ladder is pointed at the 8 new classes and every instrument returns the same verdict: **the loop-cover front is SATURATED as currently instrumented.** Rule-closure hits its FIXED POINT after one step (conjugated R-K7 from the 8 novel sources: 336 forward firings ALL killed by replay, 8 reverse firings → 8 rediscoveries each mapping a novel class back to its OWN s41 source, so conjugated R-K7 is an INVOLUTION on the corpus — the 92-class published n=7 shell is CLOSED under the single-rule vocabulary, n=7 joins n=6 in saturation); the cover census over all 92 finds 83 distinct covers and **NO new rule candidates** — the 9 sharing pairs are the Kristan seam plus the 8 discovery pairs, and m4a re-anatomizes all of them as the SAME rigid R-K7 object-for-object, which yields the structural corollary that **R-K7 is exactly cover-preserving, so the census can NEVER detect an R-K7 product** (new-rule discovery needs a different signal); the anchored ladder on the 8 is indistinguishable from the old 84 (block-order-optimal at 4905/4840/4770, recomp 48.46% same-allocation equals vs the ~48.5% law, recomp2 at 4840 reproduces the ZERO-equal pair-compound shell over 628,663 exact re-solves, 0 events anywhere); the L0 map refreshes to **92 classes / 8 allocations, all pure-w3, T0 waste identity 92/92**; and **two live bugs in `i4a_apply.py`'s conjugated sweep were found and fixed (novelty gate ignored our own discovery indexes; product dedup keyed on FILENAME not content) — the audit re-run of the 84-source s41 sweep under fixed code returns 0 novel, so s41's "8 novel" claim was COMPLETE and nothing was ever dropped**
+
+HANDOFF-S41 work-menu item 1 (a–d) executed in one session, three
+agents in parallel, Python only. Every sub-item closed negative in the
+productive sense: no new records, no new rules, and four independent
+confirmations that the 8 discoveries are ordinary citizens of the
+record shell.
+
+**1a — rule closure is a fixed point (`i4a_apply.py apply-sym`, sources
+= the 8 novel classes).** 0 novel products. The funnel is the s41 trap
+reproduced one rung up:
+
+- **R-K7-fwd: 336 conjugated firings, ALL killed by replay** ("landed
+  on non-entry"). Replay-sufficiency ≫ precondition, again — the
+  preconditions fire freely under conjugation and the replay refuses
+  every one.
+- **R-K7-rev: 8 firings → 8 products, all rediscoveries**, and each
+  maps a novel class back to its OWN s41 source: allocations
+  (840,21)×6 and (836,25)×2, all validated, all m3-gated as
+  rediscoveries, all tight at L=142. So the conjugated rule is an
+  **involution** on this corpus: applying it to its own products
+  returns the sources and nothing else.
+- **Merged n=7 natural-move census: 18 directed / 9 undirected edges
+  over 92 classes** — the 8 discovery pairs + the Kristan seam, all
+  bidirectional, and **no novel↔novel edges**. Committed at
+  `data/i4a_products_sym_rev/i4a_sym_edges_n7.tsv` (same format as the
+  n=6 file). The n=7 corpus is now CLOSED under the conjugated
+  vocabulary — a weaker claim than n=6's, since at n=7 the vocabulary
+  is a single rule.
+
+**Two live bugs found and fixed in `run_apply_sym` (both would have
+mattered):**
+
+1. The inline novelty gate loaded only the *published* index, so a
+   re-derivation of one of our own 8 would have been bannered NOVEL
+   (and its edge lost). It now folds in the supplementary discovery
+   indexes via `m3_check`'s `SUPPLEMENTARY`, matching the 92-class
+   gate.
+2. Product dedup was by FILENAME, not content — distinct products from
+   different conjugates of the same (source, rule, orientation) were
+   silently dropped. Now sha-based, plus a new
+   `i4a_sym_novel_provenance.tsv` dump (sha → every source/rule/
+   orientation that produced it).
+
+**Audit (the important part): the 84-source s41 sweep re-run under the
+fixed code yields 0 novel — s41's "8 novel" claim was COMPLETE, bug 2
+dropped nothing.** Oracle re-verified 13/13 byte-identical after the
+patch.
+
+**1b — cover census over all 92 (`loop_ledger_probe cover 7`, both
+dirs): 92 walks → 83 distinct covers, NO new rule candidates.** Nine
+cover-sharing pairs, every one of size 2: the known Kristan seam plus
+8 new pairs, each pairing a novel class with its own R-K7 source
+(identical 142-loop cover). Unmodified `m4a_pair_anatomy` over all 9:
+all are the SAME rigid R-K7 object-for-object — e.g. (840,21)→(839,22)
+is rotor `1576342`, A-door w3 `1634275→1576342` ⟷ B-doors w3
+`1576342→1567342` + w3 `1634275→1756342`, loop `1763425` demoted; and
+(836,25)→(835,26) is rotor `1346257`, loop `1346275` demoted. Depth
+spans 2520–4137 — the same unanchorable midgame band s40 measured. Run
+order: 6 pairs byte-identical run sequences, 3 pairs lose exactly one
+run (two adjacent same-loop runs merge) — a minor variation on the
+seam property, not a new object. All 8 novel classes are tight
+(deficit 0), L=142, and use ZERO 2-loops the 84 never used (union
+stays 772/840; 1 universal loop across all 92).
+
+**The structural corollary, and it is the session's real result: R-K7
+is exactly cover-preserving, so the cover census can never detect an
+R-K7 product.** The instrument that FOUND the rule is constitutionally
+blind to the rule's own images. New-rule discovery on this front needs
+a different signal — the census is not merely exhausted here, it is
+the wrong detector.
+
+**1c — anchored ladder on the 8 (`tail-atsp`): identical behaviour to
+the old 84 on every instrument; all exit 0, no events.**
+
+- **I1 reorder:** 8/8 block-order-optimal at 4905/4840/4770 (observed
+  anchors 4905–4909 / 4841–4844 / 4772–4776, blocks 19–44 under caps —
+  the ANCHOR binds at these bands, not the block ceiling).
+- **Ties** at 4905+4840: 0 new-allocation ties. **Merge** at 4840: 119
+  moves, 0 improved, 0 equal-cost.
+- **Recomp-1** at 4905: 18,467 moves (2,308/walk — same density as the
+  old 84's 2,292), 0 improved, 0 new-allocation equals, 8,949
+  same-allocation equals = **48.46%: the ~48.5% equal-cost law holds
+  to 0.05 pp**. All 16 emitted samples m3-gate as rediscoveries of
+  their own source class.
+- **Recomp2** at 4840, full 8 walks (probe first: 20 s/walk, **4.5×
+  cheaper than the old 84's ~90 s/walk** — fewer straddle candidates;
+  205 s total): 145,209,828 raw pairs → 811,528 post-T1 (0.56%) →
+  628,663 exact re-solves (nets −2/−1/0 = 3,577/74,781/550,305), 0
+  improved, 0 new-allocation equals, **0 same-allocation equals**, 0 Λ
+  violations. The s38b zero-equal pair-compound shell reproduces
+  exactly on the new classes.
+- **Side observation worth chasing:** the recomp2 funnel counts pair
+  up byte-identically across {`29c55ed5fbf6`,`c1080e26f60c`},
+  {`50d865ca7907`,`b99b1d60f13e`}, {`66637a3b8941`,`7f46c8149026`} —
+  suggesting relabel-conjugate tail structure between *inequivalent*
+  walks inside the new shell. Cheap to census; possibly a new signal.
+  Samples in `out/s42_ladder/` (16 recomp-sameeq, all rediscoveries).
+
+**1d — structure census refreshed (`upstream5906_structure.py` over all
+three dirs, exit 0): the L0 map is 92 classes / 8 allocations, all
+pure-w3, T0 waste identity 92/92** — (844,17)=61, (838,23)=9,
+(840,21)=9, **(839,22)=6 NEW, all novel**, (842,19)=2, (836,25)=2,
+**(835,26)=2 NEW, all novel**, (843,18)=1 (Kristan).
+`analysis/counting/upstream5906_structure.tsv` refreshed 87→95 rows.
+The script's docstring said "84 classes / 6 allocations" — corrected,
+logic untouched, and the usage note now spells out that the committed
+TSV needs all three dirs passed explicitly (the bare default still
+covers only the stale 84, which is a live clobber trap).
+
+**Reading.** Work-menu item 1 is DONE in one session and every
+instrument agrees: the 8 discoveries are ordinary citizens of the
+record shell (tight, closed, same equal-cost density, same cover
+diversity), and the loop-cover front is saturated *as currently
+instrumented* — the rule vocabulary's closure is a fixed point, the
+census cannot see R-K7 products by construction, and the anchored
+ladder remains blind to the midgame band (depths 2520–4137) where the
+rules actually live. Nothing here says the front is closed; it says
+all three of our detectors are exhausted on it simultaneously, and for
+three different reasons.
+
+**Ritual notes:** no Rust touched (Python-only session, no farm
+reship); `out/` and job-dir artifacts deliberately NOT committed (`out/`
+is untracked, not ignored — check `git status` before any `git add -A`).
+The n=7 edge census is committed alongside the n=6 one; the refreshed
+structure TSV, the two `i4a_apply.py` fixes and the docstring fix are
+in the same commit. `cargo test --release` green (139), clippy
+`-D warnings` clean, `cargo fmt` a no-op.
+
+**Next session, concretely (s43).** The front now needs a *detector*,
+not another sweep. (1) **A new rule from a non-census signal** — the
+census provably cannot see cover-preserving rules, so the candidate
+generators are: cheap-first the s42 relabel-conjugate observation
+(census the recomp2/tail funnel fingerprints across all 92 and see
+whether byte-identical funnels predict a structural relation the cover
+misses); then differential run-sequence anatomy (the 3 pairs that lose
+a run are the only fine-structure variation we have); then the reverse
+direction of the unused rules at n=7 (R-compound/R-unit have no n=7
+instantiation yet — do they conjugate up?). (2) **Approvals still
+pending with Andrew, unchanged:** the n=6 FORWARD conjugated sweep
+(~100 min, the n=7 precedent makes novel (143,5)/(142,6) live) and the
+older n=6 recomp2 520/450 band entries. (3) **M-4b / M-4d**
+(SURGERY-DESIGN §11.4): traversal count of one cover (exhaustive I4-A
+vs guided) and 871-cover combinatorial feasibility — a NO on M-4d
+closes the 871 within the tight class at certificate level, which is
+the highest-value negative currently reachable. (4) **Still open,
+untouched:** ip=1; per-allocation NRPA/beam over `data/frontiers_s28/`;
+Track C v2's 2.4× scoring-overhead cut.
+
 ## 2026-07-30 (session 41b) — PUBLISHED: the 8 novel 5906s are submitted upstream as **superpermutators/superperm PR #50** (branch `eight-new-5906s` on the abalint fork, files `superpermutations/7/7_5906_derived_<sha12>.txt`), after a fresh independent double-confirmation against the repo's CURRENT contents
 
 Publication session. The community clone (`../superperm`) was 5 commits

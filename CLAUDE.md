@@ -421,3 +421,9 @@ Always benchmark and search in `--release`; debug builds are ~50× slower in the
 1. Read `docs/JOURNAL.md` (latest entry) → know where we left off.
 2. Do the work; keep `cargo test --release` green.
 3. Update JOURNAL.md (+ README results if applicable), commit with a descriptive message.
+4. **Hand off to a fresh agent.** Every session ends with the repo cold-start
+   ready: the JOURNAL entry must carry concrete next steps, and when the front
+   has moved enough that `docs/HANDOFF-S<N>.md` is stale (menu items done, new
+   traps, corpus/state changed), refresh it — write `HANDOFF-S<new>.md`
+   superseding the old one and repoint the reading orders here and in the agent
+   docs. Assume the next session starts from zero context.
