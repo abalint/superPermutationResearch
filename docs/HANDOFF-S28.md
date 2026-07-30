@@ -5,12 +5,13 @@
 read JOURNAL s28/s28b and `docs/SURGERY-DESIGN.md` (§8 has the build
 outcomes: tie oracle passed across an allocation boundary; NEW law — all
 22,062 classes block-order-optimal at anchors ≥ 585 and ≥ 520). The s29
-front is: tie CENSUS over the corpus (which allocations do S1 ties
-reach? is (144,4) or any ip=1 target ever hit?), the 3.5 h anchor-450
-sweep (launch protocol — needs Andrew's go-ahead), the I2 design pass
-(SURGERY-DESIGN §5), then the ip=1 study and per-allocation NRPA/beam
-over the frontier dumps (`data/frontiers_s28/`, gitignored). Items below
-kept for the traps section, which still applies verbatim.
+front is now split across TWO agent roles: long runs (anchor-450 sweep,
+tie census) live in `docs/SWEEP-QUEUE.md` and are executed/monitored by
+an operator agent per `docs/OPS-BACKGROUND-AGENT.md`; iteration (I2
+design pass, ip=1 study, per-allocation NRPA/beam over
+`data/frontiers_s28/`) continues in parallel per
+`docs/RESEARCH-AGENT-S29.md`. Fresh agents: read the doc for YOUR role.
+Items below kept for the traps section, which still applies verbatim.
 
 Written at the end of s27b (2026-07-29) for a fresh agent. Read
 `docs/JOURNAL.md` s27/s27b first; this note only adds the entry points and

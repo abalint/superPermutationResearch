@@ -1,5 +1,7 @@
 /target
 /target-analysis
+# operator agent's run logs + pid files (docs/OPS-BACKGROUND-AGENT.md)
+/logs/
 /data/*
 # s26 splice-closure hybrids (docs/RECOMB-DESIGN.md §8.1): results, tiny, committed.
 !/data/hybrids872/
