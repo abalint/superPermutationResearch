@@ -268,15 +268,34 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   cross-allocation compound. Λ-tripwire violations are bannered too —
   drop everything if one appears (solver bug or first counterexample
   to the s35 loop-count relation).
-- projected: s38 single-walk probe (`02d771908307`, 33 blocks): 75,201
-  exact re-solves, 89.1 s/walk → **~2.2 h single-core** for all 90
-  walks (87 files are small enough that the corpus is its own probe;
-  local Mac run is fine, no farm needed). If run on the farm instead:
-  the s38 build CHANGED `src/tailatsp.rs` — cross-compile + reship
-  per OPERATIONS §"tail-atsp farm harness" first.
-- approved: NO
-- status: pending
-- result: —
+- projected: s38 single-walk probe implied ~2.2 h single-core. Farm actual
+  (12 workers, reshipped binary from clean `bdc9625`): **71.4 core-min,
+  8.5 min wall**, slowest worker 8.4 min — 1.6× faster per walk than the
+  single-walk probe implied (49 s/walk vs 89), because the probe walk was an
+  unusually wide 33-block instance.
+- approved: YES (Andrew, 2026-07-30 — "run the three cheap ones back to back")
+- status: **done** (farm run `n7a4840recomp2`, 12 workers, 0 skipped, no alarm)
+- result: **The pair-compound tier is CLOSED at n=7 — and unlike every earlier
+  tier, its equal-cost shell is EMPTY.** Ledger sum over 12 workers:
+  `87 walks, 87 block-order-optimal, 0 improved, 0 skipped` plus
+  `7,321,635 exact re-solves, 0 improved (candidates), 0 equal-cost in NEW
+  allocations, 0 equal-cost same-allocation, 0 loop-relation violations`
+  (verdicts OK:12). All three tripwires silent: no 5905/5906 candidate, **no
+  KRISTAN SEAM**, and **no Λ violation** — so the s35 loop-count relation
+  survives 7.3M independent exact re-solves, which is the strongest evidence
+  it has.
+  - Funnel, summed over the corpus: **1,574,583,671 raw pairs → 9,673,573
+    post-T1 (0.61%) → 7,321,635 exact re-solves**, from 189 extraction
+    candidates. Net split −2/−1/0 = 49,735 / 943,145 / 6,328,755.
+  - **The contrast with recomp-1 is the finding.** Single recompositions have
+    a dense equal-cost shell — 48.5% of moves at n=7 (`n7a4840recomp`), 48.2%
+    at n=6 (`a585recomp`). Pair compounds have **zero** equal-cost outcomes in
+    7.3M exact re-solves. Compounding two recompositions does not explore a
+    wider equal-cost plateau; it leaves the plateau entirely and strictly
+    costs. That is consistent with the s38 §10.6 refutation (the natural
+    2-compound prices +6 over equal) and sharpens it: at this band the
+    compound tier is not merely closed to improvements, it is closed to
+    equality.
 
 ## n=6 recomp2, 520 band (full corpus) — farm, tight first
 - spec (tight pass, S−1 family only): `cargo run --release --quiet -- tail-atsp -n 6 --dirs data/upstream872 --anchor 520 --max-blocks 42 --recomp2 --recomp2-tight --quiet --out-dir data/surgery_finds`
