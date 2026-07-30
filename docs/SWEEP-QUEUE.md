@@ -47,9 +47,18 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   (heavy-tail shards may push the last worker to ~1 h).
 - approved: YES (Andrew, 2026-07-29 — "pick up the background execution work
   that needs to be done. make sure it runs on the pc and you monitor it")
-- status: running (farm run `a450b50`, 24 workers, supervisor pid 10236,
-  started 2026-07-29 20:17:58 local-PC time)
-- result: —
+- status: **done** (farm run `a450b50`, 24 workers, 2026-07-29 20:17:58 →
+  21:06:53 PC time, 48.8 min wall / 13.9 core-hours)
+- result: **0 improvements over the full corpus.** Ledger sum over 24 workers:
+  `22,062 walks, 22,062 block-order-optimal, 0 improved, 0 skipped, 0 ties`
+  (verdicts OK:24, no finds, no alarm; slowest worker 2,921 s vs 2,091 s mean).
+  **Nothing was skipped** — the adaptive anchor solved every walk, so this is
+  the whole corpus, not a solvable subset. NEW LAW (third band, same
+  fixed-decomposition caveat): every known 872 class is block-order-optimal at
+  anchor ≥ 450 / ≤ 50 blocks, i.e. across its last ~270 perm visits. With
+  s28b (≥ 585, ≥ 520) and s9 (tablebase-optimal ≤ 25-perm tails), reordering
+  cover blocks is now dead as a route to 871 out to ~270 perms — the missing
+  char must RECOMPOSE cycles (I2/I2a), which is what the merge entry tests.
 
 ## tie-census probe (are allocation shells S1-connected?)
 - spec: `cargo run --release --quiet -- tail-atsp -n 6 --dirs data/upstream872 --anchor 585 --ties --tie-cap 256 --limit 100 --quiet`
@@ -76,14 +85,20 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   300-walk probe already found 1 equal-cost 872 (a rediscovery of the
   committed specimen pair's partner class — pipeline proven in the
   wild).
-- projected: ~2.1 h single-core from a first-300 probe (104 s) — but that
-  probe is ALPHABETICAL-PREFIX biased (see Farm execution note: ×3.3 at
-  anchor 450), so plan for up to ~7 h single-core; re-probe round-robin
-  or run on the farm (~20–40 min on 24 cores). **Farm caveat: s30
-  changed `src/tailatsp.rs` (merge machinery) — cross-compile and reship
-  `superperm.exe` BEFORE any farm run of this entry.**
-- approved: NO
-- status: pending
+- projected: **MEASURED on the farm** — round-robin probe `probe520merge`
+  (24×40 = 920 walks scored, 979 core-s) gives **1.06 s/walk** on a PC core,
+  22 merge moves tried per walk. The entry's first-300 figure implied
+  0.35 s/walk, so the alphabetical bias here is ~1.9× (it was 3.3× at anchor
+  450 — always re-probe round-robin). Full corpus: ~6.5 core-hours → ~16 min
+  mean, **~25 min wall** on 24 cores (a450b50's slowest/mean imbalance was
+  1.4×). Farm caveat handled: `superperm.exe` recross-compiled and reshipped
+  from clean `c0c64e9` with a BUILD.txt provenance stamp.
+- approved: YES (Andrew, 2026-07-29 — "the md doc has been updated to add full
+  anchor-520 merge sweep in SWEEP-QUEUE.md run it when this operation is
+  finished")
+- status: running (farm run `a520b40merge`, 24 workers, started 2026-07-29
+  21:11:14 PC time; probe `probe520merge` already found 1 equal-cost 872 at
+  S−1 in allocation (142,6,0,0))
 - result: —
 
 ## tie-census full corpus
