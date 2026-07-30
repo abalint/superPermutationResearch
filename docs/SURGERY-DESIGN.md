@@ -649,3 +649,113 @@ over all 87 walks: 0 improved, 0 equal-cost in ANY allocation, 0
 48.5% equal plateau, compounds strictly cost — at this band the tier
 is closed to equality itself, corpus-wide. Verbatim ledgers in
 SWEEP-QUEUE; fold in JOURNAL s38b.
+
+## 11. s39 — the midgame-order front: loop-cover coordinates and instrument I4
+
+Work-menu item 1 of HANDOFF-S38, written with the s39 theorem in hand
+(THEORY §7: every pure walk satisfies `length ≥ base + Λ`; records are
+exactly the TIGHT LOOP COVERS — Φ = splits fully-ridden 2-loops
+spanning the w2 cycle space, a bridge-forest of doors, D+1
+door-terminated single chains).
+
+### 11.1 The wall, from every direction (inputs)
+
+- s24: capped beam — the record's own trajectory has zero bound slack
+  at every step; midgame RANKING (levels ~60–450) is the sole failure.
+- s25: NRPA — off-policy deviations cost ≥ 2 chars; the shell is thin
+  under LOCAL exploration.
+- s36 M-2b′: nature's minimal 2-compound spans depths 181–718.
+- s38 §10.8: extraction/absorption at a w2 seam is +6-lossy — the
+  compound tier lives in midgame ORDER, not depth; s38b: the pair tier
+  at anchored reach has an EMPTY equal shell.
+
+Common shape: every instrument we own perturbs a walk LOCALLY (in tail
+depth or in policy space) and the record shell is closed under all of
+it. The missing move is a GLOBAL reordering that preserves the
+certificate. s39 says what that certificate is.
+
+### 11.2 The reframe: the cover is the certificate, order is the move
+
+s39 census (`loop_ledger_probe.py cover`, results in THEORY §7): the
+used-loop set is a near-perfect class invariant — 22,050 distinct
+covers over 22,062 n=6 classes — and its ONLY collisions are the
+natural edit boundaries:
+
+- n=6: 12 cover-sharing pairs, all cross-allocation: 8× (145,3)↔(143,5)
+  — the COMPOUND type, including the s36 pair `55088ebb4107` ↔
+  `d141177d85e1`; s36's controlled-prefix method saw only 2 of these 8
+  — and 4× (143,5)↔(142,6), the unit-trade type (incl. the committed
+  specimen pair `0105a4b77ce8` ↔ `b020caf20414`).
+- n=7: exactly ONE collision in 84 classes — **the Kristan seam**:
+  (844,17) `a30c7c517d7b` ↔ (843,18) Kristan `d9a28c2d8195`. The edge
+  every anchored sweep failed to find down to ~410-perm tails exists as
+  a cover-preserving global reordering, found by census without search.
+
+So: nature's compound crossings — the exact moves s38 proved anchored
+instruments cannot express — are TRAVERSAL REORDERINGS OF A FIXED LOOP
+COVER. Two walks on the same cover have the same L, same door count
+(tight ⇒ D = P − 1 fixed by the cover's chain structure... measured,
+see M-4a), hence the same length. The midgame-order question becomes
+concrete: **given a cover, enumerate its tight traversals.**
+
+### 11.3 Instrument I4 (two modes)
+
+- **I4-A, cover re-chaining (build first):** fix a known record's loop
+  cover; search over tight traversals — which cycles split (rotor
+  placement), where doors land (bridge-forest), how runs chain. Every
+  tight traversal materializes at the SAME length; products are
+  equal-length walks in possibly different allocations/classes. Oracle
+  set: the 13 cover-sharing pairs (I4-A must re-derive each partner
+  from its mate's cover — 13 independent oracles where every previous
+  instrument had 1). Events: M3-novel classes, unreached allocations
+  ((144,4), ip=1 targets), and at n=7 the Kristan seam by
+  construction. This searches the record shell exactly where anchored
+  tools are blind.
+- **I4-B, cover synthesis (staged):** search COVER SPACE itself for
+  Λ−1 objects — an 871 is a tight 28-loop cover ((144,3) or (145,2)
+  families), a 5905 a tight 141-loop cover. This is an exact-cover-
+  shaped problem (choose full loops + chains covering all (n−1)!
+  1-cycles under the tightness constraints) — the Track A/C DLX
+  machinery's home turf, and the n=8 46204's kernel+2-cycle-extension
+  construction is precisely a tight-cover synthesis. Staged behind
+  M-4d counting (below).
+
+### 11.4 Measurements BEFORE build (M-4, standing directive)
+
+- **M-4a — anatomy of the 13 pairs (first, cheap, Python):** for each
+  cover-sharing pair diff the traversals: rotor placements (which
+  cycles split, arc boundaries), door trees, chain assignment, run
+  order. Output: the move vocabulary of the compound tier as nature
+  performs it — 13 instances. Also: near-miss census (|cover Δ| ∈
+  {1..4}) to see whether the shell has cover-ADJACENT structure beyond
+  exact sharing.
+- **M-4b — traversal count of one cover:** enumerate (or bound) the
+  tight traversals of one committed record's cover. If enumerable
+  (≤ ~1e7), I4-A is an exhaustive instrument; if not, it needs
+  guided search — which is Track C's evaluator territory, on a space
+  ~1000× smaller than perm-level midgame.
+- **M-4c — the Λ-bound for search:** at record prefixes (depths
+  60–450), is `loops-committed + admissible-minimum-additional-loops`
+  a nontrivial lower bound? If yes it attacks the s24 zero-slack wall
+  inside beam/NRPA directly — the first new admissible signal for the
+  blocked zone since the residual bound.
+- **M-4d — 871-cover counting:** do the tightness constraints admit
+  ANY 28-loop cover at n=6 (24 splits + 3 doors or 25 + 2)? Pure
+  combinatorics/DLX, no walk search; a NO here would be a certificate-
+  level closure of the 871 within the tight class (an 871 would then
+  need deficit > 0 — a structurally slack record, never observed).
+
+### 11.5 Traps
+
+- **Canonical frame:** loop ids are not relabel-invariant. All cover
+  comparisons happen between canonical representatives; the "120/144
+  loops ever used, 4 universal" facts are canonical-frame statements —
+  quotient properly before quoting them as structure.
+- **Tight ≠ only:** deficit > 0 walks are legal; I4's tightness
+  constraints are search restrictions, not laws of nature. Products
+  outside tightness are impossible for I4 by construction — say so in
+  any closure claim it produces.
+- **The cover census is not an edit census:** sharing a cover proves
+  the two walks are order-variants; NOT sharing one does not prove
+  edit-distance — compound edits that change the cover exist (any
+  Λ-neutral loop swap).

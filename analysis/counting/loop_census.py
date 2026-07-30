@@ -8,7 +8,9 @@ door histogram, then report
 
     Λ = L + sum_{w>=4} (w-3) * inter[w].
 
-CORPUS LAW (calibrated, this script re-verifies; discovered s34-s35):
+s39: THEOREM (docs/THEORY.md §7) — for every pure complete walk,
+length >= n! + (n-1)! + (n-3) + Λ, and equality = the "tight loop
+cover" class. This script verifies the corpus sits at EQUALITY:
 every known record-length walk at a given n has the SAME Λ, and
     length = n! + (n-1)! + (n-3) + Λ
   - n=6: Λ = 29 on ALL 22,062 classes (L=29 for the pure-w3

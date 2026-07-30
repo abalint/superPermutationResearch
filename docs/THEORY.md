@@ -117,15 +117,100 @@ regression data.
   extension tree live outside this repo in `../extraDocs/`.
 - A found superpermutation is **self-certifying** — validation is a linear scan. Records
   require no trust in the search that produced them.
-- **Loop-count relation (s35, corpus law, derivation OPEN):** the number of distinct
-  2-loops a walk's w2 edges use satisfies `L = S + #doors − ((n−1)! − 1)`, equivalently
-  `length = n! + (n−1)! + (n−3) + Λ` with `Λ = L + Σ_{w≥4}(w−3)·inter[w]` — verified
-  exceptionless on 22,062 n=6 872s, 4 off-shell 873s (incl. a wild
-  18×w3/4×w4/1×w5 allocation), and all 87 known n=7 walks
-  (`analysis/counting/loop_census.py`, exit-0 verifier). One char = one Λ-unit on the
-  record shell: an 871 is a Λ=28 object, a 5905 is Λ=141. If derived, this becomes the
-  cycle-level restatement of the waste identity; SURGERY-DESIGN §10.1 builds the I3
-  prune tier T4 on it either way. s37 showed T4 is tautological as a PRUNE (Λ-neutral =
-  length-neutral), so it runs as a tripwire assertion instead — and as of the s38 n=7
-  recomp2 farm sweep it has survived 7,321,635 independent exact re-solves with zero
-  violations, the strongest calibration the relation has.
+- **Loop-count relation (s35 corpus law → s39 THEOREM, §7 below):** for EVERY pure
+  (intra-free) complete walk, `L ≤ S + #doors − ((n−1)! − 1)` — equivalently
+  `length ≥ n! + (n−1)! + (n−3) + Λ` with `Λ = L + Σ_{w≥4}(w−3)·inter[w]` — with a
+  structural characterization of equality (§7). The corpus-law EQUALITY form
+  (verified exceptionless on 22,062 n=6 872s, 4 off-shell 873s, all 87 known n=7
+  walks, Egan's 5908, and — via the s38 tripwire — 7,321,635 recomp2 re-solves) says
+  every known record and near-record is a TIGHT LOOP COVER (§7's deficit = 0). One
+  char = one Λ-unit on the tight shell: an 871 is a Λ=28 object (in general
+  Λ + deficit = 28, so Λ ≤ 28), a 5905 is Λ ≤ 141. s37 showed the I3 tier T4 is
+  tautological as a PRUNE (on the tight shell Λ-neutral = length-neutral), so it runs
+  as a tripwire assertion; after §7, a tripwire "violation" on a found walk means a
+  deficit>0 (structurally slack) walk — remarkable and worth the banner, but not a
+  solver bug.
+
+## 7. The loop-count theorem (s39 — proven, with equality characterization)
+
+Setting: a complete first-visit walk over all `n!` permutations with NO intra-cycle
+edges of weight ≥ 2 (every corpus walk qualifies). Notation: `S` sojourns,
+`splits = S − (n−1)!`, `D` inter edges of weight ≥ 3 ("doors"), `W = S − 1 − D` w2
+edges. The **2-loop** of a permutation `p` is its orbit under
+`g(q) = q₂…q_{n−1} q₁ q_n` (orbit size `n−1`; `n!/(n−1)` loops; equivalently: the
+parked last symbol plus the cyclic order of the rest). `L` = number of distinct
+2-loops over the walk's w2 edges, `Λ = L + Σ_{w≥4}(w−3)·inter[w]`.
+
+**Structural lemmas** (each verified exactly on record corpora by
+`analysis/counting/loop_ledger_probe.py`, modes `walk`/`random`):
+
+- **L1 (arcs).** The sojourns of a 1-cycle partition its `n` perms into contiguous
+  cyclic intervals, and `rot(exit of an arc) = entry of the spatially-next arc`.
+  (First-visit + completeness + w1 = rotation.)
+- **L2 (loop readability).** The unique inter-w2 edge out of `a` lands on
+  `g(rot(a))`, and its 2-loop equals the g-orbit of its LANDING perm. Hence the w2
+  edge into an entry `v` is the loop-space edge `g⁻¹(v) → v`, and the w2 edge
+  departing past `v`'s cycle-neighbour is `v → g(v)`: each loop's potential w2 edges
+  form a directed (n−1)-cycle, and `v → g(v)` is used iff the arc spatially before
+  `v` departs by w2.
+- **L3 (coherence).** A full-cycle arc (its cycle has one sojourn) entered by w2 and
+  exited by w2 continues the SAME loop; a split-cycle arc always switches loops
+  (the n perms of a cycle lie on n distinct loops).
+
+**Theorem.** For every pure complete walk:
+
+    L  ≤  splits + D + 1,   equivalently   length  ≥  n! + (n−1)! + (n−3) + Λ,
+
+and the deficit decomposes into two independently non-negative terms:
+
+    deficit := (splits + D + 1) − L = (splits − Φ) + ((D+1) − P),
+
+where `Φ` = fully-used loops (all n−1 edges used) and `P = L − Φ` = partially-used
+loops.
+
+**Proof.** (i) `Φ ≤ splits`: in the multigraph `G₂` on the `(n−1)!` 1-cycles whose
+edges are the walk's W w2 edges, each fully-used loop is a closed cycle through its
+n−1 distinct 1-cycles (L2), and distinct loops are edge-disjoint, hence linearly
+independent in the cycle space: `Φ ≤ dim = W − (n−1)! + C` with `C` = components of
+`G₂`. Adding the D door edges makes the transition graph connected (the walk is),
+so `C ≤ D + 1`; substituting `W = S − 1 − D` gives `Φ ≤ splits`. (ii) `P ≤ D + 1`:
+a partially-used loop's used edges form maximal chains on its (n−1)-cycle; each
+chain's last edge `u → v` has its successor `v → g(v)` unused, which by L2 means
+the arc spatially before `v` departs by a DOOR or is the walk's final arc. That arc
+is unique per chain-end and each door/end serves exactly one entry (`v = rot` of
+its exit), so chain-ends — hence partial loops — inject into the D doors plus the
+walk end. ∎
+
+**Equality (the tight-loop-cover class).** `deficit = 0` iff (a) every door bridges
+two w2-components (`C = D + 1` exactly — the doors form a bridge-forest gluing the
+w2-graph) and the cycle space of `G₂` is spanned by the fully-ridden 2-loops
+(`Φ = splits`: no accidental cycles), and (b) there are exactly `D + 1` partial
+loops, each a SINGLE chain, one terminated at each door and one at the walk's end.
+**Every known record-shell walk is tight**: all 22,062 n=6 872s, all 87 known n=7
+walks (both checked term-by-term), the off-shell 873s/5907s/5908, and all 7.3M s38
+recomp2 re-solves (via the tripwire). Random complete n=4 walks: deficit ≥ 0 in
+11,400+ samples (5,400+ of them pure; both terms individually ≥ 0 on every pure
+walk checked), ~5–8% tight. A legal walk CAN be
+slack (e.g. at n=3: ride cycle 1, w3-door to cycle 2, ride it — L=0, deficit=2),
+so the corpus's exceptionless tightness is a strong structure theorem for how
+records are built: **a record is a tight loop cover — Φ = splits fully-ridden
+2-loops spanning the w2 cycle space, glued by a bridge-forest of doors, plus D+1
+door-terminated single chains.**
+
+**Consequences.**
+- The hunt targets restate as: an 871 satisfies `Λ + deficit = 28`, a 5905
+  `Λ + deficit = 141` — and since deficit ≥ 0, `Λ ≤ 28` (resp. 141): one char
+  below record means one fewer Λ-unit OR one unit of structural slack.
+- The I3 Λ-tripwire asserts tightness, not consistency: a "violation" on a found
+  walk is a deficit>0 walk (legal, structurally slack, never yet observed at
+  record length) — banner-worthy, not a solver bug.
+- **The loop cover is a near-perfect class invariant (s39 census,
+  `loop_ledger_probe.py cover`):** 22,062 n=6 classes → 22,050 distinct covers;
+  the ONLY collisions are 12 cross-allocation pairs sitting exactly on the natural
+  edit boundaries — 8× (145,3)↔(143,5) (the compound-crossing type; s36's
+  controlled-pair method had found 2) and 4× (143,5)↔(142,6) (the unit-trade
+  type). At n=7: 84 classes → 83 covers, and the single collision is
+  **(844,17) `a30c7c517d7b` ↔ (843,18) Kristan** — the Kristan seam, absent from
+  every anchored sweep, EXISTS as a cover-preserving global reordering. Only 120
+  of the 144 loops (canonical frame) are ever used by any known 872; 4 loops
+  appear in every cover.

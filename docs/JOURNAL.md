@@ -6,6 +6,78 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 39) — the loop-count relation is PROVEN (THEORY §7: `length ≥ n!+(n−1)!+(n−3)+Λ` for every pure complete walk, deficit = (splits−Φ) + (D+1−P) with both terms ≥ 0; equality = the TIGHT LOOP COVER class, and every known record is tight) — and the theorem's census instrument immediately finds the midgame front's missing object: **the used-loop set is a near-perfect class invariant (22,050 distinct covers over 22,062 n=6 classes) whose ONLY collisions are the natural edit boundaries — 8× (145,3)↔(143,5) compound pairs (s36 knew 2; we now hold 8) + 4× (143,5)↔(142,6) unit pairs — and at n=7 the single collision in 84 classes is THE KRISTAN SEAM: (844,17) `a30c7c517d7b` ↔ (843,18) Kristan share one 142-loop cover** — the seam absent from every anchored sweep down to ~410-perm tails exists as a cover-preserving global reordering, found by census with no search; SURGERY-DESIGN §11 written (work-menu item 1): the midgame-order instrument is I4 = tight-traversal search of a FIXED cover, with 13 pinned oracle pairs and an M-4 measurement pass specced before any build
+
+Python-only session (probe + docs; no Rust). Both HANDOFF-S38 work-menu
+items landed: item 2 (derive the relation) is DONE — upgraded from
+corpus law to theorem with an equality characterization — and item 1
+(midgame-order design) is WRITTEN as SURGERY-DESIGN §11, grounded in
+census results the theorem made possible.
+
+**The theorem (full statement + proof in THEORY §7).** For every pure
+(intra-free) complete first-visit walk: `L ≤ splits + D + 1`,
+equivalently `length ≥ n! + (n−1)! + (n−3) + Λ`. Proof in two counting
+lemmas: (i) fully-used 2-loops are edge-disjoint closed cycles in the
+w2-transition multigraph, hence independent in its cycle space ⇒
+Φ ≤ splits (doors bound the component count: C ≤ D+1); (ii) every
+partially-used loop has a chain-end, and chain-ends inject into
+{doors, walk-end} ⇒ P ≤ D+1. The deficit decomposes as
+(splits−Φ) + (D+1−P), both ≥ 0. The relation is NOT unconditional —
+a legal n=3 walk with one w3 door has deficit 2 (the derivation-open
+flag was hiding a real hypothesis) — and the corpus's exceptionless
+EQUALITY is therefore a structure theorem: **a record is a tight loop
+cover** (Φ = splits full loops spanning the w2 cycle space, doors a
+bridge-forest, D+1 door-terminated single chains). Verified
+term-by-term: all 8 committed allocation specimens + the 296-record
+class (Φ=splits and P=D+1 exactly, `Px=0` — every loop single-
+component), all 87 n=7 walks, 11,400+ random n=4 walks (5,400+ pure,
+zero violations of either term; `analysis/counting/loop_ledger_probe.py`,
+modes walk/random). Consequences: an 871 has Λ + deficit = 28 (so
+Λ ≤ 28); the I3 Λ-tripwire now asserts TIGHTNESS — a violation on a
+found walk would be a legal deficit>0 walk, not a solver bug.
+
+**The census (probe mode `cover`; ~4 min for the 22,062-class
+archive).** Loop covers are nearly free class invariants and their
+collisions are EXACTLY nature's edit structure:
+
+- n=6: 22,062 classes → 22,050 covers; 12 sharing pairs, every one
+  cross-allocation on a natural boundary: 8× (145,3)↔(143,5) — the
+  compound-crossing type, including s36's `55088ebb4107↔d141177d85e1`
+  — and 4× (143,5)↔(142,6) — the unit-trade type, including the
+  committed specimen pair `0105a4b77ce8↔b020caf20414`. Zero
+  same-allocation collisions.
+- n=7: 84 classes → 83 covers; the ONE sharing pair is the Kristan
+  seam, (844,17)↔(843,18). s33 conjectured the seam from allocation
+  arithmetic; s33–s38b failed to realize it with every anchored
+  instrument; it is real, and it is a cover-preserving reordering —
+  i.e., exactly a midgame-ORDER object, as §10.8 predicted.
+- Canonical-frame facts (quote with the frame caveat): only 120 of
+  144 loops are ever used by any known 872; 4 loops appear in every
+  cover; cover overlaps between random classes are small (mode ~10 of
+  29) — the shell is cover-DIVERSE, not one cover reordered.
+
+**Designed — SURGERY-DESIGN §11 (I4, the midgame-order instrument).**
+I4-A (build first): fix a known cover, search its tight traversals
+(rotor placement, door bridge-forest, chain assignment) — every
+product materializes at the same length; 13 oracle pairs to re-derive
+(vs. ONE oracle for every previous instrument); events are M3-novel
+classes, unreached allocations, and the Kristan seam by construction.
+I4-B (staged): search cover space for Λ−1 objects — an 871 as a tight
+28-loop cover; exact-cover-shaped, DLX territory. M-4 measurement pass
+BEFORE build: M-4a anatomy of the 13 pairs (the compound tier's move
+vocabulary as nature performs it), M-4b traversal-count of one cover
+(exhaustive vs. guided decision), M-4c a Λ-based admissible bound for
+the s24 blocked zone, M-4d 871-cover counting (a NO would close the
+871 within the tight class — certificate-level).
+
+**Next session, concretely (s40): M-4a** — diff the 13 pairs' rotor/
+door/chain structure (Python, cheap, the direct design input for
+I4-A); then M-4b/M-4d. Still queued for Andrew: the two n=6 recomp2
+entries (SWEEP-QUEUE, closure bookkeeping, unaffected). Still open:
+per-allocation NRPA/beam, ip=1 study, Track C overhead cut — M-4c is
+the first concrete bridge from the loop frame back to that search
+line.
+
 ## 2026-07-30 (session 38b) — three farm sweeps folded (operator ran the queue back-to-back, Andrew-approved): **the n=7 pair-compound tier is CLOSED at the 4840 band — and unlike every earlier tier its equal-cost shell is EMPTY: 7,321,635 exact re-solves (from 1.57B raw pairs, 189 extractions), 0 improved, 0 equal-cost in ANY allocation, 0 Λ violations** — single recompositions sit on a dense equal plateau (48.5% at n=7, 48.2% at n=6: n-generic) but compounding two moves leaves the plateau entirely and strictly costs, so at this band the compound tier is closed to EQUALITY, not merely to improvement; recomp-1 closure extends 4905→4840 (297,232 moves, 0 events) and merge+ties extend to ~410-perm tails (NOT the ~440 the anchor implies — max-blocks 60 binds at n=7, observed anchors 4629–4689); **the Kristan seam (844,17)↔(843,18) is absent from all three sweeps**; and the loop-count relation now stands on 7.3M independent exact re-solves with zero violations
 
 Fold-only entry (results verbatim in SWEEP-QUEUE, ops details in the

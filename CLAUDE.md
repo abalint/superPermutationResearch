@@ -8,15 +8,17 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S38.md` right after it** — state of the
-   world, the engine-first premise, the midgame-order front, traps, and the
-   session-end ritual in two pages (supersedes HANDOFF-S37).
+   **Fresh agent: read `docs/HANDOFF-S39.md` right after it** — state of the
+   world, the engine-first premise, the loop-cover front (I4/M-4), traps, and
+   the session-end ritual in two pages (supersedes HANDOFF-S38).
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
    `docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; §9 has the M-R laws;
    §10 is the compound tier: s38 built I3 `--recomp2` and §10.8 records its
-   as-built truth + the oracle refutation — the open front is the
-   midgame-order design question, HANDOFF-S38 item 1)**;
+   as-built truth + the oracle refutation; §11 is the OPEN FRONT — the
+   midgame-order instrument I4 in loop-cover coordinates, designed s39 on
+   the loop-count THEOREM (THEORY §7) and the cover census: 13 pinned
+   cover-sharing oracle pairs incl. the Kristan seam; next step M-4a)**;
    `docs/RECOMB-DESIGN.md` (s26, §8 outcomes + §8.4a recalibration) for
    what closed before it, and `docs/TRACKB-DESIGN.md` for the underlying
    Track B frame (its M3/§7 carry s26 corrections inline; §2 L1 carries
@@ -325,6 +327,14 @@ python3 analysis/counting/m3_check.py -n 7 <candidate.txt>
 # EXACTLY 142 distinct 2-loops (all 6 allocations, Kristan incl.), 5907s use 143, and
 # length = 5764 + #2loops on all 87 — a 5905 in this frame is a 141-2-loop cover:
 python3 analysis/counting/upstream5906_twocycles.py
+
+# s39 loop-count THEOREM (THEORY §7): length >= n!+(n-1)!+(n-3)+Λ for every pure walk;
+# records = tight loop covers. loop_ledger_probe verifies the theorem terms per walk,
+# stress-tests the sign on random walks, and censuses used-loop COVERS (the near-perfect
+# class invariant whose only collisions are the natural edit boundaries + Kristan seam):
+python3 analysis/counting/loop_ledger_probe.py walk 6 data/upstream872_specimens/*.txt
+python3 analysis/counting/loop_ledger_probe.py cover 7 data/upstream5906
+python3 analysis/counting/loop_ledger_probe.py random 4 3000 1 4
 
 # s26 structural recombination (docs/RECOMB-DESIGN.md; src/recomb.rs + src/unionsearch.rs):
 cargo run --release -- recomb -n 6 --dirs data/records872,data/gain1_872s --emit-dir data/hybrids872   # 0.25s; pins: 298 closure walks, 2 hybrids
