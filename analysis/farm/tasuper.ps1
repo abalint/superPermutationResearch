@@ -60,6 +60,9 @@ while ($true) {
     if ($p -and $p.ProcessName -eq "superperm") {
       $alive++
       $aliveList += "w$nn"
+      # in-flight equal-cost count: the worker's merge SUMMARY only exists once
+      # it exits, so read its per-walk lines to keep MEQ live during the run
+      $liveEq += @(Select-String -Path $log -SimpleMatch "merge-equal 872 at S-1:" -ErrorAction SilentlyContinue).Count
       $ws = [math]::Round($p.WorkingSet64 / 1MB)
       $memSum += $ws
       if ($ws -gt $memMax) { $memMax = $ws }
@@ -146,7 +149,7 @@ while ($true) {
     "stage:        $stage ($alive/$Workers workers alive)",
     "walks:        $doneWalks/$Total ($pct%)   rate=$rate walks/s   elapsed=$('{0:n1}m' -f ($elapsed/60))   eta=$eta",
     "improvements: $improveTotal        new-allocation ties: $tieTotal",
-    "merge (I2a):  $mergeImpTotal improved (871 cands)   $mergeEqTotal equal-cost 872s at S-1   $mergeMovesTotal moves tried   allocs=$($mergeAllocs.Count)",
+    "merge (I2a):  $mergeImpTotal improved (871 cands)   $($mergeEqTotal + $liveEq) equal-cost 872s at S-1   $mergeMovesTotal moves tried   allocs=$($mergeAllocs.Count)",
     "worker mem:   sum=$memSum MB  max=$memMax MB",
     "finished:     $($ledgered.Count)/$Workers   last: $lastExit",
     "alive:        $($aliveList -join ' ')",
