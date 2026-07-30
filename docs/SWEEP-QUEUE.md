@@ -228,3 +228,56 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
 - approved: NO
 - status: pending
 - result: —
+
+## n=7 recomp2, 4840 band — I3 pair-compound closure over the whole n=7 corpus
+- spec: `cargo run --release --quiet -- tail-atsp -n 7 --dirs data/upstream5906,data/upstream5907 --anchor 4840 --max-blocks 56 --recomp2 --quiet --out-dir data/surgery_finds`
+- product: the first pair-compound (I3) closure statement at n=7 —
+  extends the s33 recomp-1 closure to 2-compounds under T1 (net −2..0)
+  + T2 (vocabulary) + single prefix-part extraction. Alarm paths: any
+  improvement = 5905/5906 candidate (exit 2 → validate + `m3_check -n
+  7`); any equal-length (844,17)↔(843,18) = the KRISTAN SEAM (the
+  instrument banners it); any other new-allocation equal = first n=7
+  cross-allocation compound. Λ-tripwire violations are bannered too —
+  drop everything if one appears (solver bug or first counterexample
+  to the s35 loop-count relation).
+- projected: s38 single-walk probe (`02d771908307`, 33 blocks): 75,201
+  exact re-solves, 89.1 s/walk → **~2.2 h single-core** for all 90
+  walks (87 files are small enough that the corpus is its own probe;
+  local Mac run is fine, no farm needed). If run on the farm instead:
+  the s38 build CHANGED `src/tailatsp.rs` — cross-compile + reship
+  per OPERATIONS §"tail-atsp farm harness" first.
+- approved: NO
+- status: pending
+- result: —
+
+## n=6 recomp2, 520 band (full corpus) — farm, tight first
+- spec (tight pass, S−1 family only): `cargo run --release --quiet -- tail-atsp -n 6 --dirs data/upstream872 --anchor 520 --max-blocks 42 --recomp2 --recomp2-tight --quiet --out-dir data/surgery_finds`
+  — then, if Andrew wants the d3−1 family too, the same without
+  `--recomp2-tight` (~4× the cost).
+- product: corpus-wide pair-compound closure at the 520 band (the band
+  where the single tie and the merge completion live). Same alarm
+  paths as above at n=6 (871 candidate / new-allocation equal / Λ).
+- projected: s38 single-walk probe (A side, 41 blocks, FULL nets):
+  367.5 s/walk, 111,216 solves — single-walk, so treat as
+  order-of-magnitude only (round-robin probe REQUIRED before the farm
+  commit, per the a450b50 lesson). Full corpus full-T1 ≈ 2,250
+  core-hours ≈ **3.9 days wall on 24 cores**; `--recomp2-tight` cuts
+  solves ~4× (27.5k/walk measured split) → ≈ **1 day wall**. Farm
+  binary MUST be reshipped first (s38 changed `src/tailatsp.rs`).
+- approved: NO
+- status: pending
+- result: —
+
+## n=6 recomp2, 450 band — probe only, then decide
+- spec: `cargo run --release --quiet -- tail-atsp -n 6 --dirs data/upstream872 --anchor 450 --max-blocks 56 --recomp2 --recomp2-tight --quiet --out-dir data/surgery_finds --limit <probe>`
+- product: the compound band closest to anchored reach of the compound
+  tier (54-block instances — the exact-B&B working edge). The s38
+  verdict (§10.8) says the natural compound is NOT expressible even
+  here, so this band's value is the negative sweep + any novel finds.
+- projected: s38 single-walk probe at FULL nets ran > 40 min/walk (see
+  JOURNAL s38 for the final number) — full-net full-corpus is off the
+  table; `--recomp2-tight` + round-robin probe sizes the real cost
+  before any decision.
+- approved: NO
+- status: pending
+- result: —

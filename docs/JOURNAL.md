@@ -6,6 +6,85 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 38) — I3 BUILT (`tail-atsp --recomp2`, SURGERY-DESIGN §10.8) and its first measurement KILLS the extraction hope: **the natural 2-compound is NOT expressible at anchored reach — extraction AND absorption of the `126354`@181 part both price exactly +6 over equal (the part is entered by a w2 edge; any local seam repair re-spells a full window), while nature's compound enters both whole-6s through w3 doors that exist only under a globally different midgame order** — the compound tier lives in midgame ORDER, not midgame depth (M-2b′ sharpened; the s24 blocked zone indicted a third time, now at certificate level); first sweeps: A side @520 = 111,216 exact re-solves, **zero equal-cost completions of any kind**, zero Λ violations, 6 min/walk; n=7 @4840 = 75,201 solves, 89 s/walk, zero events — the whole-corpus n=7 sweep (~2.2 h) is queued
+
+Rust session; 139 tests green (133 + 6 new pins); clippy/fmt clean.
+The build follows SURGERY-DESIGN §10.4/§10.6/§10.7 with two corrections
+found while building (both now in §10.8):
+
+**Built (src/tailatsp.rs + CLI).** `--recomp2` = distinct-cycle variant
+PAIRS from recomp-1's enumeration, plus one context per extraction
+candidate (straddling cycle, exactly one prefix part: float the part
+into the tail, hard-heal the prefix seam x→y, then identity + single +
+pair moves on the extended instance — extraction+single is itself a
+2-compound recomp-1 never tried). Incumbent-seeded exact re-solves;
+every complete find is validated, allocation-classified, and checked
+against the s35 loop-count relation (the T4 tripwire — banner, never a
+prune; `loop_relation` mirrors loop_census.py in Rust). Kristan-seam
+banner at n=7. Flags: `--recomp2-wide` (T2 off), `--recomp2-tight`
+(nets −2/−1 only, ~4× cheaper).
+
+**Correction 1 — T1 must admit net −2.** §10.4 wrote ΔS ∈ {−1, 0};
+nature's own minimal compound is net −2 (two merges + two door
+promotions, equal length) — the budget as written excluded the
+mandatory oracle by construction. Built range: {−2, −1, 0}.
+
+**Correction 2 — T2, n-generically.** M-R1's vocabulary {6, 2|4, 3|3,
+2|2|2} is exactly the singleton-free compositions of 6, so T2 as built
+= "the moved cycle's full composition (remaining prefix parts + new
+arcs) contains no part of size 1". s37's ~470–900 solves/walk figure
+assumed net −1 only and a full-cycles-only vocabulary reading; the
+as-built instrument solves ~100× more and is still affordable (below).
+
+**The s38 headline — the §10.6 oracle FAILS, with mechanism.** From
+`872.up-55088ebb4107` (A side, (145,3)) at anchors 455 AND 523: all 36
+whole-6 × whole-6 entry pairs on `126354`+`123654` after extraction of
+`126354`@181×4 are REFUTED at equal length; the B-entry compound's
+true optimum is +6 over equal (108 vs 102 / 82 vs 76, materializing to
+a valid 878), extraction-identity alone is +6, and the mirror move
+(absorption: extend the prefix part's ride to the whole-6 in place,
+`tests/s38_measure.rs`) is also +6, because w_in=2 → w_new=6. The
+mechanism is general: the part sits behind a w2 entry, and no local
+repair of a w2 seam costs less than a full re-spell. Nature's B side
+pays w3 doors into whole-6s at depths 502/630 — positions no
+extraction/absorption at A's seams can offer. Verdict pinned as a
+regression test (`natural_compound_refuted_at_anchored_reach`).
+Strategic consequence: I3's product is the pair-closure negative (plus
+any novel finds); reaching the compound tier needs a midgame-order
+instrument — the same wall the completion-policy work (s23–s25) faces
+from the search side.
+
+**First sweeps (single-walk probes; round-robin before any farm
+projection).** A side @523/41 blocks: 5.98M raw pairs (3 contexts),
+181,300 post-T1, 111,216 solves (net −2/−1/0 = 2,772/24,738/83,706),
+zero equal-cost completions, zero improvements, zero Λ violations,
+367.5 s — net ≤ 0 moves essentially never complete equal at deep
+anchors, pairs included (the merge law extends to compounds). n=7
+`02d771908307` @4840/33 blocks: 75,201 solves, 89.1 s, zero events.
+Three queue entries appended (n=7 4840 whole-corpus ~2.2 h FIRST, n=6
+520 tight ~1 day farm, n=6 450 probe-only); the 450-band full-net
+single-walk probe was still running at session end (> 40 min/walk —
+full-net 450 is off the table; see the queue entry).
+
+**Folded: `a585recomp` (operator, farm, done).** The single-edit tier
+is CLOSED at the 585 band corpus-wide: 27,873,361 recompositions over
+all 22,062 classes, 0 improved, 0 new-allocation equals, 13.4M (48.2%)
+same-allocation equals; a 200-file random M3 sample of the emitted
+equals is 200/200 equivalent-to-known AND each to its OWN source class
+— the equal-cost neighbourhood is huge in moves, one point in class
+space. (Strong evidence, not exhaustion: 2/walk sampling.)
+
+**Farm note (operator):** s38 changed `src/tailatsp.rs` ⇒ cross-compile
++ reship before ANY post-s38 farm run. A fresh
+`x86_64-pc-windows-gnu` build was made this session (see OPERATIONS).
+
+**Next session, concretely:** run the n=7 recomp2-4840 sweep when
+approved (it's the whole corpus — the Kristan-seam existence question
+under pair compounds); round-robin-probe the n=6 520 tight sweep and
+queue-revise; the two older n=7 queue entries still pending; then the
+open list unchanged (loop-count relation derivation, ip=1 study,
+per-allocation NRPA, Track C overhead).
+
 ## 2026-07-30 (session 37) — I3 staging step 2 MEASURED (SURGERY-DESIGN §10.7), build green-lit with a corrected design: **full-tail exactness at compound reach is infeasible (~110 blocks at anchor 180 vs the ~50 exact-B&B ceiling) but the straddle pivot is CHEAP — straddling cycles are rare (mean 2.2/walk at 450/520, one prefix part each), so I3 = tail pair-recomp + single prefix-part extraction at anchor 450 (blocks ≤ ~56)**; prune factors measured on the real variant space: raw pair size 2.0M/walk (520) / 3.7M (450), T1 net−1 cuts to 0.3%, +T2 vocabulary to **0.02% ≈ 470–900 exact re-solves/walk** — far under budget; and an honest correction: **T4 is TAUTOLOGICAL** (the loop-count relation makes Λ = waste − ((n−1)!−2), so Λ-neutrality IS length-neutrality) — downgraded from prune to solver-bug tripwire assertion
 
 Python-only session; 133 tests green; no Rust yet (that is s38).

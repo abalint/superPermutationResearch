@@ -3,6 +3,15 @@
 Supersedes `HANDOFF-S32.md`. Read JOURNAL s33–s37 for the full story;
 this is the two-page version with entry points and traps.
 
+**s38 ADDENDUM (this doc predates it):** `--recomp2` is BUILT (work
+menu item 1 done) and its §10.6 oracle is REFUTED — the natural
+compound is not expressible at anchored reach even with extraction
+(both extraction and absorption price +6 over equal; the compound
+tier lives in midgame ORDER). Read JOURNAL s38 + SURGERY-DESIGN §10.8
+before item 1's sweeps; three recomp2 queue entries await approval in
+SWEEP-QUEUE. The farm binary is STALE for recomp2 until reshipped
+(s38 changed `src/tailatsp.rs`).
+
 ## State of the world in six sentences
 
 1. **The premise is engine-first** (ROADMAP "Premise", Andrew

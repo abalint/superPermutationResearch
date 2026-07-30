@@ -649,6 +649,27 @@ enum Cmd {
         /// length in a different allocation = reported + written.
         #[arg(long)]
         recomp: bool,
+        /// I3 recomp2 (SURGERY-DESIGN §10, s38): try every PAIR of
+        /// recompositions on two distinct tail cycles under T1 budget
+        /// (combined net split ∈ {−2,−1,0}) + T2 vocabulary (no
+        /// singleton arcs), plus single prefix-part extraction of each
+        /// straddling cycle (float its only prefix part into the tail,
+        /// heal the seam exactly; then identity/single/pair moves on the
+        /// extended instance). Shorter = 871/5905 candidate (exit 2);
+        /// equal length in a new allocation = reported + written — at
+        /// n=7 an (844,17)↔(843,18) equal IS the Kristan seam. Run at
+        /// anchor 450/520 (n=6) or 4770/4840 (n=7) with --max-blocks ~56.
+        #[arg(long)]
+        recomp2: bool,
+        /// Lift T2 for --recomp2 (singleton 1|k arcs in) — the
+        /// broader-negative second pass; ~15× more exact re-solves.
+        #[arg(long)]
+        recomp2_wide: bool,
+        /// Restrict --recomp2's T1 to net ∈ {−2, −1} (the S−1 budget
+        /// family), skipping the net-0 (d3−1) family — ~4× fewer exact
+        /// re-solves; the deep-anchor budget option.
+        #[arg(long)]
+        recomp2_tight: bool,
         /// Cap on collected tie orders per walk.
         #[arg(long, default_value_t = 64)]
         tie_cap: usize,
@@ -1912,6 +1933,9 @@ fn main() -> ExitCode {
             ties,
             merge,
             recomp,
+            recomp2,
+            recomp2_wide,
+            recomp2_tight,
             tie_cap,
             out_dir,
             limit,
@@ -1936,6 +1960,12 @@ fn main() -> ExitCode {
             let (mut rc_moves, mut rc_improved, mut rc_equal_new, mut rc_equal_same) =
                 (0u64, 0u64, 0u64, 0u64);
             let mut rc_allocs: std::collections::BTreeMap<(usize, usize, usize, usize), u64> =
+                std::collections::BTreeMap::new();
+            let (mut r2_ext, mut r2_raw, mut r2_t1, mut r2_solved) = (0u64, 0u64, 0u64, 0u64);
+            let mut r2_by_net = [0u64; 3];
+            let (mut r2_improved, mut r2_eq_new, mut r2_eq_same, mut r2_lambda_bad) =
+                (0u64, 0u64, 0u64, 0u64);
+            let mut r2_allocs: std::collections::BTreeMap<(usize, usize, usize, usize), u64> =
                 std::collections::BTreeMap::new();
             let emit = |tag: &str, s: &str| {
                 if let Some(dir) = &out_dir {
@@ -2127,6 +2157,118 @@ fn main() -> ExitCode {
                             }
                         }
                     }
+                    if recomp2 {
+                        // I3: pair recompositions + prefix-part
+                        // extraction (SURGERY-DESIGN §10.4/§10.6/§10.7).
+                        let src_alloc = tailatsp::allocation_of(&rec.trace);
+                        let tw = Instant::now();
+                        let rep = tailatsp::recomp2_walk(
+                            n,
+                            &g,
+                            &rec.string,
+                            &rec.trace,
+                            &inst,
+                            recomp2_wide,
+                            !recomp2_tight,
+                            8,
+                            2,
+                        );
+                        r2_ext += rep.ext_candidates as u64;
+                        r2_raw += rep.raw_pairs;
+                        r2_t1 += rep.t1_pairs;
+                        r2_solved += rep.solved;
+                        for (k, v) in r2_by_net.iter_mut().enumerate() {
+                            *v += rep.solved_by_net[k];
+                        }
+                        r2_improved += rep.improved;
+                        r2_eq_new += rep.equal_new;
+                        r2_eq_same += rep.equal_same;
+                        r2_lambda_bad += rep.lambda_bad;
+                        for (a, k) in &rep.eq_new_allocs {
+                            *r2_allocs.entry(*a).or_default() += k;
+                        }
+                        let (mut k_eq, mut k_same) = (0usize, 0usize);
+                        for f in &rep.finds {
+                            if !f.lambda_ok {
+                                println!(
+                                    "*** LOOP-RELATION VIOLATION *** (solver bug or first counterexample to the s35 law) {} [{}]",
+                                    rec.name, f.desc
+                                );
+                            }
+                            match f.kind {
+                                tailatsp::R2Kind::Shorter => {
+                                    println!(
+                                        "*** RECOMP2 IMPROVEMENT *** {} anchor={} chars={} (source {}) alloc={:?} [{}]",
+                                        rec.name,
+                                        inst.anchor_depth,
+                                        f.s.len(),
+                                        rec.string.len(),
+                                        f.alloc,
+                                        f.desc
+                                    );
+                                    println!("    NEXT: python3 analysis/counting/m3_check.py + validate --complete before ANY claim");
+                                    emit(
+                                        &format!(
+                                            "recomp2-cand-{}",
+                                            rec.name.trim_end_matches(".txt")
+                                        ),
+                                        &f.s,
+                                    );
+                                }
+                                tailatsp::R2Kind::EqualNew => {
+                                    let kristan = n == 7
+                                        && ((src_alloc.0, src_alloc.1) == (844, 17)
+                                            && (f.alloc.0, f.alloc.1) == (843, 18)
+                                            || (src_alloc.0, src_alloc.1) == (843, 18)
+                                                && (f.alloc.0, f.alloc.1) == (844, 17));
+                                    if kristan {
+                                        println!(
+                                            "*** KRISTAN SEAM FOUND *** equal-length {:?} <-> {:?} compound: {} [{}]",
+                                            src_alloc, f.alloc, rec.name, f.desc
+                                        );
+                                    } else if !quiet || r2_eq_new <= 20 {
+                                        println!(
+                                            "  recomp2-equal in NEW allocation: {} -> {:?} (source {:?}) [{}]",
+                                            rec.name, f.alloc, src_alloc, f.desc
+                                        );
+                                    }
+                                    k_eq += 1;
+                                    emit(
+                                        &format!(
+                                            "recomp2-eq-{}-{}",
+                                            rec.name.trim_end_matches(".txt"),
+                                            k_eq
+                                        ),
+                                        &f.s,
+                                    );
+                                }
+                                tailatsp::R2Kind::EqualSame => {
+                                    k_same += 1;
+                                    emit(
+                                        &format!(
+                                            "recomp2-sameeq-{}-{}",
+                                            rec.name.trim_end_matches(".txt"),
+                                            k_same
+                                        ),
+                                        &f.s,
+                                    );
+                                }
+                            }
+                        }
+                        if !quiet {
+                            println!(
+                                "  recomp2 {}: ext={} raw={} t1={} solved={} eq_new={} eq_same={} ({:.1}s)",
+                                rec.name,
+                                rep.ext_candidates,
+                                rep.raw_pairs,
+                                rep.t1_pairs,
+                                rep.solved,
+                                rep.equal_new,
+                                rep.equal_same,
+                                tw.elapsed().as_secs_f64()
+                            );
+                        }
+                    }
                     if ties {
                         let src_alloc = tailatsp::allocation_of(&rec.trace);
                         for (ti, ord) in tie_orders.iter().enumerate() {
@@ -2176,7 +2318,16 @@ fn main() -> ExitCode {
                     println!("    recomposed allocation {alloc:?}: {k}");
                 }
             }
-            if improved > 0 || merge_improved > 0 || rc_improved > 0 {
+            if recomp2 {
+                println!(
+                    "  recomp2 (I3): {r2_ext} extraction candidates, {r2_raw} raw pairs, {r2_t1} post-T1, {r2_solved} exact re-solves (net -2/-1/0: {}/{}/{}), {r2_improved} improved (candidates), {r2_eq_new} equal-cost in NEW allocations, {r2_eq_same} equal-cost same-allocation, {r2_lambda_bad} loop-relation violations",
+                    r2_by_net[0], r2_by_net[1], r2_by_net[2]
+                );
+                for (alloc, k) in &r2_allocs {
+                    println!("    compound allocation {alloc:?}: {k}");
+                }
+            }
+            if improved > 0 || merge_improved > 0 || rc_improved > 0 || r2_improved > 0 {
                 std::process::exit(2);
             }
         }

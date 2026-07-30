@@ -12,6 +12,9 @@
 # s28 natural cross-allocation surgery pair (docs/SURGERY-DESIGN.md §2.3-2.4),
 # the tail-atsp --ties oracle control; pinned by src/tailatsp.rs tests.
 !/data/surgery_specimens/
+# s36/s38 natural 2-compound pairs (SURGERY-DESIGN §10.6), the --recomp2
+# natural-compound oracle control; pinned by src/tailatsp.rs tests.
+!/data/compound_specimens/
 # s33 n=7 corpus: 84 known 5906 classes + 3 urdvr 5907s (~530 KB total —
 # unlike the 22,062-class n=6 archive, small enough to commit; makes every
 # n=7 sweep reproducible from a fresh clone; see upstream5906_dump.py).
@@ -28,3 +31,5 @@ __pycache__/
 !/data/trackc/instances/
 !/data/trackc/parity/
 !/data/trackc/corpus_sample.jsonl
+# Claude Code session worktrees
+/.claude/

@@ -563,3 +563,80 @@ incumbent-seeded exact re-solves, the §10.4 controls plus the §10.6
 natural-compound oracle (softened: the instrument must find AN
 equal-cost (143,5) completion from the A side via the two merges;
 its m3 class vs `d141177d85e1` is reported either way).
+
+### 10.8 s38 — BUILT; the oracle is REFUTED with mechanism
+
+`tail-atsp --recomp2` (src/tailatsp.rs: `recomp2_walk` + extraction /
+multi-move / loop-relation machinery; flags `--recomp2`,
+`--recomp2-wide`, `--recomp2-tight`). As built:
+
+- **Move space.** Context 0: all distinct-cycle variant PAIRS from
+  recomp-1's enumeration (singles there = recomp-1, already swept).
+  Plus one context per extraction candidate (straddling cycle with
+  exactly one prefix part, part strictly inside the prefix): the part
+  floats into the tail as a block, the prefix seam is hard-healed
+  (junction x→y), and the extended instance gets identity + single +
+  pair moves. Every survivor is exact-re-solved incumbent-seeded;
+  every complete find is Λ-checked (loop-relation tripwire — banner,
+  never a prune) and classified shorter / equal-new-allocation /
+  equal-same-allocation, with the Kristan-seam banner at n=7.
+- **T1 as built: combined net ∈ {−2, −1, 0}, a CORRECTION to §10.4.**
+  The §10.4 range {−1, 0} would exclude nature's own compound (net −2,
+  §10.6) — the budget must admit −2 or the oracle is unreachable by
+  construction. `--recomp2-tight` restricts to {−2, −1} (the S−1
+  family) for deep-anchor budgets; net 0 (the d3−1 family) is ~75% of
+  all solves.
+- **T2 as built, n-generic:** after the move, the moved cycle's FULL
+  composition (remaining prefix parts + new arcs) must contain no part
+  of size 1. At n=6 this is exactly the M-R1 vocabulary — the
+  singleton-free compositions of 6 are {6, 2|4, 3|3, 2|2|2}, 17/63
+  full-cycle start-sets (Lucas L(6)−1). `--recomp2-wide` lifts it.
+  NOTE: s37's ~470–900 solves/walk assumed net −1 only AND a
+  full-cycles-only vocabulary reading; the as-built instrument solves
+  ~100× more (measured below) and is still affordable.
+
+**Controls (all pinned in src/tailatsp.rs tests, suite green at 139):**
+n=5 wide full-sweep (zero improvements, Λ clean), HK/B&B agreement on
+pair instances, synthetic composition (two equal-cost singles on
+disjoint cycles compose at the composed cost), seam edit + neutral
+(net +1 equal-cost) partner prices at exactly inc−1 and validates, and
+the natural-compound REFUTATION pin (below).
+
+**The §10.6 oracle FAILS — measured, with mechanism (the s38
+headline).** From the A side `55088ebb4107` at anchors 455 and 523,
+extraction of `126354`@181×4 plus every whole-6 × whole-6 entry pair
+(all 36) on `126354`+`123654` is refuted at equal length; the B-entry
+compound's true optimum is exactly **+6 over equal** (108 vs 102 at
+455; 82 vs 76 at 523, materializing to a valid 878), and the
+extraction-identity alone is +6 (110 vs 104; 84 vs 78). The mirror
+move — ABSORPTION, extending the prefix part's ride to the whole-6 in
+place (measured in `tests/s38_measure.rs`, `#[ignore]`d probes) — is
+also +6: the part is entered at w2 (w_in=2) and any local repair of
+that seam re-spells a full window (heal = w6, absorb-entry w_new = 6).
+Nature's compound instead enters both whole-6s through w3 doors that
+exist only under a GLOBALLY different midgame order (B's whole-6s sit
+at depths 502/630 — neither at A's 181 seam nor deep in the tail).
+**Consequence: the compound tier lives in midgame ORDER, not merely
+midgame depth — extraction/absorption support cannot substitute for
+midgame reordering.** This sharpens M-2b′ and re-indicts the s24
+blocked zone (levels ~60–450) a third time, now at the certificate
+level: single edits are closed (s29–s33), anchored pair compounds
+cannot even express nature's own equal-length crossing.
+
+**First sweeps (single-walk probes — round-robin before any farm
+projection):**
+- A side, n=6 anchor 523 (41 blocks): 5.98M raw pairs (3 contexts),
+  181,300 post-T1, **111,216 exact re-solves** (net −2/−1/0 =
+  2,772/24,738/83,706), **zero equal-cost completions of ANY kind**,
+  zero improvements, zero Λ violations, 367.5 s. The zero-equal result
+  extends the equal-cost-flood picture: net ≤ 0 moves (merge-direction)
+  essentially never complete equal at deep anchors — pairs included.
+- n=7 `02d771908307` anchor 4840 (33 blocks): 12.5M raw, 106,204
+  post-T1, 75,201 solves, zero events, zero Λ violations, 89.1 s —
+  ~2.5 h for the whole 87-walk corpus.
+
+**I3's product is therefore the pair-closure negative** (plus any
+novel finds at other walks/anchors): sweeps queued in SWEEP-QUEUE
+(n=7 first per §10.5). Reaching the compound tier itself needs a
+midgame-order instrument — out of I3's scope, and the same wall the
+policy/completion work (s23–s25) already faces from the search side.

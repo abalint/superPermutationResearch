@@ -297,6 +297,18 @@ cargo run --release -- tail-atsp -n 6 --dirs data/upstream872 --anchor 520 --max
 # equal-cost completions are ~48% of moves and (sampled) all equivalent-to-known:
 cargo run --release -- tail-atsp -n 6 --dirs data/upstream872 --anchor 585 --recomp --quiet --out-dir out/
 
+# s38 I3 --recomp2 (SURGERY-DESIGN §10.8) — PAIR recompositions on two distinct tail
+# cycles under T1 (combined net ∈ {−2,−1,0}) + T2 (no size-1 part in the moved cycle's
+# composition), plus single prefix-part extraction of straddling cycles. Shorter =
+# candidate (exit 2, M3 ritual); equal-length new-allocation = written; n=7
+# (844,17)↔(843,18) equal = KRISTAN SEAM banner; every find is Λ-checked (loop-relation
+# tripwire). --recomp2-tight = nets −2/−1 only (~4× cheaper); --recomp2-wide = T2 off.
+# Measured: ~370 s/walk @520 n=6 (full nets), ~90 s/walk @4840 n=7. s38 verdict: the
+# natural 2-compound is NOT reachable this way (extraction is +6-lossy) — the compound
+# tier lives in midgame ORDER; this instrument's product is the closure negative:
+cargo run --release -- tail-atsp -n 6 --dirs data/upstream872 --anchor 520 --max-blocks 42 --recomp2 --recomp2-tight --quiet --out-dir data/surgery_finds
+cargo run --release -- tail-atsp -n 7 --dirs data/upstream5906,data/upstream5907 --anchor 4840 --max-blocks 56 --recomp2 --quiet --out-dir data/surgery_finds
+
 # s33 n=7 corpus (committed: data/upstream5906 = 84 known 5906 classes incl. Kristan's,
 # data/upstream5907 = 3 urdvr 5907s; rebuild: analysis/counting/upstream5906_dump.py).
 # The whole instrument ladder is n-generic — anchor bands scale by perm count
