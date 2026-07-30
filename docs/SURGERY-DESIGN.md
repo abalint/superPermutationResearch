@@ -519,3 +519,47 @@ controlled pairs (`surgery_pairs.py 150`; ~7 s):
   equal-length (net −2, +2 doors); an 871 needs net −1 at fixed doors
   (or net 0 with a demotion) — I3 searches a vocabulary nature uses,
   toward budgets nature doesn't exhibit. State this in every verdict.
+
+### 10.7 s37 — feasibility + prune factors MEASURED (staging step 2); T4 CORRECTED
+
+Python-only measurements on the 8 specimens (+ 45-file round-robin
+corpus sample), pre-build per §10.5. Four verdicts:
+
+- **Full-tail exactness at compound reach is INFEASIBLE; the straddle
+  pivot is confirmed.** Blocks at anchor 180 ≈ 110 (corpus max 112)
+  vs the demonstrated exact-B&B ceiling ~50 (anchor 450). No
+  anchor-only instrument reaches the natural compound's 181–718 span.
+- **Straddling is RARE — the extraction frame is cheap.** Mean 2.2
+  straddling cycles per walk at anchors 450/520, each with exactly one
+  prefix part. So I3's move space = tail-pair recompositions PLUS an
+  optional single prefix-part extraction (remove one prefix part of a
+  straddling cycle, heal its prefix seam exactly, add its perms as a
+  floating/mergeable block, re-solve the tail). Block count grows by
+  ≤ 1 (≈ 55 at anchor 450 — at the working edge, measure solve times
+  in the build probe). The natural-compound A side (`55088ebb4107`)
+  has 6 extraction candidates at 450, including the required
+  `126354`@181.
+- **T1/T2 factors (measured on the real variant space).** Raw
+  cross-cycle pair space ≈ 2.0M/walk (anchor 520) / 3.7M (450) —
+  larger than §10.4's estimate. T1 net −1 (the S−1 budget): 0.3% →
+  6.2k / 12.2k pairs per walk. T1 net 0 (d3−1 family): 2.0%. Adding
+  T2 (vocabulary on full cycles, 17/63) to net −1: **0.02% — ~470
+  (520) / ~900 (450) exact re-solves per walk**, far under the §10.4
+  ≤ 5k budget. Build order: T1+T2 sweep first; T1-only
+  (broader-negative, 1|5-in) as the second pass.
+- **T4 is TAUTOLOGICAL — downgraded from prune to assertion.** Given
+  the s35 loop-count relation L = S + #doors − ((n−1)!−1), algebra
+  gives Λ = waste − ((n−1)!−2): Λ-neutrality IS length-neutrality, so
+  as an enumeration filter T4 admits exactly the pairs T1's budget
+  arithmetic already admits. The relation's value stands as the
+  cycle-level REFRAME (a 5905 is a 141-2-loop cover) and as a cheap
+  internal consistency assertion on every materialized compound (the
+  instrument should verify L + door terms against S and length and
+  panic on mismatch — a solver-bug tripwire, not a prune).
+
+**Green light (s38+): build `--recomp2`** = tail pair enumeration
+under T1(+T2) at anchors 450/520 with single prefix-part extraction,
+incumbent-seeded exact re-solves, the §10.4 controls plus the §10.6
+natural-compound oracle (softened: the instrument must find AN
+equal-cost (143,5) completion from the A side via the two merges;
+its m3 class vs `d141177d85e1` is reported either way).

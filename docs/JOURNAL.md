@@ -6,6 +6,44 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 37) — I3 staging step 2 MEASURED (SURGERY-DESIGN §10.7), build green-lit with a corrected design: **full-tail exactness at compound reach is infeasible (~110 blocks at anchor 180 vs the ~50 exact-B&B ceiling) but the straddle pivot is CHEAP — straddling cycles are rare (mean 2.2/walk at 450/520, one prefix part each), so I3 = tail pair-recomp + single prefix-part extraction at anchor 450 (blocks ≤ ~56)**; prune factors measured on the real variant space: raw pair size 2.0M/walk (520) / 3.7M (450), T1 net−1 cuts to 0.3%, +T2 vocabulary to **0.02% ≈ 470–900 exact re-solves/walk** — far under budget; and an honest correction: **T4 is TAUTOLOGICAL** (the loop-count relation makes Λ = waste − ((n−1)!−2), so Λ-neutrality IS length-neutrality) — downgraded from prune to solver-bug tripwire assertion
+
+Python-only session; 133 tests green; no Rust yet (that is s38).
+
+**Measured (all in §10.7):**
+- **Blocks vs anchor** (8 specimens + 45-file round-robin sample):
+  ~110 blocks at anchor 180 (max 112), 54 at 450, 40 at 520. The
+  compound tier's 181–718 span is unreachable by any full-tail exact
+  instrument — confirming the M-2b′ pivot.
+- **Straddle frame is tiny:** 2.2 straddling cycles/walk (450 and
+  520), each exactly one prefix part. Extraction (remove one prefix
+  part of a straddling cycle, heal the seam exactly, float its perms
+  as a mergeable block, re-solve the tail) adds ≤ 1 block. The
+  natural-compound A side has 6 extraction candidates at 450
+  including the required `126354`@181.
+- **T1/T2 factors:** cross-cycle pair space 2.0M/walk (520) / 3.7M
+  (450); T1 net −1 → 0.3% (6.2k / 12.2k); T1 net 0 → 2.0%; T1+T2
+  (vocab 17/63 on full cycles) net −1 → 0.02% = ~470/~900 exact
+  re-solves per walk. Build order: T1+T2 first, T1-only
+  (broader-negative, 1|5-in) second.
+- **T4 correction:** with L = S + #doors − ((n−1)!−1), algebra gives
+  Λ ≡ waste − ((n−1)!−2) ⇒ Λ-neutral = length-neutral. As a filter it
+  admits exactly what T1's budget admits — nothing. Kept as an
+  internal consistency assertion on every materialized compound (the
+  cycle-level REFRAME stands; its pruning power was already inside
+  the waste identity).
+
+**Green light (s38): build `--recomp2`** — tail pair enumeration
+under T1(+T2), single prefix-part extraction, incumbent-seeded exact
+re-solves at anchors 450/520, §10.4 controls + the softened §10.6
+natural-compound oracle (find AN equal-cost (143,5) completion from
+`55088ebb4107` via the two merges; report its m3 class vs
+`d141177d85e1` either way). Farm note for the operator: s38 will
+change `src/tailatsp.rs` — reship before any farm run after it lands.
+
+**Still open:** fold `a585recomp` (operator); the two pending n=7
+queue entries; ip=1 study; per-allocation NRPA/beam; Track C overhead.
+
 ## 2026-07-30 (session 36) — M-2 co-occurrence census RUN (`analysis/trackb/recomp_cooccur.py`, 1,071 controlled pairs, 7 s): **T5 is dead (zero bulk joint-locality: used-loop 14.2% vs null 14.4%), but nature exhibits exactly TWO minimal 2-compounds and they are the SAME object mirrored — (145,3)↔(143,5), the two LARGEST shells (S1-disconnected per s32), bridged by two merges + two door promotions on the SAME two cycles `126354`(2|4↔6) + `123654`(3|3↔6) with the same part entries, recurring across independent controlled pairs** — the compound tier's existence proof, its first pinned oracle, and a hard anchor-reach constraint: the compound's parts span depths 181–718, so `--recomp2` at anchor ≥ 520 could NEVER find it — the compound tier lives across the midgame (the same band s24 indicted)
 
 Continuation session (same day as s33–s35). Python only; 133 tests
