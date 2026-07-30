@@ -6,6 +6,54 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 35) — Multi-move tier DESIGNED (SURGERY-DESIGN §10: I3 = `tail-atsp --recomp2`, pair compounds with prune tiers T1 budget / T2 vocabulary / T3 admissible price / T4 Λ-neutrality / T5 co-occurrence, M-2 measurement pass specced BEFORE build per the standing directive) on top of a NEW conservation law found while designing: **the loop-count relation `L = S + #doors − ((n−1)!−1)`** — equivalently `length = n! + (n−1)! + (n−3) + Λ`, `Λ = L + Σ(w−3)·heavy doors` — **exceptionless on 22,062 n=6 872s (Λ=29: pure-w3 classes L=29, the 397 single-w4 L=28, the 18 double-w4 L=27), 4 off-shell 873s (Λ=30, incl. a wild 23-door allocation), and all 87 n=7 walks (Λ=142/143)** ⇒ one char = one Λ-unit: an 871 is a Λ=28 object, a 5905 is Λ=141, and NO Λ-neutral edit can shorten a walk — the cheap new prune for every compound enumerator
+
+Continuation session (same day as s33/s34). No Rust changes; 133 tests
+green. The two n=7 queue entries stand in SWEEP-QUEUE with `approved:`
+fields for Andrew (recomp-4840, deep-seam 4600); the operator's n=6
+`a585recomp` farm sweep still runs.
+
+**Measured first (design-before-code directive): the 2-loop census at
+n=6.** s34's L1 (every 5906 = exactly 142 2-loops) begged the n=6
+question. `analysis/counting/loop_census.py` (n-generic, exit-0
+verifier) over all 22,062 classes: L is NOT invariant — it splits
+27/28/29 — but the split lands EXACTLY on the w4-bearing allocations:
+L + #w4 + 2·#w5 = 29 with zero exceptions (the 18 double-w4 classes at
+L=27, the 397 single-w4 at L=28, all pure-w3 at L=29). Heavy doors
+substitute for 2-loops at exactly (w−3) loops per door. Off-shell
+probe: all four local 873s satisfy Λ=30 exactly, including the wild
+(S=120, 18×w3+4×w4+1×w5) stratified-beam walk — so this is not a
+record-shell artifact. Algebra against the s22 waste identity reduces
+it to the loop-count relation `L = S + #doors − ((n−1)!−1)` (check:
+Kristan 843+18−719=142 ✓, wild 873 120+23−119=24 ✓). Likely a small
+theorem — derivation flagged OPEN in THEORY.md §6; corpus-law status
+until proven.
+
+**Designed — SURGERY-DESIGN §10 (I3, the multi-move tier).**
+- §10.1 the 2-loop frame: improvement ⇔ Λ−1 (remove a distinct
+  2-loop or demote a heavy door); T4 = skip exact re-solves for
+  Λ-neutral pairs, computable from arc structures pre-ATSP.
+- §10.2 budgets: S−1 targets need net-split −1 (M-R2), d3−1 targets
+  net 0 + separable door demotion (M-R4); n=7 instantiation includes
+  the Kristan-seam existence question ((844,17)↔(843,18) as a
+  2-recomposition compound — s33 proved it is no single edit).
+- §10.3 M-2 co-occurrence census (RUN BEFORE BUILD): joint locality
+  of recomposed-cycle pairs (M-2a), pair types carrying the net in
+  minimal-flux controlled pairs (M-2b), full joint autopsy of the four
+  natural unit pairs (M-2c) — machinery already in recomp_census.py.
+- §10.4 the instrument: pair moves over recomp-1's variant
+  enumeration; unpruned ~845k pairs/walk ≈ 1 h/walk is unusable, so
+  T1–T5 with measured prune factors gate the build (target ≤ ~5k
+  exact solves/walk); controls pinned in the doc (n=5 optimum,
+  synthetic composition, seam-edit + Λ-neutral compound).
+- §10.5 staging: M-2 → prune-factor measurement on specimens → build
+  → probe → sweep n=7 FIRST (87 walks = the whole corpus is a probe).
+
+**Next session, concretely (s36):** run M-2 (Python only); fold
+`a585recomp` when the operator lands it; the two n=7 queue entries if
+approved. Then the T1/T2/T4 prune-factor measurement (staging step 2)
+— only after that does --recomp2 get built.
+
 ## 2026-07-30 (session 34) — twoCycles files DECODED, the s33 completeness caveat RESOLVED: the community `7_5906_twoCycles_*` files are per-string ANNOTATIONS (7/7 files bijective, group i = exactly the 142 2-loops its string traverses) — **the published n=7 corpus IS the 83 strings; our 84-class index covers all published data**; NEW 2-loop corpus laws (`upstream5906_twocycles.py`, exit-0 verifier): **every known 5906 uses EXACTLY 142 distinct 2-loops — invariant across all six L0 allocations and Kristan's class — every 5907 exactly 143, and length = 5764 + #2loops on all 87 walks** (waste = (n−1)!−2 + L; one char = one 2-loop; a 5905 is a 141-2-loop cover); operator doc updated with n=7 rates + n-generic alarm path
 
 Continuation session (same day as s33). No Rust changes; 133 tests

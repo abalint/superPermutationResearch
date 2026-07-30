@@ -117,3 +117,12 @@ regression data.
   extension tree live outside this repo in `../extraDocs/`.
 - A found superpermutation is **self-certifying** — validation is a linear scan. Records
   require no trust in the search that produced them.
+- **Loop-count relation (s35, corpus law, derivation OPEN):** the number of distinct
+  2-loops a walk's w2 edges use satisfies `L = S + #doors − ((n−1)! − 1)`, equivalently
+  `length = n! + (n−1)! + (n−3) + Λ` with `Λ = L + Σ_{w≥4}(w−3)·inter[w]` — verified
+  exceptionless on 22,062 n=6 872s, 4 off-shell 873s (incl. a wild
+  18×w3/4×w4/1×w5 allocation), and all 87 known n=7 walks
+  (`analysis/counting/loop_census.py`, exit-0 verifier). One char = one Λ-unit on the
+  record shell: an 871 is a Λ=28 object, a 5905 is Λ=141. If derived, this becomes the
+  cycle-level restatement of the waste identity; SURGERY-DESIGN §10.1 builds the I3
+  prune tier T4 on it either way.
