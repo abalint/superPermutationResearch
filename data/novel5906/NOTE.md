@@ -1,5 +1,10 @@
 # novel5906 — the first record-length classes this project has produced
 
+**PUBLISHED: merged into superpermutators/superperm by Robin Houston
+on 2026-07-30 (PR #50, files `superpermutations/7/7_5906_derived_*`).
+These 8 classes are now part of the canonical community corpus — the
+published n=7 5906 count is 92 classes across 8 allocations.**
+
 s41 (2026-07-30). Eight distinct 5906 classes, each INEQUIVALENT
 (relabel+reversal) to all 84 published/known classes in
 `analysis/counting/upstream5906_canon_index.tsv` — the first genuinely
