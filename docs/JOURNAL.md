@@ -63,8 +63,10 @@ anchors, pairs included (the merge law extends to compounds). n=7
 `02d771908307` @4840/33 blocks: 75,201 solves, 89.1 s, zero events.
 Three queue entries appended (n=7 4840 whole-corpus ~2.2 h FIRST, n=6
 520 tight ~1 day farm, n=6 450 probe-only); the 450-band full-net
-single-walk probe was still running at session end (> 40 min/walk —
-full-net 450 is off the table; see the queue entry).
+single-walk probe (54 blocks) was killed unfinished — two attempts,
+> 10 and > 12 solver-minutes each without completing one walk, i.e.
+≥ 2× the 520 cost with no upper bound measured; full-net 450 is off
+the table pending a tight round-robin probe (see the queue entry).
 
 **Folded: `a585recomp` (operator, farm, done).** The single-edit tier
 is CLOSED at the 585 band corpus-wide: 27,873,361 recompositions over

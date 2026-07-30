@@ -274,10 +274,11 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   tier (54-block instances — the exact-B&B working edge). The s38
   verdict (§10.8) says the natural compound is NOT expressible even
   here, so this band's value is the negative sweep + any novel finds.
-- projected: s38 single-walk probe at FULL nets ran > 40 min/walk (see
-  JOURNAL s38 for the final number) — full-net full-corpus is off the
-  table; `--recomp2-tight` + round-robin probe sizes the real cost
-  before any decision.
+- projected: s38 single-walk probes at FULL nets were killed
+  unfinished (> 10 and > 12 solver-minutes without completing one
+  54-block walk) — full-net full-corpus is off the table;
+  `--recomp2-tight` + round-robin probe sizes the real cost before
+  any decision.
 - approved: NO
 - status: pending
 - result: —
