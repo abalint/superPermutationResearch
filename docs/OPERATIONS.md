@@ -98,6 +98,35 @@ F:\superpermFarm\tailatsp\tastop.ps1   -Tag a450b50      # abort (add -All to sw
 `-Limit K` runs K walks per shard — always probe first (`-Tag probeXXX -Limit 40`)
 and quote the measured rate ×1.5.
 
+**Mode switches** (each maps to the `tail-atsp` flag of the same name, and each
+is recorded in the run's SPEC.txt):
+
+| switch | flag | what the supervisor tracks |
+|---|---|---|
+| `-Ties -TieCap N` | `--ties --tie-cap N` | `ties` = equal-cost orders landing in a DIFFERENT allocation |
+| `-Merge` | `--merge` | `merge_moves/merge_improved/merge_equal` + `MERGE-ALLOCS.txt` |
+| `-Recomp` | `--recomp` | `rc_moves/rc_improved/rc_eq_new/rc_eq_same` + `RECOMP-ALLOCS.txt` |
+
+Ledger columns are `worker,shard,rc,verdict,walks,optimal,improved,skipped,
+ties,merge_moves,merge_improved,merge_equal,rc_moves,rc_improved,rc_eq_new,
+rc_eq_same,secs,finished` — fixed for the life of a run file. `rc` is always
+empty: `detach.exe` discards exit codes, so an improvement is detected from the
+worker's own banner/summary instead (see the alarm path below). A new mode
+needs its switch in `talaunch.ps1`, its summary regex in `tasuper.ps1`, and its
+counters in `tabrief.ps1`/`ta_watch.sh` — `--recomp2` (s38) is NOT wired yet.
+
+**Progress is completed walks, not log lines.** Modes differ in how much they
+print (`--recomp` emits ~3 lines per walk because it writes 2 sampled equals),
+so `tasuper.ps1` counts lines ending in `block-order-optimal`. Anything that
+changes that per-walk line must keep the counter honest, or long-run ETAs go
+silently wrong (this bit a 5 h run before it was caught; results were never
+affected, since every reported number comes from the ledger).
+
+**A src change invalidates the shipped binary.** `superperm.exe` on the PC is
+whatever was last cross-compiled; `BUILD.txt` beside it records the commit. Check
+it against `git rev-parse --short HEAD` before any farm run, and reship if they
+differ (s31 and s38 both changed `src/tailatsp.rs`).
+
 **Heartbeat.** `talaunch.ps1` starts `tasuper.ps1` detached; it rewrites
 `STATUS.txt` every 30 s (stage, alive workers, walks/total, rate, ETA,
 improvements, per-worker memory) and appends one `ledger.csv` row per finished
