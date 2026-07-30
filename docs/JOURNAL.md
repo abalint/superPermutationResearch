@@ -6,7 +6,7 @@ mechanism — read it before touching code.
 
 ---
 
-## 2026-07-30 (session 37c) — In-engine cross-check of the s37 sizing (parallel session, reconciled): `tail-atsp --measure` + `analysis/trackb/recomp2_sizing.py` re-ran staging step 2 through the REAL `enumerate_recomps` move space at both n — **§10.7 corroborated (blocks, raw pair space) with two refinements: the exact-B&B ceiling is 75–110 blocks, not ~50 (timed: 55 blk 0.1 s, 75 blk 2.7 s, 111 blk killed at 600 s — the anchor-450 extraction frame is comfortably solvable), and the §10.7 re-solve budgets are full-cycle-only: the real move space is ~5–10× bigger (T1(net−1)+T2 at 450 = 8,370/walk median vs ~900 est.)**; new n=7 measurement (all 87 walks, 4 anchors): at the 4905 band the net−1 in-vocab pair space is MEDIAN ZERO — the S−1 family barely exists in short tails; the d3−1 (net-0) family is the n=7 bulk (6.2k/walk); SURGERY-DESIGN §10.8
+## 2026-07-30 (session 37c) — In-engine cross-check of the s37 sizing (parallel session, reconciled): `tail-atsp --measure` + `analysis/trackb/recomp2_sizing.py` re-ran staging step 2 through the REAL `enumerate_recomps` move space at both n — **§10.7 corroborated (blocks, raw pair space) with two refinements: the exact-B&B ceiling is 75–110 blocks, not ~50 (timed: 55 blk 0.1 s, 75 blk 2.7 s, 111 blk killed at 600 s — the anchor-450 extraction frame is comfortably solvable), and the §10.7 re-solve budgets are full-cycle-only: the real move space is ~5–10× bigger (T1(net−1)+T2 at 450 = 8,370/walk median vs ~900 est.)**; new n=7 measurement (all 87 walks, 4 anchors): at the 4905 band the net−1 in-vocab pair space is MEDIAN ZERO — the S−1 family barely exists in short tails; the d3−1 (net-0) family is the n=7 bulk (6.2k/walk); SURGERY-DESIGN §10.8. **PLUS the a585recomp fold: the full-corpus recomp-1 sweep finished clean (27.87M moves, 0 improvements, 0 new-allocation equals, 13.44M same-allocation equals = 48.2%, 40/40 gate sample equivalent-to-known) — the s31 tentative law is now corpus-wide: every known 872 is recomposition-closed over its last ~135 perm visits; three independent move types agree the anchorable zone is single-edit-closed**
 
 Parallel session, same day as s33–s37b; ran concurrently with s37 and
 reconciled after: §10.7's T4 correction (tautological — Λ = waste −
@@ -42,9 +42,17 @@ the Kristan-seam question is answerable in under an hour); the
 extraction frame's block cost is a non-issue (0.1 s base solves at
 56 blocks).
 
-**a585recomp fold:** [pending at entry time — see addendum below if
-present; the sweep was at 98.4% with RIMP=0, REQN=0, REQS=8.4M when
-this entry was written.]
+**a585recomp FOLDED (this session; full entry in SWEEP-QUEUE.md):**
+the full-corpus recomp-1 sweep at anchor 585 finished clean —
+22,062/22,062 walks, **27,873,361 moves tried, 0 improvements, 0
+equal-cost new-allocation 872s, 13,441,109 same-allocation equals
+(48.2%)**, 3.5 h wall / 78.3 core-hours, no alarm. A random 40 of the
+44,124 sameeq samples fetched and gated: validator 40/40 complete,
+m3_check 40/40 equivalent-to-known, 0 novel. **The s31 tentative law
+is now corpus-wide: every known 872 is recomposition-closed over its
+last ~135 perm visits** — with a520b40merge and a520ties, three
+independent move types agree the corpus is single-edit-closed in the
+anchorable zone; the compound tier is the only remaining local route.
 
 **Next (s38): unchanged from s37/HANDOFF-S37** — build `--recomp2`
 per §10.7 with the §10.8 budget deltas.

@@ -138,9 +138,26 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   same-allocation equals (48% — the dense shell, as s31 said). Binary
   reshipped from clean `e286355` (BUILD.txt provenance on the PC).
 - approved: YES (Andrew, 2026-07-30, after being given the ~5 h figure)
-- status: running (farm run `a585recomp`, 24 workers, started 2026-07-30
-  06:15:18 PC time; ETA ~11:00–11:30 PC time)
-- result: —
+- status: **done** (farm run `a585recomp`, 24 workers, 2026-07-30 06:15:18 →
+  09:45:35 PC time, 3.5 h wall / 78.3 core-hours — faster than the 4.5–5 h
+  projection; slowest worker 210 min vs 196 min mean)
+- result: **The single-edit tier is CLOSED at the 585 band, corpus-wide — the
+  s31 tentative law is now a measured law.** Ledger sum over 24 workers:
+  `22,062 walks, 22,062 block-order-optimal, 0 improved, 0 skipped` plus
+  `recomp-1: 27,873,361 moves tried, 0 improved (871 candidates), 0 equal-cost
+  872s in NEW allocations, 13,441,109 equal-cost same-allocation` (48.2% —
+  the dense-shell density holds corpus-wide; verdicts OK:24, no alarm).
+  Every alternative arc-partition of every tail cycle of every known 872
+  (last ~135 perm visits) re-prices to ≥ its own cost, and the only
+  equal-cost completions stay in the walk's own allocation. Gate sample: 40
+  random `recomp-sameeq` finds (of 44,124 on the PC) fetched and gated from
+  clean `9e3cbf4` — validator complete 40/40, `m3_check` **exit 0
+  (equivalent-to-known) 40/40, 0 novel** — consistent with the s31 60-sample
+  batch; the dense shell is rediscovery, not novelty. Copy of ledger + gated
+  sample: `data/farm_finds/a585recomp/` (NOTE.txt has the fold provenance).
+  Read with a520b40merge + a520ties: three independent move types now agree
+  the corpus is single-edit-closed in the anchorable zone — the compound tier
+  (I3, SURGERY-DESIGN §10.7–10.8) is the only remaining local route.
 
 ## tie-census full corpus
 - spec: as probe, without `--limit`, `--out-dir data/surgery_finds`
