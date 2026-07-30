@@ -13,7 +13,7 @@ $run = "$ROOT\runs\$Tag"
 if (-not (Test-Path "$run\STATUS.txt")) { Write-Output "ERR no-status TAG=$Tag"; exit 0 }
 
 $stage="?"; $alive=-1; $done=-1; $total=-1; $pct=-1; $imp=-1; $ties=-1; $fin=-1; $eta="?"
-$mimp=0; $meq=0
+$mimp=0; $meq=0; $rimp=0; $reqn=0; $reqs=0
 foreach ($l in Get-Content "$run\STATUS.txt") {
   if ($l -match 'stage:\s+(\S+)\s+\((\d+)/(\d+)\s+workers') { $stage=$Matches[1]; $alive=[int]$Matches[2] }
   if ($l -match 'walks:\s+(\d+)/(\d+)\s+\(([\d\.]+)%\)')     { $done=[int]$Matches[1]; $total=[int]$Matches[2]; $pct=[double]$Matches[3] }
@@ -21,9 +21,10 @@ foreach ($l in Get-Content "$run\STATUS.txt") {
   if ($l -match 'improvements:\s+(\d+)\s+new-allocation ties:\s+(\d+)') { $imp=[int]$Matches[1]; $ties=[int]$Matches[2] }
   if ($l -match 'finished:\s+(\d+)/')                         { $fin=[int]$Matches[1] }
   if ($l -match 'merge \(I2a\):\s+(\d+) improved .* (\d+) equal-cost') { $mimp=[int]$Matches[1]; $meq=[int]$Matches[2] }
+  if ($l -match 'recomp-1:\s+(\d+) improved .*?(\d+) equal-cost in NEW allocs\s+(\d+) same-alloc') { $rimp=[int]$Matches[1]; $reqn=[int]$Matches[2]; $reqs=[int]$Matches[3] }
 }
 $age = [int]((Get-Date) - (Get-Item "$run\STATUS.txt").LastWriteTime).TotalSeconds
 $live = @(Get-Process -Name superperm -EA SilentlyContinue).Count
 $alarm = 0
 if (Test-Path "$run\ALARM.txt") { $alarm = 1 }
-Write-Output "TAG=$Tag STAGE=$stage ALIVE=$alive LIVE=$live WALKS=$done/$total PCT=$pct IMP=$imp TIES=$ties MIMP=$mimp MEQ=$meq FIN=$fin ETA=$eta AGE=$age ALARM=$alarm"
+Write-Output "TAG=$Tag STAGE=$stage ALIVE=$alive LIVE=$live WALKS=$done/$total PCT=$pct IMP=$imp TIES=$ties MIMP=$mimp MEQ=$meq RIMP=$rimp REQN=$reqn REQS=$reqs FIN=$fin ETA=$eta AGE=$age ALARM=$alarm"

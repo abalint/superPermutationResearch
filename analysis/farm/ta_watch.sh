@@ -31,19 +31,23 @@ while true; do
   alarm=$(echo "$line" | sed -n 's/.*ALARM=\([^ ]*\).*/\1/p')
   mimp=$(echo "$line"  | sed -n 's/.*MIMP=\([^ ]*\).*/\1/p')
   meq=$(echo "$line"   | sed -n 's/.*MEQ=\([^ ]*\).*/\1/p')
+  rimp=$(echo "$line"  | sed -n 's/.*RIMP=\([^ ]*\).*/\1/p')
+  reqn=$(echo "$line"  | sed -n 's/.*REQN=\([^ ]*\).*/\1/p')
 
   # 1. the alarm path: an improvement is an 871 candidate
   if [ "$alarmed" -eq 0 ] && { [ "$alarm" = "1" ] || { [ -n "$imp" ] && [ "$imp" -gt 0 ] 2>/dev/null; } \
-       || { [ -n "$mimp" ] && [ "$mimp" -gt 0 ] 2>/dev/null; }; }; then
+       || { [ -n "$mimp" ] && [ "$mimp" -gt 0 ] 2>/dev/null; } \
+       || { [ -n "$rimp" ] && [ "$rimp" -gt 0 ] 2>/dev/null; }; }; then
     alarmed=1
     echo "*** ALARM: 871 CANDIDATE -- $line  (do not overwrite finds/; gate with validate --complete + m3_check.py) ***"
   fi
 
   # 1b. first equal-cost 872 at S-1: not an alarm, but every one needs m3_check
   #     (a novel class would itself be an M3-class result), so say it once.
-  if [ "$eq_noted" -eq 0 ] && [ -n "$meq" ] && [ "$meq" -gt 0 ] 2>/dev/null; then
+  if [ "$eq_noted" -eq 0 ] && { { [ -n "$meq" ] && [ "$meq" -gt 0 ] 2>/dev/null; } \
+       || { [ -n "$reqn" ] && [ "$reqn" -gt 0 ] 2>/dev/null; }; }; then
     eq_noted=1
-    echo "merge pipeline producing equal-cost 872s at S-1 (MEQ=$meq) -- gate them with ta_fetch.sh when the run ends: $line"
+    echo "equal-cost 872s appearing in NEW allocations (MEQ=$meq REQN=$reqn) -- gate them with ta_fetch.sh when the run ends: $line"
   fi
 
   # 2. stage transitions (RUNNING -> ALLDONE, or an ERR line)

@@ -17,13 +17,19 @@ $run  = "$ROOT\runs\$Tag"
 $t0   = Get-Date
 $PID | Set-Content "$run\super.pid"
 
-function Count-Lines([string]$p) {
+# Progress = COMPLETED WALKS, not log lines. --recomp prints ~3 lines per walk
+# (and --ties more), so a raw line count read 3x high and sent PCT past 100%
+# with a nonsense ETA. Every solved walk emits exactly one line ending in
+# "block-order-optimal", so count those -- still one streaming pass, O(1) memory.
+function Count-Walks([string]$p) {
   if (-not (Test-Path $p)) { return 0 }
   $c = 0
   try {
     $fs = [System.IO.File]::Open($p, 'Open', 'Read', 'ReadWrite')
     $sr = New-Object System.IO.StreamReader($fs)
-    while ($null -ne $sr.ReadLine()) { $c++ }
+    while ($null -ne ($line = $sr.ReadLine())) {
+      if ($line.EndsWith("block-order-optimal")) { $c++ }
+    }
     $sr.Close(); $fs.Close()
   } catch { return $c }
   return $c
@@ -37,6 +43,11 @@ $mergeMovesTotal = 0
 $mergeImpTotal = 0
 $mergeEqTotal = 0
 $mergeAllocs = @{}      # corpus-wide merged-allocation histogram (the I2a product)
+$rcMovesTotal = 0
+$rcImpTotal = 0
+$rcEqNewTotal = 0
+$rcEqSameTotal = 0
+$rcAllocs = @{}         # recomposed-allocation histogram (the recomp-1 product)
 $lastExit = "-"
 
 while ($true) {
@@ -46,7 +57,7 @@ while ($true) {
   for ($i = 0; $i -lt $Workers; $i++) {
     $nn = "{0:d2}" -f $i
     $log = "$run\logs\w$nn.log"
-    $doneWalks += (Count-Lines $log)
+    $doneWalks += (Count-Walks $log)
 
     $wpid = 0
     $pf = "$run\pids\w$nn.txt"
@@ -101,15 +112,34 @@ while ($true) {
       }
       $mergeMovesTotal += $mMoves; $mergeImpTotal += $mImp; $mergeEqTotal += $mEq
 
+      # recomp-1 (--recomp): same shape, one more counter (same-allocation equals)
+      $rMoves=0; $rImp=0; $rEqNew=0; $rEqSame=0
+      if (Test-Path $log) {
+        $rl = @(Select-String -Path $log -SimpleMatch "recomp-1 (I2a):" -ErrorAction SilentlyContinue)
+        if ($rl.Count -gt 0 -and $rl[$rl.Count-1].Line -match 'recomp-1 \(I2a\): (\d+) moves tried, (\d+) improved \(871 candidates\), (\d+) equal-cost 872s in NEW allocations, (\d+) equal-cost same-allocation') {
+          $rMoves=[int]$Matches[1]; $rImp=[int]$Matches[2]; $rEqNew=[int]$Matches[3]; $rEqSame=[int]$Matches[4]
+        }
+        foreach ($al in @(Select-String -Path $log -SimpleMatch "recomposed allocation" -ErrorAction SilentlyContinue)) {
+          if ($al.Line -match 'recomposed allocation \(([^)]*)\): (\d+)') {
+            $k = "(" + $Matches[1] + ")"
+            if (-not $rcAllocs.ContainsKey($k)) { $rcAllocs[$k] = 0 }
+            $rcAllocs[$k] = $rcAllocs[$k] + [int]$Matches[2]
+          }
+        }
+      }
+      $rcMovesTotal += $rMoves; $rcImpTotal += $rImp
+      $rcEqNewTotal += $rEqNew; $rcEqSameTotal += $rEqSame
+
       $verdict = "OK"
       if ($sum -eq "")   { $verdict = "NO-SUMMARY" }   # crashed / killed mid-shard
       if ($imp -gt 0)    { $verdict = "IMPROVEMENT" }
       if ($mImp -gt 0)   { $verdict = "MERGE-IMPROVEMENT" }
+      if ($rImp -gt 0)   { $verdict = "RECOMP-IMPROVEMENT" }
       $rc = ""
       $improveTotal += $imp
       $tieTotal     += $ties
       $ledgered[$nn] = $true
-      "w$nn,s$nn,$rc,$verdict,$walks,$opt,$imp,$skip,$ties,$mMoves,$mImp,$mEq,$secs,$(Get-Date -Format 'HH:mm:ss')" |
+      "w$nn,s$nn,$rc,$verdict,$walks,$opt,$imp,$skip,$ties,$mMoves,$mImp,$mEq,$rMoves,$rImp,$rEqNew,$rEqSame,$secs,$(Get-Date -Format 'HH:mm:ss')" |
         Add-Content "$run\ledger.csv"
       $lastExit = "w$nn $verdict walks=$walks improved=$imp ties=$ties merge_eq=$mEq secs=$secs"
       if ($mergeAllocs.Count -gt 0) {
@@ -118,8 +148,14 @@ while ($true) {
         $ml2 += "total equal-cost: $mergeEqTotal   moves tried: $mergeMovesTotal   updated: $(Get-Date -Format 'HH:mm:ss')"
         $ml2 | Set-Content "$run\MERGE-ALLOCS.txt"
       }
-      if ($imp -gt 0 -or $mImp -gt 0) {
-        @("*** ALARM: $imp block-order + $mImp MERGE IMPROVEMENT(S) = 871 CANDIDATE(S) ***",
+      if ($rcAllocs.Count -gt 0) {
+        $rl2 = @("recomposed-allocation histogram (equal-cost 872s in NEW allocations, summed over finished workers)")
+        foreach ($k in ($rcAllocs.Keys | Sort-Object)) { $rl2 += ("  {0}  {1}" -f $k, $rcAllocs[$k]) }
+        $rl2 += "new-alloc equals: $rcEqNewTotal   same-alloc equals: $rcEqSameTotal   moves tried: $rcMovesTotal   updated: $(Get-Date -Format 'HH:mm:ss')"
+        $rl2 | Set-Content "$run\RECOMP-ALLOCS.txt"
+      }
+      if ($imp -gt 0 -or $mImp -gt 0 -or $rImp -gt 0) {
+        @("*** ALARM: $imp block-order + $mImp MERGE + $rImp RECOMP IMPROVEMENT(S) = 871 CANDIDATE(S) ***",
           "worker w$nn shard s$nn",
           "log:   $run\logs\w$nn.log",
           "finds: $run\finds\w$nn",
@@ -150,13 +186,14 @@ while ($true) {
     "walks:        $doneWalks/$Total ($pct%)   rate=$rate walks/s   elapsed=$('{0:n1}m' -f ($elapsed/60))   eta=$eta",
     "improvements: $improveTotal        new-allocation ties: $tieTotal",
     "merge (I2a):  $mergeImpTotal improved (871 cands)   $($mergeEqTotal + $liveEq) equal-cost 872s at S-1   $mergeMovesTotal moves tried   allocs=$($mergeAllocs.Count)",
+    "recomp-1:     $rcImpTotal improved (871 cands)   $rcEqNewTotal equal-cost in NEW allocs   $rcEqSameTotal same-alloc equals   $rcMovesTotal moves tried   allocs=$($rcAllocs.Count)",
     "worker mem:   sum=$memSum MB  max=$memMax MB",
     "finished:     $($ledgered.Count)/$Workers   last: $lastExit",
     "alive:        $($aliveList -join ' ')",
     "updated:      $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
   )
-  if (($improveTotal + $mergeImpTotal) -gt 0) {
-    $lines = @("*** ALARM: $($improveTotal + $mergeImpTotal) IMPROVEMENT(S) -- see ALARM.txt ***") + $lines
+  if (($improveTotal + $mergeImpTotal + $rcImpTotal) -gt 0) {
+    $lines = @("*** ALARM: $($improveTotal + $mergeImpTotal + $rcImpTotal) IMPROVEMENT(S) -- see ALARM.txt ***") + $lines
   }
   $lines | Set-Content "$run\STATUS.txt"
 
