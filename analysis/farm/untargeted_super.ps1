@@ -41,7 +41,7 @@ $PID | Set-Content "$run\super.pid"
 # --- run parameters (key=value, one per line; written by untargeted_run.ps1) --
 $P = @{ Shards = 24; Workers = 24; Mode = "untargeted"; Limit = 0
         DryRunMode = 0; StallMinutes = 5; Total = 10786; ExtraArgs = ""
-        TickSeconds = 30; Stub = 0 }
+        TickSeconds = 30; Stub = 0; Target = "" }
 if (Test-Path "$run\PARAMS.txt") {
   foreach ($l in (Get-Content "$run\PARAMS.txt")) {
     if ($l -match '^\s*([A-Za-z]\w*)\s*=\s*(.*?)\s*$') { $P[$Matches[1]] = $Matches[2] }
@@ -60,7 +60,13 @@ $Stub         = ([int]$P.Stub -ne 0)
 # The stub exercises the supervisor's mechanics (ledger / STATUS / stall
 # flagging / abort) without the instrument.  It takes the same --shard/--out
 # contract and writes the same STATUS heartbeat.
-$TARGET = if ($Stub) { "$ROOT\untargeted_stub.py" } else { $FUSE }
+# Target (s52b): an optional PARAMS override so this supervisor can drive any
+# instrument honouring the --shard/--out + STATUS contract, not just fuse.py.
+# Path is relative to $ROOT.  Empty (the default) keeps the original behaviour
+# byte-for-byte, so every existing untargeted run is unaffected.
+$TARGET = if ($Stub) { "$ROOT\untargeted_stub.py" }
+          elseif ([string]$P.Target -ne "") { "$ROOT\$([string]$P.Target)" }
+          else { $FUSE }
 
 # ---------------------------------------------------------------- helpers ---
 # Incremental line reader: seeks to a remembered offset and returns only the
@@ -266,7 +272,15 @@ while ($true) {
     # are counted precisely from the tagged STATUS rows above; this scan exists
     # for hard errors and for the instrument's own "!!  DEPTH-1 ESCAPE" banner.
     foreach ($l in (Read-New $st.log).Lines) {
-      if ($l -match '(?i)Traceback|MemoryError|^\s*!!|\*\*\*|ESCAPES\s+[1-9]|\bNOVEL\b') {
+      # s52b: `\bNOVEL\b` alone had the very bug the ESCAPES\s+[1-9] guard
+      # above was written to fix -- demotion.py's NORMAL end-of-run summary
+      # prints "novel-candidate classes: 0", so the n=6 promotion run p1
+      # bannered all 24 HEALTHY shards.  Require a nonzero count, exactly as
+      # ESCAPES does.  A real find still alarms via the `\*\*\*` branch
+      # ("*** NOVEL-CANDIDATE len=..."), which is unaffected.
+      # RULE: before driving a NEW instrument through this supervisor, diff
+      # its terminal summary against this regex.
+      if ($l -match '(?i)Traceback|MemoryError|^\s*!!|\*\*\*|ESCAPES\s+[1-9]|NOVEL[^:\r\n]*:\s*[1-9]') {
         if ($l -match '(?i)Traceback|MemoryError') {
           Alarm @("*** SHARD s$nn ERROR ***", $l, "log: $($st.log)")
         } else {

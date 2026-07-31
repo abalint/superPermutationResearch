@@ -66,6 +66,45 @@ queue entry: start time, PID, log path, projected end.
    read log CONTENT for the last un-resulted walk filename). `ta_watch.sh`
    has no no-progress detector; add one before trusting it on a long run.
 
+## Python instruments go on the FARM too (s52/s52b)
+
+The farm is no longer Rust-only. `analysis/farm/untargeted_*` is a full
+Python harness (venv + repo mirror + detached supervisor + ledger + stall
+flag), and **any instrument honouring the `--shard i/N` + `--out` contract
+and writing a STATUS heartbeat can be driven by it** — set `Target=<script>`
+in PARAMS (s52b; empty default keeps fuse.py behaviour).
+
+Andrew's standing instruction (2026-07-31): *"we have the farm for a
+reason"* — do not default Python sweeps to the Mac. Measured contrast the
+same day: the n=6 loop-swap sweep took **75 min** on one Mac core, while the
+promotion hunt (a comparable ~4.7M-completion workload) took **18.7 min** on
+24 farm shards.
+
+To add an instrument, copy the pattern in `promote_*`:
+- `promote_shim.py` — adapter, when the instrument's own CLI does not fit.
+  `demotion.py` needed one for two reasons worth remembering: it reads
+  positionals from `argv[0..2]` (and the supervisor's only injection point,
+  `ExtraArgs`, appends at the END), and it writes no STATUS heartbeat.
+- `promote_run.ps1` — launcher; keep every refusal (live-`upyw` check,
+  existing-run-dir check, RAM headroom, corpus completeness).
+- `promote_ship.sh` — incremental ship; `COPYFILE_DISABLE=1` is
+  non-negotiable and the tarball must be checked for `/._` entries.
+
+**Before driving a NEW instrument through the supervisor, diff its terminal
+summary against the alarm regex** (see the alarm section below). Regression
+test: `powershell -File F:\superpermFarm\untargeted\untargeted_alarmtest.ps1`
+(source: `analysis/farm/untargeted_alarmtest.ps1`, 13 cases, expect
+"ALARM REGEX OK: 0 failures").
+
+Measured Python-instrument rates (24 farm shards):
+
+| run | rate | full job |
+|---|---|---|
+| `fuse.py untargeted` (10,794 intermediates) | ~24–40 units/s aggregate | **7.4 min** |
+| `demotion.py promote` n=6 (44,124 orientations) | ~40 units/s aggregate | **18.7 min** |
+| `loopswap_apply.py apply-sym` n=6, 27 rules (31.2M replays) | single-core Mac | 75 min (NOT yet farm-ported) |
+| `i4a_apply.py apply-sym` n=6 fwd (12.5M replays) | single-core Mac | 95 min (NOT yet farm-ported) |
+
 ## The alarm path — read this twice
 
 `tail-atsp` exits **2** and prints `*** IMPROVEMENT ***` if any walk's
@@ -84,6 +123,17 @@ tail beats its own cost — that is an **871 candidate** at n=6, a
    governs every further step.
 4. Either fails → record the failure in the queue entry (a solver bug is
    ALSO news — the controls in `src/tailatsp.rs` should have caught it).
+
+**The benign-summary trap — it has now fired TWICE.** The farm supervisor's
+stdout alarm scan must never match an instrument's NORMAL end-of-run
+summary. s52 hit it with fuse.py's `ESCAPES 0` (fixed by requiring
+`ESCAPES\s+[1-9]`); s52b hit the *same class of bug* on the other branch,
+because `demotion.py` prints `novel-candidate classes: 0` and the regex
+still had a bare `\bNOVEL\b` — so run `p1` bannered all 24 HEALTHY shards
+into ALARM.txt. Now `NOVEL[^:\r\n]*:\s*[1-9]`. Real finds still alarm via
+the `\*\*\*` branch. **Rule: a zero-count summary line must never alarm;
+require the nonzero digit.** Verify with `untargeted_alarmtest.ps1` after
+any change to the regex or any new instrument.
 
 ## Git discipline
 

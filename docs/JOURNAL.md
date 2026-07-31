@@ -6,6 +6,113 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-31 (session 52b) — **the queue is RUN: four sweeps launched back-to-back and all four CLOSE — the n=6 archive is closed under the conjugated forward i4a rules (12.5M replays, and the fwd edge set is the s41 rev set reversed EXACTLY), closed under the expanded loop-swap vocabulary (31.2M replays, 6,231-undirected natural-move graph), the 12-class blind spot is closed under the untargeted fused-pair tier (4.71M pairs, 0 escapes — and every one of the 10,942 survivors is a SELF-map), and the w3→w4 promotion trade is REPLAY-DEAD corpus-wide (4.72M admissible completions, 100% killed, 0 products) — s52's Python farm harness carried two of them, and `demotion.py` was ported onto it in-session via a shim; the session's own defect was again in the MONITOR, not the science: the benign-summary alarm trap fired a SECOND time**
+
+Operator session. Andrew reconnected after an ssh pipe broke, ordered the
+queue ("queue the n=6 I4-A job, then fused-pair, then n=6 loop-swap, then
+n=6 full-corpus, hold off on n=6 recomp2"), approved the block, and chose
+farm mode. Verbatim results live in SWEEP-QUEUE; this is the fold.
+
+**First, the run that had to die.** `n6a450r2tightprobe` (n=6 recomp2, 450
+band) was still live from the lost session — and had made **zero progress
+for 12.4 h**. Not hung and not swapping: each of the 3 surviving workers
+held 54,705 s CPU at ~100 % with a 7 MB working set, i.e. genuinely
+searching. `w09` sat ~14.8 h inside ONE walk (`872.up-009579d4b6ec`,
+anchor 451, 54 blocks) having cleared a *different* 54-block instance in
+239.9 s — so **block count does not predict divergence** and no
+`--max-blocks` setting makes that band safe. Aborted at Andrew's call; the
+450-band decision the entry asked for is **NO** (≈9.6 days on 24 cores
+extrapolated, plus non-terminating instances). The 520-band sibling is HELD.
+
+**The four closures.**
+
+- **i4a fwd, n=6 (95 min, Mac).** 12,463,713 replays over 22,062 classes ×
+  720 relabelings × both orientations → 0 novel, 0 shorter. The result
+  beyond the negative: the 20 forward edges are the s41 REVERSE edges with
+  source/target swapped — **0 fwd-only, 0 rev-only**, rule split 16
+  R-compound + 4 R-unit both ways. The n=6 natural-move graph is those 20
+  undirected edges, now confirmed from both directions rather than assumed
+  by symmetry. Forward fired as often as reverse (6.21M vs 6.25M), so the
+  closure is not a precondition artifact.
+- **loop-swap expanded, n=6 (75 min, Mac).** 31,174,285 replays, 99.924 %
+  replay-killed, 23,542 survivors ALL rediscoveries → 21,916 directed /
+  6,231 undirected edges + 16 self-edges, 0 novel. Scale contrast worth
+  keeping: 6,231 undirected at n=6 against the n=7 union's 2,006 — n=6 is
+  closed AND densely interconnected while n=7 stays sparse and open, the
+  same asymmetry the i4a sweep sees from the other side. (Closure is over
+  27/30 rules; 3 were deferred by the spec's `--skip-rules` and have not
+  been run.)
+- **fused-pair untargeted (7.4 min, farm `u1`).** 10,794 intermediates,
+  **4,713,880 fused pairs, every one replayed** (`replays ==
+  r2_instances`, nothing sampled away), 99.768 % killed — and **all 10,942
+  survivors are self-edges**: 0 rediscoveries, 0 longer, 0 escapes. The
+  tier does not merely fail to escape the blind spot, at depth 2 it fails
+  to MOVE. Per HANDOFF-S51 this was the one remaining live loop-swap-tier
+  idea for the blind spot; it is spent. Two calibration facts: the s49
+  sizing was sound (4.71M actual vs 4.83M projected), and the "optional 3×
+  prefilter cut" **does not exist** — `prefilter_pass == r2_instances`
+  exactly, the tightness identity rejects nothing at that stage.
+- **promotion hunt, n=6 (18.7 min, farm `p1`).** 44,124 orientations,
+  4,716,847 admissible completions, **100 % replay-killed**, 0 products.
+  Only two kill mechanisms exist and they partition the space: 91.0 %
+  `w2 target`, 9.0 % `entry revisited`. Coverage is exact not sampled
+  (per-shard stats sum to 22,062 walks / 44,124 orientations; shard indices
+  sum to 276 = 0+…+23), and the zero is not an instrument failure —
+  `roundtrip-ok` is 44,124/44,124, every source walk re-derived
+  byte-exactly before any edit. This confirms the s51 prediction that the
+  w4 trade is structurally infeasible at n=6 record level: the promotion
+  direction was a **can't-lose M3 hunt** (any product novel by
+  construction) and it won nothing.
+
+**`demotion.py` ported to the farm in-session.** s52 built the Python
+harness for fuse.py; `demotion.py` could not use it directly for two
+reasons, both now documented: it reads positionals from `argv[0..2]` while
+the supervisor's only injection point appends at the END (so `int("--shard")`
+would have killed all 24 shards at launch), and it writes no STATUS
+heartbeat (so every shard would have been flagged stalled at 5 min). New
+`analysis/farm/promote_shim.py` supplies both — the heartbeat by wrapping
+`first_visit_path` (exactly one call per file×orientation) and the declared
+total by calling `demotion.gather()` itself, so the total cannot drift from
+what the run does. Plus `promote_run.ps1`, `promote_ship.sh`, and ONE
+additive line in `untargeted_super.ps1` (`Target` PARAM, empty default =
+byte-identical fuse.py behaviour). What did NOT need shimming: the stdout
+alarm scan already catches demotion's `*** NOVEL-CANDIDATE` banners, and
+`edges.tsv` is already counted by the `(?i)edge` rule.
+
+**The defect, again in the monitor.** All 24 HEALTHY `p1` shards raised
+`ALARM.txt`. Cause: demotion's normal summary prints `novel-candidate
+classes: 0` and the scan still had a bare `\bNOVEL\b`. This is the SAME
+trap s52 fixed for fuse.py's `ESCAPES 0` — the other branch of the same
+regex. Now `NOVEL[^:\r\n]*:\s*[1-9]`, verified on the PC with a 13-case
+regression test (`analysis/farm/untargeted_alarmtest.ps1`, 0 failures) that
+is now part of the harness. **Rule: a zero-count summary must never alarm;
+before driving a NEW instrument through the supervisor, diff its terminal
+summary against the alarm regex.**
+
+**Monitoring lesson (the 12.4 h one).** `ta_watch.sh`'s stall detector keys
+on `STATUS.txt` AGE, which stays fresh forever because the SUPERVISOR keeps
+writing while every worker is wedged. `rate=0 walks/s` for 12.4 h produced
+no event. The real signal is **`WALKS` unchanged across polls**, not
+heartbeat freshness — written into OPS-BACKGROUND-AGENT along with the
+`LastWriteTime`-lies-on-that-box trap.
+
+**Two operator errors recorded so they do not propagate.** (1) A dry-run
+sizing was summed from a `tail -20`-TRUNCATED listing (17 of 27 rules),
+producing a bogus "12.05M candidates, 2.6× cut" — the truth was 31.17M and
+`--skip-rules` bought nothing measurable. Sum a dry run from full output.
+(2) The `p1` runtime estimate (~9 min) came from a 2-walk Mac sample; farm
+cores are slower per-core and 24 shards contend for bandwidth, so it ran
+18.7 min — still ~11× the queue's 3.4 h single-core figure.
+
+**Next session, concretely.** The blind spot now survives single rules,
+sequential chains, targeted AND untargeted fused pairs, and the full
+sumset — the loop-swap tier is out of ideas for it, so the next move must
+come from a different tier or a new object, not more of this one. Cheap
+loose ends: the 3 deferred loop-swap rules (a second pass, likely minutes),
+and porting `i4a_apply.py` / `loopswap_apply.py` to the farm harness (both
+still Mac-only, 95 and 75 min respectively — the pattern is now proven
+twice). Still HELD: n=6 recomp2 520 band.
+
 ## 2026-07-31 (session 52) — **the untargeted fused-pair sweep becomes a LAUNCHABLE PACKAGE, not a result: `fuse.py untargeted` built + controlled, a full Python farm harness built and proven end-to-end on the 28-core PC, and the 33 h projection killed — the true cost is ~81 min single-core (~minutes at 24-way) because the precondition rescan early-exits 7.5 s → 0.11 s and 99.8% of replays die immediately. NOTHING LAUNCHED: the re-scoped sweep still needs Andrew's approval. The session's own product is a negative about instruments: both defects found today were in the MONITOR, not the science — a supervisor that bannered all 24 healthy shards into ALARM.txt, and a progress tally that mixed units**
 
 Andrew: "resume", then "we we building tools for the fused-pair untargeted

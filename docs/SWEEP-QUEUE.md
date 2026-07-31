@@ -5,15 +5,22 @@ executes them top-down, fills in status/results, and never edits the
 spec of a pending entry. Andrew's go-ahead is per-entry (`approved:`),
 required for anything projected > 30 min. One `running` entry at a time.
 
-## Execution order (set by Andrew, 2026-07-31) — overrides file order
+## Execution order (set by Andrew, 2026-07-31) — ALL FOUR COMPLETE
 
-Work the pending entries in THIS sequence, not top-down file order:
+Andrew queued these four on 2026-07-31 and approved them as a block. All ran
+and all closed the same day; see each entry's `result:` for the numbers.
 
-1. **n=6 I4-A conjugated sweep, FORWARD directions** — local, ~100 min
-2. **fused-pair UNTARGETED sweep on the blind spot** — 33 h single-core /
-   4.2 h 8-way / 1.4 h farm (mode not yet chosen)
-3. **n=6 loop-swap conjugated sweep, EXPANDED rule table** — local, ~2 h
-4. **n=6 full-corpus PROMOTION hunt (w3→w4, Δlen = 0)** — local, ~3.4 h
+| # | entry | where | wall | outcome |
+|---|---|---|---|---|
+| 1 | n=6 I4-A conjugated sweep, FORWARD | Mac | 95 min | CLOSED — 12.46M replays, 0 novel; fwd edge set = the s41 rev set reversed EXACTLY (0 fwd-only, 0 rev-only) |
+| 2 | fused-pair UNTARGETED, blind spot | **farm `u1`** | 7.4 min | CLOSED — 4,713,880 fused pairs, 0 escapes; all 10,942 survivors are SELF-maps |
+| 3 | n=6 loop-swap, EXPANDED rule table | Mac | 75 min | CLOSED — 31,174,285 replays, 0 novel; 21,916 directed / 6,231 undirected edges |
+| 4 | n=6 full-corpus PROMOTION hunt | **farm `p1`** | 18.7 min | REPLAY-DEAD — 4,716,847 completions, 100 % killed, 0 products |
+
+Four independent closure negatives. The two farm runs went through the s52
+Python harness (#4 via the new `promote_shim.py` adapter); the two Mac runs
+predate the decision to move Python work to the PC — **run future Python
+sweeps on the farm** (Andrew, 2026-07-31: "we have the farm for a reason").
 
 **HELD: n=6 recomp2, 520 band** — "hold off on n=6 recomp2 for now"
 (Andrew, 2026-07-31). Do not launch. Its sibling 450-band run was aborted
@@ -21,9 +28,8 @@ the same day for non-termination; before this one is reconsidered it needs
 a round-robin probe and a per-walk timeout, not its current single-walk
 projection.
 
-Ordering is not consent: every entry above still carries its own
-`approved:` field and the > 30 min launch protocol applies to each
-individually.
+Ordering is not consent: every entry carries its own `approved:` field and
+the > 30 min launch protocol applies to each individually.
 
 Entry template:
 
@@ -474,17 +480,37 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
     summary** (no periodic progress line, unlike `i4a_apply.py`), so log
     silence is EXPECTED and a log-stall detector cries wolf here. Judge
     health from the process: ~90–100 % of one core at flat RSS.
-- result: dry-run sizing (run first, per the s45 shard-or-OOM lesson):
-  **12,053,443 candidate replays** over the 27 non-skipped rules, 20,400
-  distinct conjugated instances, RSS ~180 MB at launch (no sharding
-  needed at n=6 — far from the 8–9 GB gen-2 n=7 regime). One rule
-  `7439442d96f5` carries 6,388,284 of the total (53 %). vs the entry's
-  31.17M for all 30 rules, the `--skip-rules` first pass is a 2.6× cut,
-  matching the projected "~3×". Expected ~35–45 min, not ~2 h.
-  **Scope caveat: the spec as written defers 3 of 30 rules, so whatever
-  this run reports is closure over 27/30 — a second pass on
-  `9a9c0f8835c0,47c49d109d2f,7a94c5053e55` is required before anyone
-  claims closure under the full expanded table.**
+- result: **the n=6 archive is CLOSED under the conjugated loop-swap
+  vocabulary — 0 novel, 0 shorter.** ~75 min wall (07:55 → 09:10),
+  single-core, exit 0, no alarm. Verbatim tail:
+  ```
+  replayed:      31,174,285      replay-killed: 31,150,727  (99.924%)
+  edge:              23,542      self-edge:            16
+  21916 directed edges (6231 undirected) -> data/loopswap/products_n6_expanded/lswap_sym_edges_n6.tsv
+  corpus CLOSED under the conjugated loop-swap vocabulary
+  ```
+  - 31.17M conjugated replays over 20,400 distinct instances; 99.92 %
+    die at replay, and the 23,542 survivors are all rediscoveries —
+    they resolve to a **21,916-directed / 6,231-undirected** edge set
+    among known classes, plus 16 self-edges. Zero products left the
+    known shell.
+  - Scale contrast worth keeping: this n=6 natural-move graph has 6,231
+    undirected edges against the n=7 union's 2,006 — the n=6 corpus is
+    both closed AND densely interconnected, while n=7 stays sparse and
+    open. Same asymmetry the I4-A fwd sweep found from the other side.
+  - **SIZING CORRECTION (operator error, recorded so it is not
+    repeated).** The pre-launch note here claimed "12,053,443 candidate
+    replays, a 2.6× cut from `--skip-rules`". That was wrong: it came
+    from summing a `tail -20`-TRUNCATED dry-run listing — only 17 of the
+    27 rule lines were visible. The true figure is the 31,174,285 above,
+    i.e. **`--skip-rules` bought no measurable cut at this scale** and
+    the s44 projection of 31.17M was exactly right. Sum a dry run from
+    the full output, never from a tail.
+  - Scope caveat stands: 3 of 30 rules were deferred
+    (`9a9c0f8835c0,47c49d109d2f,7a94c5053e55`), so this is closure over
+    27/30. Given they contributed nothing measurable to the candidate
+    count, a second pass should be cheap — but it has NOT been run, and
+    "closed under the full expanded table" is not yet earned.
 
 ## lifted-873 loop-swap control (n=6, w4-bearing 873 shell) — local, ~10 min + small patch
 - spec: patch `run_apply_sym`'s hardcoded `record = 872 if n == 6 else 5906`
@@ -592,9 +618,49 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   8 ms → 10.7 h. TOTAL ~33 h single-core; 8-way Mac ~4.2 h wall; 24-way farm
   ~1.4 h. RSS ~250 MB/shard (measured). Optional 3× cut: prefilter on the
   tightness identity |flat| + #doors = 861 before replay.
-- approved: **YES (Andrew, 2026-07-31), farm mode (~1.4 h) chosen** — second
-  in the execution-order block.
-- status: **BLOCKED — not launchable as written.** Two gaps, both real:
+- approved: **YES (Andrew, 2026-07-31), farm mode chosen** — second in the
+  execution-order block.
+- status: **done** — farm run `u1`, 24 shards, 2026-07-31 08:37:14 →
+  08:44:38, **7.4 min wall**, 24 ok / 0 failed / 0 stalled, no alarm.
+  Artifacts fetched to `out/s52/untargeted_farm/u1/` (24 shard dirs, 72
+  TSVs, 0 product .txt).
+  *(This entry was briefly marked BLOCKED by the operator on the grounds
+  below; Andrew then BUILT both missing pieces — the `untargeted` mode in
+  `fuse.py` and a full Python farm harness, `analysis/farm/untargeted_*`.
+  The blockers are historical, kept for the record:*
+  1. *the mode did not exist in `fuse.py` (now at line 650);*
+  2. *the farm had no Python path — no interpreter, no repo mirror, no
+     supervisor. The new harness supplies all three.)*
+- result: **the 12-class blind spot is CLOSED under the untargeted
+  fused-pair tier — and the closure is total, not marginal.** Aggregated
+  from the 24 shard `stats.tsv` (10,794 rows, one per intermediate):
+  ```
+  r2_instances    4,713,880     replays        4,713,880
+  replay_killed   4,702,938     (99.768%)
+  self_edges         10,942     rediscoveries          0
+  longer                  0     escapes                0
+  ```
+  - **Every fused pair was replayed** — `replays == r2_instances`, so
+    nothing was sampled away or lost to a budget cap.
+  - **Every survivor is a self-map.** All 10,942 replays that survived
+    landed back on their OWN source class: zero reached even a different
+    *known* class, let alone escaped the shell. The tier does not merely
+    fail to escape, it fails to move at all.
+  - Sizing check: 4.71M fused pairs vs the s49 projection of 4.83M — 2.4%
+    under, so `sizing_untargeted.py` was sound.
+  - **The optional prefilter is worthless here:** `prefilter_pass ==
+    r2_instances` exactly (4,713,880 of 4,713,880), so the tightness
+    identity `|flat| + #doors = 861` rejects NOTHING at this stage. The
+    projected "optional 3× cut" does not exist — do not budget for it.
+  - Wall-clock note for future Python farm entries: the as-built harness
+    did in **7.4 min** what this entry projected at 1.4 h farm / 4.2 h
+    8-way / 33 h single-core. Projections made before the harness existed
+    should be re-derived, not trusted.
+  - Per HANDOFF-S51 this was the ONE remaining live idea in the loop-swap
+    tier for the blind spot. It is now spent; the blind spot survives
+    single rules, sequential chains, fused pairs (targeted AND
+    untargeted), and the full sumset.
+- historical blockers (resolved by Andrew's build, kept for the record):
   1. **The instrument does not exist yet.** `analysis/counting/s49/fuse.py`
      dispatches exactly `index` / `depth1` / `depth2`; the string
      "untargeted" appears 0 times in the file. This entry's own spec says
@@ -743,9 +809,51 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   Deterministic; run-twice byte-agreement demonstrated on every s51 run.
 - approved: **YES (Andrew, 2026-07-31)** — fourth in the execution-order
   block.
-- status: pending (queued last). ~~**Launch caveat:** the instrument
-  `analysis/counting/s51/demotion.py` is still UNTRACKED and was being
-  edited at 05:55 today by the live s51 session.~~ **RESOLVED (s52):**
-  `demotion.py` was committed by s51 and is tracked — `git ls-files`
-  confirms. The version is pinned; the caveat no longer applies.
-- result:
+- status: **done** — farm run `p1`, 24 shards, 2026-07-31 09:01 → 09:20,
+  **18.7 min wall**, 24 ok / 0 failed / 0 stalled. Run on the FARM, not the
+  Mac (Andrew: "we have the farm for a reason"). Instrument pinned at
+  `demotion.py` sha256 `15be935b5bed…` before shipping. Artifacts:
+  `out/s52/untargeted_farm/p1/`. Driven through the s52 Python farm harness
+  by a new adapter — `analysis/farm/promote_shim.py` (+ `promote_run.ps1`,
+  `promote_ship.sh`, and an additive `Target` PARAM in
+  `untargeted_super.ps1`). The shim supplies demotion.py's positional argv
+  and the STATUS heartbeat; it does not touch results.
+- result: **the w3→w4 promotion trade is REPLAY-DEAD across the entire n=6
+  corpus — 4,716,847 admissible completions, 100 % killed, 0 products.**
+  Aggregated from all 24 shard logs:
+  ```
+  carrier-orientations         44,124      roundtrip-ok        44,124  (100%)
+  admissible-completions    4,716,847      branch-P         4,716,847
+  replay-killed             4,716,847      (100%)
+    kill:w2 target          4,293,514      (91.0%)
+    kill:entry revisited      423,333      ( 9.0%)
+  novel-candidate classes           0      product files            0
+  ```
+  - **Coverage is exact, not sampled:** per-shard stats sum to 22,062
+    walks / 44,124 orientations = the whole archive, with shard indices
+    summing to 276 (= 0+…+23, so all 24 distinct — no gap, no
+    double-count).
+  - **The zero is not an instrument failure:** `roundtrip-ok` is
+    44,124/44,124 — every source walk was re-derived byte-exactly before
+    any edit was attempted. A broken instrument fails there first.
+  - **Only two kill mechanisms exist**, and they partition the space:
+    91 % die because the promoted door's target is w2-entered, 9 %
+    because the edit revisits an entry. Nothing else ever fires.
+  - Confirms the s51 prediction (HANDOFF-S51: the w4 demotion trade is
+    "structurally infeasible at n=6 record level"). The promotion
+    direction was a **can't-lose M3 hunt** — every product would have been
+    a novel 872 by construction — and it is empty. Can't-lose, and won
+    nothing.
+  - **TRAP (operator error — cost a false alarm; fix below).** All 24
+    HEALTHY shards raised `ALARM.txt`. Cause: `demotion.py`'s normal
+    end-of-run summary prints the literal `novel-candidate classes: 0`,
+    and the supervisor's stdout scan matches `\bNOVEL\b`. This is the SAME
+    trap `untargeted_super.ps1` already documents for fuse.py's
+    "ESCAPES 0" line — that one was fixed with `ESCAPES\s+[1-9]`; the
+    NOVEL branch needed the same treatment and did not get it.
+    **Before driving any NEW instrument through this supervisor, diff its
+    terminal summary against the alarm regex.**
+  - Runtime note: 18.7 min vs my ~9 min pre-launch estimate (sized from a
+    2-walk Mac sample at 0.5 s/walk; farm cores are slower per-core and 24
+    shards contend for memory bandwidth). Queue's single-core figure was
+    ~3.4 h, so the farm still bought ~11×.
