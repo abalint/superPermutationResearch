@@ -67,11 +67,14 @@ This is the two-page version with entry points and traps.
 
 ## The work menu (priority order)
 
-1. **Andrew's decisions** (blocked on him, don't act): publication +
-   credit coordination for the Kristan-derived tier (read
-   `data/novel5906d/NOTE.md` caveat first); whether to tell
-   Kristan/the group that V0004/V0005 are archived and un-corpused;
-   PR #52 watch; promotion-hunt approval (queue tail).
+1. **PR watch — now TWO open**: #52 (the 4 novel5906c classes) and
+   **#53 (the 20 novel5906d classes, submitted 2026-07-31 on Andrew's
+   instruction, Kristan-derivation credit note in the body)**. On
+   merge, flip the respective NOTE.md to PUBLISHED and update counts
+   here + CLAUDE.md (194 → 198 → 218 as they land). Still Andrew's:
+   whether/how to tell Kristan the V0004/V0005 copies are archived
+   awaiting his own publication; promotion-hunt approval (queued at
+   execution-order #4 on the PC list, `approved:` still NO).
 2. **Hunt more missing unit rules via the K₄ law**: the 14 remaining
    cover pairs/triples (list in JOURNAL s51 §3 / out/s51/closure
    census) are candidate incomplete simplices — compute admissible

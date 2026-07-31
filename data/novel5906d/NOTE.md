@@ -1,4 +1,12 @@
-# novel5906d — the 20 s51 K₄-tier classes (UNPUBLISHED; provenance caveat below)
+# novel5906d — the 20 s51 K₄-tier classes (SUBMITTED as PR #53; provenance caveat below)
+
+**STATUS UPDATE 2026-07-31:** submitted to superpermutators/superperm as
+**PR #53** (https://github.com/superpermutators/superperm/pull/53, branch
+`abalint:twenty-new-5906s-two-profiles`), per Andrew's instruction, with the
+Kristan-derivation credit note in the PR body (his two source solutions
+deliberately excluded — they are his to publish). On merge: published shell
+grows by 20 (and by 4 more when PR #52 merges); flip this NOTE to PUBLISHED
+and update the counts in HANDOFF + CLAUDE.md.
 
 20 record-tying n=7 5906 classes discovered 2026-07-31 (s51) by applying the s51
 rule tier (`data/loopswap/rules_n7_s51.tsv`: unit rules R-K7 / S51A / S51C of
