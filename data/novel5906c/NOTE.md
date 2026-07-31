@@ -1,8 +1,11 @@
 # novel5906c — the s47 R-BND discoveries (4 novel 5906 classes)
 
-**STATUS: CANDIDATE — NOT PUBLISHED.** Publication upstream
-(superpermutators/superperm PR) is Andrew's decision; nothing here has
-been submitted.
+**STATUS: SUBMITTED** — Andrew approved publication 2026-07-30;
+submitted as superpermutators/superperm
+[PR #52](https://github.com/superpermutators/superperm/pull/52)
+(branch `four-new-5906s-843-18` on the abalint fork, files
+`superpermutations/7/7_5906_derived_<hash12>.txt`). Update this line
+to PUBLISHED when merged.
 
 Four length-5906 n=7 superpermutation classes, all at allocation
 **(843,18)** — the allocation where Kristan's class previously sat
