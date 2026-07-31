@@ -8,20 +8,24 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S47.md` right after it** — state of the
+   **Fresh agent: read `docs/HANDOFF-S48.md` right after it** — state of the
    world, the engine-first premise, the executable natural-move tiers
    (cover-preserving rules via i4a; the s43/s44 loop-swap tier via
    loopswap_apply = I5 — 102 novel classes, PR #51; the s47 R-BND
    boundary-trade tier via `analysis/counting/rbnd.py`, spec
-   `docs/RBND-RULE.md`, which resolved s46's conjugated cover twins and
-   produced **4 novel 5906 classes at (843,18)**, `data/novel5906c/`,
-   CANDIDATES unpublished — published n=7 shell 194, project shell 198;
-   the 862-rule loop-swap vocabulary = **397 distinct moves** under
-   S₇×ι×τ, annotation `data/loopswap/rule_annotation_n7.tsv`; loop-swap
-   graph file `data/loopswap/lswap_sym_edges_n7_ALL_union.tsv`, R-BND
-   edges separate in `rbnd_edges_n7.tsv`; ALL closure claims are
-   REOPENED over the 198 — s48's top item), traps,
-   and the session-end ritual (supersedes HANDOFF-S46).
+   `docs/RBND-RULE.md`, whose **4 novel 5906 classes at (843,18)**,
+   `data/novel5906c/`, are SUBMITTED as PR #52 — published n=7 shell
+   194 until it merges, project shell 198; the loop-swap vocabulary =
+   **398 distinct moves = 864 directed rules** under S₇×ι×τ (the 862
+   tables + `data/loopswap/rules_n7_s48_covertwin.tsv`, the s48 rule
+   realizing the first Δalloc=0 cover twin; annotation
+   `data/loopswap/rule_annotation_n7.tsv` covers the 862 only);
+   loop-swap graph file
+   `data/loopswap/lswap_sym_edges_n7_ALL_union.tsv` (2,006 undirected),
+   R-BND edges separate in `rbnd_edges_n7.tsv` — normalize node names
+   by hash12 before cross-tier unions; the 198 is RE-CLOSED under
+   every tier (s48) — the s49 front is blind-spot composition chains),
+   traps, and the session-end ritual (supersedes HANDOFF-S47).
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
    `docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; §9 has the M-R laws;

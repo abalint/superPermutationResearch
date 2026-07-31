@@ -4005,3 +4005,11 @@ n	source_class	target_class	rule
 7	5906.up-f8d1e70c6a52.txt	5906.lswap-637b5054102a.txt	298e146c1b51
 7	5906.up-f8d1e70c6a52.txt	5906.up-6f42b3603dac.txt	224ee0b368b2
 7	5906.up-f8d1e70c6a52.txt	5906.up-7f9a93193f10.txt	ed253872391f
+7	5906.rbnd-0dad091b8ac4.txt	5906.rbnd-c44d48fbd52c.txt	ab88abce72ba
+7	5906.rbnd-2641d60c9d5c.txt	5906.rbnd-c44d48fbd52c.txt	ab88abce72ba
+7	5906.rbnd-c44d48fbd52c.txt	5906.rbnd-0dad091b8ac4.txt	ab88abce72ba
+7	5906.rbnd-c44d48fbd52c.txt	5906.rbnd-2641d60c9d5c.txt	ab88abce72ba
+7	5906.rbnd-0dad091b8ac4.txt	5906.rbnd-2641d60c9d5c.txt	4004c6042131
+7	5906.rbnd-0dad091b8ac4.txt	5906.rbnd-2641d60c9d5c.txt	9233133e9c39
+7	5906.rbnd-2641d60c9d5c.txt	5906.rbnd-0dad091b8ac4.txt	4004c6042131
+7	5906.rbnd-2641d60c9d5c.txt	5906.rbnd-0dad091b8ac4.txt	9233133e9c39
