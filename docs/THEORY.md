@@ -187,8 +187,12 @@ w2-graph) and the cycle space of `G₂` is spanned by the fully-ridden 2-loops
 (`Φ = splits`: no accidental cycles), and (b) there are exactly `D + 1` partial
 loops, each a SINGLE chain, one terminated at each door and one at the walk's end.
 **Every known record-shell walk is tight**: all 22,062 n=6 872s, all 87 known n=7
-walks (both checked term-by-term), the off-shell 873s/5907s/5908, and all 7.3M s38
-recomp2 re-solves (via the tripwire). Random complete n=4 walks: deficit ≥ 0 in
+walks (both checked term-by-term), the four loose 873s/5907s/5908, and all 7.3M s38
+recomp2 re-solves (via the tripwire). **s56 correction: NOT every off-shell 873 —
+46 of the 448 `data/lift873_n6/` REV-w4 lift walks are slack (deficit=1, j=0,
+v−L=1, all length 873), the first slack n=6 walks ever identified in-corpus.
+"Slack has never been observed" is true only AT or BELOW record length.** Random
+complete n=4 walks: deficit ≥ 0 in
 11,400+ samples (5,400+ of them pure; both terms individually ≥ 0 on every pure
 walk checked), ~5–8% tight. A legal walk CAN be
 slack (e.g. at n=3: ride cycle 1, w3-door to cycle 2, ride it — L=0, deficit=2),
@@ -214,3 +218,43 @@ door-terminated single chains.**
   every anchored sweep, EXISTS as a cover-preserving global reordering. Only 120
   of the 144 loops (canonical frame) are ever used by any known 872; 4 loops
   appear in every cover.
+
+**s56 additions (the slack-tax / j-tax frame; instrumentation in
+`loop_ledger_probe.py` modes `slack`/`hunt`/`exhaust`, artifacts
+`out/s56/slacktax/`).** Write `v` = # distinct ENTERED marked loops,
+`j = splits + D + 1 − v`, `x = v − L`, so `deficit = j + x` (the s55
+Gheorghe-dictionary bridge). Then, for every pure complete first-visit walk:
+
+- **Exact length identity:** `length = n! + (n−1)! + (n−3) + v + j + x`
+  (verified per-walk on all 22,062 + 87 + 755 local corpus walks and on
+  exhaustive n=3/4 enumerations). Each unit of j costs exactly +1 char.
+- **Loop-supply bound:** `v ≥ ((n−1)! + splits)/(n−1)` (a 2-loop has n−1
+  perms, so supplies ≤ n−1 arc starts) — Gheorghe's T3 `s ≤ 5l` rederived
+  on our side. Combining: `length ≥ n! + (n−1)! + (n−2)! + (n−3) + j + x +
+  splits/(n−1)` — the classical bound's slack IS `j + x + splits/(n−1)`.
+  At n=6 this proves `j ≥ 1 ⇒ length ≥ 868` (4 short of the 872 target).
+- **Ledger inequality:** `(n−2)L ≥ (n−1)! − 1 − D`; at n=6,
+  `4·splits + 5·D ≥ 115 + 4·deficit` (tight on 3/8 allocation specimens).
+  At length 871: `D ≥ 7 + 4x + 4·deficit` — a slack 871 needs ≥ 11 doors
+  (corpus max: 11), a deficit-2 871 needs ≥ 15.
+- **Per-edge door law (exceptionless, 68,999 doors / 3.1M inter-w2 edges
+  over all 22,062; same at n=7):** with `dc` = "edge closes its departing
+  1-cycle", `dv` = "edge enters a fresh 2-loop": every w≥3 door has BOTH,
+  every inter-w2 edge has EXACTLY ONE. This is j=0 in per-edge form — a
+  second door law beside s27's landing-cycle law — and gives a refutation
+  engine a per-edge test to enforce `j = 0` (equivalently, to price j ≥ 1).
+- **Materialized species (firsts):** slack n=6 walks exist in-corpus (the
+  46 lift873 walks above); the first j ≥ 1 n=6 walk ever materialized is
+  `out/s56/slacktax/witness/n6_j2_874.txt` (874, j=2: exactly two doors
+  with dv=0 — the predicted "re-entered loop with a spent door").
+  Exhaustive tail re-completion (cap 873, last 160 perms, all 8
+  allocation representatives, 71.3M nodes, 0 aborts) finds NO j≥1 walk
+  ≤ 873 — a local negative only. Tax ladder: n=3 slack-tax 1 / j-tax 3
+  (exhaustive); n=4 both 1 (exhaustive); n=5 slack-tax 1 exhaustive at
+  cap 153, j-tax 1..2; n=6 observed slack min 873, j≥1 min 874.
+- **The O5 discharge target reframes as the j-tax:** all 22 O5-held cells
+  need j ≥ 1 (deficit ≥ 1 is weaker — deficit-1/j=0 873s exist one char
+  above record, so a "deficit tax to 872" is false-adjacent). Their cell
+  arithmetic forces D ∈ [19,26] and splits ≤ 8 — the opposite ledger
+  corner from every known walk. `j ≥ 1 ⇒ length ≥ 872` remains OPEN
+  (proved floor: 868).

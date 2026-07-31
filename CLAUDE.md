@@ -8,14 +8,19 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S55.md` right after it (supersedes
-   S53; s55 headlines: P0 half-adjudicated — Grayzel Lean FAITHFUL but
-   all-`native_decide`, `lake build` queued; Gheorghe's frame = our
-   loop-cover grammar exactly, his O5 gap localized to slack covers
-   only → the slack-tax attack is ours; Kramer–Mesner |G|>2 = NO by
-   theorem + measurement; fl1577 proxy built, stall reproduced,
-   GAIN_CRITERION=NO recipe demoted to control; cover freeze 183 is
-   orientation-canonical — fully quotiented 178), then
+   **Fresh agent: read `docs/HANDOFF-S56.md` right after it (supersedes
+   S55; s56 headlines: the §6.1 known-SAT control gate is PASSED —
+   177/177 expressible controls re-derived byte-identically from their
+   own chain+cover-atom assumptions, decidability cliff at pool ≈ 3×R,
+   chains #0/#24 need an ATOM PROPOSER not budget; the certificate
+   encoding cannot express 44/221 known words → census "no cover"
+   verdicts are sublanguage-scoped; slack-tax PARTIAL — target
+   reframed to the j-tax, proven floor j≥1 ⇒ ≥868, per-edge door law
+   68,999/68,999, first j≥1 n=6 walk materialized at 874, 22 O5 cells
+   OPEN; PRs #52/#53 MERGED — published shell 218; s55 headlines it
+   carries: Grayzel Lean FAITHFUL but all-`native_decide`; Gheorghe's
+   frame = our loop-cover grammar; Kramer–Mesner |G|>2 = NO; fl1577
+   proxy built; cover freeze fully quotiented = 178), then
    `docs/NOVELTY-DESIGN.md` — the active design doc** —
    headline state: **the neighborhood/rewrite-rule program is EXHAUSTED
    at both n** (s53 K₄ hunt closes the n=7 tier at 220 — no incomplete

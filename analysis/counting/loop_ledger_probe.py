@@ -27,6 +27,16 @@ Ledger quantities measured (no formula assumed):
       used edges on each loop's (n−1)-cycle), Φ = fully-used loops;
   slot placement (start/end/door in/out on split vs full arcs).
 
+s56 addition — the SLACK ledger (Gheorghe bridge lemma, out/s55/gheorghe/
+DICTIONARY.md §2).  Alongside `deficit` we now also measure
+
+  v  = #distinct arc-start 2-loops  (his `v`; the L-set is a subset, our L2)
+  j  = (splits + D + 1) − v         (his `j`)
+  deficit = j + (v − L) >= j        (the bridge lemma)
+
+so a walk's slack is split into the part his frame sees (`j`) and the
+door/first-arc part (`v − L`).  `slack`/`hunt`/`exhaust` report both.
+
 Modes:
   python3 loop_ledger_probe.py walk <n> <file...>     # full ledger per walk
   python3 loop_ledger_probe.py random <n> <count> <seed> [wmax]
@@ -37,6 +47,18 @@ Modes:
       # M-4 down-payment: per-walk USED-LOOP SET (the cover the
       # theorem certifies) — reports #distinct covers, cover sizes,
       # and pairwise overlap stats across the input walks
+  python3 loop_ledger_probe.py slack <n> <file-or-dir...>
+      # s56 control/census: deficit, j and (v−L) per walk over a corpus;
+      # prints every slack (deficit>0) walk, a (deficit,j,v−L) histogram
+      # and the min length per deficit value.  Always prints `words read`.
+  python3 loop_ledger_probe.py hunt <n> <count> <seed> [wmax] [outdir]
+      # s56 slack-walk materializer: random complete walks, keep the
+      # SHORTEST slack walk seen (writes it to outdir if given), report
+      # min length by deficit and the tight/slack length gap.
+  python3 loop_ledger_probe.py exhaust <n> <cap> [maxnodes]
+      # s56 exhaustive slack tax: DFS over ALL complete first-visit walks
+      # of length <= cap, reporting min length among pure slack walks and
+      # among pure tight walks (theorem-grade at n=3,4).
 """
 import random
 import sys
@@ -77,11 +99,20 @@ def g(q):
     return q[1 : n - 1] + (q[0], q[n - 1])
 
 
+_LAM = {}
+
+
 def lam(p):
+    c = _LAM.get(p)
+    if c is not None:
+        return c
     orb = [p]
     for _ in range(len(p) - 2):
         orb.append(g(orb[-1]))
-    return min(orb)
+    c = min(orb)
+    for q in orb:
+        _LAM[q] = c
+    return c
 
 
 def analyze(path, n, verbose=True):
@@ -166,6 +197,12 @@ def analyze(path, n, verbose=True):
     sigma = sum(1 for ais in by_cycle.values() if len(ais) > 1)
     deficit = splits + D + 1 - L
 
+    # s56: Gheorghe's v = #distinct arc-start 2-loops (DICTIONARY §2).
+    # The L-set is a subset of it (L2), so v >= L and deficit = j + (v-L).
+    v = len({lam(a[1]) for a in arcs})
+    j = splits + D + 1 - v
+    v_minus_L = v - L
+
     # per-loop used-edge components on the g-cycle
     used_edges = {}  # loop -> set of vertex q (edge q->g(q) used)
     for i in range(S - 1):
@@ -238,6 +275,7 @@ def analyze(path, n, verbose=True):
         "partial_loops": partial_loops, "chain_ends": chain_ends,
         "t_phi": t_phi, "t_p": t_p, "thm_ok": thm_ok,
         "v1": v1_ok, "v2": v2_ok, "v3": v3_ok, "intra": intra,
+        "v": v, "j": j, "vmL": v_minus_L,
         "len": None,
     }
 
@@ -270,6 +308,245 @@ def random_complete_walk(n, rng, wmax):
         path.append(nxt)
         cur = nxt
     return path
+
+
+def expand(args):
+    """file/dir arguments -> sorted list of .txt paths (s56)."""
+    import os
+
+    files = []
+    for arg in args:
+        if os.path.isdir(arg):
+            files += [
+                os.path.join(arg, f)
+                for f in sorted(os.listdir(arg))
+                if f.endswith(".txt")
+            ]
+        else:
+            files.append(arg)
+    return files
+
+
+def slack_report(n, files):
+    """s56 mode `slack`: deficit / j / (v-L) census over a corpus."""
+    read = 0
+    hist = Counter()
+    minlen = {}
+    slackers = []
+    impure = 0
+    for f in files:
+        s = open(f).read().strip().replace("\n", "")
+        if not s or set(s) - set("123456789"):
+            continue
+        path = first_visit_path(s, n)
+        if len(path) != factorial(n):
+            print(f"  SKIP (incomplete: {len(path)}/{factorial(n)} perms): {f}")
+            continue
+        read += 1
+        r = analyze(path, n, verbose=False)
+        if r["intra"]:
+            impure += 1
+        hist[(r["deficit"], r["j"], r["vmL"])] += 1
+        d = r["deficit"]
+        if d not in minlen or len(s) < minlen[d][0]:
+            minlen[d] = (len(s), f)
+        if d > 0:
+            slackers.append((len(s), f, r))
+    print(f"words read: {read} (impure, intra w>=2 present: {impure})")
+    print("(deficit, j, v-L) histogram:")
+    for k, c in sorted(hist.items()):
+        print(f"  deficit={k[0]} j={k[1]} v-L={k[2]} : {c}")
+    print("min length by deficit:")
+    for d in sorted(minlen):
+        ln, f = minlen[d]
+        print(f"  deficit={d}: {ln}   e.g. {f}")
+    if slackers:
+        print(f"SLACK WALKS ({len(slackers)}):")
+        for ln, f, r in sorted(slackers)[:50]:
+            print(f"  len={ln} deficit={r['deficit']} j={r['j']} "
+                  f"v-L={r['vmL']} splits={r['splits']} D={r['D']} L={r['L']} {f}")
+    else:
+        print("SLACK WALKS: none (every input walk is a tight loop cover)")
+    return read
+
+
+def hunt_report(n, count, seed, wmax, outdir=None):
+    """s56 mode `hunt`: materialize slack walks from random complete walks."""
+    import os
+
+    rng = random.Random(seed)
+    base = factorial(n) + factorial(n - 1) + (n - 3)
+    minlen = {}
+    best_slack = None
+    got = 0
+    for _ in range(count):
+        path = random_complete_walk(n, rng, wmax)
+        if path is None:
+            continue
+        got += 1
+        # score the STRING's own first-visit reading, not the raw graph path
+        # (a heavy edge can spell fresh perms inside its appended block)
+        s = path_to_string(path, n)
+        path = first_visit_path(s, n)
+        if len(path) != factorial(n):
+            continue
+        r = analyze(path, n, verbose=False)
+        if r["intra"]:
+            continue
+        length = len(s)
+        d = r["deficit"]
+        if d not in minlen or length < minlen[d]:
+            minlen[d] = length
+        if d > 0 and (best_slack is None or length < best_slack[0]):
+            best_slack = (length, path, r)
+    print(f"walks generated: {got} (pure ones scored; base = {base})")
+    print("min length by deficit:")
+    for d in sorted(minlen):
+        print(f"  deficit={d}: {minlen[d]}")
+    if best_slack:
+        length, path, r = best_slack
+        print(f"SHORTEST SLACK WALK: len={length} deficit={r['deficit']} "
+              f"j={r['j']} v-L={r['vmL']} splits={r['splits']} D={r['D']} L={r['L']}")
+        s = path_to_string(path, n)
+        if outdir:
+            os.makedirs(outdir, exist_ok=True)
+            p = os.path.join(outdir, f"slack_n{n}_{length}_d{r['deficit']}.txt")
+            open(p, "w").write(s + "\n")
+            print(f"  wrote {p}")
+        else:
+            print(f"  {s}")
+    else:
+        print("SHORTEST SLACK WALK: none found")
+    return 0
+
+
+def path_to_string(path, n):
+    s = "".join(map(str, path[0]))
+    for a, b in zip(path, path[1:]):
+        w = weight(a, b, n)
+        s += "".join(map(str, b[n - w:]))
+    return s
+
+
+def exhaust(n, cap, maxnodes=0):
+    """s56 mode `exhaust`: DFS over ALL complete first-visit walks of length
+    <= cap (start perm fixed to identity, WLOG by relabelling), reporting the
+    minimum length among pure SLACK walks and among pure TIGHT walks."""
+    perms = [tuple(p) for p in permutations(range(1, n + 1))]
+    idx = {p: i for i, p in enumerate(perms)}
+    N = len(perms)
+    fact1 = factorial(n - 1)
+    loops = sorted({lam(p) for p in perms})
+    lid = {lp: i for i, lp in enumerate(loops)}
+    LOOP = [lid[lam(p)] for p in perms]
+    CYC = {}
+    for p in perms:
+        CYC.setdefault(rotc(p), len(CYC))
+    CY = [CYC[rotc(p)] for p in perms]
+    # successors grouped by weight, each carrying the intermediate
+    # permutations spelled inside the appended block (s34 simple-reading
+    # constraint: an edge whose block spells an UNVISITED permutation never
+    # occurs in a string's own first-visit reading — the string's reading is
+    # a different path of the same length, enumerated separately).
+    succ = [[[] for _ in range(n + 1)] for _ in range(N)]
+    for i, a in enumerate(perms):
+        for w in range(1, n + 1):
+            head = a[w:]
+            missing = [c for c in range(1, n + 1) if c not in head]
+            for tail in permutations(missing):
+                b = head + tail
+                if b != a and weight(a, b, n) == w:
+                    mids = []
+                    for off in range(1, w):
+                        win = a[off:] + b[n - w:n - w + off]
+                        if len(set(win)) == n:
+                            mids.append(idx[win])
+                    succ[i][w].append((idx[b], mids))
+    capw = cap - n  # budget for the sum of edge weights
+    start = idx[tuple(range(1, n + 1))]
+
+    visited = [False] * N
+    visited[start] = True
+    loopcnt = [0] * len(loops)   # multiplicity of each loop in the L-set
+    ncyc = len(CYC)
+    cyc_open = [n] * ncyc        # unvisited members per 1-cycle
+    cyc_open[CY[start]] -= 1
+    nopen = ncyc                 # 1-cycles still holding an unvisited perm
+    best = {}                    # deficit -> min length
+    stats = Counter()
+    nodes = 0
+    aborted = [False]
+
+    def rec(cur, nseen, cost, S, D, Lcnt):
+        # admissible arc bound: every remaining edge costs >= 1, and every
+        # 1-cycle other than the current one that still holds an unvisited
+        # perm needs at least one entry edge of weight >= 2 (+1 each).
+        nonlocal nodes, nopen
+        nodes += 1
+        if maxnodes and nodes > maxnodes:
+            aborted[0] = True
+            return
+        if nseen == N:
+            splits = S - fact1
+            deficit = splits + D + 1 - Lcnt
+            length = cost + n
+            stats[deficit] += 1
+            if deficit not in best or length < best[deficit]:
+                best[deficit] = length
+            return
+        rem = N - nseen
+        for w in range(1, n + 1):
+            if cost + w + (rem - 1) > capw:
+                break
+            for b, mids in succ[cur][w]:
+                if visited[b]:
+                    continue
+                inter = CY[b] != CY[cur]
+                if w >= 2 and not inter:
+                    continue  # impure: excluded from the pure-walk ledger
+                if any(not visited[m] for m in mids):
+                    continue  # not a first-visit reading edge (s34)
+                cb = CY[b]
+                cyc_open[cb] -= 1
+                closed = cyc_open[cb] == 0
+                if closed:
+                    nopen -= 1
+                extra = nopen - (1 if cyc_open[cb] else 0)
+                if cost + w + (rem - 1) + extra <= capw:
+                    nS, nD, nL = S, D, Lcnt
+                    added = -1
+                    if inter:
+                        nS += 1
+                        if w >= 3:
+                            nD += 1
+                        elif w == 2:
+                            added = LOOP[b]
+                            if loopcnt[added] == 0:
+                                nL += 1
+                            loopcnt[added] += 1
+                    visited[b] = True
+                    rec(b, nseen + 1, cost + w, nS, nD, nL)
+                    visited[b] = False
+                    if added >= 0:
+                        loopcnt[added] -= 1
+                cyc_open[cb] += 1
+                if closed:
+                    nopen += 1
+                if aborted[0]:
+                    return
+
+    sys.setrecursionlimit(max(2000, N + 100))
+    rec(start, 1, 0, 1, 0, 0)
+    print(f"n={n} cap={cap} nodes={nodes} aborted={aborted[0]}")
+    print(f"complete pure walks by deficit: {dict(sorted(stats.items()))}")
+    print("min length by deficit:")
+    for d in sorted(best):
+        print(f"  deficit={d}: {best[d]}")
+    tight = best.get(0)
+    sl = min((v for k, v in best.items() if k > 0), default=None)
+    print(f"tight min = {tight}   slack min = {sl}   "
+          f"SLACK TAX = {None if (tight is None or sl is None) else sl - tight}")
+    return 0
 
 
 def main():
@@ -378,6 +655,19 @@ def main():
             print("NEGATIVE-DEFICIT PURE WALK FOUND (sign conjecture DEAD):")
             print(neg)
         return 0
+    if mode == "slack":
+        slack_report(n, expand(sys.argv[3:]))
+        return 0
+    if mode == "hunt":
+        count = int(sys.argv[3])
+        seed = int(sys.argv[4])
+        wmax = int(sys.argv[5]) if len(sys.argv) > 5 else 3
+        outdir = sys.argv[6] if len(sys.argv) > 6 else None
+        return hunt_report(n, count, seed, wmax, outdir)
+    if mode == "exhaust":
+        cap = int(sys.argv[3])
+        maxnodes = int(sys.argv[4]) if len(sys.argv) > 4 else 0
+        return exhaust(n, cap, maxnodes)
     print(__doc__)
     return 1
 

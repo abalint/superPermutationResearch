@@ -6,6 +6,135 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-31 (session 56) — **The known-SAT control gate is PASSED — the s15 "no engine can re-derive a known record" wall falls at the right assumption level (all 177 expressible 5906/5907 controls re-derived byte-identically from their own chain + cover-atom assumptions, median 0.01 s, max 0.06 s, every SAT validator-green), and the gate LOCALIZES the field's completion hardness: it is atom-catalog slop, with a sharp decidability cliff at pool ≈ 3× the true cover size — Houston's open 5905 chains #0/#24 sit at 4.6–4.9×R, so deciding them needs an atom PROPOSER eliminating ~37% of the candidate pool, not solver budget (realizer throughput ~100 atom-set decisions/s/core, so §6.4's cover master is provably realizable IF a proposer hits ≤~3×R precision; random sampling is 10¹³⁰-dead); a cover atom set is a RIGID minimal certificate (delete any one true atom → UNSAT, 365/365) and the chain frame's V = K−Σ satisfies #2loops = (720−V)/5, so the s34 "142 2-loops" law IS V=10 and Houston's "score-15" IS our 141-2-loop 5905 frame — same number; MAJOR SCOPE TRAP: the certificate encoding cannot express 44/221 known record words (100% of the i4a and s51 families — repeated-perm readings, non-swap doors, parent-shares), so every census "no cover" verdict incl. the 85 closed chains is a ~80%-sublanguage statement, and the repair (first-visit normalization + generalized doors) is now a named work item. The slack-tax attack returns a PARTIAL with a reframe: the O5 discharge target is the J-TAX, not the deficit-tax (slack deficit-1/j=0 873s EXIST — 46 of the 448 lift873 walks, in-corpus all along, correcting THEORY §7's "off-shell 873s are tight"), j is priced exactly (+1 char/unit, new identity length = 843 + v + j + x), the classical bound's slack is characterized (j + x + splits/5, giving j≥1 ⇒ length ≥ 868 — proven floor, 4 short of target), a new exceptionless per-edge door law lands (all 68,999 doors close-AND-refresh, all 3.1M inter-w2 edges do exactly one — j=0 in per-edge, engine-enforceable form; door count corrected from s27's 66,999), the first j≥1 n=6 walk is materialized (874, j=2 = two spent-door re-entries, exactly the predicted species) and exhaustive tail re-completion (cap 873, r=160, all 8 allocations, 0 aborts) finds NO j≥1 ≤873 — but the 22 O5-held cells stay OPEN (their arithmetic forces D∈[19,26], splits ≤ 8 — the far ledger corner). Plus: PRs #52 AND #53 MERGED upstream (published shell 194→218, committed s56a) — the only unpublished project-shell classes are Kristan's two.**
+
+Two Opus agents (slack-tax; P1a control gate), launched in parallel;
+the orchestrator re-verified every load-bearing claim: P1a — selfcheck
+re-run, fresh 4-control A1 gate (SAT/validated/byte-identical, ≤0.02 s),
+corpus log tallies (177/177 SAT + validated + identical with
+`controls read: 177`), full-corpus extraction re-run from scratch
+(221 read / 177 extracted / 44 inexpressible = 23 repeated-perm +
+11 parent-share + 10 non-swap-door), uniqueness json (365/365 UNSAT),
+throughput logs (93–116 decisions/s); slack-tax — probe byte-stability
+diffed against `git show HEAD:` (walk-6 and cover-7 modes IDENTICAL),
+lift873 slack recount (46/448), the j=2 witness re-validated (Rust
+validator: 874, 720/720, complete) and re-scored (j=2, deficit=2),
+door TSV recounted (69,000 lines = 68,999 doors + header), 22,062
+census words-read line checked, n=3 exhaust re-run (tight 9 / slack
+10 / tax 1). PR merges verified against `origin/master` directly
+(`77dc0d1`, 24 files added by tree diff).
+
+**1 — P1a (the §6.1 known-SAT control gate): PASSED, and the scarce
+resource has a name now.** Pipeline `out/s56/p1a/p1a_assume.py`: word →
+certificate → chain tuples → `chain7.build_instance_from_chain` →
+cover rows. Extraction verified on 177 controls against five laws
+(s34 142-law, length = 5764 + #2loops, score identity, fresh-doors,
+K+R closure) and cross-checked through `loop_ledger_probe.py` and
+`upstream5906_twocycles.py`. Assumptions wired by INSTANCE REDUCTION
+(row filter + prefix re-rooting; soundness proved by 6/6 selfcheck
+incl. byte-identical compile round-trip). Honest finding: P1a's four
+named cuts (2-loop law, waste identity, fresh-doors, door-pricing)
+are ALREADY ENFORCED by the encoding's construction — zero rows
+removed; the implemented C2 failed-row propagation prunes only
+5.7–11.7% — the leverage is entirely atom-pool precision. Gate
+results: A1 (chain + true atom pool) 177/177 SAT; A0 (chain only, the
+s15 baseline) 0/6 — reproducing the field fact exactly; decoy-pool
+gradient locates the cliff at ≈3×R on all 6 panel controls (SAT
+≤ 2.45–3.46×R fast, one step up unreachable at 3–9M nodes); prefix
+fixings alone need only 20–30 of ~124 cover rows (and 4 partial-prefix
+SATs compiled DIFFERENT valid 5906s — all m3-verified rediscoveries,
+so partial assumptions move between classes inside a chain). n=6
+control: 59 standard-kernel 872s, 100% SAT/validated, A1
+byte-identical, instance export reproduces the trackc README's
+canonical 21,627-node baseline exactly. Chains #0/#24 measured at
+97/116 decisions/s (600 samples, all UNSAT, all three-valued-clean).
+
+**2 — Slack tax (P0 in-session half): PARTIAL, with the target
+reframed.** Deficit ≥ 1 is the WRONG discharge target — deficit-1
+(j=0) 873s exist one char above record, so a deficit-tax to 872 is
+false-adjacent; all 22 O5-held cells specifically need j ≥ 1. What is
+PROVEN (THEORY §7 s56 additions): the exact identity
+`length = n!+(n−1)!+(n−3)+v+j+x`; the loop-supply bound
+`v ≥ ((n−1)!+splits)/(n−1)` (= Gheorghe's T3, rederived); their
+combination `j ≥ 1 ⇒ length ≥ 868` at n=6; the ledger inequality
+`4·splits+5·D ≥ 115+4·deficit` (tight on 3/8 allocations) giving
+D ≥ 11 for any slack 871; and the per-edge door law above. What is
+MEASURED: tax ladder n=3 (1/3, exhaustive), n=4 (1/1, exhaustive),
+n=5 (slack-tax exactly 1 — cap-153 exhaustive, 1.6×10⁹ nodes, 8
+shards, 0 aborts, exactly 8 walks ≤153 all tight; j-tax 1..2), n=6
+(slack min 873 observed, j≥1 min 874, tail-exhaustive negative at
+cap 873/r=160 over all 8 allocations). Verdict on the 22 O5 cells:
+**OPEN** — strong evidence (species never in-corpus at ≤873; cells
+need D∈[19,26] vs corpus max 11), but the proven floor is 868, and
+counting alone will not cross 872; new structure needed. New engine:
+`out/s56/slacktax/slack_dfs.c` (exhaustive/suffix modes, ledger +
+arc bound + s34 simple-reading constraint, deterministic sharding,
+node-for-node cross-validated vs Python at n=3/4).
+
+**3 — Corrections and shell state.** (a) THEORY §7's "off-shell 873s
+are tight" corrected — 46/448 lift873 walks are slack; s55's "slack
+never materialized" holds only at ≤ record length. (b) s27's fresh-
+doors law count is 68,999/68,999, not 66,999 (TSV + independent
+recount agree; TRACKB-DESIGN annotated, JOURNAL s27 left as history).
+(c) PRs #52/#53 merged: published shell 218; NOTE.md files flipped
+(commit s56a); canon indexes were already wired. (d) The two s55
+SWEEP-QUEUE entries were retargeted Mac→farm-PC and marked approved
+by a CONCURRENT launch session mid-s56 (its edits to SWEEP-QUEUE.md
+left uncommitted for that session to own); this session launched
+nothing — total in-session compute ≈ 13.5 min (P1a) + short slack-DFS
+shards, per the launch protocol.
+
+**New traps (s56).** (a) Census "no cover" verdicts (incl. the 85
+closed chains) are certificate-SUBLANGUAGE statements — 44/221 known
+record words are inexpressible (all i4a, all s51, Kristan). Never read
+a chain UNSAT as "no 5906/5905 with this kernel". (b) `gaps ≠
+chain-ends`: `(n−1)L − W ≥ chain-ends` is an INEQUALITY on real
+records — assuming equality spuriously killed an O5 cell; run any
+"cell dies" claim against all 8 allocation specimens first. (c) Raw
+graph paths ≠ first-visit readings — an enumerated path can spell an
+unvisited perm inside an edge block; the probe's `random` mode still
+has this defect (its `hunt` re-reads the string; the C engine applies
+the s34 simple-reading constraint). (d) A relative path handed to a
+subprocess with `cwd=` silently yields `validated: false` on a
+perfect SAT — abspath before validating. (e) `chain7.verify_chain`
+asserts on words not starting `1234567` (32/177 corpus words need
+relabeling first); `solve_dlx.py`'s exporter hardcodes `nchild=5`
+(derive it from rows at n≠7); dlx7g exit 3 = timeout = UNKNOWN.
+(f) `crosscheck_houston.py` STILL prints its vacuous all-`[ok]`
+header above real output (s55 trap live). (g) zsh does not word-split
+unquoted variables in `for` loops.
+
+**Committed:** this entry; s56a (the PR flip, pushed mid-session);
+THEORY §7 s56 additions + tightness correction; TRACKB-DESIGN door-
+count annotation; `loop_ledger_probe.py` v/j/x instrumentation + 3 new
+modes (existing modes verified byte-stable); HANDOFF-S56 (supersedes
+S55); CLAUDE.md repoint. Scratch (regenerable, uncommitted):
+`out/s56/p1a/` (extraction/gate/uniqueness/throughput + logs),
+`out/s56/slacktax/` (C engine, pricing scripts, witnesses incl. the
+first j≥1 n=6 walk, all outputs). SWEEP-QUEUE.md deliberately left
+uncommitted (concurrent launch session's in-flight edits).
+
+**Next (s57 front):** (1) **The atom proposer** — the named unlock
+for chains #0/#24: any mechanism (learned, ledger-driven, or
+Gheorghe-frame) that prunes candidate 2-loop pools 557→≤350 makes the
+5905 question decidable at ~100 decisions/s/core; start from the
+per-edge door law + cover-frequency structure (120/144 loops ever
+used, 4 universal). (2) **Expressibility repair** (QS-C, ~zero
+compute): first-visit normalization recovers 23 repeated-perm words
+incl. all i4a + 10 s51; parent-share and non-swap-door need encoding
+extensions; then re-scope the census ledger labels. (3) j-tax
+closure: the n=5 cap-154 exhaustive (queued, ~40 min 8-way, pins
+j-tax ∈ {1,2}), the n=6 midgame probe (needs design — tail negatives
+don't touch levels 60–450), and the 868→872 gap needs new structure
+(candidate: combine the ledger inequality's door floor with the
+per-edge law). (4) P1a queue specs QS-A (atom-precision census, ~20
+min 8-way) and QS-B (chain #0/#24 verdict-mix mapping, blocked on the
+proposer). (5) P5c/P5d instruments still open. (6) Watch the
+concurrent session's PC launches (lake build = P0 decisive; fl1577).
+(7) Standing: Kristan outreach; grammar writeup (new headline lines:
+provenance split + the V=10 bridge); Grayzel/Gheorghe contact —
+Andrew's calls.
+
 ## 2026-07-31 (session 55) — **P0 lands both halves in one session — Grayzel's Lean proof is statement-FAITHFUL with a clean trust surface except that EVERYTHING (both bounds) is `native_decide`, and the "mid-audit" status was survey overstatement (one clarifying question in six days; correct status: announced and unexamined) so the queued `lake build` is now the decisive test; Gheorghe's frame turns out to be OUR loop-cover grammar in different coordinates (s=splits, B=D+1 — his s=25/B=4 prediction on Houston's witness recomputed from our ledger and EXACT, zero dictionary violations over all 22,062) and his O5 gap LOCALIZES: all 22 O5-held δ=4 cells require structurally SLACK covers (deficit ≥ 1 — never observed in any corpus we hold) while the 55 tight cells a tight 871 could occupy are O5-free, so the discharge route is OURS (prove the slack tax: deficit ≥ 1 ⇒ length ≥ 872) — and the survey's "O5 is the real gap" was right about kind but wrong about reach: O6 blankets the whole 872 rung; plus two P5 instruments close — Aut groups is a VERDICT (theorem: |Aut_str| ≤ 2 for every superpermutation at every n; 0 of 22,282 known record classes at either n has |Aut_cov|>2; every community class is cover-symmetric and all 108 fully-asymmetric classes are ours — Kramer–Mesner |G|>2 engines are a NO, refutation sweeps only; bonus correction: the "183 covers" freeze is orientation-canonical, fully quotiented it's 178) and the fl1577 proxy is BUILT with the stall reproduced at exactly optimum+5 and the survey's claims verified against primaries for the first time since the s53 trap was written — first output: P4's named GAIN_CRITERION=NO recipe is 40–60× WORSE than stock LKH on its own gate instrument, demoted to control**
 
 Four Opus agents (Grayzel audit, Gheorghe O5 + ledger cross-check, Aut

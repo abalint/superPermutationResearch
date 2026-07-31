@@ -128,7 +128,9 @@ The class hierarchy (each level is an "opening book" chapter; chess = ECO codes)
   against their allocation grammars (719/719 moves each). Two corpus laws worth
   pruning with (both calibrated, not theorems): the composition vocabulary is
   just {6, 2|4, 3|3, 4|2, 2|2|2, 1|5, 5|1}, and every weight≥3 door opens an
-  untouched cycle (66,999/66,999 events — the `--fresh-doors` cap).
+  untouched cycle (68,999/68,999 events — the `--fresh-doors` cap; s56
+  correction: JOURNAL s27's "66,999" was a typo'd count — the committed
+  door-pricing TSV has 68,999 door rows and an independent s56 recount agrees).
 - **L2 — canonical opening prefixes.** Concrete first-d-sojourn walks, deduped up
   to symbol relabeling: canonical key = (per-cycle visit-pattern multiset, waste
   ledger so far, current-cycle pattern), hashed Zobrist-style (Track C's `shash`
