@@ -8,8 +8,15 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S53.md` right after it (supersedes
-   S51), then `docs/NOVELTY-DESIGN.md` — the active design doc** —
+   **Fresh agent: read `docs/HANDOFF-S55.md` right after it (supersedes
+   S53; s55 headlines: P0 half-adjudicated — Grayzel Lean FAITHFUL but
+   all-`native_decide`, `lake build` queued; Gheorghe's frame = our
+   loop-cover grammar exactly, his O5 gap localized to slack covers
+   only → the slack-tax attack is ours; Kramer–Mesner |G|>2 = NO by
+   theorem + measurement; fl1577 proxy built, stall reproduced,
+   GAIN_CRITERION=NO recipe demoted to control; cover freeze 183 is
+   orientation-canonical — fully quotiented 178), then
+   `docs/NOVELTY-DESIGN.md` — the active design doc** —
    headline state: **the neighborhood/rewrite-rule program is EXHAUSTED
    at both n** (s53 K₄ hunt closes the n=7 tier at 220 — no incomplete
    simplices, vocabulary mirror-complete via S53A/S53B in

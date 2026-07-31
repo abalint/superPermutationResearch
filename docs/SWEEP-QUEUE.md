@@ -916,3 +916,74 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
     2-walk Mac sample at 0.5 s/walk; farm cores are slower per-core and 24
     shards contend for memory bandwidth). Queue's single-core figure was
     ~3.4 h, so the farm still bought ~11×.
+
+## grayzel lake build — a(6)=872 Lean proof, compile + axiom audit (P0, s55)
+- spec: (needs elan; toolchain auto-installs `leanprover/lean4:v4.30.0` from
+  `lean-toolchain`)
+  ```
+  git clone https://github.com/BGray-wrl/superperm6 <workdir>/superperm6
+  cd <workdir>/superperm6 && git checkout d8a932d8f61d80b0bcfc737bd0e235a8300449c4
+  cd formal-verification
+  lake exe cache get                     # mathlib cache, several GB download
+  lake build 2>&1 | tee ../../lake-build.log
+  lake env lean AxiomAudit.lean                    2>&1 | tee ../../axiom-audit-main.log
+  lake env lean Section57Closure/AxiomAudit.lean   2>&1 | tee ../../axiom-audit-s57.log
+  ```
+  Capture ALL THREE logs verbatim — the two AxiomAudit outputs are the
+  deliverable (expected axiom set: `propext, Classical.choice, Quot.sound,
+  Lean.ofReduceBool` + native-eval axioms; any `sorryAx` = proof invalid),
+  not just the build exit code.
+- product: decides whether Grayzel's `main_theorem : IsMinimumLength 872`
+  compiles — i.e. (1) the 20,300 lines type-check, (2) all 156
+  `native_decide` goals evaluate true, (3) the elaborated terms are
+  sorryAx-free. Statement faithfulness already verified statically (s55:
+  FAITHFUL; witness independently re-verified in Python). If this build
+  passes, a(6)=872 is as good as trust in the Lean compiler → 871 is dead
+  and n=6 becomes calibration ground truth (NOVELTY-DESIGN P0).
+- projected: hours-scale, dominated by mathlib cache download + ~8,500 build
+  jobs with `maxHeartbeats 4000000` files and 156 native evaluations
+  (`maxHeartbeats 0` on the witness theorem). No parallelism tuning needed
+  (`lake` uses all cores). Disk: ~10 GB. Mac preferred (PC has no
+  toolchain).
+- heartbeat: `lake build` streams per-job progress to lake-build.log; STATUS
+  = `tail -1 lake-build.log` on the usual cadence; stall = log mtime
+  unchanged 30 min (native_decide jobs can legitimately run long — check
+  CPU% before declaring a hang).
+- abort: `pkill -f "lake build"` (child `lean` processes die with it).
+- approved: NO
+- status: pending
+- result:
+
+## fl1577 recipe study — P4 gate (P5a instrument, s55)
+- spec: harness `out/s55/fl1577/run_fl1577.sh` (LKH-3.0.13 at
+  `out/s55/fl1577/bin/LKH`, instance sha256 `cb473802…`, optimum 22249).
+  5 recipes × 10 seeds at 600 s/cell, 8-way parallel:
+  ```
+  cd out/s55/fl1577
+  for cfg in cfg/*.par; do for s in 1 2 3 4 5 6 7 8 9 10; do
+    echo "$(basename $cfg .par) $cfg 600 $s runs_study"; done; done \
+    | xargs -P 8 -n 5 ./run_fl1577.sh
+  ```
+  Recipe set (finalize cfg/ fragments at launch): `default` (control),
+  `lkh3_special` (known stall-at-+5 control), `gaincrit_patch` (control —
+  s55 smoke showed it 40-60x WORSE than default; re-run under the fixed
+  MAX_TRIALS harness), + two escape-oriented candidates chosen from the
+  LKH-3 parameter surface (kick/perturbation- or population-based; NOT
+  gain-criterion-off variants).
+- product: which (if any) recipe cracks fl1577 (hits 22249) — the P4 gate:
+  recipes that can't crack the proxy don't get n=7 CPU. Success column =
+  `cracked` in `runs_study/ledger.tsv`; headline = `cracked_total > 0`.
+- projected: 50 cells x ~810 s actual (LKH overshoots the 600 s budget
+  ~1.35x, measured s55) / 8-way = ~85 min hard-bounded on the Mac
+  (single-threaded per cell; binary is Mac-built — farm would need a
+  Windows LKH rebuild, not worth it at this scale).
+- heartbeat: `runs_study/STATUS.txt` rewritten after every cell (stage /
+  last cell / done N / cracked_total / ts) + append-only
+  `runs_study/ledger.tsv`; stall = ledger row count unchanged for 20 min.
+  ALARM-REGEX CHECK (s52b trap): harness emits no NOVEL/ESCAPES strings;
+  ledger `cracked` column is 0/1 — do not alarm on `cracked 0` rows.
+- abort: `pkill -f 'out/s55/fl1577/bin/LKH'` (matches only this study's
+  binary path).
+- approved: NO
+- status: pending
+- result:

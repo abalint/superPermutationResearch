@@ -6,6 +6,168 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-31 (session 55) — **P0 lands both halves in one session — Grayzel's Lean proof is statement-FAITHFUL with a clean trust surface except that EVERYTHING (both bounds) is `native_decide`, and the "mid-audit" status was survey overstatement (one clarifying question in six days; correct status: announced and unexamined) so the queued `lake build` is now the decisive test; Gheorghe's frame turns out to be OUR loop-cover grammar in different coordinates (s=splits, B=D+1 — his s=25/B=4 prediction on Houston's witness recomputed from our ledger and EXACT, zero dictionary violations over all 22,062) and his O5 gap LOCALIZES: all 22 O5-held δ=4 cells require structurally SLACK covers (deficit ≥ 1 — never observed in any corpus we hold) while the 55 tight cells a tight 871 could occupy are O5-free, so the discharge route is OURS (prove the slack tax: deficit ≥ 1 ⇒ length ≥ 872) — and the survey's "O5 is the real gap" was right about kind but wrong about reach: O6 blankets the whole 872 rung; plus two P5 instruments close — Aut groups is a VERDICT (theorem: |Aut_str| ≤ 2 for every superpermutation at every n; 0 of 22,282 known record classes at either n has |Aut_cov|>2; every community class is cover-symmetric and all 108 fully-asymmetric classes are ours — Kramer–Mesner |G|>2 engines are a NO, refutation sweeps only; bonus correction: the "183 covers" freeze is orientation-canonical, fully quotiented it's 178) and the fl1577 proxy is BUILT with the stall reproduced at exactly optimum+5 and the survey's claims verified against primaries for the first time since the s53 trap was written — first output: P4's named GAIN_CRITERION=NO recipe is 40–60× WORSE than stock LKH on its own gate instrument, demoted to control**
+
+Four Opus agents (Grayzel audit, Gheorghe O5 + ledger cross-check, Aut
+groups, fl1577 harness), launched in parallel; the orchestrator
+re-verified every load-bearing claim: theorem statement + witness
+re-checked independently (Python, all 720 perms confirmed), s=25/B=4
+re-run from the saved script, O5 closure re-run at the pinned checkout
+(the agent was sent back mid-session to materialize its ad-hoc closure
+computation as `o5_closure.py` — the one gap in its artifact trail),
+Aut distributions re-tabulated and three σ(rev(s))=s witnesses
+re-verified through an independent parser, fl1577 ledger + checksum +
+harness append logic inspected. No sweeps launched; two SWEEP-QUEUE
+entries filed (below). Docs + queue only; no src changes.
+
+**1 — Grayzel (`BGray-wrl/superperm6`, HEAD d8a932d, 3 commits, no
+dev history — kept private; CITATION.cff openly lists Claude Fable 5
+and GPT Sol 5.6 Pro as co-authors).**
+`main_theorem : IsMinimumLength 872` is the correct literal rendering
+of a(6)=872: contiguous-factor occurrence (Mathlib `IsInfix`), alphabet
+exactly `Fin 6`, both halves asserted (existence at 872 + universal
+`872 ≤`), no hypotheses. Verdict: **FAITHFUL**. Trust surface: 0
+sorries/axioms/rigged `Decidable` instances (every custom instance is
+an honest unfold; the highest-value check), stock mathlib v4.30.0
+(SHA verified = the tag). The one concession: **156 `native_decide`
+across 22 files, and the upper bound too** (`maxHeartbeats 0` +
+`include_str` witness) — every finite fact incl. both bounds is
+compiler-trusted, not kernel-trusted; axiom set will include
+`Lean.ofReduceBool`. Found: `VERIFICATION_LEDGER.md` §3.6/§3.7 is
+stale text contradicting §2 in the same commit ("remain executable
+finite claims" vs "fully verified") — the likeliest source of a false
+"gap found" if the group ever audits; flag to Grayzel if we engage.
+Context: the community watched Fritsch's 872-minimality claim collapse
+in 2021 (Lemma 5.9 + R₃ + V/E errors, conceded in-thread) — one reason
+nobody rushed to endorse. The witness file is independently TRUE
+(verified here, twice). **`lake build` queued in SWEEP-QUEUE** —
+deliverable = the two AxiomAudit outputs verbatim, not the exit code.
+
+**2 — Gheorghe (`vlad-ds/a6-872`, HEAD f47a4d51 2026-07-29 = the
+Raudvere-review-absorption commit; Zenodo still v1; zero group
+replies).** The dictionary is exact, not analogical: his marked loops
+= our 2-loops (144), arc = sojourn, **s = splits, B = D+1, x = the
+Λ-excess, delta = Λ + deficit − 24**, and the new **bridge lemma**
+`deficit = j + (v−L) ≥ j` (because the L-set ⊆ arc-start-loop set, by
+our L2) — verified with **zero exceptions over all 22,062** n=6 record
+classes, `v == L` throughout. Houston's witness (byte-identical to our
+`872.up-d251150b9f42` modulo trailing newline): **s=25, B=4 — his
+prediction matches exactly**, cell (0,5,25,0), all three length
+identities pass. His `j ≥ 0` per-edge argument (`d = w−1−dc−dv ≥ 0`,
+whose w=2 case is literally our L3) elementarily reproves our s39
+loop-count theorem AND strengthens it (bounds v, not just L) — fold
+into THEORY §7 as the alternative proof when convenient. **O5
+localization** (re-verified from `o5_closure.py` at the pin, ownership
+from HIS `verify_d4_priced.py` map): 22/115 δ=4 cells carry O5 in
+transitive closure, 20 classes, all direct, j-histogram {1:7, 2:12,
+3:3}, **every one j ≥ 1**; all **55 j=0 cells are O5-free**; O6
+attaches to `rung:872` itself (42-item dep list) — unbounded reach,
+zero cell edges. Consequence: **any 871 hiding behind O5 is a slack
+walk** (deficit ≥ 1), a species never observed in 22,062 872s, 87 n=7
+walks, the 873/5907/5908 shells, or 7.3M recomp2 re-solves. Also
+found: his component-kernel containment receipt is partly
+self-fulfilling (asserts fibre members share packed bytes, then
+compares a pure function of those bytes) — the honest residual
+obligation is the over-approximation property of packed-field `Step`;
+and GAPS.md says "fifteen cell classes" where his own ledger says 20
+(cosmetic, a referee will notice). **New work item (next session's
+P0): the slack tax** — (i) instrument `loop_ledger_probe.py` to
+measure min length over materialized slack walks corpus-wide (we have
+never knowingly materialized a slack n=6 walk); (ii) targeted
+construction: minimize length s.t. deficit ≥ 1 via door-pricing
+(`upstream872_door_pricing.py`) — deficit ≥ 1 means a re-entered loop
+with a spent door or an accidental G₂ cycle, both priced objects.
+
+**3 — Aut groups (P5b): the instrument returns a THEOREM and a NO.**
+Theorem (proved in-session, brute-force-confirmed on 4 walks over full
+S_n): **|Aut_str| ≤ 2 for every superpermutation at every n** — S_n
+acts freely on strings containing all n symbols, so only the reversal
+coset survives, at most one element, σ forced involutive. String-level
+Kramer–Mesner with |G|>2 is vacuous by proof. Cover-level (the
+KM-relevant object, full computation, no stratification — 10 s for
+n=7, 107 s for all 22,062 n=6): **0/220 and 0/22,062 classes with
+|Aut_cov|>2**; S_n-only stabilizers ALL trivial; every nontrivial
+element is reversal∘(2+2 double transposition) at n=7. n=6: exactly 4
+classes at |Aut|=2, all in (140,6); the records allocation (145,3),
+21,144 classes, has ZERO symmetric members; blind spot all trivial.
+**Provenance split (new structural fact, candidate line for the
+grammar-of-5906s writeup): 84/84 published community 5906s are
+cover-symmetric (Egan's palindromic-kernel |G|=2 program measured as
+an invariant of its whole output, incl. both Kristan web classes);
+all 108 fully-asymmetric classes are ours, 102 of them = the entire
+loop-swap tier.** Positive controls: greedy 873/5913 covers carry
+groups of order 240/1440. Verdict: **do not buy a |G|>2 KM engine;
+if run at all, run as cheap refutation sweeps** ("no 5905 with
+symmetry G" is publishable structure), prescribing at cover level,
+knowing it provably cannot rediscover any known class. **Correction
+committed to NOVELTY-DESIGN: the "183 covers" freeze is
+orientation-canonical only — fully quotiented (S₇×ι) the 220-class
+shell has 178 distinct covers (180 up to S₇)** — and §6.4's unseeded
+cover master must exclude by fully-quotiented orbit or relabeled
+copies of known covers leak through the no-goods.
+
+**4 — fl1577 (P5a): built, bites, and already killed a recipe.**
+Harness `out/s55/fl1577/run_fl1577.sh` (TSV ledger + STATUS heartbeat
+per OPERATIONS), LKH-3.0.13 built clean, instance sha256-pinned
+(Heidelberg's server is DOWN — mirrors verified byte-identical).
+`MOVE_TYPE=5 SPECIAL` reproduces the published stall at **exactly
+optimum+5 (22254)** in ~150 s on one core. **All four survey claims
+verified against primaries** (Ochoa–Veerapen J.Heur 2018 Table 2;
+MABB-LKH arXiv:2501.04072 — LKH/NeuroLKH/MABB-LKH all 22254, 0/10) —
+first survey claim-set to survive primary contact since the s53 trap;
+two carried corrections: **"22,628 optima" is a sampled lower bound**
+(1000 Chained-LK runs), and **Concorde solves fl1577** — hard for
+local search, not absolutely; the 873→872 analogy is landscape-level.
+First output: **P4's named `GAIN_CRITERION=NO / PATCHING_C=5 EXTENDED`
+recipe is 40–60× worse than stock LKH** (+500–700 vs +12) — gain
+criterion off collapses trial throughput; demoted to control in
+NOVELTY-DESIGN (orchestrator caveat: those cells ran pre-fix, full
+budget consumed, direction sound — re-run under the fixed harness in
+the study). Recipe study (5×10 @ 600 s ≈ 85 min 8-way, hard-bounded)
+= second SWEEP-QUEUE entry.
+
+**New traps (s55).** (a) **A verification script that reads zero
+inputs can print all-PASS** — `crosscheck_houston.py` with no args
+emitted 11 green `[ok]` lines over 0 words (and the saved `.out`
+carries that vacuous header above the real run); re-runs must check
+the `words read: N` line first. (b) LKH defaults are hostile to
+budget comparisons: `MAX_TRIALS = DIMENSION` let configs exit at 10 s
+of a 150 s budget (harness now pins 10⁶); and bare `./LKH` blocks on
+an interactive stdin prompt — never invoke without a parameter file.
+(c) The `extraDocs/a6-872` clone is STALE at f386a8a2 (one substantive
+commit behind f47a4d51, the Raudvere absorption); `o5_closure.py`
+pins the HEAD hash and prints a marker on drift — don't "fix" the
+stale clone, refetch fresh when needed. (d) Audit-status survey claims
+("mid-audit", "under review") are as unreliable as "never tried"
+claims — both proof threads had effectively zero community
+examination; count the actual messages. (e) comopt.ifi.uni-heidelberg.de
+is unreachable — TSPLIB fetches need mirrors.
+
+**Committed:** this entry; SWEEP-QUEUE ×2 (grayzel lake build, fl1577
+recipe study — both `approved: NO`, awaiting Andrew); NOVELTY-DESIGN
+s55 annotations (§2 P0 status + O5 localization, P5a/P5b results +
+verdicts, 183→178 correction ×3); HANDOFF-S55 (supersedes S53);
+CLAUDE.md repoint. Scratch (regenerable, uncommitted): `out/s55/`
+{grayzel, gheorghe, aut, fl1577} incl. `o5_closure.py`,
+`crosscheck_houston.py`, `aut_scan.py`, the fl1577 harness, and all
+outputs; clones in session scratchpad (ephemeral): superperm6 @
+d8a932d, a6-872 @ f47a4d51.
+
+**Next (s56 front):** (1) P0 closure: the `lake build` launch (queued,
+needs approval) + the **slack-tax attack** in-session (materialize
+slack walks via `loop_ledger_probe.py`; door-pricing minimization
+under deficit ≥ 1) — proving it kills all 22 O5-held cells from our
+side. (2) P1a under the §6.1 three-valued contract — first milestone
+re-deriving known 5906s from their own assumptions (unchanged from
+s54). (3) fl1577 recipe study (queued, needs approval). (4) P5c
+(873-shell local-optima network) + P5d (PatternBoost data-shape) —
+still open. (5) THEORY §7: fold in Gheorghe's elementary reproof.
+(6) PR watch: #52/#53 still open (checked this session). (7) Standing:
+Kristan outreach; consider sending Grayzel the VERIFICATION_LEDGER
+§3.6/§3.7 staleness note and Gheorghe the 15-vs-20 GAPS.md drift +
+the receipt self-fulfillment observation — field-relations calls that
+are Andrew's to make.
+
 ## 2026-07-31 (session 54) — **docs session: an external research proposal (Markov/Graver cover fibers + logic-based Benders "cover master / word realizer") is evaluated through two rounds and folded into the roadmap as NOVELTY-DESIGN §6 — the accepted reframing is that the LOOP COVER is the game position and the move vocabulary should eventually be DERIVED algebraically (the 886-rule vocabulary is a hand-built partial Markov basis; every s44–s53 closure proves closure under that vocabulary, NOT its completeness — a computable question we'd been implicitly assuming), but everything generative is gated behind the round-2 correction: candidate-cover supply is not scarce, DECIDABLE ASYMMETRIC COMPLETION is scarce, so P1 is now built under a three-valued contract (SAT → witness; UNSAT → certified minimal-core cut; UNKNOWN → scheduling signal only, a timeout must NEVER become a cut) with the known-SAT control gate as its first milestone**
 
 The proposal arrived from Andrew (external model, independent of the s53

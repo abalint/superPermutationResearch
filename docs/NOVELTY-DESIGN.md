@@ -46,9 +46,21 @@ The K₄ hunt result is in `out/s53/k4hunt/` + `data/loopswap/rules_n7_s53.tsv`
 
 - **a(6) = 872 has two independent claimed proofs** (Gheorghe
   209-cell, preliminary, DOI 10.5281/zenodo.21653956; Grayzel
-  end-to-end Lean 4 / mathlib, zero sorries, under group audit). If
+  end-to-end Lean 4 / mathlib, zero sorries). If
   either holds, 871 is dead and n=6 becomes a *calibration domain
   with known ground truth* — still valuable, no longer a target.
+  **(s55 correction: neither is "under group audit" — Grayzel's
+  thread has one clarifying question, Gheorghe's zero replies; the
+  correct status is announced and unexamined. s55 P0 results: Grayzel
+  statement FAITHFUL, trust surface clean except everything incl.
+  both bounds is `native_decide`; decisive `lake build` is queued in
+  SWEEP-QUEUE. Gheorghe's frame = our loop-cover grammar exactly
+  (s=splits, B=D+1, deficit = j + (v−L)); his O5 gap is localized to
+  22/115 δ=4 cells, ALL requiring slack covers (deficit ≥ 1, never
+  observed in any corpus we hold) — the 55 tight cells are O5-free;
+  his O6 (production-prune certificates), not O5, blankets the whole
+  872 rung. Discharge route from our side: prove the slack tax
+  `deficit ≥ 1 ⇒ length ≥ 872`. See JOURNAL s55.)**
 - **Houston's 5905 program exists and was abandoned mid-run.** Two
   explicit score-15 n=7 kernels (lengths 27, 29) that "would give
   5905" if completable; Egan started them Feb 2019, no
@@ -164,11 +176,37 @@ the same measured pathology. n=7 at 5040 nodes = LAUNCH.
 
 **P5 — Instruments before engines** (cheap, in-session, do early):
   a. **fl1577 proxy**: the TSPLIB instance with our exact disease
-     (22,628 optima, mean plateau 1238; LKH + NeuroLKH + MABB-LKH all
+     (≥22,628 optima SAMPLED — not a count, s55; mean plateau 1238;
+     LKH + NeuroLKH + MABB-LKH all
      stall at optimum+5, 0/10). Minutes per iterate; any P4 recipe
      that can't crack fl1577 doesn't get n=7 CPU.
+     **(s55: BUILT — harness + LKH-3.0.13 at `out/s55/fl1577/`, stall
+     reproduced at exactly optimum+5; all four survey claims verified
+     against primaries (Ochoa–Veerapen 2018, arXiv:2501.04072), with
+     two caveats: the optima count is sampled, and Concorde SOLVES
+     fl1577 — it is hard for local search only, so the 873→872 analogy
+     holds at landscape level, not tractability level. First output:
+     the GAIN_CRITERION=NO / PATCHING_C=5 recipe named in P4 is
+     40–60× WORSE than stock LKH here — demoted from candidate to
+     control. Recipe study = SWEEP-QUEUE entry.)**
   b. **Aut groups of our known classes** (math survey #1 first step):
      decides Kramer–Mesner |G|>2 viability either way.
+     **(s55: DONE, verdict NO on buying a |G|>2 engine. Theorem:
+     |Aut_str| ≤ 2 for EVERY superpermutation at every n — S_n acts
+     freely, only reversal∘involution can survive — so string-level
+     KM with |G|>2 is vacuous by proof. Cover-level: 0/220 n=7 and
+     0/22,062 n=6 classes have |Aut_cov|>2; S_n-only stabilizers are
+     ALL trivial; the only symmetry the record set carries is |G|=2
+     reversal-type (Egan's palindromic-kernel trick, already fully
+     exploited: 84/84 published 5906 covers carry it). Provenance
+     split: every community-found class is cover-symmetric, all 108
+     fully-asymmetric classes are ours (102 = the whole loop-swap
+     tier). If KM runs at all: cheap refutation sweeps ("no 5905 with
+     symmetry G"), never as a search expected to reach known shells.
+     Correction: the "183 covers" freeze is orientation-canonical
+     only; fully quotiented (S₇×ι) the 220-class shell has 178
+     distinct covers (180 up to S₇ alone). Artifacts
+     `out/s55/aut/`.)**
   c. **Local-optima network** of the n=6 873 shell (canonicalized):
      measures basin structure before we pay for escapes.
   d. **PatternBoost data-shape check** on the 22,062 (tokenization =
@@ -211,7 +249,9 @@ evaluated and revised through two rounds; both rounds + the evaluation
 preserved at `../extraDocs/2026-07-31-research-cover-algebra.md`. Its
 factual grounding checked out claim-by-claim. The accepted reframing:
 **the loop cover is the game position** (the 220-classes-yet-183-covers
-freeze says covers are the scarcer object), and the move vocabulary
+freeze says covers are the scarcer object; s55: 183 is
+orientation-canonical — fully quotiented the count is 178, scarcer
+still), and the move vocabulary
 should ultimately be *derived* algebraically rather than extracted one
 rule family at a time — but gated as below.
 
@@ -305,7 +345,9 @@ tie-plateau diagnosis rule out bounds as midgame ranking fixes.
 ### 6.4 Deferred generative tier (opens only after the 6.1 gate)
 
 - **Unseeded cover master**: `Ax = b`, Λ + deficit ≤ budget, the 183
-  known covers as no-good exclusions — known words used only as
+  known covers as no-good exclusions (s55: exclude by fully-quotiented
+  orbit — 178 distinct under S₇×ι — or a relabeled copy of a known
+  cover leaks through) — known words used only as
   exclusions and validation. Milestone: a previously unknown cover
   satisfying every proved necessary condition — the self-derived-
   novelty target at cover level, BEFORE any word.
