@@ -6,7 +6,63 @@ mechanism — read it before touching code.
 
 ---
 
-## 2026-07-31 (session 53) — **strategy session: the K₄ unit-rule vein is MINED OUT (14 residual cover groups all resolved — 10 forward shadows of complete K₄s, one 3+2 glued-K₄ cover split, 3 groups with provably no admissible unit diff; the only find is that the vocabulary was missing the reversal-MIRRORS of S51A/S51C, now committed as S53A/S53B with zero new reachability — the 220 shell stays closed), and a four-agent research sweep lands three field facts that reshape the roadmap: TWO independent claimed proofs that a(6)=872 (Gheorghe 209-cell + Grayzel end-to-end Lean, different reductions), the correction that BOTH "obvious untried ideas" were tried by the field's principals (LKH-at-n=7 configured by Houston since the repo's first commit with zero posted results; Houston's kernel program = KernelFinder+PermutationChains, executed by Egan), and the discovery that Houston's abandoned 5905 program — two explicit score-15 kernels, started Feb 2019, never concluded — is literally chains #0 and #24 of our own census, both still OPEN; the whole synthesis is committed as `docs/NOVELTY-DESIGN.md` (ranked program P0–P5)**
+## 2026-07-31 (session 54) — **docs session: an external research proposal (Markov/Graver cover fibers + logic-based Benders "cover master / word realizer") is evaluated through two rounds and folded into the roadmap as NOVELTY-DESIGN §6 — the accepted reframing is that the LOOP COVER is the game position and the move vocabulary should eventually be DERIVED algebraically (the 886-rule vocabulary is a hand-built partial Markov basis; every s44–s53 closure proves closure under that vocabulary, NOT its completeness — a computable question we'd been implicitly assuming), but everything generative is gated behind the round-2 correction: candidate-cover supply is not scarce, DECIDABLE ASYMMETRIC COMPLETION is scarce, so P1 is now built under a three-valued contract (SAT → witness; UNSAT → certified minimal-core cut; UNKNOWN → scheduling signal only, a timeout must NEVER become a cut) with the known-SAT control gate as its first milestone**
+
+The proposal arrived from Andrew (external model, independent of the s53
+survey agents). Round 1 was factually flawless — every repo claim it made
+checked out (cold-NRPA 883 vs warm-start byte-identical, covers frozen at
+183 while classes grew to 220, the 33-rule table, the 12-class blind spot,
+braid-splice bimodal symdiff, abstraction-dedup unsoundness) — but it
+treated realization as infrastructure ("you already possess most of this
+machinery") when the s15/s18 record says realization is the FIELD'S open
+problem (no engine finds covers on known-SAT controls; 138/223 chains
+undecided), and it put a production Graver-basis computation near the top
+with no sizing or symmetry analysis. Both criticisms were accepted in
+round 2, which contributed the genuinely new instrument of the session:
+the **targeted move oracle** — instead of enumerating a basis, solve an IP
+for ONE canonical kernel move at a time (bounded support, ledger-
+preserving, symmetry-broken, excluded from known + previously returned
+orbits, objective favoring blind-region reach / topology change), lift the
+orbit only on application, replay, add an orbit no-good, iterate.
+
+**What changed in the docs (the session's whole product — no code, no
+sweeps, nothing launched):**
+
+- `docs/NOVELTY-DESIGN.md` **§6 added** (the cover-algebra amendment):
+  §6.0 the organizing principle (decidability first); §6.1 the three-
+  valued completion contract, binding on all P1 work, with cut-producer
+  roles for P1a/b/c and the known-SAT control gate; §6.2 the vocabulary-
+  completeness instruments (ker-A encoding test; blind-spot fiber
+  diagnostic — the mod-6 obstruction should reappear as a lattice fact;
+  the targeted move oracle; the gated 4ti2 ladder with n=7 Graver ruled
+  out); §6.3 pattern REFUTATION tables (admissible loop-obligation
+  abstractions confined to capped/decision runs — s24 zero-slack + the
+  tie-plateau diagnosis rule them out as ranking keys); §6.4 the deferred
+  generative tier (unseeded cover master excluding the 183, door-forest/
+  cross-join sampler, cover-circuit recombination, branch-and-price, 5905
+  deficit lanes with scoped outcomes); §6.5 ranking effects (P0/P5/P2/P4
+  unchanged; P3's sampling side deferred, its discipline retained).
+  Pointer lines added at P1 and P3.
+- Both rounds + the evaluation preserved verbatim-condensed at
+  `../extraDocs/2026-07-31-research-cover-algebra.md` (the fourth
+  2026-07-31 research report).
+
+**Why the reframing earned a section rather than a footnote:** the
+220-classes/183-covers freeze (s53) is the single best empirical argument
+that covers are the scarcer, more fundamental object, and the ker-A test +
+fiber diagnostic convert "is the closed vocabulary complete?" from an
+assumption into an experiment — with standalone value even if realization
+never gets cheaper. The unseeded-cover milestone (a cover outside the 183
+satisfying every proved necessary condition, found with known words used
+only as exclusions) is now the named self-derived-novelty target at cover
+level.
+
+**Next steps (unchanged in priority, sharpened in contract):** P0
+adjudication first; P5 instruments; P1a cuts wired under the §6.1
+contract with re-deriving known 5906s from their own assumptions as the
+first milestone; §6.2a–c prototyped in-session at n=6 when the front
+gets there. Checks: cargo test --release 139 green, clippy -D warnings
+clean, fmt clean (docs-only change). — **strategy session: the K₄ unit-rule vein is MINED OUT (14 residual cover groups all resolved — 10 forward shadows of complete K₄s, one 3+2 glued-K₄ cover split, 3 groups with provably no admissible unit diff; the only find is that the vocabulary was missing the reversal-MIRRORS of S51A/S51C, now committed as S53A/S53B with zero new reachability — the 220 shell stays closed), and a four-agent research sweep lands three field facts that reshape the roadmap: TWO independent claimed proofs that a(6)=872 (Gheorghe 209-cell + Grayzel end-to-end Lean, different reductions), the correction that BOTH "obvious untried ideas" were tried by the field's principals (LKH-at-n=7 configured by Houston since the repo's first commit with zero posted results; Houston's kernel program = KernelFinder+PermutationChains, executed by Egan), and the discovery that Houston's abandoned 5905 program — two explicit score-15 kernels, started Feb 2019, never concluded — is literally chains #0 and #24 of our own census, both still OPEN; the whole synthesis is committed as `docs/NOVELTY-DESIGN.md` (ranked program P0–P5)**
 
 Andrew: "ignore anything to do with existing sweep work. what do we
 have next" → K₄ hunt approved; then "send out sub agents to do strong

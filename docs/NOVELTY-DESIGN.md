@@ -91,8 +91,10 @@ predicts Houston's witness at s=25, B=4 — recompute from our ledger
 as a cross-check). Gates everything n=6.
 
 **P1 — Reopen Track A as "finish Houston's 5905 program."** The 138
-open chains ARE the program; chains #0/#24 are its named targets. The
-new method stack, in order of prototyping cost:
+open chains ARE the program; chains #0/#24 are its named targets.
+**(s54: all P1 work is built under the three-valued completion
+contract of §6.1; its first milestone is the known-SAT control gate.)**
+The new method stack, in order of prototyping cost:
   a. **Ledger/grammar cuts in the completion engines**: wire the s34
      2-loop law (5905 ⇔ 141-2-loop cover; length = 5764 + #2loops),
      the waste identity, fresh-doors, and door-pricing as propagators
@@ -149,7 +151,9 @@ admissible bound (s24: zero slack = no signal); select by a
 DIVERSITY ARCHIVE over ledger coordinates (MAP-Elites/Go-Explore
 discipline), not top-k by score. This is the sampled generalization
 of the chain census and shares P1's completion engines. Prototype:
-in-session at n=6 (ground truth known).
+in-session at n=6 (ground truth known). **(s54: read §6 first — the
+sampling side is deferred behind §6.1's control gate; the near-term
+cover-level work is §6.2's vocabulary-completeness instruments.)**
 
 **P4 — Deform-the-surface metaheuristics** (game survey #1): GLS
 penalties on weight-≥2 arcs, STUN with f₀ = record, SISR
@@ -199,3 +203,132 @@ n=7, P5d training are LAUNCH items — each needs a SWEEP-QUEUE entry
 with runtime estimate, artifact list, heartbeat plan, and abort
 command before Andrew's launch agent takes it. Everything else
 (P1a prototypes at n=6, P3 prototype, P5a–c) is in-session scale.
+
+## 6. The cover-algebra amendment (s54)
+
+Source: an external research proposal Andrew brought in 2026-07-31,
+evaluated and revised through two rounds; both rounds + the evaluation
+preserved at `../extraDocs/2026-07-31-research-cover-algebra.md`. Its
+factual grounding checked out claim-by-claim. The accepted reframing:
+**the loop cover is the game position** (the 220-classes-yet-183-covers
+freeze says covers are the scarcer object), and the move vocabulary
+should ultimately be *derived* algebraically rather than extracted one
+rule family at a time — but gated as below.
+
+### 6.0 The organizing principle
+
+**Candidate-cover supply is not scarce; decidable asymmetric
+completion is scarce.** No engine here or anywhere finds covers on
+known-SAT controls (s15); 138/223 chains sit undecided at 30-min
+budgets. Any method that increases cover supply without improving
+completion decidability makes the pipeline busier while lowering its
+information per CPU-hour. Every generator idea answers one question
+first: what fraction of its output can the realizer DECIDE?
+
+### 6.1 The three-valued completion contract (binding on all P1 work)
+
+Every completion call receives explicit structural assumptions (cover
+atoms, ledger constraints, chain fixings) and returns exactly one of:
+
+- **SAT** → a validated word (validator + m3_check ritual unchanged),
+  with the witness replayable from the assumptions;
+- **UNSAT** → a checkable certificate or independently reproducible
+  exhaustion, projected to the *smallest assumption subset*
+  responsible, stored as a reusable cut over cover space;
+- **UNKNOWN** → a scheduling/profiling signal ONLY. **A timeout must
+  never become a no-good cut.**
+
+The cut store + assumption manager is the "Benders" layer: an
+interface standard, not a solver. Cut producers by component —
+P1a: ledger contradictions, fresh-door violations, zero/impossible
+columns, waste-capacity failures. P1b: corridor/block-neighborhood
+impossibility certificates. P1c: certified k′-opt/local-branching
+exclusions (a "no" at cutoff 5905 proves no k′-opt improvement exists
+from that 5906/5907 — witness corpora become certificate factories).
+**Gate: the outer cover master activates only after P1a–c re-derive
+known 5906s from their own cover/chain assumptions at usable rates
+(the known-SAT control gate) and convert a meaningful fraction of
+candidates into witnesses or certified cuts.**
+
+### 6.2 Vocabulary-completeness instruments (cheap, standalone, P5-grade)
+
+The s44–s53 closures prove closure *under the discovered vocabulary*;
+they do not prove the vocabulary complete. Completeness is computable,
+and these instruments have value even if realization stays hard:
+
+a. **ker-A encoding test.** Serialize covers as integer atom vectors
+   `x` (2-loop dispositions, partial-chain endpoints, doors,
+   split-profile atoms, Λ surcharges; complement variables for binary
+   bounds) with invariant rows `A` from THEORY §7's equality terms
+   (coverage, entry/exit balance, one disposition per 2-loop, split
+   counts, door incidence, Λ budget, proved modular identities).
+   Every verified cover-preserving rule must satisfy
+   `A·(x_tgt − x_src) = 0`; a failure indicts the ENCODING (something
+   mutable treated as invariant), not the rule.
+b. **Blind-spot fiber diagnostic.** Same-fiber membership for the 12
+   blind classes vs an ordinary shell class. Same fiber → search for
+   connecting moves; different fiber → the differing row NAMES the
+   higher-tier invariant. The known arithmetic obstruction
+   (entry-diff 536 ≢ 0 mod 6) should reappear as a lattice fact —
+   a cross-check on encoding and obstruction at once.
+c. **Targeted move oracle** (preferred over basis enumeration). An IP
+   solved one move at a time: smallest canonical kernel vector with
+   bounded support/coefficients, applicable to a chosen source cover,
+   ledger-preserving, canonically symmetry-broken, excluding the known
+   rule orbits and all previously returned orbits; objective favors
+   blind-region reach, cover-topology change under a tight ledger,
+   multi-frame support, bounded-defect novelty. Lift the orbit only on
+   application; replay every instance; add an orbit no-good; iterate.
+   Sacrifices the fiber-connectivity theorem, attacks the actual
+   question directly.
+d. **Gated 4ti2 ladder** (only if the oracle motivates a basis view).
+   Gate A: schema validation at n=5 (rules ∈ ker A, legal covers in
+   fiber, illegal covers violate named rows, complement semantics).
+   Gate B: ONE anchored n=6 allocation, circuits only, external orbit
+   canonicalization, full sizing report (rank, kernel dim, raw vs
+   canonical circuit counts, stabilizer distribution, support/degree,
+   memory/wall, overlap with the 33 rules, replay-valid new orbits).
+   Gate C: fiber-truncated Markov only on a positive circuit verdict.
+   **Production n=7 Graver: ruled out** (astronomically
+   symmetry-redundant; 4ti2 has no group quotient).
+
+### 6.3 Pattern refutation tables (not PDB heuristics)
+
+Loop-obligation abstractions with additively partitioned exact costs
+are admissible by construction — but they are REFUTATION instruments,
+deployed only inside capped/decision runs and the realizer. Judge by:
+states proved impossible under cap, chains closed, node/time on known
+UNSAT controls, reusable conflict patterns, P1b/c certificate rates.
+Never a frontier ordering key: s24's zero-slack theorem and the §1.1
+tie-plateau diagnosis rule out bounds as midgame ranking fixes.
+
+### 6.4 Deferred generative tier (opens only after the 6.1 gate)
+
+- **Unseeded cover master**: `Ax = b`, Λ + deficit ≤ budget, the 183
+  known covers as no-good exclusions — known words used only as
+  exclusions and validation. Milestone: a previously unknown cover
+  satisfying every proved necessary condition — the self-derived-
+  novelty target at cover level, BEFORE any word.
+- **Door-forest / cross-join sampler**: cycle basis + spanning forest
+  of door connections + chain terminations — the constructive dual of
+  THEORY §7's equality characterization (doors = bridge forest).
+- **Cover-circuit recombination**: decompose cover-vector symmetric
+  differences into kernel circuits; exchange coordinated circuit
+  subsets (replaces the dead exact-state braid splice). Population-
+  dependent — corpus expansion, not cold discovery.
+- **Branch-and-price** if the atom catalog outgrows enumeration
+  (columns = legal sojourn chains / loop blocks; duals = a global
+  scarcity signal).
+- **5905 lanes**: separate deficit lanes (tight Λ=141 per the s34
+  2-loop law, plus slack lanes); scoped outcomes only — "no cover
+  under the current atom catalog" is NOT "no 5905" unless the catalog
+  is proven complete.
+
+### 6.5 Effect on the §3 ranking
+
+P0 and P5 unchanged (P0 still first — cheap and gating). P1 gains 6.1
+as its binding contract and the known-SAT control gate as its first
+milestone. P3's exact-arithmetic + diversity-archive discipline
+stands, but its sampling side moves to 6.4; the near-term cover-level
+work is 6.2's instruments (a–c in-session at n=6; d Gate B likely
+LAUNCH). P2/P4 unchanged.
