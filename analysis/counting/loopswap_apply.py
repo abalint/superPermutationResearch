@@ -342,6 +342,7 @@ def run_apply_sym(n, rules_tsv, dirs, outdir, max_replays=None,
     # walks: flat entry sets, doors, start — both orientations
     names, structs = [], []
     postings = {}
+    door_postings = {}
     files = file_map(dirs)
     for f, path in files.items():
         src = open(path).read().strip()
@@ -356,6 +357,8 @@ def run_apply_sym(n, rules_tsv, dirs, outdir, max_replays=None,
             structs.append((flat, doors, pid[st]))
             for p in flat:
                 postings.setdefault(p, set()).add(wi)
+            for a, b in doors.items():
+                door_postings.setdefault((a, b), set()).add(wi)
     print(f"{len(names)} walk-orientations from {len(files)} files; "
           f"index built", flush=True)
 
@@ -364,16 +367,24 @@ def run_apply_sym(n, rules_tsv, dirs, outdir, max_replays=None,
     novel, novel_shas, novel_src = [], set(), {}
     n_replays = 0
     empty = set()
+    all_wi = set(range(len(structs)))
     for (eo, ei, do, di), rid in instances.items():
-        posts = [postings.get(p, empty) for p in eo]
-        if not posts or any(not po for po in posts):
+        # candidate walks: post on ents_out; a rule with EMPTY ents_out (the
+        # near-pure door moves) posts on doors_out instead — s46 fix, those
+        # used to be silently skipped. Neither ⇒ no removal precondition.
+        posts = ([postings.get(p, empty) for p in eo] if eo
+                 else [door_postings.get(d, empty) for d in do])
+        if any(not po for po in posts):
             continue
-        posts.sort(key=len)
-        cand = posts[0]
-        for po in posts[1:]:
-            cand = cand & po
-            if not cand:
-                break
+        if posts:
+            posts.sort(key=len)
+            cand = posts[0]
+            for po in posts[1:]:
+                cand = cand & po
+                if not cand:
+                    break
+        else:
+            cand = all_wi
         if not cand:
             continue
         for wi in cand:

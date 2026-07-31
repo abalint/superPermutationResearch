@@ -6,6 +6,160 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 46) — the S45 menu's top three items executed in parallel by Opus subagents (new working mode; Fable orchestrates): the sub-256 band is MINED TO CLOSURE — 312/312 extractable pairs oracle byte-identically, **240 new canonical rules (vocabulary 622 → 862)**, sharded sweep of 140,937 replays → **0 novel, 0 shorter** — but the band was NOT redundant: **328 of its 338 undirected edges are new, union graph 1,675 → 2,003, giant 75 → 85, 3 previously-unreachable classes now touched**; the "three near-pure door-move rules" are **FOUR rules = two objects, and they are R-K7** (reversal-frame variant + its allocation-neutral self-composite — proven three ways, incl. exact algebraic composition), no new seam, but the hunt exposed a real instrument bug (`run_apply_sym` silently SKIPPED empty-`ents_out` rules — FIXED; s45's closure survives complete) and a new closure: **the 194-class shell is closed under the i4a cover-preserving tier too** (first full-194 R-K7 sweep; s41 only ever swept 92); the blind spot is **17 classes, not 19 → 14 after the band**, and it is GENUINE isolation (5,384/5,384 preconditioned firings on them die at replay; perfect separation from the touched); and the discovery of the session: **conjugated cover twins — canonicalizing used-loop covers over all 5,040 relabelings collapses 194 → 180, and every (842,19) class has a relabel-identical cover twin at (844,17): a PROVEN cover-preserving 2-unit allocation trade (S−2, #w3+2) that NO rule in any tier realizes**
+
+HANDOFF-S45 menu items 1–3, run as three parallel Opus subagents plus a
+wrap-up agent (bug fix, data promotion, ritual checks) — the new working
+mode per Andrew (2026-07-30): heavy tool-loop work goes to Opus subagents,
+Fable orchestrates and writes docs. All numbers below are agent-measured
+and cross-validated where they overlap: the band agent's 3 newly-touched
+classes are exactly the 3 the blind-spot agent forecast, and the wrap-up
+agent reproduced every expected union count to the unit.
+
+**1 — The sub-256 band (menu item 1): closure, and a graph windfall.**
+The band file is exactly **352 rows** (1,520 NEW = 1,168 at ≥256 + 352 at
+200–255; the census floor is exactly 200, so this was the whole remaining
+band). **312 extractable / 40 not** — all 40 the same aligned-frame
+"heads share no perm" failure (11.4%, vs 14.1% at ≥256; no new failure
+mode). **Oracle 312/312 byte-identical in both directions.** The band
+yields 421 distinct directed canonical rules — 181 already known, **240
+genuinely NEW: vocabulary 622 → 862**. The (n−1)·loops law holds with
+**zero exceptions** (all 200 door-free NEW rules have |ents_out| =
+|ents_in| = 6k, k ∈ {2…38}); the 40 door-editing rules are ALL
+(9,3)/(3,9) allocation-crossing composites — **no new door shapes and no
+near-pure siblings** (min |ents_out| in the band is 12). Sweep: 4 shards
+at ≤12k entries, dry-run projected 140,937 candidate replays, real run
+**140,937 in 10.5 min — dry-run-exact again**; **99.29% replay-killed**
+(vs 91.8% at ≥256 — deeper rules are more precondition-promiscuous and
+less replay-sufficient); 997 surviving firings, all edges, **0 novel, 0
+shorter, 0 longer** (m3_check never exercised — nothing to gate). The 45
+door composites fired 66/66 with zero kills (s45's hyper-specificity
+pattern again). **The edge yield is the real product: 338 undirected
+edges over 106 classes, all 240 rules fire, and only 10 overlap the
+committed union — 328 NEW, union graph 1,675 → 2,003 undirected, giant
+75 → 85 (absorbed a whole 10-node component), still 20 components.**
+Newly touched: `up-6773ff05a318`, `up-e8da0f18269f` (both (844,17)),
+`up-f8d1e70c6a52` ((840,21)). Lesson: **`--min-perms 256` was a
+graph-coverage cut, not a quality cut** — the band's rules are the same
+species (6k law exact, same composite family) connecting almost entirely
+different class pairs.
+
+**2 — The near-pure door rules are R-K7 (menu item 2).** s45 said
+"three"; the truth is **four directed rules = two undirected objects**
+(each pair exact reverses): `a23d031fbcd3`/`51c13efc7a14` at shape
+(1,0,1,2)/(0,1,2,1) and `af1df8c730b3`/`9a1f3be55831` at (1,1,2,2). Six
+source pairs, all in novel5906b, forming two disjoint triangles. All six
+pairs are **cover-identical** (|A∩B| = 142) — cover-preserving
+door-CHANGERS, the exact dual of the loop-swap tier's cover-changing
+door-preservers. Three independent proofs of the R-K7 identification:
+(i) R-K7's canonical ids appear in no rule table because **`canon_rule`
+quotients by S₇ only, NOT by reversal — the loop-swap tables silently
+double-count reversal-frame variants**; (ii) the first-ever conjugated
+i4a R-K7 sweep over all 194 produces 13 undirected edges **byte-equal**
+to a23d ∪ 51c1's; (iii) on two carriers, R-K7's product and a23d's are
+relabel+reversal-equivalent but not relabel-equivalent. The composites
+are algebraically exact: compose(51c1, R-K7-fwd) canonicalizes to 9a1f,
+compose(R-K7-rev, a23d) to af1d — the intermediate door cancels, hence
+allocation-neutral. Footprint: **every a23d edge crosses allocations at
+ΔS=−1/Δd3=+1** — 10× (840,21)↔(839,22), 2× (836,25)↔(835,26), and 1× the
+Kristan seam (844,17)↔(843,18), **which is Kristan's class's ONLY edge in
+the whole graph**; 8 of the 13 are precisely the s41 discovery edges, and
+R-K7 is the sole edge of 5 of the 20 components. Verdict: interior moves
+of the shell; no new seam.
+
+**The instrument bug (found, fixed; blast radius one rule).**
+`run_apply_sym` built candidate postings from `ents_out` and `continue`d
+on empty — an empty-`ents_out` rule was never TRIED, not "fired zero".
+`51c13efc7a14` is the only such rule in the entire 862-rule vocabulary
+(all six tables scanned; none has both `ents_out` and `doors_out` empty),
+so no published sweep result changes. Fixed in
+`analysis/counting/loopswap_apply.py` (19+/8−): a door-posting index
+serves empty-`ents_out` rules, full-corpus fallback if both are empty;
+the normal-rule hot path is unchanged (regression rule byte-identical vs
+the committed census). Patched-path sweep of 51c1 over the 194: 5,040
+conjugated instances, 13 replays, 0 kills, **13 edges = exactly
+reverse(a23d), 0 novel** — s45's closure claim survives, now complete.
+Alongside it, a **new closure: i4a R-K7 conjugated over all 194** (fwd
+7,074 replays, 99.7% killed, 22 edges; rev 13 replays, 13 edges): **0
+novel, 0 shorter. The 102 novel5906b classes had never seen R-K7 until
+now — the cover-preserving tier is closed on the full shell.**
+
+**3 — The blind spot: 17, not 19; then 14 (menu item 3).** Correction
+first: `data/loopswap/lswap_sym_edges_n7_gen2_union.tsv` is the union of
+the 8 gen-2 SHARDS, not s44 ∪ gen-2 — s45 quoted the edge count (1,675)
+from the full union but the touched count (175) from gen-2 alone. True
+pre-s46 union: 1,675 undirected / **177 touched / 17 untouched**, all 17
+upstream (s45's "65 of 84" should read 67). Two classes
+(`up-95ffff5c765c`, `up-cad80abdf334`) hang solely on the two
+gen-2-absent s44 rules — the KNOWN-EDGE annotation trap made visible at
+class level. Allocations spread ∝ upstream population (no localized
+blind spot); Kristan's class is TOUCHED (degree 1, via R-K7). Why
+untouched: **14 of 17 appear in ZERO tail-conjugacy pairs**; 3 appear
+only in sub-256 pairs — and the band swept this session reaches exactly
+those 3, so **untouched is now 14**. Unextractability is refuted as a
+cause (the 4 sub-256 pairs on untouched classes extract and oracle 4/4).
+The operative mechanism is **total replay-kill**: a per-class re-run of
+the full gen-2 sweep (reproducing s45's 87,276 firings to the unit)
+shows the 17 drew 5,384 preconditioned conjugated firings and **all
+5,384 died at replay**, while every touched class keeps ≥2 survivors
+(median survival 6.5%) — perfect separation. Tail-sharing: untouched max
+206 shared perms (median 117) vs touched median 739 — inside the s43
+generic-endgame null band, so **nothing tail-anchored can see the
+remaining 14**. Not a detector-anchor artifact, not a frame artifact:
+genuine structural isolation of the tier.
+
+**The discovery — conjugated cover twins.** Canonicalizing each class's
+used-loop cover over all 5,040 relabelings: **194 → 180 distinct covers,
+14 collision groups** (11 literal-frame + 3 NEW). All 3 new collisions
+are **(842,19) ↔ (844,17)** — the corpus has exactly 3 classes at
+(842,19) and every one has a cover twin at (844,17), byte-identical
+under σ = swap 5↔6 (verified by direct relabel-and-recompute). One twin
+pair (`up-8b8c8916a24a` ~ `up-dab493384582`) lies wholly inside the
+blind spot; none of the 3 pairs is an edge of any move graph, and
+conjugated R-K7 does not produce them. This is a **proven
+cover-preserving allocation trade of TWO units (S−2, #w3+2)** — R-K7
+trades one — **with no realizing rule in any tier**. It is exactly the
+M-4-style anatomy target the R-compound/R-unit-lift-to-n=7 item has been
+waiting for: derive the rewrite from measured specimens.
+
+**Committed artifacts.** `data/loopswap/rules_n7_a4840_band200.tsv` (the
+240 NEW rules, 9-column); `lswap_sym_edges_n7_band200_union.tsv` (802
+rows = 676 directed / 338 undirected / 106 classes);
+`lswap_sym_edges_n7_ALL_union.tsv` (**the file for graph analyses**:
+4,006 directed = 2,003 undirected × both directions, 180 classes, 762
+rules — a graph artifact, not provenance; per-rule multiplicity lives in
+the source TSVs; dedup keeps the lexicographically smallest rule id per
+directed pair); the `loopswap_apply.py` fix. Scratch (gitignored,
+regenerable): `out/s46/{item1,item2,item3,task1}/` — band drivers,
+per-shard edges, pair anatomies, the per-class sweep accounting, the
+conjugated-cover censuses, the i4a-194 edge TSV. Ritual: `cargo test
+--release` 139 green, clippy `-D warnings` clean, fmt clean.
+
+**Caveats.** (1) Vocabulary counts are DIRECTED canonical ids under S₇
+only — reversal-frame variants double-count (a23d vs R-K7); a
+reversal-quotiented recount of the 862 is unrun. (2) The census floor is
+200 shared perms — below it is unmined AND inside the generic null band,
+and extraction cost grows as tails shrink (`canon_rule` ~0.014 s/entry ×
+5,040 relabelings; the band cost ~10 min memoized). (3) The closure
+claims cover loop-swap (862) + i4a on the current 194; new tiers or new
+upstream solutions reopen them. (4) The i4a-194 edge census lives in
+scratch only (`out/s46/item2/i4a_194/`).
+
+**Next session, concretely (s47).** (1) TOP: anatomize the three
+(842,19)↔(844,17) cover-twin pairs in theorem coordinates and derive the
+realizing rule — the R-compound/R-unit lift to n=7, now with measured
+specimens; one pair is inside the blind spot, so reaching it doubles as
+proof the tier extension works. (2) The alignment-free rule synthesizer
+for the 14 zero-pair classes (relabel-minimized entry-set difference
+instead of shared-tail alignment; their nearest conjugated cover
+neighbors are 36–68 loops away, within the vocabulary's k ≤ 85 range —
+reachable in principle). (3) Reversal-quotient audit of the rule tables
+(how much of the 862 is frame double-counting?). (4) Pending approvals,
+unchanged: n=6 expanded sweep (~2 h, closure-bias caveat), n=6 i4a
+forward sweep (~100 min), recomp2 520/450 bands. (5) Still open:
+run-losing-pair fine anatomy; M-4b/M-4d; ip=1; per-allocation NRPA/beam;
+Track C v2's 2.4× overhead cut.
+
 ## 2026-07-30 (session 45) — the second-generation extraction is DONE and it is a clean CLOSURE NEGATIVE: the 1,520-pair census of the 194-class corpus yields **604 directed entry-level rules (541 NEW vs the 81), oracled 1,003/1,003 byte-identically**, and the full conjugated sweep of all of them — 87,276 candidate replays under 5,040 relabelings × both orientations × 194 classes — produces **ZERO novel and ZERO shorter classes: the published n=7 record shell is CLOSED under the complete loop-swap vocabulary (all 622 known rules), fixed point reached at iteration 1**; what the second generation actually delivers is not classes but STRUCTURE — the natural-move graph goes **433 → 1,675 undirected edges (3.9×), 175 of 194 classes touched, 20 components with a 75-node giant** (n=6 has no giant at all) — and the lesson costs more than the negative: **second-generation extraction from a corpus that is already the closure of a rule is structurally biased toward returning that closure, so s44's 102-class discovery event was a CORPUS-SIZE artifact, not a rule-quality one**
 
 HANDOFF-S44's work-menu item 1, executed end-to-end (extract → oracle →
