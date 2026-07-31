@@ -104,14 +104,47 @@ producing a bogus "12.05M candidates, 2.6× cut" — the truth was 31.17M and
 cores are slower per-core and 24 shards contend for bandwidth, so it ran
 18.7 min — still ~11× the queue's 3.4 h single-core figure.
 
+**Both s52b loose ends closed, same session.**
+
+- **The "3 deferred loop-swap rules" were not a gap.** `--skip-rules` in
+  the expanded spec was excluding **s44's 3 deep rules, already swept**,
+  not postponing work — and re-running them proved it: the product is
+  **byte-identical** to the committed `data/loopswap/lswap_sym_edges_n6.tsv`
+  (same sha256 `d459c78e9fdd…`, 19,308 directed edges = 2 × s44's 9,654
+  undirected; our dry-run's 6,966,546 candidates matches s44's "7.0M
+  replays"). So **closure under the FULL 33-rule table was already earned**:
+  30 rules (this session) + 3 (s44), 0 novel in both. What the re-run does
+  buy is a cross-session, cross-day **byte-exact reproducibility control**,
+  plus one new structural fact: the two tiers' edge sets are **DISJOINT** —
+  union 41,224 = 21,916 + 19,308, overlap **0**, so deep and shallow rules
+  touch entirely different class pairs. Lesson recorded: before treating an
+  `--only`/`--skip` exclusion as a coverage hole, check whether the excluded
+  work already has a committed artifact (`git log -- <artifact>`).
+- **`i4a_apply.py` and `loopswap_apply.py` are now farm-ported**, joining
+  fuse.py and demotion.py — `i4a_shim.py` (shards by corpus file via an
+  `os.listdir` wrap, exact total, no presize) and `lswap_shim.py` (shards by
+  RULE, exact per s45; presizes with the instrument's own `--dry-run` to
+  declare a true total), both smoke-validated on the farm (96/96 units and
+  3/3 shards, `replays == presized`). Plus `pysweep_run.ps1`, a generic
+  launcher, so the harness stops accreting a `*_run.ps1` per instrument.
+  Two shim bugs caught in smoke and worth not repeating: the hot loop calls
+  `replay_ids`, not `replay`, so the obvious wrapper counted ZERO and would
+  have flagged every shard stalled; and heartbeat units must match the
+  declared total, since the supervisor tallies ROWS while I first declared
+  replays — a finished run read `50/2462 (2%)`.
+
+**Operational note:** a second agent working this repo concurrently deleted
+`logs/` and the run's output dir out from under this session's live
+loop-swap job. The process survived (its log fd pointed at an unreachable
+inode) but would have died on its FINAL write; recreating the output dir in
+flight saved ~17 min of work. Worth namespacing per-agent run dirs.
+
 **Next session, concretely.** The blind spot now survives single rules,
 sequential chains, targeted AND untargeted fused pairs, and the full
 sumset — the loop-swap tier is out of ideas for it, so the next move must
-come from a different tier or a new object, not more of this one. Cheap
-loose ends: the 3 deferred loop-swap rules (a second pass, likely minutes),
-and porting `i4a_apply.py` / `loopswap_apply.py` to the farm harness (both
-still Mac-only, 95 and 75 min respectively — the pattern is now proven
-twice). Still HELD: n=6 recomp2 520 band.
+come from a different tier or a new object, not more of this one. The Python
+farm path is now proven for four instruments, so future sweeps at either n
+should default to the PC. Still HELD: n=6 recomp2 520 band.
 
 ## 2026-07-31 (session 52) — **the untargeted fused-pair sweep becomes a LAUNCHABLE PACKAGE, not a result: `fuse.py untargeted` built + controlled, a full Python farm harness built and proven end-to-end on the 28-core PC, and the 33 h projection killed — the true cost is ~81 min single-core (~minutes at 24-way) because the precondition rescan early-exits 7.5 s → 0.11 s and 99.8% of replays die immediately. NOTHING LAUNCHED: the re-scoped sweep still needs Andrew's approval. The session's own product is a negative about instruments: both defects found today were in the MONITOR, not the science — a supervisor that bannered all 24 healthy shards into ALARM.txt, and a progress tally that mixed units**
 

@@ -80,7 +80,46 @@ same day: the n=6 loop-swap sweep took **75 min** on one Mac core, while the
 promotion hunt (a comparable ~4.7M-completion workload) took **18.7 min** on
 24 farm shards.
 
-To add an instrument, copy the pattern in `promote_*`:
+**Ported so far** (s52b): `fuse.py` (native), `demotion.py` (via
+`promote_shim.py`), `i4a_apply.py` (via `i4a_shim.py`), `loopswap_apply.py`
+(via `lswap_shim.py`). Launch any of them with the GENERIC front end —
+stop cloning a `*_run.ps1` per instrument:
+
+```
+powershell -File F:\superpermFarm\untargeted\pysweep_run.ps1 `
+  -Tag i4a1 -Target i4a_shim.py -Mode apply-sym -Total 44124 `
+  -ExtraArgs "--dirs data/upstream872 --only fwd"
+
+powershell -File F:\superpermFarm\untargeted\pysweep_run.ps1 `
+  -Tag ls1 -Target lswap_shim.py -Mode apply-sym `
+  -ExtraArgs "--rules data/loopswap/rules_n6_a360.tsv --dirs data/upstream872"
+```
+
+How each shards, and why it is exact:
+- `i4a_shim` — by CORPUS FILE, wrapping `os.listdir` for the corpus dir only
+  and returning `files[i::k]` (same round-robin rule as `demotion.gather`).
+  Total is `2 x len(shard files)`, known exactly up front — no presize.
+- `lswap_shim` — by RULE, which s45 proved exact (canonical rules have
+  disjoint relabeled-instance sets). Candidate counts are only knowable from
+  the instrument's own `--dry-run`, so the shim runs one FIRST; that presize
+  pass is silent, hence `-StallMinutes 10` by default. `--no-presize` skips
+  it and falls back to the supervisor's even split.
+
+**Two shim bugs worth not repeating** (both caught in smoke tests, s52b):
+- **Wrap the seam the hot loop actually calls.** `loopswap_apply` imports
+  both `replay` and `replay_ids`; `apply-sym` calls `replay_ids`. Wrapping
+  `replay` counted ZERO, so no heartbeat would ever fire and every shard
+  would be flagged STALLED. Validate a new wrapper against the instrument's
+  own counter on a tiny corpus (`data/upstream872_specimens`, 8 files) before
+  trusting it.
+- **Heartbeat units must match the declared total.** The supervisor does
+  `$st.lines++` per progress ROW and takes the total from that row's `i/n`.
+  Emitting `replays/total_replays` while beating every 50 replays made a
+  FINISHED run read `50/2462 (2%)`. Emit rows/total_rows. Also keep any
+  non-progress line (e.g. PRESIZE) free of an `i/n` field, or it will be
+  parsed as a total.
+
+To add another instrument, copy the pattern in `promote_*` / `*_shim.py`:
 - `promote_shim.py` — adapter, when the instrument's own CLI does not fit.
   `demotion.py` needed one for two reasons worth remembering: it reads
   positionals from `argv[0..2]` (and the supervisor's only injection point,

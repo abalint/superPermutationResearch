@@ -506,11 +506,70 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
     i.e. **`--skip-rules` bought no measurable cut at this scale** and
     the s44 projection of 31.17M was exactly right. Sum a dry run from
     the full output, never from a tail.
-  - Scope caveat stands: 3 of 30 rules were deferred
-    (`9a9c0f8835c0,47c49d109d2f,7a94c5053e55`), so this is closure over
-    27/30. Given they contributed nothing measurable to the candidate
-    count, a second pass should be cheap — but it has NOT been run, and
-    "closed under the full expanded table" is not yet earned.
+  - **Scope, corrected.** The rule table has **33** data rows, not 30, and
+    the run's own log carries 31 `replayed:` lines (30 per-rule + 1 total).
+    So this sweep covered **30 of 33** rules — not the "27 of 30" first
+    recorded here, which mis-stated both numbers.
+    The 3 excluded by `--skip-rules`
+    (`9a9c0f8835c0,47c49d109d2f,7a94c5053e55`) are **s44's 3 deep rules,
+    already swept on 2026-07-30** — the flag was avoiding a redundant
+    re-run, not deferring work. Re-running them (entry below) reproduced
+    s44's edge file byte-identically. **So closure under the FULL 33-rule
+    table holds: 30 here + 3 at s44, 0 novel in both.** An earlier caveat
+    on this entry claimed a 27/30 or 30/33 coverage hole; withdrawn.
+  - Sizing of those 3, for the record: **6,966,546 candidates**
+    (47c49d109d2f 5,660,452 + 9a9c0f8835c0 1,134,102 + 7a94c5053e55
+    171,992). Counter-intuitively the CHEAP-looking rule dominates —
+    `47c49d109d2f` has only 5 `ents_out` against 9a9c…'s 15 and 7a94…'s
+    20, and fewer required entries means a LESS restrictive precondition,
+    hence far more candidates. **Do not rank loop-swap rule cost by entry
+    count — invert it.**
+  - The two tiers' edge sets are **DISJOINT**: union 41,224 = 21,916 (these
+    30 rules) + 19,308 (s44's deep 3), overlap **0**.
+
+## n=6 loop-swap, the 3 DEFERRED rules (completes the 33-rule table) — local, ~20 min
+- spec: `python3 -u analysis/counting/loopswap_apply.py apply-sym -n 6 --rules data/loopswap/rules_n6_deferred3.tsv --dirs data/upstream872 --out data/loopswap/products_n6_deferred3`
+  (`rules_n6_deferred3.tsv` = the 3 rows `--skip-rules` deferred from the
+  33-row `rules_n6_a360.tsv`: `9a9c0f8835c0,47c49d109d2f,7a94c5053e55`.)
+- product: closes the gap left by the expanded sweep, which covered 30 of 33
+  rules. Only with this does "the n=6 archive is closed under the FULL
+  expanded loop-swap vocabulary" become an earned claim. Alarm paths: any
+  product < 872 (M3 ritual), any NOVEL class.
+- projected: dry-run MEASURED (full output, not a tail): **6,966,546
+  candidates**, 1,620 conjugated instances — 22 % on top of the 30-rule
+  sweep's 31.17M. At that sweep's ~6,930 replays/s ⇒ ~17 min replay +
+  ~3 min index build ≈ **20 min single-core**.
+- approved: YES (Andrew, 2026-07-31 — "do the 3 deferred loop swap rules")
+- status: **done** (local, pid 84070, 2026-07-31 09:44 → 09:58, ~14 min)
+- result: **THE PREMISE OF THIS ENTRY WAS WRONG — there was no gap. The 3
+  "deferred" rules ARE s44's 3 deep rules, already swept on 2026-07-30.**
+  `--skip-rules` in the expanded spec was excluding already-done work, not
+  postponing unfinished work, and the operator (me) misread it as a
+  coverage hole.
+  - Proof: this run's `lswap_sym_edges_n6.tsv` is **byte-identical** to the
+    committed `data/loopswap/lswap_sym_edges_n6.tsv` — same sha256
+    `d459c78e9fdd…`, 19,308 directed edges both. s44's commit describes
+    exactly this: the n=6 vocabulary "collapse[s] to 3 directed n=6 rules"
+    and its conjugated sweep was "CLOSED (0 novel, 7.0M replays)"; our
+    dry-run measured 6,966,546 candidates for the same 3. 19,308 directed
+    = 2 × s44's reported 9,654 undirected. All consistent.
+  - **So "closed under the FULL 33-rule expanded table" was already earned
+    before today**: 30 rules (s52b expanded sweep) + 3 rules (s44) = 33,
+    0 novel in both. The caveat previously recorded on the expanded entry
+    is withdrawn.
+  - What the run DID buy, and it is worth having: a **cross-session,
+    cross-day byte-exact reproducibility control**. Same instrument, new
+    process, one day later, different session — identical sha256. The repo
+    prizes run-twice byte-agreement; this is run-twice across sessions.
+  - **New structural fact:** the two tiers' edge sets are **DISJOINT**.
+    Union = 41,224 = 19,308 + 21,916 exactly, **overlap 0**. The deep-3
+    and the 30 shallow rules touch entirely different (source, target)
+    class pairs — they are not two views of one relation.
+  - Cost of the misread: ~14 min of local compute and one wrong caveat in
+    the expanded entry. **Lesson: before treating a `--skip-rules` /
+    `--only` exclusion as a coverage gap, check whether the excluded work
+    already has a committed artifact.** `git log -- <artifact>` answers it
+    in one command.
 
 ## lifted-873 loop-swap control (n=6, w4-bearing 873 shell) — local, ~10 min + small patch
 - spec: patch `run_apply_sym`'s hardcoded `record = 872 if n == 6 else 5906`
