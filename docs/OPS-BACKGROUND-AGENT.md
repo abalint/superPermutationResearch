@@ -28,6 +28,23 @@ touching anything.
   s28 trap: a zsh loop that "failed" kept spawning duplicate runs
   alongside the retry (three-fold duplication, dump-file race). Before
   any launch or relaunch: `ps aux | grep -E "superperm|sojourn|tail-atsp"`.
+- **More than one agent may be working this repo at once** (s52c). A
+  concurrent agent's cleanup deleted `logs/` and a live run's output dir
+  mid-flight. The process survived — its stdout fd pointed at an
+  unreachable inode — but `loopswap_apply` writes its product on the LAST
+  line, so it would have finished ~17 min of work and then died with
+  `FileNotFoundError`. Recreating the output dir in flight saved it
+  (the path resolves at write time). Two rules follow:
+  - **Never delete `logs/` or a `data/.../products_*` dir without first
+    checking for a live writer**: `lsof +D <dir>`, or
+    `ps aux | grep -E "loopswap_apply|i4a_apply|demotion|fuse\.py"`.
+  - **A missing `.pid` file does not mean the process is gone.**
+    `ps -p $(cat missing.pid)` reports an error that reads like a dead
+    process; confirm with `ps aux | grep <instrument>` before concluding
+    anything died.
+  Per-agent run-directory namespacing was proposed as a fix and
+  **deliberately deferred** (Andrew, 2026-07-31: "hold off on per agent
+  directories") — the checks above are the mitigation for now.
 
 ## How to launch
 

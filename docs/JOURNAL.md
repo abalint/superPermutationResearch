@@ -137,7 +137,12 @@ cores are slower per-core and 24 shards contend for bandwidth, so it ran
 `logs/` and the run's output dir out from under this session's live
 loop-swap job. The process survived (its log fd pointed at an unreachable
 inode) but would have died on its FINAL write; recreating the output dir in
-flight saved ~17 min of work. Worth namespacing per-agent run dirs.
+flight saved ~17 min of work (the path resolves at write time). Per-agent
+run-dir namespacing was proposed and **deferred by Andrew** ("hold off on
+per agent directories"); the mitigation is instead two checks now in
+OPS-BACKGROUND-AGENT — never delete `logs/` or a products dir without
+`lsof +D`/`ps` first, and remember a missing `.pid` file makes
+`ps -p $(cat …)` look exactly like a dead process when the job is fine.
 
 **Next session, concretely.** The blind spot now survives single rules,
 sequential chains, targeted AND untargeted fused pairs, and the full
