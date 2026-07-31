@@ -410,13 +410,38 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   protocol if run by the operator.
 - approved: **YES (Andrew, 2026-07-31 — "queue the n=6 I4-A job" first of
   four, execution-order block at top)**
-- status: **running** (pid in `logs/i4a_fwd_n6.pid`, launched 2026-07-31
-  ~06:05, log `logs/i4a_fwd_n6.log`, abort = `kill $(cat
-  logs/i4a_fwd_n6.pid)`). Launched with `python3 -u`: without it Python
-  block-buffers the redirected stdout and the run is invisible for its
-  whole 100 min. Progress prints every 2,000 of 22,062 walks (~9 min
-  apart); watch has a no-progress detector, not just a liveness check.
-- result: —
+- status: **done** (2026-07-31, ~95 min wall, single-core local, pid 31753,
+  log `logs/i4a_fwd_n6.log`, exit 0, no alarm). Launch note for the next
+  operator: run it with `python3 -u` — without it Python block-buffers the
+  redirected stdout and the job is invisible for its entire runtime.
+- result: **the n=6 archive is CLOSED under the conjugated FORWARD rules —
+  and the forward directions add ZERO connectivity over the s41 reverse
+  sweep.** Verbatim tail:
+  ```
+  R-compound-fwd:edge: 16      R-compound-fwd:replayed: 6209164
+  R-unit-fwd:edge: 4           R-unit-fwd:replayed: 6254549
+  20 directed edges (20 undirected) -> data/i4a_products_sym_fwd/i4a_sym_edges.tsv
+  corpus CLOSED under the conjugated rule vocabulary (no novel classes)
+  ```
+  - **12,463,713 replays over all 22,062 classes × 720 relabelings × both
+    orientations → 0 NOVEL, 0 SHORTER.** No product files written at all;
+    the out dir contains only the edge TSV.
+  - **The edge set is the reverse sweep's, reversed — exactly.** Comparing
+    `data/i4a_products_sym_fwd/i4a_sym_edges.tsv` against the s41
+    `..._rev/i4a_sym_edges.tsv` with source/target swapped: 20 shared, **0
+    fwd-only, 0 rev-only**. The rule/count split matches too (16
+    R-compound + 4 R-unit in both). So the natural-move graph of the known
+    n=6 corpus is precisely these 20 undirected edges, now confirmed
+    independently from both directions.
+  - **Answers the entry's question with a NO.** It asked whether the
+    promiscuous forward directions would yield novel (143,5)/(142,6)
+    classes the way the n=7 analogue produced 8 novel 5906s. They do not.
+    The n=6/n=7 asymmetry stands and sharpens: a 22,062-class corpus has
+    exhausted its own move-closure in BOTH directions, while n=7's
+    84-class corpus was not closed under even one seam move.
+  - Directional note: fwd firing is not rarer than rev (6.21M vs 6.25M
+    replays — near-identical), so the closure is not a precondition
+    artifact. The rules fire constantly and always land on known classes.
 
 ## n=6 loop-swap conjugated sweep, EXPANDED rule table (30 shallow-tier rules) — local, ~2 h
 - spec: `python3 analysis/counting/loopswap_apply.py apply-sym -n 6 --rules data/loopswap/rules_n6_a360.tsv --dirs data/upstream872 --out data/loopswap/products_n6_expanded --skip-rules 9a9c0f8835c0,47c49d109d2f,7a94c5053e55`
@@ -437,9 +462,29 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   atoms); `--skip-rules` can defer them for a 3× cheaper first pass if
   preferred.
 - approved: **YES (Andrew, 2026-07-31)** — third in the execution-order
-  block, after the I4-A fwd sweep and the fused-pair item.
-- status: pending (queued behind `i4a_fwd_n6`; one long job at a time)
-- result: —
+  block; started ahead of the fused-pair item because that one is
+  build-blocked (see its entry).
+- status: **running** (pid in `logs/lswap_n6_expanded.pid`, launched
+  2026-07-31 ~07:55, log `logs/lswap_n6_expanded.log`, abort = `kill $(cat
+  logs/lswap_n6_expanded.pid)`). Two operator notes:
+  - **`--dry-run` prints `0 directed edges / corpus CLOSED`.** That is a
+    SIZING ARTIFACT — dry-run executes no replays. Do not read a dry-run
+    tail as a closure result.
+  - **This instrument prints nothing between setup and the final
+    summary** (no periodic progress line, unlike `i4a_apply.py`), so log
+    silence is EXPECTED and a log-stall detector cries wolf here. Judge
+    health from the process: ~90–100 % of one core at flat RSS.
+- result: dry-run sizing (run first, per the s45 shard-or-OOM lesson):
+  **12,053,443 candidate replays** over the 27 non-skipped rules, 20,400
+  distinct conjugated instances, RSS ~180 MB at launch (no sharding
+  needed at n=6 — far from the 8–9 GB gen-2 n=7 regime). One rule
+  `7439442d96f5` carries 6,388,284 of the total (53 %). vs the entry's
+  31.17M for all 30 rules, the `--skip-rules` first pass is a 2.6× cut,
+  matching the projected "~3×". Expected ~35–45 min, not ~2 h.
+  **Scope caveat: the spec as written defers 3 of 30 rules, so whatever
+  this run reports is closure over 27/30 — a second pass on
+  `9a9c0f8835c0,47c49d109d2f,7a94c5053e55` is required before anyone
+  claims closure under the full expanded table.**
 
 ## lifted-873 loop-swap control (n=6, w4-bearing 873 shell) — local, ~10 min + small patch
 - spec: patch `run_apply_sym`'s hardcoded `record = 872 if n == 6 else 5906`
@@ -566,6 +611,100 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   Recommended: build the mode, run the 24-shard split, and only then decide
   farm-vs-8-way — an 8-way Mac run at ~4.2 h needs no new farm plumbing at
   all and may beat farm-with-setup on wall clock.
+- s51 re-scope (JOURNAL s51 §5, HANDOFF-S51 menu item 3): the sweep is
+  PROVABLY VACUOUS for `up-1b8244ba04bb` within the 198 (min entry-diff 536 >
+  vocabulary max 534; min door-edit 34 > 24 fused; 536 ≡ 2 mod 6) — the
+  remaining value is escape OUTSIDE the shell, and the canon gate must now
+  target the **220-class project shell** (supplementary indexes
+  `novel5906d_canon_index.tsv` + `kristan5906_web_canon_index.tsv`, already
+  wired into m3_check). The approval above predates both this re-scope and
+  the farm-mode blocker; the re-scoped run (8-way Mac ~4.2 h vs
+  farm-with-setup) needs Andrew's re-approval before launch.
+- status update (2026-07-31, live session s52): **BUILD CLAIMED by the live
+  research session** — the `untargeted` mode is being implemented here (Opus
+  subagent, canon gate vs the 220, controls + dry-run sizing before any
+  launch). Sweep runner: do NOT write a competing implementation.
+- **MODE BUILT + VERIFIED (2026-07-31 s52).** `fuse.py untargeted --shard
+  i/24 [--out DIR] [--dry-run] [--limit N] [--prefilter] [--verify-scan]
+  [--no-gate-intermediate]` + `--control` mode. Canon gate = 220 (m3_check
+  index + all supplementary). Positive control PASS (strict depth-2 chain
+  lswap-25804d565b10 →1d66c35e4a35→ →0d491f159886→ up-e94d2b57a7d4, both
+  steps matching documented edge rule ids; orchestrator re-ran
+  independently, FOUND incl. --prefilter). Dry-run 24/24 shards: 10,794
+  intermediates (+8 vs sizing: the door-exit-reuse post-removal
+  convention fix), 4,713,880 fused pairs (−2.4%: sizing's 448 mean was an
+  8-sample estimate; true 436.7); orchestrator re-ran shard 2
+  independently, identical. **RE-SIZED: the 33 h projection is dead —
+  early-exit column narrowing cuts the rescan 7.5 s → 0.11 s (verified
+  identical vs all-columns reference 12/12) and true replay cost is
+  0.73 ms (99.8% die early). Measured: ~81 min single-core, ~28–31 min
+  8-way Mac, RSS 184 MB/shard.** Notes: `--prefilter` is PROVABLY VACUOUS
+  for this vocabulary (all 864 rules net-zero in |entries|+|doors| — the
+  spec's "3× cut" does not exist; flag kept for non-net-zero tiers).
+  Intermediate canon-gating ON by default (closes the 4th orientation
+  combo via the s46/s50 shell-closure sweeps; MIDESCAPE bannered).
+  Latent s49 wart (does NOT weaken published negatives — the s50 sumset
+  is precondition-free): depth1/depth2/sizing test `doors[e] == -1`
+  pre-removal, so 32 door-exit-reuse rules never fired as r1 there;
+  committed depth-2 counts undercount by the same +8. Andrew to decide:
+  annotate or re-run.
+- **Andrew re-confirmed FARM mode (2026-07-31): "build it for the PC farm."**
+  A second agent is building the farm Python harness (ship script +
+  24-way PowerShell supervisor + ledger/STATUS/stall detection + status/
+  abort/fetch scripts, per OPERATIONS.md conventions).
+- **LAUNCH OWNERSHIP: Andrew's queue manager launches this — NOT the
+  research session, NOT its subagents.**
+- **STATUS: READY (2026-07-31 s52). Farm package shipped and verified
+  end-to-end; farm idle; nothing launched.** Harness:
+  `analysis/farm/untargeted_{ship.sh,env.ps1,run.ps1,super.ps1,super.bat,
+  status.ps1,abort.ps1,fetch.sh,stub.py}`. Package at
+  `F:\superpermFarm\untargeted\` (repo mirror + venv `pyenv\Scripts\
+  upyw.exe` — renamed interpreter so abort can NEVER kill the user's
+  transcription python; identity = pid+name+start-time; recycled-pid
+  refusal tested live). 308 files / 160 MB, sha256 manifest both ends.
+  Farm-side proof: caches load byte-identical (index rebuild matches Mac,
+  CRLF-only diff in ruleids.txt, functionally invisible), gate = 220,
+  depth1 control matches committed s49, `--shard 0/24 --dry-run` = 458
+  r1 / 198,631 r2 (exact Mac numbers), `--limit 5` real run clean.
+  Supervisor: 24-shard pool + backfill, captured stdout (detach.exe →
+  upyw -u, no cmd redirect), append-only ledger.csv + TABLE.csv snapshot,
+  5-min stall alarm (tested against a live-but-frozen shard), exit codes
+  real (.Handle cached at launch), escape detection off tagged STATUS
+  rows (NOT log text — `ESCAPES 0` in normal summaries is a landmine for
+  text-matching monitors). Expected full run: ~81 min single-core total ⇒
+  minutes wall at 24-way (largest shard ~6 min solo on M1); ~184 MB/shard
+  (~4.4 GB, box has 38 GB free); BELOW_NORMAL priority, 4 cores left for
+  transcription. Queue-manager commands:
+  `ssh transcribe "powershell -NoProfile -ExecutionPolicy Bypass -File F:\superpermFarm\untargeted\untargeted_run.ps1 -Tag u1"`
+  (launch; `-DryRun`/`-Limit N`/`-Workers K` available),
+  `...untargeted_status.ps1` (status; `-Tag`/`-Full`),
+  `...untargeted_abort.ps1` (abort),
+  `bash analysis/farm/untargeted_fetch.sh u1` (fetch →
+  out/s52/untargeted_farm/u1/). On completion: any ESCAPE/MIDESCAPE
+  string still owes `m3_check.py -n 7` + `validate -n 7 --complete`.
+- **Supervisor defects caught BY the 24-shard smoke tests (s52, fixed).**
+  Recorded because both are generic monitor traps, not one-off typos, and
+  because the READY block above was written against the pre-fix supervisor:
+  1. **Healthy shards raised ALARM.txt.** The alarm scan matched the
+     instrument's own normal per-shard summary line, so smoke3 bannered all
+     24 good shards. A monitor that alarms on success is worse than none —
+     a real ESCAPE would have been buried in 24 lines of noise. Escapes are
+     now counted only off tagged STATUS rows; the log scan is reserved for
+     hard errors (`Traceback`/`MemoryError`) and the instrument's own `!!`
+     banner. This is the same landmine the block above names (`ESCAPES 0`
+     matching a text monitor) — it was live in the shipped code.
+  2. **The progress tally mixed units.** `$st.lines` counted every STATUS
+     row, including each shard's terminal `DONE`, against a `declTotal` of
+     intermediates only ⇒ 96/72; and a shard that had not yet written
+     STATUS on the first tick stayed pinned to the evenly-split fallback
+     forever ⇒ 96/519. Fixed by counting only progress-tagged rows and by
+     holding the instrument's declared total in its own field. At 10,794
+     intermediates the old form would have hit "100%" ~0.2% early with a
+     correspondingly inflated rate and ETA.
+  Final verification after both fixes (smoke6, 24 shards, `-Limit 3`):
+  **24 DONE, 0 failed, rc=0, ESCAPES=0, no ALARM.txt, intermediates
+  72/72 (100%)**; `untargeted_env.ps1` re-run ENV OK, 0 failures.
+  `cargo test --release` 139 green. Farm left idle.
 - result: —
 
 ## liberal sumset, FULL coverage (s49 item1) — ~84 min single-core / ~11 min 8-way
@@ -604,8 +743,9 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   Deterministic; run-twice byte-agreement demonstrated on every s51 run.
 - approved: **YES (Andrew, 2026-07-31)** — fourth in the execution-order
   block.
-- status: pending (queued last). **Launch caveat:** the instrument
+- status: pending (queued last). ~~**Launch caveat:** the instrument
   `analysis/counting/s51/demotion.py` is still UNTRACKED and was being
-  edited at 05:55 today by the live s51 session. Pin the version (commit or
-  copy) before launching a 3.4 h job against a file that is moving under it.
+  edited at 05:55 today by the live s51 session.~~ **RESOLVED (s52):**
+  `demotion.py` was committed by s51 and is tracked — `git ls-files`
+  confirms. The version is pinned; the caveat no longer applies.
 - result:

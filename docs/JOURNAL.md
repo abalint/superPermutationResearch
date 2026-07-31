@@ -6,6 +6,120 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-31 (session 52) — **the untargeted fused-pair sweep becomes a LAUNCHABLE PACKAGE, not a result: `fuse.py untargeted` built + controlled, a full Python farm harness built and proven end-to-end on the 28-core PC, and the 33 h projection killed — the true cost is ~81 min single-core (~minutes at 24-way) because the precondition rescan early-exits 7.5 s → 0.11 s and 99.8% of replays die immediately. NOTHING LAUNCHED: the re-scoped sweep still needs Andrew's approval. The session's own product is a negative about instruments: both defects found today were in the MONITOR, not the science — a supervisor that bannered all 24 healthy shards into ALARM.txt, and a progress tally that mixed units**
+
+Andrew: "resume", then "we we building tools for the fused-pair untargeted
+sweep". Session ran as a build session with a background agent from s51's
+tail still in flight when it resumed — see the ownership note below.
+
+**0 — Session shape (read this before trusting timestamps).** This session
+resumed while a *background agent* spawned by the previous session was still
+running and still editing `analysis/farm/untargeted_super.ps1`. It was caught
+mid-loop: it was `sed`-patching the supervisor, re-shipping, deleting the
+previous run dir, and re-running the smoke test roughly every two minutes
+(smoke3 → smoke4 → smoke5). The resuming session did NOT edit anything until
+that agent went quiet (watched for 200 s of no farm-file writes and no
+`ssh transcribe` activity), then verified its end state independently. Trap
+for the next agent: `ps -eo pid,ppid,command` and walk the parent chain — a
+background agent's shell shows up under `claude bg-spare` / the daemon, and
+run dirs appearing and vanishing on the farm is what it looks like from the
+outside. Two agents editing one PowerShell file is a real collision risk.
+
+**1 — The instrument.** `fuse.py untargeted --shard i/24 [--out D]
+[--dry-run] [--limit N] [--prefilter] [--verify-scan]
+[--no-gate-intermediate]`, plus `--control --src <class> [--target <class>]`.
+One shard = one (blind class, orientation). Per edit-preconditioned r1, the
+whole 4,354,560-instance table is rescanned against the intermediate F′,
+every surviving r2 applied, each fused product replayed ONCE and canon-gated
+against the **220-class project shell** (m3_check's n=7 index + every
+SUPPLEMENTARY index). In-shell ⇒ rediscovery edge row; out-of-shell at
+length ≤ 5906 ⇒ ESCAPE (banner + written string, still owing both gates).
+Positive control PASSES on a strict depth-2 chain (lswap-25804d565b10 →
+1d66c35e4a35 → 0d491f159886 → up-e94d2b57a7d4), both steps matching
+documented edge rule ids, re-run independently by the orchestrator including
+`--prefilter`.
+
+**2 — The 33 h projection is dead.** Dry-run over all 24 shards: **10,794
+intermediates** (+8 vs `sizing_untargeted.py`, from the door-exit-reuse
+post-removal convention fix) and **4,713,880 fused pairs** (−2.4%: the
+sizing's 448 mean was an 8-sample estimate, true 436.7). The cost model was
+wrong in the expensive direction twice over — the precondition rescan
+narrows column-by-column with early exit (**7.5 s → 0.11 s**, verified
+identical against the all-columns reference 12/12) and true replay cost is
+**0.73 ms** because 99.8% die early. Measured: **~81 min single-core total,
+~28–31 min 8-way Mac, 184 MB RSS/shard.** `--prefilter` is PROVABLY VACUOUS
+for this vocabulary — all 864 rules are net-zero in |entries|+|doors|, so the
+spec's advertised "3× cut" does not exist; the flag is kept for non-net-zero
+tiers.
+
+**3 — The farm harness (the bulk of the work).** Nine scripts,
+`analysis/farm/untargeted_{ship.sh,env.ps1,run.ps1,super.ps1,super.bat,
+status.ps1,abort.ps1,fetch.sh,stub.py}`, shipping a Python instrument to a
+farm that had only ever run a cross-compiled `superperm.exe`. Package at
+`F:\superpermFarm\untargeted\` — repo mirror + venv, 308 files / 160 MB,
+sha256 manifest both ends. Two conventions worth keeping: the venv
+interpreter is shipped as a **renamed** `upyw.exe` so `Get-Process -Name
+upyw` is exact and the abort path can never touch the user's transcription
+`python.exe`; and `COPYFILE_DISABLE=1` is mandatory on the tar (the s29
+AppleDouble lesson — `._x` twins hide from `tar -t` and would parse as
+corpus records). `untargeted_env.ps1` re-run at session end: **ENV OK, 0
+failures** — 28 cores, 38.3 GB free of 48.8 (6.4× the 24 × 250 MB budget),
+caches load byte-identical to the Mac (CRLF-only diff in ruleids.txt),
+223 corpus files = the 220 project classes + the 3 urdvr 5907s, 5 rule
+tables, 7 canon indexes, manifest 308/308.
+
+**4 — What actually broke, and it was never the science.** Every defect this
+session came from the monitoring layer, and both were caught only because
+the smoke test was run at full 24-shard width rather than on one shard:
+- **The supervisor bannered all 24 HEALTHY shards into ALARM.txt** (smoke3).
+  The alarm scan was matching the instrument's own normal summary line. An
+  alarm channel that fires on success is worse than no alarm at all — a real
+  ESCAPE would have arrived as the 25th identical-looking banner. Escapes now
+  count only off tagged STATUS rows; the log scan is reserved for
+  `Traceback`/`MemoryError` and the instrument's own `!!` banner. Note the
+  irony: the harness's own docs named `ESCAPES 0` as a landmine for
+  text-matching monitors, and the shipped code stepped on it anyway.
+- **The progress tally mixed units** (smoke4/smoke5). `$st.lines` counted
+  every STATUS row — including each shard's terminal `DONE` — against a
+  `declTotal` of intermediates only, reading **96/72**; and a shard that had
+  not yet written STATUS on the first tick stayed pinned to the evenly-split
+  fallback forever, reading **96/519**. Fixed in two parts: the declared
+  total lives in its own field, and only progress-tagged rows increment the
+  counter. At 10,794 intermediates the old form would have reached "100%"
+  ~0.2% early with a correspondingly inflated rate and ETA.
+  Final state after both fixes (**smoke6**, 24 shards, `-Limit 3`): 24 DONE,
+  0 failed, rc=0, ESCAPES=0, **no ALARM.txt**, **72/72 (100%)**.
+
+**5 — Latent s49 wart, Andrew's call.** The depth1/depth2/sizing paths test
+`doors[e] == -1` PRE-removal, so 32 door-exit-reuse rules never fired as r1
+there; the committed depth-2 counts undercount by the same +8 seen in the
+dry-run. This does **not** weaken any published negative — the s50 sumset
+is precondition-free and covers both directions — but the committed numbers
+are off by 8. Options: annotate the tables, or re-run. Not decided.
+
+**Status: READY, NOT LAUNCHED.** Farm idle, nothing running anywhere.
+Launch ownership stays with Andrew's queue manager, and the re-scoped run
+was never re-approved (the standing approval predates both the s51 re-scope
+and the farm-mode blocker). Commands, refusals, sizing and the gate ritual
+are in `docs/SWEEP-QUEUE.md` under "fused-pair UNTARGETED sweep". Recall the
+s51 re-scope: this sweep is provably vacuous for `up-1b8244ba04bb` *within*
+the 198, so the entire remaining value is escape OUTSIDE the shell.
+
+**Next session.**
+- Decide the s49 +8 wart (annotate vs re-run) — it is the only known
+  inaccuracy in a committed table.
+- If Andrew approves: launch `-Tag u1`, expect minutes of wall clock, then
+  `untargeted_fetch.sh u1` and gate every ESCAPE through
+  `validate -n 7 --complete` + `m3_check.py -n 7` before believing anything.
+- Untouched from the S51 menu: the full-corpus promotion hunt (approved,
+  queued fourth). Its SWEEP-QUEUE entry carried a stale "instrument is still
+  UNTRACKED" launch caveat — `analysis/counting/s51/demotion.py` was in fact
+  committed by s51 and is tracked; caveat corrected this session.
+
+`cargo test --release` 139 green.
+
+---
+
 ## 2026-07-31 (session 51) — **Kristan's website+email strings expose a MISSING RULE FAMILY and the session ends with the project shell at 220 classes (+22), a NINTH occupied 5906 allocation (834,27), and a clean geometric law: every cover-sharing quadruple is a complete K₄ whose six edges are exactly the six new s51 rules — three unit (0,1,2,1) moves {R-K7, S51A, S51C} starring out of an old anchor class, their three 2-unit composites forming the opposite triangle**; plus the two queued menu items land: the w4 demotion trade is a UNIT FAMILY (DEMOTION(3) = R-BND FWD) that is structurally INFEASIBLE at n=6 record level (866/866 doors, every gate closed, both directions) — whose corollary makes the full-corpus promotion sweep a can't-lose M3 hunt (queued, NOT approved) — and `up-1b8244ba04bb`'s blindness is ARITHMETIC (min entry-diff 536 > vocabulary max 534; door-edit 34 > 12 per rule > 24 fused; 536 ≢ 0 mod 6), a different phenomenon from the (844,17) eleven entirely
 
 Andrew: "continue working", then "I think Kristan has found more 5906s
