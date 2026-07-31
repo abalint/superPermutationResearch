@@ -43,7 +43,9 @@ __pycache__/
 !/data/trackc/parity/
 !/data/trackc/corpus_sample.jsonl
 # Claude Code session worktrees
-/.claude/
+/.claude/*
+# project skills are versioned infrastructure (like CLAUDE.md); local settings stay ignored
+!/.claude/skills/
 # s41 I4-A discoveries: the first novel record-length classes this project
 # produced (8 × 5906 in two never-seen allocations; data/novel5906/NOTE.md
 # has provenance + verification; gate index analysis/counting/novel5906_canon_index.tsv)
