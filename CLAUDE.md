@@ -8,13 +8,16 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S44.md` right after it** — state of the
+   **Fresh agent: read `docs/HANDOFF-S45.md` right after it** — state of the
    world, the engine-first premise, the executable natural-move tiers
    (cover-preserving rules via i4a; the s43/s44 loop-swap tier via
    loopswap_apply = I5, which produced the 102 novel 5906 classes in
    `data/novel5906b/`, PUBLISHED as superpermutators/superperm PR #51 —
-   the published n=7 shell is 194 classes, 110 of them ours), traps,
-   and the session-end ritual (supersedes HANDOFF-S43).
+   the published n=7 shell is 194 classes, 110 of them ours; s45 closed
+   that tier: the full 622-rule loop-swap vocabulary is a FIXED POINT on
+   the 194 — see `data/loopswap/rules_n7_a4840_gen2.tsv` and
+   `lswap_sym_edges_n7_gen2_union.tsv`), traps,
+   and the session-end ritual (supersedes HANDOFF-S44).
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
    `docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; §9 has the M-R laws;
@@ -382,6 +385,11 @@ python3 analysis/counting/loopswap_apply.py oracle
 python3 analysis/counting/loopswap_apply.py extract -n 7 data/tailconj/tail_all_n7.tsv --min-perms 256 --rules-out out/rules_n7.tsv
 python3 analysis/counting/loopswap_apply.py apply-sym -n 7 --rules data/loopswap/rules_n7_a256.tsv --dirs data/upstream5906,data/novel5906,data/novel5906b --out out/products
 python3 analysis/counting/loopswap_apply.py apply-sym -n 6 --rules data/loopswap/rules_n6_a360.tsv --dirs data/upstream872 --out out/p6 --dry-run  # sizing (no replays)
+# s45: at gen-2 scale (604 rules, data/loopswap/rules_n7_a4840_gen2.tsv) a single
+# apply-sym process needs ~8-9 GB and OOMs -> SHARD BY RULE at <=12k rule-entries
+# per shard (exact: canonical rules have disjoint relabeled-instance sets), one
+# --out dir per shard, then union the edge TSVs. Always --dry-run to size first.
+# The 194-class shell is CLOSED under all 622 known loop-swap rules (0 novel).
 
 # s26 structural recombination (docs/RECOMB-DESIGN.md; src/recomb.rs + src/unionsearch.rs):
 cargo run --release -- recomb -n 6 --dirs data/records872,data/gain1_872s --emit-dir data/hybrids872   # 0.25s; pins: 298 closure walks, 2 hybrids

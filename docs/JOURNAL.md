@@ -6,6 +6,118 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 45) — the second-generation extraction is DONE and it is a clean CLOSURE NEGATIVE: the 1,520-pair census of the 194-class corpus yields **604 directed entry-level rules (541 NEW vs the 81), oracled 1,003/1,003 byte-identically**, and the full conjugated sweep of all of them — 87,276 candidate replays under 5,040 relabelings × both orientations × 194 classes — produces **ZERO novel and ZERO shorter classes: the published n=7 record shell is CLOSED under the complete loop-swap vocabulary (all 622 known rules), fixed point reached at iteration 1**; what the second generation actually delivers is not classes but STRUCTURE — the natural-move graph goes **433 → 1,675 undirected edges (3.9×), 175 of 194 classes touched, 20 components with a 75-node giant** (n=6 has no giant at all) — and the lesson costs more than the negative: **second-generation extraction from a corpus that is already the closure of a rule is structurally biased toward returning that closure, so s44's 102-class discovery event was a CORPUS-SIZE artifact, not a rule-quality one**
+
+HANDOFF-S44's work-menu item 1, executed end-to-end (extract → oracle →
+dedupe → sharded sweep → gate). All local Python; no Rust changed.
+New committed data: `data/loopswap/rules_n7_a4840_gen2.tsv` (604 rules)
+and `data/loopswap/lswap_sym_edges_n7_gen2_union.tsv` (4,169 edge rows).
+
+**Extraction (the vocabulary at second generation).** The 194-class
+census `data/tailconj/tail_pairs_n7_a4840_194.tsv` holds 1,561 pairs =
+1,520 NEW + 41 KNOWN-EDGE; the s44 cut (`--min-perms 256`) admits
+**1,168**, leaving 352 NEW pairs in the 200–255 band unextracted.
+Of the 1,168: **1,003 extractable, 165 unextractable — every single
+failure the same reason, "heads share no perm"** (the aligned-frame
+limit; at n=6 it was 4/1,234, here 14.1%, and it concentrates on
+novel5906b × upstream crossings). **Oracle: 1,003/1,003 re-derive
+their partner BYTE-IDENTICALLY in both directions** (edit + replay),
+zero failures, 927 s. Canonicalized over all 5,040 relabelings the
+2,006 directed pair-instances collapse to **604 directed rules (302
+undirected if all reverses pair), 541 NEW and 63 already in the s44
+table**; 18 of the 81 s44 rules do not reappear because their source
+pairs are now annotated KNOWN-EDGE (the census loads the committed
+loop-swap edge TSVs) and so are filtered out of the NEW-pair set — an
+artifact of the annotation, not a lost rule. **`ab88abce72ba` — the
+rule that made the 102 — goes from 2 pair-instances to 506 (253 pairs,
+25.2% of everything extractable), by far the widest single object in
+the vocabulary**; `65d9c5d02da1` goes 8→20; the rest of the head is a
+flat plateau of eight NEW 8-loop (48-entry) rules at 28 each, then a
+long tail (328 singletons). **Structure: the (n−1)·loops law holds
+with ZERO exceptions** — all 516 door-free rules have
+|ents_out| = |ents_in| = 6k exactly, k = 1…85. The 88 door-editing
+rules are (9,3)/(3,9) ×64 (the allocation-crossing composites, up to
+510 entries), (1,2)/(2,1) ×18, and **(2,2) ×6 — a door-edit shape that
+does not occur in the s44 table** — plus **three near-pure door moves
+(|ents_out| ∈ {0,1} with a 1–2 door diff), the first of their kind at
+n=7 and the most R-K7-flavored objects the swap tier has produced.**
+
+**The sweep, and the operational law it forced.** A single process
+holding all 604 rules × 5,040 relabelings = 3.04 M conjugated
+instances needs **~8–9 GB and OOMs**; the sweep had to be **sharded by
+rule** at ≤12,000 rule-entries per shard (~1.2 GB peak each). Sharding
+is arithmetically exact — distinct canonical rules have disjoint
+relabeled-instance sets — and the proof is that the sharded run's
+replay total **matched the dry-run sizing to the unit (47,929)**.
+Iteration 1 (541 NEW rules, 8 shards, ~21 min): 47,929 candidate
+replays, 43,975 replay-killed (91.8% — precondition ≫
+replay-sufficiency, one more tier), 3,882 surviving firings, **0
+novel, 0 shorter, 0 longer**. Then the 63 known-refound rules over the
+same 194 (2 shards, 3.2 min): 39,347 replays, **0 novel, 0 shorter** —
+which is an **independent, unsharded confirmation that s44's
+frontier-only closure iteration was valid**: the 81-rule vocabulary
+really is at fixed point over all 194 classes, not just over the
+frontier it was iterated on. **Fixed point at ITERATION 1**; no
+frontier rounds, no `data/novel5906c/`, no gating runs, nothing to
+publish. Upstream was re-pulled first per the trap (`superperm` at
+`235a074`, unchanged since PR #51, 118 files in `superpermutations/7/`)
+so the negative is against the current published shell.
+
+**The edge census is the actual product.** All 604 rules over the 194
+classes: **3,307 distinct directed / 1,660 distinct undirected class
+edges, 175 of 194 classes touched** (all 102 novel5906b, all 8
+novel5906, 65 of 84 upstream). Against the committed s44 census (433
+undirected): 418/433 re-found (cross-validation) and **1,242 genuinely
+new edges → union graph 1,675 undirected, a 3.9× densification**.
+Shape: **20 components, largest 75 nodes** (sizes 75, 23, 10, 10, 10,
+7, 7, 4, …) — unlike n=6, where 9,654 edges over 22,062 classes
+fragment into 3,909 components with a largest of 44, the n=7 shell has
+a genuine giant covering 43% of the touched classes. 540 of the 541
+NEW rules produce at least one edge (only `51c13efc7a14` fires zero);
+the 26 giant composite rules fire **35/35 with zero replay kills** —
+so specific that every precondition match is a valid move.
+**Cross-validation of the detector against the applier: 1,146 of the
+1,168 census pairs (98.1%) are re-found as sweep edges, including 143
+of the 165 "unextractable" ones — so the shared-head-perm gap is a
+FRAME limitation, not a MOVE limitation**; those pairs are reachable,
+just not diffable in the aligned frame.
+
+**The lesson (worth more than the negative).** Second-generation rules
+are extracted from pairs *in the enlarged corpus*, and the enlarged
+corpus is exactly the closure of the first-generation rule — so the
+gen-2 vocabulary is structurally biased toward moves that stay inside
+it, and closure is the *expected* outcome, not a surprise. s44's 102
+classes came from a 92-class corpus with unexplored neighbours;
+`ab88abce72ba` is not a better rule than its 540 siblings, it just ran
+first on a smaller shell. **Do not carry "second-generation extraction
+is the highest-expected-value instrument" forward** (HANDOFF-S44 item
+1's framing): re-extracting from a closed corpus buys graph structure,
+not classes. New classes need either a genuinely different move tier
+or a source outside the current closure.
+
+**Caveats.** (1) The 352 NEW pairs at 200–255 shared perms were never
+extracted — the cheapest remaining vocabulary widening, and the only
+part of this census left unmined. (2) The closure claim is over the
+loop-swap tier only (622 rules: 604 gen-2 + the 18 gen-2-absent s44
+rules, which s44 closed separately); it says nothing about tiers not
+yet built. (3) Edge TSVs are per-shard under `out/s45/` and per-iteration
+under `data/loopswap/`; the committed union file is the one to use for
+graph analyses. (4) `--min-perms 256` remains a judgement call, not a
+theorem — the tier below it is uncensused at entry level.
+
+**Next session, concretely (s46).** (1) The **queued n=6 expanded
+sweep** (SWEEP-QUEUE, 30 shallow-tier rules, 31.2 M replays, ~2 h,
+still pending Andrew's approval) — and note it now carries the same
+closure-bias caveat. (2) The **352 sub-256 pairs**: extract + oracle +
+sweep, minutes of work, the last cheap widening of this vocabulary.
+(3) The **three near-pure door-move rules** as R-K7-flavored seam
+candidates — they change doors with ~0 entry churn, which is the shape
+that crossed allocations at s41. (4) The **19 untouched classes** (194
+− 175): why does no loop-swap rule reach them? (5) Still open and
+untouched: run-losing-pair fine anatomy; R-compound/R-unit lift to
+n=7; M-4b/M-4d; ip=1; per-allocation NRPA/beam; Track C v2's 2.4×
+overhead cut.
+
 ## 2026-07-30 (session 44c) — PR #51 MERGED: the 102 are published; the n=7 record shell is 194 classes / 8 allocations, 110 of them (57%) this project's
 
 Upstream commit `235a074` on superpermutators/superperm master; the
