@@ -388,9 +388,33 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
 - projected: dry-run-exact (s49): 33 directed rules, 22,020 conjugated
   instances, 896 walk-orientations, 740,455 replays ≈ **~10 min** at the
   measured n=6 replay rate.
-- approved: NO
-- status: pending
-- result: —
+- approved: YES (Andrew, 2026-07-31 — "run the first two on the Mac, the PC is in use")
+- status: done (s50, 2026-07-31; 66 s wall, not ~10 min)
+- result: **THE LOOP-SWAP TIER MOVES INSIDE THE 873 SHELL.** Dry-run-exact:
+  740,455 replays projected = 740,455 executed (33 rules, 22,020 instances,
+  896 walk-orientations); 739,803 replay-killed (99.91%), 652 surviving
+  products, all length 873, **zero ≤872 products (no alarm)**. Every one of
+  the 652 is another class of the 448-shell — **0 new shell classes, so the
+  873 shell is CLOSED under the 33-rule n=6 loop-swap vocabulary** — and
+  **0 self-edges**: 332 directed class pairs / 388 (src,tgt,rule) triples /
+  166 undirected pairs over 214 of the 448 classes, 86 components, largest
+  14, from 15 of the 33 rules. Contrast with lift-and-drop's 824/824
+  self-edges: the shell is a genuine intermediate. Artifacts:
+  `out/s50/lswap873/` (214 product files + provenance),
+  `out/s50/lswap873_shell_edges_n6.tsv`, `out/s50/lift873_n6_canon_index.tsv`.
+  Note: the instrument's inline gate indexes only ≤-record classes, so at
+  --record 873 in-shell rediscoveries land in the NOVEL bucket and the
+  self/edge/new split is recovered by post-processing the provenance TSV
+  against a canon index of the 448.
+  **STEP 5 composite** (`rbnd_w4.py 6 data/lift873_n6`, ~40 s): 816 FWD-w4
+  survivors, all 872, 0 NOVEL, 0 ≤871; drop map single-valued on 446/448 →
+  219 distinct 872 landings. All 332 lift→move→drop rows land on a
+  DIFFERENT 872: 230 ordered / 115 undirected 872↔872 bridges over 118
+  classes. 66 were already edges of the committed 3-rule s44 n=6 graph;
+  a targeted direct control (the 14 responsible rules over the 118 involved
+  872 classes, 44,257 replays, 5 s — `out/s50/ctl872_out/`) re-found the
+  other **49/49 directly at 872**. So the composite adds ZERO connectivity
+  at n=6 as well: lift→move→drop = move.
 
 ## lifted-5907 loop-swap sweep (n=7, first w4-bearing 5907 shell) — local sharded, ~49 min (extrapolated; dry-run first)
 - spec: same `--record` patch, then
@@ -407,9 +431,36 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   sources → 4,374 replays (~1,094/source); 232 sources ≈ 254,000
   replays ≈ **~49 min** at the measured n=7 replay rate. Over the
   30-min bar. Run the sharded `--dry-run` first to replace this estimate.
-- approved: NO
-- status: pending
-- result: —
+- approved: YES (Andrew, 2026-07-31 — "run the first two on the Mac, the PC is in use")
+- status: done (s50, 2026-07-31; dry 19 min + live 15.5 min wall, 12 shards, J=4)
+- result: **THE LOOP-SWAP TIER MOVES INSIDE THE 5907 SHELL TOO — AND THE
+  DROP-BACK COMPOSITE BUYS NOTHING.** Dry-run sizing MEASURED (01:24:36→
+  01:43:38): 284,080 replays over 4,352,040 conjugated instances / 464
+  walk-orientations (+12% on the 254,000 extrapolation — projection stood,
+  no re-approval needed). Live (01:45:01→02:00:34, worker pool J=4)
+  **284,080 replays — dry-run-exact, shard by shard**; 274,580 replay-killed
+  (96.66%), 9,500 products, **all length 5907, zero ≤5906 (no alarm)**.
+  All 9,500 are among the 232 — **0 new shell classes (the 5907 shell is
+  CLOSED under the 864-rule vocabulary)** — and **0 self-edges**: 7,590
+  directed class pairs / 8,156 (src,tgt,rule) triples / 3,795 undirected
+  over 220 of 232 classes, 13 components, largest 144, from 517 of the 864
+  rules. Vocabulary = out/s50/rules_n7_union864.tsv (s48's vetted 862 +
+  the 2 covertwin rules; rules_n7_rbnd.tsv excluded).
+  **STEP 5 composite** (`rbnd_w4.py 7 data/lift5907_n7`): 289 FWD-w4
+  survivors, all 5906, 0 NOVEL, 0 ≤5905; drop map single-valued on 220/232
+  → 128 distinct 5906 landings. Composite over the 7,512 shell pairs whose
+  both ends drop: 7,462 land on a DIFFERENT 5906 (50 land on the same),
+  giving **3,328 ordered / 1,664 undirected 5906↔5906 bridges over 118
+  classes — and ALL 1,664 are ALREADY edges of the known n=7 natural-move
+  graph (0 new), with the 12-class blind spot untouched.** Same verdict at
+  n=6 after a targeted control: 115/115 composite bridges are direct-tier
+  edges of the same rules (49 looked "new" only against the committed
+  3-rule s44 graph; a 14-rule direct sweep over the 118 involved 872s
+  re-found 49/49). **Conclusion: the REV-w4 lift is a conjugation of the
+  loop-swap tier, not an escape from it — lift→move→drop = move.**
+  Artifacts: `out/s50/live7/` (12 shard dirs), `out/s50/lswap5907_shell_edges_n7.tsv`,
+  `out/s50/drop5907/`, `out/s50/lswap5907_composite_5906_bridges.tsv`,
+  `out/s50/composite_5906_bridges_undirected.tsv`, `out/s50/lift5907_n7_canon_index.tsv`.
 
 ## fused-pair UNTARGETED sweep on the blind spot (s49 item1) — ~33 h single-core / ~4.2 h 8-way / ~1.4 h farm
 - spec: `python3 analysis/counting/s49/fuse.py untargeted --shard <i>/24` (mode
@@ -443,6 +494,14 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   both directions, with no precondition assumption.
 - projected: 0.53 s/triple measured × 9,456 = 84 min single-core; 8-way ~11 min
   wall. RSS ~250 MB/shard.
-- approved: NO
-- status: pending
-- result: —
+- approved: YES (Andrew, 2026-07-31 — "run the full sum set too, just not the untargeted fuses sweep")
+- status: done (s50, 2026-07-31; 4 shards × 3 blind classes, 35m48s wall on a loaded box)
+- result: **0 hits / 9,456 triples (FULL coverage: 12 blind × 197 targets ×
+  4 frames) — δ_req ∉ Δ+Δ everywhere.** Controls PASS (depth-1 200/200;
+  NEW sumset 2-step-path control 12/12 — the s49-cited control was never
+  committed as code; it exists now: `analysis/counting/s49/sumset_control.py`).
+  All 1,200 s49 rows reproduced identically. **Fused depth-2 is CLOSED for
+  the blind spot, both directions, precondition-free.** Min |EO_req| over all
+  9,456 = 216 (nothing closer than the s49 nearest set — the isolation is
+  structural). Product: `data/loopswap/blindspot_sumset_n7_full.tsv`;
+  `sumset.py` gained S49_SOURCES/S49_TAG sharding.

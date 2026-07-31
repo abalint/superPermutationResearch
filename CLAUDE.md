@@ -8,29 +8,26 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S49.md` right after it** — state of the
+   **Fresh agent: read `docs/HANDOFF-S50.md` right after it** — state of the
    world, the engine-first premise, the executable natural-move tiers
-   (cover-preserving rules via i4a; the s43/s44 loop-swap tier via
-   loopswap_apply = I5 — 102 novel classes, PR #51; the s47 R-BND
-   boundary-trade tier via `analysis/counting/rbnd.py`, spec
-   `docs/RBND-RULE.md`, whose **4 novel 5906 classes at (843,18)**,
-   `data/novel5906c/`, are SUBMITTED as PR #52 — published n=7 shell
-   194 until it merges, project shell 198; the loop-swap vocabulary =
-   **398 distinct moves = 864 directed rules across FIVE tables** under
-   S₇×ι×τ (annotation `data/loopswap/rule_annotation_n7.tsv` covers all
-   864); loop-swap graph `data/loopswap/lswap_sym_edges_n7_ALL_union.tsv`
-   (2,006 undirected) + `rbnd_edges_n7.tsv` (32-row corrected) —
-   normalize node names by hash12 before cross-tier unions; the 198 is
-   closed under every tier and the 12-class blind spot's isolation is
-   PROVEN as of s49 (depth-1 exhaustive + targeted fused depth-2, via
-   the replay-free rigidity trick in `analysis/counting/s49/fuse.py`);
-   s49's two w4 theorems: R-BND's w=3 is forced (Δlen = 3 − w) and no
-   length-conserving w≥4 boundary trade exists; the REV-w4 lift built
-   the first w4-bearing shells `data/lift873_n6/` (448 × 873) +
-   `data/lift5907_n7/` (232 × 5907, six d4=1 allocations) — the s50
-   front is the four queued sweeps in `docs/SWEEP-QUEUE.md`, headed by
-   the lifted-5907 loop-swap sweep), traps, and the session-end ritual
-   (supersedes HANDOFF-S48).
+   (i4a; loop-swap = I5, 102 novel classes PR #51; R-BND boundary-trade
+   tier, spec `docs/RBND-RULE.md`, whose 4 novel (843,18) classes,
+   `data/novel5906c/`, are SUBMITTED as PR #52 — published n=7 shell 194
+   until it merges, project shell 198; vocabulary = **398 moves = 864
+   directed rules across FIVE tables**, annotation covers all 864;
+   graph = `lswap_sym_edges_n7_ALL_union.tsv` (2,006) +
+   `rbnd_edges_n7.tsv` (32-row) — hash12-normalize before unions; the
+   12-class blind spot is closed against single rules, sequential
+   chains, AND fused pairs both directions (s49 depth-1/depth-2 + s50
+   full sumset 0/9,456 — replay-free rigidity trick,
+   `analysis/counting/s49/fuse.py`); s49 w4 theorems: w=3 forced
+   (Δlen = 3 − w), no length-conserving w≥4 boundary trade; the REV-w4
+   lift shells `data/lift873_n6/` + `data/lift5907_n7/` are conjugated
+   copies of loop-swap structure — s50 proved lift→move→drop = move,
+   zero new connectivity; the s51 front = the untargeted fused sweep
+   (queued, NOT approved), the w4 demotion trade, and the
+   `up-1b8244ba04bb` anatomy), traps, and the session-end ritual
+   (supersedes HANDOFF-S49).
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
    `docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; §9 has the M-R laws;

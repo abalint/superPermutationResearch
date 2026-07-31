@@ -6,6 +6,118 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-31 (session 50) — **the three approved sweeps all land, and the answer is a clean, fully-verified NEGATIVE that closes two fronts at once: fused depth-2 is CLOSED for the blind spot (0 hits / 9,456 triples, full coverage, precondition-free, both directions), and the w4 lift-and-drop composite buys ZERO connectivity — the loop-swap tier moves freely INSIDE both w4 shells (332 / 3,795 undirected in-shell edges; both shells CLOSED as class sets) but every lift→move→drop bridge is already a known natural-move edge (1,664/1,664 at n=7; 115/115 at n=6 after the honest control) and the blind spot is untouched: lift → move → drop = move — the REV-w4 lift CONJUGATES the loop-swap tier rather than escaping it**, which retires HANDOFF-S49 menu item 1's strategic hope; the untargeted fused sweep (queued, NOT approved) is now the only remaining loop-swap-tier idea for the blind spot
+
+Andrew approved three of the four s49 queue entries ("run the first two on
+the Mac, the PC is in use" + "run the full sum set too, just not the
+untargeted fuses sweep"); two Opus agents ran them concurrently on the Mac
+(operator: the two loop-swap sweeps; second agent: the sumset). The
+orchestrator re-verified every load-bearing claim independently: bridge
+membership recomputed against its own hash12-normalized union (2,014
+edges — 1,664/1,664 known, 0 blind endpoints), all 347 drop landings
+re-checked against the canonical indexes (347/347 known; m3_check spot
+checks exit 0), replay totals re-summed from shard logs (dry==live
+284,080 / 740,455 to the unit), the regression diff re-run, the new
+sumset control re-run (12/12, 22 s), sumset coverage recounted (9,456
+rows, 0 nonzero, 1,200 s49 rows reproduced 0-mismatch).
+
+**1 — Full-coverage sumset (queue #4, approved).** All 9,456 (blind,
+frame, target) triples: **0 hits — δ_req ∉ Δ+Δ anywhere.** With s49's
+depth-1 exhaustion and sequential vacuity: **no single rule, no
+sequential chain, and no fused pair of the 864-rule vocabulary connects
+any blind class to any corpus class, in either direction.** Shape data
+says the negative is structural, not a range artifact: min |EO_req| over
+all 9,456 is 216 (inside single-rule reach; 8 rules sit at exactly 216),
+4,768 triples need no door change, and full coverage found nothing
+closer than the s49 nearest set. 35m48s wall, 4 shards, on a box already
+carrying 5 foreign compute processes. TRAP RETIRED + TRAP FOUND: the
+"12/12 2-step-path control" cited by JOURNAL s49 was never committed as
+code — the s49 0/1,200 was uncontrolled as committed. The control now
+exists (`analysis/counting/s49/sumset_control.py`), exercises the exact
+linkey/2SUM path (including the intentional mod-2⁶⁴ wraparound), and
+passes 12/12 on real A→X→C paths with both single steps verified as
+depth-1 hits. `sumset.py` also had NO sharding despite the queue spec
+(concurrent runs would have clobbered each other) — fixed via
+S49_SOURCES/S49_TAG env vars, default path byte-identical.
+
+**2 — The two lift-shell sweeps (queue #1/#2, approved).** The
+`--record` patch (loopswap_apply.py, 11 insertions: `--record <int>`
+threading to run_apply_sym, default = old behavior) passed a three-way
+regression control: patched-default vs patched-`--record 5906` vs
+committed-code-via-git-stash, sizing output BYTE-IDENTICAL. Results:
+
+- **n=6 (lifted-873 control, 66 s — 9× under projection):** 740,455
+  replays (two passes agree to the unit), 99.91% killed, 652 products,
+  all 873, **zero ≤872**. The 448-class shell is CLOSED as a set (0 new
+  classes) but NOT frozen: **332 directed / 166 undirected in-shell
+  edges** from 15 of 33 rules, 214/448 classes touched, 86 components.
+- **n=7 (lifted-5907 sweep, ~35 min total for two full passes, 12
+  shards ≤12k rule-entries, J=4 pool):** 284,080 replays per pass
+  (pass-identical shard by shard — the "dry" pass was in fact a full
+  duplicate run, so this is a complete reproduction, stronger than
+  sizing-only), 96.66% killed, 9,500 products, all 5907, **zero
+  ≤5906**. Shell CLOSED as a set, 232 classes: **7,590 directed / 3,795
+  undirected in-shell edges** from 517 of 864 rules, 220/232 touched,
+  13 components (largest 144). Sweep vocabulary =
+  union864 (the four loop-swap tables; rbnd TSV excluded per trap).
+
+So the queue's question — "does loop-swap move inside the w4 shells?" —
+is YES, emphatically. **s49's lift-and-drop involution (824/824,
+360/360 self-edges) was a property of the DROP, not the shell.**
+
+**3 — The drop-back composite: the payoff question, answered NEGATIVE
+(the honest way).** FWD-w4 drop applied to both full shells: n=7 →
+7,462/7,512 rows land on a DIFFERENT 5906 (3,328 directed / 1,664
+undirected 5906↔5906 bridges over 118 classes); n=6 → 332/332 land
+elsewhere (230/115 bridges over 118 classes). Then the kill: **all
+1,664 n=7 bridges are already edges of the known natural-move union**
+(orchestrator recount: 1,664/1,664 in the 2,014-edge union; 0 blind
+endpoints). At n=6, 49/115 looked new — but they came entirely from
+rules the committed s44 3-rule sweep never ran; a 5-second direct
+control (those 14 rules at 872 over the 118 classes, 44,257 replays)
+**re-found all 49 directly at record level**. Conclusion, now
+twice-measured: **the w4 door rides along inertly — lift → move → drop
+= move.** The composite is not a bridge out of the pocket or into the
+blind spot; the (843,17,1)-et-al shells are a conjugated copy of
+loop-swap structure we already had, not new reach. (Value that
+survives: the shells + their edge/drop tables are the first w4-bearing
+corpora at both n, committed for whatever future tier CAN use w4
+structure — see data/loopswap/lswap{873,5907}_shell_edges_*.tsv,
+w4drop_bridges_n{6,7}.tsv, w4drop_map_n{6,7}.tsv,
+blindspot_sumset_n7_full.tsv.)
+
+**New traps (s50):** (a) `--record` alone is NOT sufficient for shell
+sweeps — the inline gate only indexes ≤record classes, so EVERY in-shell
+rediscovery lands in the NOVEL bucket and the run prints "0 edges";
+recover the self/non-self/new split by post-processing the provenance
+TSV against a canon index of the shell. (b) Three rule ids
+(`ab88abce72ba`, `cb47d5e063e0`, `ea1ae55099c1`) carry different stored
+frames in `rules_n7_a256.tsv` vs `_gen2.tsv` (same canonical id) —
+harmless under full conjugation, but unions must dedup by id, not row.
+(c) The batched-wave shard driver wastes wall time on skewed loads — use
+an `xargs -P` pool (15.5 vs 19 min here). (d) Foreign compute on the Mac
+(3× sat_chain.py + 2× PermutationChains at ~100%) — flagged to Andrew.
+
+**Committed:** `analysis/counting/loopswap_apply.py` (`--record`),
+`analysis/counting/s49/sumset.py` (env-var sharding),
+`analysis/counting/s49/sumset_control.py` (NEW — the control that
+backs the sumset negatives), `data/loopswap/{blindspot_sumset_n7_full.tsv,
+lswap873_shell_edges_n6.tsv, lswap5907_shell_edges_n7.tsv,
+w4drop_bridges_n6.tsv, w4drop_bridges_n7.tsv, w4drop_map_n6.tsv,
+w4drop_map_n7.tsv}`, SWEEP-QUEUE (3 entries → done with results).
+Scratch (regenerable, gitignored): `out/s50/`, `out/s49/item1/full/`.
+
+**Next (s51 front):** (1) the **untargeted fused sweep** is now the ONLY
+remaining loop-swap-tier idea for the blind spot (~33 h single-core /
+~4.2 h 8-way Mac / ~1.4 h farm when free; queued, NOT approved). (2) PR
+#52 watch (still open, no comments). (3) The w4 demotion trade
+`(S+1, d3+1, d4−1)`, Δlen = 0 — now MORE interesting: it is the only
+length-conserving w4 move and the lift shells give it 680 carriers; no
+instrument implements it. (4) `up-1b8244ba04bb` anatomy (the 23-door
+blind outlier). (5) Older opens unchanged: n=6 queue approvals,
+run-losing-pair anatomy, M-4b/M-4d, ip=1, per-allocation NRPA/beam,
+Track C v2 overhead cut.
+
 ## 2026-07-30 (session 49) — **the blind spot's isolation is now a PROOF, not a law: exhaustive depth-1 closure (0 hits over all 4,354,560 rule instances × 9,456 forced frames) and TARGETED FUSED depth-2 closure (0 over 4,249,684 fused pairs + a 5.2×10⁹-pair direction-symmetric sumset probe) — with the discovery that rigidity + replay-determinism make targeted composition a REPLAY-FREE set-membership question**; plus two theorems from the w≥4 front: **R-BND's weight-3 is FORCED by the length identity (Δlen = 3 − w — the w4 FWD trade is not a generalization, it IS the record-break move, and it is 100% replay-dead when forced, 1,732/1,732)** and **no length-conserving w≥4 door-for-boundary trade exists** (needs two loop closures from one door deletion; the chain structure permits at most one); the consolation is a new instrument's territory: **the R-BND REV-w4 lift materializes the first w4-bearing shells the field has — 448 novel-territory 873 classes and 232 5907 classes in six d4=1 allocations no known n=7 string ever occupied** (committed as `data/lift873_n6/` + `data/lift5907_n7/`; lift-and-drop is an exact involution, 824/824 + 360/360 self-edges, so the value is the intermediate shell and two sweeps are QUEUED to ask whether loop-swap MOVES inside it); the n=6 REV-fingerprint census (full 22,062, ~40 s — s48's 22-min sizing was 33× conservative) is a positive-but-one-sided verdict: **313 classes (1.42%) carry the exact s48 fingerprint** (not an n=7 exclusive; perfect on the (142,6) FWD side of all four R-unit edges, 4/6 vs 0/13 — but 0/301 on the (143,5) REV side and anti-correlated with connectivity — an allocation-conditional property, identically zero on the records class), and a second asymmetry is EXACTLY the w4 indicator (415/415 set identity, mechanism proven: **the w4 door itself occupies R-BND's REV-START door slot, 821/821**)
 
 Session run as three parallel Opus subagents (items 1, 3, and hygiene);

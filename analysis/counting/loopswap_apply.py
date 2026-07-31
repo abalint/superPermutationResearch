@@ -35,6 +35,11 @@ Modes:
              bannered, shorter-than-record products are candidates
              (banner, drop everything). STILL run m3_check on any
              novel/shorter file before believing it.
+             --record <int> overrides the record length used for the
+             longer/equal/shorter split (default 872 at n=6, 5906
+             otherwise). Needed for ABOVE-record corpora such as the
+             s49 w4 lift shells (--record 873 / 5907), where the
+             default silently discards every product as "longer".
 
 Usage:
   python3 analysis/counting/loopswap_apply.py oracle
@@ -301,9 +306,10 @@ def replay_ids(flat, doors, start, n, TUP, ROT, G):
 
 
 def run_apply_sym(n, rules_tsv, dirs, outdir, max_replays=None,
-                  dry_run=False, skip_rules=()):
+                  dry_run=False, skip_rules=(), record=None):
     os.makedirs(outdir, exist_ok=True)
-    record = 872 if n == 6 else 5906
+    if record is None:
+        record = 872 if n == 6 else 5906
     TUP, pid, ROT, G = make_tables(n)
 
     # novelty gate = m3_check convention (published + our discovery indexes)
@@ -484,7 +490,7 @@ def main():
         args = args[2:]
     opts = {"--dirs": None, "--min-perms": None, "--rules-out": None,
             "--rules": None, "--out": None, "--max-replays": None,
-            "--skip-rules": None}
+            "--skip-rules": None, "--record": None}
     flags = {"--dry-run": False}
     pos = []
     i = 0
@@ -511,7 +517,8 @@ def main():
             int(opts["--max-replays"]) if opts["--max-replays"] else None,
             dry_run=flags["--dry-run"],
             skip_rules=set(opts["--skip-rules"].split(","))
-            if opts["--skip-rules"] else ())
+            if opts["--skip-rules"] else (),
+            record=int(opts["--record"]) if opts["--record"] else None)
     print(__doc__)
     return 1
 

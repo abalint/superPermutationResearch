@@ -19,7 +19,13 @@ Any hit is a 64-bit hash coincidence candidate and MUST be re-verified
 exactly.
 
 Usage: python3 sumset.py build
-       python3 sumset.py run [top_targets_per_blind]
+       python3 sumset.py run [top_targets_per_blind]   # 0 = FULL coverage
+
+Sharding (s50, full-coverage run): the job list is built per source class
+and concatenated, so splitting the source list splits the job list exactly.
+  S49_SOURCES=<file with one source class per line>   (default blindspot12.txt)
+  S49_TAG=<suffix>   ->  sumset_results<suffix>.tsv / sumset_hits<suffix>.tsv
+Defaults reproduce the s49 behaviour byte-for-byte.
 """
 import os
 import sys
@@ -97,8 +103,11 @@ def run(topn):
     names, W = fuse.load_corpus()
     sig = list(permutations(range(1, 8)))
     sidx_of = {s: i for i, s in enumerate(sig)}
-    blind = [l.strip() for l in open(os.path.join(OUT, 'blindspot12.txt'))
-             if l.strip()]
+    srcfile = os.environ.get('S49_SOURCES',
+                             os.path.join(OUT, 'blindspot12.txt'))
+    blind = [l.strip() for l in open(srcfile) if l.strip()]
+    tag = os.environ.get('S49_TAG', '')
+    print(f"sources: {len(blind)} from {srcfile}", flush=True)
     starts = sorted({v[0] for v in W.values()})
 
     cache = {}
@@ -134,7 +143,7 @@ def run(topn):
 
     t0 = time.time()
     hits = []
-    out = open(os.path.join(OUT, 'sumset_results.tsv'), 'w')
+    out = open(os.path.join(OUT, f'sumset_results{tag}.tsv'), 'w')
     out.write("blind\to_src\ttarget\to_tgt\tsymdiff\tents_out\tents_in\t"
               "doors_out\tdoors_in\tsumset_hits\n")
     for i, (sdv, B, ob, C, ot) in enumerate(jobs):
@@ -163,7 +172,7 @@ def run(topn):
     out.close()
     print(f"SUMSET hits (hash-level, unverified): {len(hits)}  "
           f"{time.time()-t0:.1f}s")
-    with open(os.path.join(OUT, 'sumset_hits.tsv'), 'w') as fh:
+    with open(os.path.join(OUT, f'sumset_hits{tag}.tsv'), 'w') as fh:
         fh.write("blind\to_src\ttarget\to_tgt\trule1\tsigma1\trule2\t"
                  "sigma2\n")
         for h in hits:
