@@ -8,21 +8,27 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S51.md` right after it** (supersedes S50) —
-   headline state: the project shell is **220 classes / 9 allocations**
-   (198 + Kristan's 2 unpublished (842,19) classes at
-   `data/kristan5906_web/` + 20 project classes at `data/novel5906d/`
-   incl. the ninth allocation (834,27)); the **s51 rule tier**
-   (`data/loopswap/rules_n7_s51.tsv`: unit rules R-K7/S51A/S51C of
-   shape (0,1,2,1) + 3 composites) and the **K₄ law** (every
-   cover-sharing quadruple = complete K₄, unit star from an old
-   anchor); the m3 gate covers all 220 via two new supplementary
-   indexes; the w4 demotion trade is a unit family (DEMOTION(3) =
-   R-BND FWD), structurally infeasible at n=6 record level, whose
-   corollary makes the queued full-corpus promotion sweep a can't-lose
-   M3 hunt (NOT approved); `up-1b8244ba04bb` is ARITHMETICALLY blind
+   **Fresh agent: read `docs/HANDOFF-S53.md` right after it (supersedes
+   S51), then `docs/NOVELTY-DESIGN.md` — the active design doc** —
+   headline state: **the neighborhood/rewrite-rule program is EXHAUSTED
+   at both n** (s53 K₄ hunt closes the n=7 tier at 220 — no incomplete
+   simplices, vocabulary mirror-complete via S53A/S53B in
+   `data/loopswap/rules_n7_s53.tsv`, zero new reachability; s52b closes
+   n=6: forward i4a + full 33-rule loop-swap, blind spot untargeted-
+   fused SELF-maps only, promotion trade replay-dead 0 products);
+   **a(6)=872 has two independent claimed proofs** (Gheorghe 209-cell
+   preliminary + Grayzel Lean zero-sorries, mid-audit) — adjudication
+   is P0; **Houston's abandoned 5905 program = our chains #0/#24**
+   (both OPEN; score-15 kernels, no tractable asymmetric completion
+   exists anywhere) — the 138 open chains + ledger cuts are P1; the
+   ranked program P0–P5 + the do-not-respend list live in
+   NOVELTY-DESIGN §3/§4, with three research surveys preserved at
+   `../extraDocs/2026-07-31-research-*.md`. Project shell 220 / 9
+   allocations; the **s51 rule tier** and the **K₄ law** (every
+   cover-sharing quadruple = complete K₄); the m3 gate covers all 220;
+   `up-1b8244ba04bb` is ARITHMETICALLY blind
    (536 > 534, door 34 > 24-fused, 536 ≢ 0 mod 6) — distinct from the
-   (844,17) eleven. PUBLISHED shell still 194 (PR #52 open). Older
+   (844,17) eleven. PUBLISHED shell still 194 (PRs #52 AND #53 open). Older
    state of the world, the engine-first premise, the executable natural-move tiers
    (i4a; loop-swap = I5, 102 novel classes PR #51; R-BND boundary-trade
    tier, spec `docs/RBND-RULE.md`, whose 4 novel (843,18) classes,
@@ -38,13 +44,15 @@ planned learned value function.
    (Δlen = 3 − w), no length-conserving w≥4 boundary trade; the REV-w4
    lift shells `data/lift873_n6/` + `data/lift5907_n7/` are conjugated
    copies of loop-swap structure — s50 proved lift→move→drop = move,
-   zero new connectivity; the s51 front = the untargeted fused sweep
-   (queued, NOT approved), the w4 demotion trade, and the
-   `up-1b8244ba04bb` anatomy), traps, and the session-end ritual
-   (supersedes HANDOFF-S49).
+   zero new connectivity; the s51-era fronts — untargeted fused sweep,
+   w4 demotion/promotion, `up-1b8244ba04bb` anatomy — are ALL RESOLVED
+   as of s52b/s53, see HANDOFF-S53), traps, and the session-end ritual.
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
-   `docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; §9 has the M-R laws;
+   `docs/NOVELTY-DESIGN.md` (s53: the P0–P5 self-derived-novelty
+   program — a(6)=872 adjudication, Houston's 5905 chains, shell
+   descent, cover triage, instruments-first)**; before it,
+   **`docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; §9 has the M-R laws;
    §10 is the compound tier: s38 built I3 `--recomp2` and §10.8 records its
    as-built truth + the oracle refutation; §11 is the OPEN FRONT — the
    loop-cover frame: s39 theorem (THEORY §7) + cover census, s40 M-4a

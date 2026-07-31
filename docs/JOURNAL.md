@@ -6,6 +6,139 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-31 (session 53) — **strategy session: the K₄ unit-rule vein is MINED OUT (14 residual cover groups all resolved — 10 forward shadows of complete K₄s, one 3+2 glued-K₄ cover split, 3 groups with provably no admissible unit diff; the only find is that the vocabulary was missing the reversal-MIRRORS of S51A/S51C, now committed as S53A/S53B with zero new reachability — the 220 shell stays closed), and a four-agent research sweep lands three field facts that reshape the roadmap: TWO independent claimed proofs that a(6)=872 (Gheorghe 209-cell + Grayzel end-to-end Lean, different reductions), the correction that BOTH "obvious untried ideas" were tried by the field's principals (LKH-at-n=7 configured by Houston since the repo's first commit with zero posted results; Houston's kernel program = KernelFinder+PermutationChains, executed by Egan), and the discovery that Houston's abandoned 5905 program — two explicit score-15 kernels, started Feb 2019, never concluded — is literally chains #0 and #24 of our own census, both still OPEN; the whole synthesis is committed as `docs/NOVELTY-DESIGN.md` (ranked program P0–P5)**
+
+Andrew: "ignore anything to do with existing sweep work. what do we
+have next" → K₄ hunt approved; then "send out sub agents to do strong
+research on other kind of game solves … as well as other math problems
+from both high and low profiles that we might be able to leverage."
+Four Opus agents (K₄ hunt in-repo; three web surveys), orchestrator
+re-verified every load-bearing claim (oracle re-run 40/40, id-novelty
+greps, edge-set equality via the kristan canon-index mapping, GitHub
+API provenance of the field claims, chains #0/#24 lookup in our own
+ledger). Ran CONCURRENTLY with the s52/s52b/s52c operator sessions —
+their sweeps are theirs; this entry folds none of their results beyond
+citing them.
+
+**1 — K₄ hunt (HANDOFF-S51 menu 2).** Census regenerated both
+conventions (forward: 193 covers/15 groups; orientation-canonical: 183,
+matching s51). Per-group verdicts (`out/s53/k4hunt/group_verdicts.tsv`):
+the 14 non-quadruple forward groups are (a) ×10 forward shadows of
+already-complete K₄s, (b) ×2 the two faces of ONE 13-node region — two
+K₄s glued on a triangle, cover split 3+2, already saturated (the s51
+trap, now seen from the cover side), (c) ×3 genuinely tier-free (G10
+{0dad,2641,9bd2}, G12, G13 — 7 classes) whose edges are R-BND /
+s48-covertwin, with NO admissible unit diff in any of the four
+orientation frames (minima: 2 = known R-BND rule, or 96 = known
+covertwin rule) and 0 replay-surviving firings of all 14 s51/s53
+rules. The four-frame minimization DID expose a vocabulary gap:
+**S53A** (`319eaa67d21f` fwd / `9897c012c13e` rev, unit (0,1,2,1) —
+R-K7's sibling with door exit 7651234→6751234) and **S53B**
+(`86cb0ce89be9`/`541528918ea6`, 2-unit) are the reversal-mirrors of
+S51A/S51C, absent from the 882 committed ids (R-K7's own mirror was
+already present). Committed `data/loopswap/rules_n7_s53.tsv`; oracle
+40/40 byte-identical; full conjugated apply-sym over all 220 (20,160
+instances, ~20 s): 52 directed / 26 undirected edges, set-identical to
+S51A/S51C's (the mirror adds nothing because apply-sym sweeps both
+orientations) — **0 novel, corpus CLOSED, no sweep queued**. Verdict
+for the tier: new classes now require external seeds; the
+neighborhood program at n=7 is exhausted from the inside, matching
+s52b's same verdict at n=6.
+
+**2 — Field news (all verified against primary sources/GitHub, not
+just agent claims).** (a) **a(6)=872 has two independent claimed
+proofs**: Gheorghe's 209-cell reduction (vlad-ds/a6-872, Zenodo DOI
+10.5281/zenodo.21653956, self-declared preliminary, two open
+obligations — O5 continuation abstraction is the real logical gap) and
+**Grayzel's end-to-end Lean 4/mathlib proof, zero sorries**
+(BGray-wrl/superperm6, mid-audit by the group; different reduction —
+genuine corroboration). If either holds, 871 is dead and n=6 becomes a
+calibration domain. Not on arXiv/OEIS — GitHub + the google group
+only. (b) **Provenance corrections** (Andrew called both, agents'
+"never tried" claims were wrong): `lkh/par/7.par` (RUNS=50000) is in
+Houston's FIRST commit (2018-01-31), publicly advertised, **zero
+posted results ever** — nine months of availability while the record
+sat at 5913 and fell analytically; repo pins LKH-2.0.7, untouched
+since 2018-02. KernelFinder (Egan, 2019-03) implements Houston's
+kernel search — its smoke test emits the 5906 seed kernel
+`666646664466646666`. Concorde failed at n=6 twice (Houston 2014,
+Pantone cluster 2019). (c) **Chaffin/DCM shut down 2023-03 at waste
+122** (>100M CPU-h; the n=6 target is 146) — our "waste 116" notes
+were stale. (d) **The 5905 find**: Houston posted two score-15 n=7
+kernels (len 27/29) Feb 2019 — "if they could be completed, they would
+give rise to superpermutations of length 5905"; Egan started them, no
+conclusion ever posted; Garner's request for the full sub-5907 kernel
+list unanswered; the published engines have no tractable asymmetric
+mode. **They are chains #0 and #24 in `analysis/cover7/
+results_n7_merged.csv` — OPEN, timeout-killed at our 30-min budgets.**
+Three parties have now failed on them with generic engines.
+
+**3 — The synthesis (`docs/NOVELTY-DESIGN.md`).** Three research
+reports preserved at `../extraDocs/2026-07-31-research-{game-solving,
+math-records,superperm-field}.md` (~100 cited URLs each). Converging
+diagnosis: the record+1 plateau is a TIE PLATEAU (known pathology,
+known fixes); nothing in the record literature works cold — every
+neighborhood escape in every surveyed hunt came from searching a
+smaller structured space (programs/orbits/kernels), never a stronger
+object-space optimizer; near the optimum, refutation beats
+optimization ~2000×/position; our shell is thin in construction type
+(22,062 classes ≈ hundreds of 2-cycle-graph isomorphism classes).
+Ranked program: **P0** adjudicate a(6)=872 (Grayzel statement-
+faithfulness audit + Gheorghe O5, ~1 day); **P1** reopen Track A as
+"finish Houston's 5905 program" (the 138 open chains ARE it; method
+stack: ledger/2-loop-law cuts in DLX/SAT → exact VLSN
+(Balas–Simonetti/corridor DP) → local-branching certificates → answer
+Garner's enumeration); **P2** shell-descent pilot (Andrew's idea:
+populate the above-record shell UNSEEDED — mobile where the record
+shell is rigid, s51 demotion 399-products datum — then descend with
+the length-reducing stack through the m3 gate; n=6 first, n=7 gated on
+unseeded 5907/5908 entry); **P3** cover-level boardstate triage
+(Andrew's idea, corrected: sample partial 2-loop covers not strings;
+evaluate with EXACT ledger arithmetic — never the learned evaluator
+(s5: prunes every record path by ~level 62) nor the zero-slack bound;
+select by diversity archive, MAP-Elites style); **P4** surface-
+deforming metaheuristics (GLS/STUN/SISR), gated behind **P5**
+instruments (fl1577 proxy — the TSPLIB instance with our exact
+disease; Aut groups of known classes; local-optima network of the 873
+shell; PatternBoost data-shape check). §4 of the doc lists what is
+closed and must not be respent.
+
+**New traps (s53).** (a) Research-agent "X was never tried" claims are
+unreliable — BOTH failed against primary sources this session; demand
+positive citations, verify via the community repo + GitHub API before
+folding into docs. (b) The local `../superperm` clone is SHALLOW —
+`git log` collapses every file's history to the single fetched commit;
+provenance questions need `gh api repos/superpermutators/superperm/
+commits?path=…`. (c) `data/kristan5906_web` filenames carry no hash12,
+so edge-table joins against them silently mismatch hash-keyed tables —
+map via `analysis/counting/kristan5906_web_canon_index.tsv`
+(v0004=9f233e21883b, v0005=df2adfa160ec). (d) CONCURRENT-SESSION
+NAMING: this session started as "s52" and collided with the operator
+sessions' s52/s52b/s52c commits — check `git log` for taken session
+numbers before naming artifacts (the hunt's rules file was renamed
+rules_n7_s52→s53.tsv, labels S52*→S53*, scratch out/s52/k4hunt→
+out/s53/k4hunt before commit; out/s52/{untargeted,untargeted_farm}
+belong to the operator sessions and were left in place).
+
+**Committed:** `data/loopswap/rules_n7_s53.tsv`,
+`docs/NOVELTY-DESIGN.md`, `docs/HANDOFF-S53.md` (supersedes S51;
+folds the s52-family state), CLAUDE.md repoint, this entry; reports in
+`../extraDocs/` (outside repo). Scratch (regenerable):
+`out/s53/k4hunt/`.
+
+**Next (s54 front):** (1) P0 — the a(6)=872 adjudication (Grayzel
+build = launch-agent item; the reading + Gheorghe O5 attack +
+s=25/B=4 ledger cross-check are in-session). (2) P5 instruments
+(cheap, in-session): fl1577 proxy, Aut groups, 873-shell local-optima
+network, PatternBoost data-shape. (3) P1a — wire the 2-loop law into
+the DLX/SAT chain engines; first targets chains #0/#24. (4) P2 pilot
+sizing (n=6 shell-descent) → SWEEP-QUEUE spec. (5) PR watch: #52 and
+#53 both still open upstream (checked this session). (6) Andrew's
+standing calls: Kristan outreach, promotion-era approvals now moot
+(s52b ran the queue).
+
+---
+
 ## 2026-07-31 (session 52b) — **the queue is RUN: four sweeps launched back-to-back and all four CLOSE — the n=6 archive is closed under the conjugated forward i4a rules (12.5M replays, and the fwd edge set is the s41 rev set reversed EXACTLY), closed under the expanded loop-swap vocabulary (31.2M replays, 6,231-undirected natural-move graph), the 12-class blind spot is closed under the untargeted fused-pair tier (4.71M pairs, 0 escapes — and every one of the 10,942 survivors is a SELF-map), and the w3→w4 promotion trade is REPLAY-DEAD corpus-wide (4.72M admissible completions, 100% killed, 0 products) — s52's Python farm harness carried two of them, and `demotion.py` was ported onto it in-session via a shim; the session's own defect was again in the MONITOR, not the science: the benign-summary alarm trap fired a SECOND time**
 
 Operator session. Andrew reconnected after an ssh pipe broke, ordered the
