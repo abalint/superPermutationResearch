@@ -1,0 +1,25 @@
+# s49 item3 — the n=7 blind spot: PROJECT-corpus classes untouched by every known natural-move tier.
+# corpus (198 classes): data/upstream5906 (84) + data/novel5906 (8) + data/novel5906b (102) + data/novel5906c (4)
+# edge union (node names normalized to their 12-hex class hash before taking endpoints):
+#   data/loopswap/lswap_sym_edges_n7_ALL_union.tsv	4014 directed rows
+#   data/loopswap/rbnd_edges_n7.tsv	30 directed rows
+#   out/s49/item3/i4a_sym_edges_n7_198.tsv	26 directed rows
+#   NOTE: the i4a table is the union of the committed data/i4a_products_sym_rev/i4a_sym_edges_n7.tsv (18 rows,
+#   the 194-corpus run) and the s44 novel5906b run out/s44/i4a_on_novelb_full/i4a_sym_edges.tsv (8 rows)
+#   = 26 directed / 13 undirected, the count s46/s48 quote. Proposed committed home:
+#   data/i4a_products_sym_rev/i4a_sym_edges_n7_198.tsv
+# result: 186 touched + 12 untouched = 198.  Allocation = (S, #w3) from analysis/counting/upstream5906_structure.tsv
+# (all 198 classes are pure-w3: no w>=4 inter doors, no intra doors).
+hash12	source_dir	filename	S	w3_doors	allocation	inter_hist	intra_hist	waste
+1b0920685429	data/upstream5906	5906.up-1b0920685429.txt	844	17	(844,17)	3:17	-	860
+1b8244ba04bb	data/upstream5906	5906.up-1b8244ba04bb.txt	838	23	(838,23)	3:23	-	860
+1e6ba5f50479	data/upstream5906	5906.up-1e6ba5f50479.txt	844	17	(844,17)	3:17	-	860
+3ba99c5557bb	data/upstream5906	5906.up-3ba99c5557bb.txt	844	17	(844,17)	3:17	-	860
+4c3eef44600b	data/upstream5906	5906.up-4c3eef44600b.txt	844	17	(844,17)	3:17	-	860
+6572648567f1	data/upstream5906	5906.up-6572648567f1.txt	844	17	(844,17)	3:17	-	860
+6a8f7756517b	data/upstream5906	5906.up-6a8f7756517b.txt	844	17	(844,17)	3:17	-	860
+7824c044436e	data/upstream5906	5906.up-7824c044436e.txt	844	17	(844,17)	3:17	-	860
+839c85982253	data/upstream5906	5906.up-839c85982253.txt	844	17	(844,17)	3:17	-	860
+c2286e4674af	data/upstream5906	5906.up-c2286e4674af.txt	844	17	(844,17)	3:17	-	860
+da93a66cd37b	data/upstream5906	5906.up-da93a66cd37b.txt	844	17	(844,17)	3:17	-	860
+dcd1e20d40f8	data/upstream5906	5906.up-dcd1e20d40f8.txt	844	17	(844,17)	3:17	-	860

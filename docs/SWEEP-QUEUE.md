@@ -373,3 +373,76 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
 - approved: NO
 - status: pending
 - result: —
+
+## lifted-873 loop-swap control (n=6, w4-bearing 873 shell) — local, ~10 min + small patch
+- spec: patch `run_apply_sym`'s hardcoded `record = 872 if n == 6 else 5906`
+  into a parameter (`--record 873`), then:
+  `python3 analysis/counting/loopswap_apply.py apply-sym -n 6 --record 873 --rules data/loopswap/rules_n6_a360.tsv --dirs data/lift873_n6 --out out/s49/item2/lswap873`
+- product: does the loop-swap tier MOVE inside the w4-bearing 873 shell
+  (448 classes materialized by s49's R-BND REV-w4 lift)? If it does,
+  FWD-w4 drop-back (Δlen = −1) from a moved 873 is a candidate bridge to
+  a DIFFERENT 872 class — the s49 lift-and-drop composite is an
+  involution only because nothing moves at the top of the lift.
+  NOTE: without the `--record` patch every 873 product is silently
+  discarded as "longer" and the run reports a vacuous 0 edges.
+- projected: dry-run-exact (s49): 33 directed rules, 22,020 conjugated
+  instances, 896 walk-orientations, 740,455 replays ≈ **~10 min** at the
+  measured n=6 replay rate.
+- approved: NO
+- status: pending
+- result: —
+
+## lifted-5907 loop-swap sweep (n=7, first w4-bearing 5907 shell) — local sharded, ~49 min (extrapolated; dry-run first)
+- spec: same `--record` patch, then
+  `python3 analysis/counting/loopswap_apply.py apply-sym -n 7 --record 5907 --rules <862 tables + rules_n7_s48_covertwin.tsv> --dirs data/lift5907_n7 --out out/s49/item2/lswap5907`
+  — 12 shards at ≤12k rule-entries each (mandatory), `--dry-run` first.
+- product: the only route the project has into w4-bearing n=7 structure
+  (232 classes in six previously unoccupied d4=1 allocations). A
+  loop-swap move inside the 5907/w4 shell followed by FWD-w4 (Δlen = −1)
+  lands back at 5906 on a possibly different class — exactly the
+  composite-chain shape the blind-spot front needs, and the only known
+  move family that leaves the (842,19)–(843,18)–(844,17) pocket's
+  length band at all.
+- projected: EXTRAPOLATED, not measured — s48's marginal sweep was 4
+  sources → 4,374 replays (~1,094/source); 232 sources ≈ 254,000
+  replays ≈ **~49 min** at the measured n=7 replay rate. Over the
+  30-min bar. Run the sharded `--dry-run` first to replace this estimate.
+- approved: NO
+- status: pending
+- result: —
+
+## fused-pair UNTARGETED sweep on the blind spot (s49 item1) — ~33 h single-core / ~4.2 h 8-way / ~1.4 h farm
+- spec: `python3 analysis/counting/s49/fuse.py untargeted --shard <i>/24` (mode
+  to be added to the committed instrument: for each edit-preconditioned r1
+  instance on a blind class-orientation, rescan the 4,354,560-instance table
+  against the intermediate F', apply each surviving r2, replay ONCE, canon-gate
+  inline; shard = one (blind class, orientation) per shard, 24 shards).
+  Rebuild indexes first: `python3 analysis/counting/s49/fuse.py index` (~45 s).
+- product: the ONE remaining live idea in the loop-swap tier — a fused pair
+  escaping a blind class to a class OUTSIDE the 198 (targeted fusion into the
+  198 is already closed exactly, s49: 0/9,456 at depth 1, 0/4,249,684 at
+  depth 2). Otherwise the closure negative "the 12-class blind spot is closed
+  under all ~4.8M fused pairs of the 864-rule vocabulary".
+- projected: all measured (s49, analysis/counting/s49/sizing_untargeted.py):
+  10,786 intermediates; precondition rescan 7.5 s each → 22.5 h; mean 448
+  preconditioned r2 instances per intermediate → 4.83M fused pairs; replay
+  8 ms → 10.7 h. TOTAL ~33 h single-core; 8-way Mac ~4.2 h wall; 24-way farm
+  ~1.4 h. RSS ~250 MB/shard (measured). Optional 3× cut: prefilter on the
+  tightness identity |flat| + #doors = 861 before replay.
+- approved: NO
+- status: pending
+- result: —
+
+## liberal sumset, FULL coverage (s49 item1) — ~84 min single-core / ~11 min 8-way
+- spec: `python3 analysis/counting/s49/sumset.py run 0` (sharded 8-way by blind
+  class; indexes from `fuse.py index`).
+- product: extends the precondition-free, direction-symmetric negative
+  "δ_req ∉ Δ+Δ" from the 1,200 nearest (blind, frame, target) triples to ALL
+  9,456. Subsumes BOTH directions of strict fused composition (Δ = −Δ verified
+  0/864), so a full 0 closes fused depth 2 for the blind spot completely, in
+  both directions, with no precondition assumption.
+- projected: 0.53 s/triple measured × 9,456 = 84 min single-core; 8-way ~11 min
+  wall. RSS ~250 MB/shard.
+- approved: NO
+- status: pending
+- result: —

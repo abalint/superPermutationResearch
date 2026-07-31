@@ -43,6 +43,19 @@ Usage:
              orientation combos, annotated KNOWN-EDGE if the pair is an
              edge of the natural-move graph (i4a_sym_edges_n7.tsv /
              i4a_sym_edges.tsv), else NEW. Writes the TSV to f.
+--edges f  : (s49) add an edge table to the KNOWN-EDGE reference set;
+             repeatable.  WITHOUT it the reference set is the two BASE
+             tables above — only 41 undirected n=7 edges, 1,973 short of
+             the 2,014 the known tiers actually carry (s48 called this
+             "~340 short"; measured s49).  Pass the full union, e.g.
+               --edges data/loopswap/lswap_sym_edges_n7_ALL_union.tsv \
+               --edges data/loopswap/rbnd_edges_n7.tsv \
+               --edges data/i4a_products_sym_rev/i4a_sym_edges_n7.tsv
+             Tables may be 4-column (n, source, target, rule) or
+             3-column (source, target, move); node names are matched by
+             their 12-hex class hash, so the three spellings of an R-BND
+             node (NEW-<h>, rbnd-NOVEL-5906-<h>.txt, 5906.rbnd-<h>.txt)
+             all resolve to the same vertex.
 --all f    : null-model mode — exact longest shared tail for EVERY
              unordered class pair (every pair trivially matches at the
              final perm, so the binary search is always anchored).
@@ -53,6 +66,7 @@ Exit 0 always (a measurement, not a gate); collisions are the product.
 """
 import hashlib
 import os
+import re
 import sys
 from collections import defaultdict
 from math import factorial
@@ -126,25 +140,50 @@ def deepest_shared(wa, oa, wb, ob, d_hi):
     return hi
 
 
-def load_known_edges(n):
+HASH12 = re.compile(r"([0-9a-f]{12})")
+
+
+def class_key(name):
+    """Vertex identity of a class node: its 12-hex hash if it has one.
+
+    The tiers spell the same class three ways (`NEW-<h>`,
+    `rbnd-NOVEL-5906-<h>.txt`, `5906.rbnd-<h>.txt`) — normalizing here is
+    what keeps a cross-tier union from double-counting (s48 trap).  On the
+    base tables the map is injective, so default behaviour is unchanged.
+    """
+    m = HASH12.search(name)
+    return m.group(1) if m else name
+
+
+def load_known_edges(n, extra=()):
     """Undirected natural-move edges from the committed censuses:
-    i4a (cover-preserving rules, s41) + loop-swap (s44)."""
+    i4a (cover-preserving rules, s41) + loop-swap (s44), plus any tables
+    named by --edges.  Keys are hash12-normalized (see class_key)."""
     here = os.path.dirname(os.path.abspath(__file__))
     fn = "i4a_sym_edges_n7.tsv" if n == 7 else "i4a_sym_edges.tsv"
     paths = [
         os.path.join(here, "..", "..", "data", "i4a_products_sym_rev", fn),
         os.path.join(here, "..", "..", "data", "loopswap",
                      f"lswap_sym_edges_n{n}.tsv"),
-    ]
+    ] + list(extra)
     edges = set()
     for path in paths:
         if os.path.exists(path):
             with open(path) as f:
-                next(f)
+                # 4-column (n, source, target, rule) or 3-column
+                # (source, target, move) — decide from the header.
+                off = 1 if f.readline().split("\t")[0].strip() == "n" else 0
                 for line in f:
-                    _, a, b, *_ = line.rstrip("\n").split("\t")
-                    edges.add(frozenset((a, b)))
+                    fld = line.rstrip("\n").split("\t")
+                    if len(fld) < off + 2:
+                        continue
+                    a, b = fld[off], fld[off + 1]
+                    edges.add(frozenset((class_key(a), class_key(b))))
     return edges
+
+
+def edge_key(a, b):
+    return frozenset((class_key(a), class_key(b)))
 
 
 def main():
@@ -157,6 +196,7 @@ def main():
     deep = False
     pairs_out = None
     all_out = None
+    extra_edges = []
     dirs = []
     i = 0
     while i < len(args):
@@ -171,6 +211,9 @@ def main():
             i += 2
         elif args[i] == "--all":
             all_out = args[i + 1]
+            i += 2
+        elif args[i] == "--edges":
+            extra_edges.append(args[i + 1])
             i += 2
         else:
             dirs.append(args[i])
@@ -198,7 +241,7 @@ def main():
     if all_out:
         from collections import Counter
 
-        known = load_known_edges(n)
+        known = load_known_edges(n, extra_edges)
         last = nfact - 1  # every pair's tails match at the final perm
         rows = []
         for i in range(len(walks)):
@@ -214,7 +257,7 @@ def main():
         with open(all_out, "w") as out:
             out.write("class_a\tclass_b\tdeepest_d\tshared_perms\torient\tstatus\n")
             for a, b, d, o in rows:
-                status = "KNOWN-EDGE" if frozenset((a, b)) in known else ""
+                status = "KNOWN-EDGE" if edge_key(a, b) in known else ""
                 out.write(f"{a}\t{b}\t{d}\t{nfact - d}\t{o}\t{status}\n")
         hist = Counter()
         for _, _, d, _ in rows:
@@ -245,7 +288,7 @@ def main():
         return 0
 
     if pairs_out:
-        known = load_known_edges(n)
+        known = load_known_edges(n, extra_edges)
         best = {}  # frozenset(names) -> (dmin, orient tag)
         for members in colls:
             for i in range(len(members)):
@@ -262,15 +305,17 @@ def main():
             out.write("class_a\tclass_b\tdeepest_d\tshared_perms\torient\tstatus\n")
             for key, (dmin, orient) in rows:
                 a, b = sorted(key)
-                status = "KNOWN-EDGE" if key in known else "NEW"
+                status = ("KNOWN-EDGE" if edge_key(a, b) in known
+                          else "NEW")
                 out.write(f"{a}\t{b}\t{dmin}\t{nfact - dmin}\t{orient}\t{status}\n")
-        n_new = sum(1 for k, _ in rows if k not in known)
+        n_new = sum(1 for k, _ in rows
+                    if edge_key(*sorted(k)) not in known)
         print(f"{len(rows)} colliding class pairs at anchor {anchor} "
               f"({n_new} NEW vs the natural-move graph, "
               f"{len(rows) - n_new} known edges) -> {pairs_out}")
         for key, (dmin, orient) in rows:
             a, b = sorted(key)
-            status = "KNOWN-EDGE" if key in known else "NEW"
+            status = "KNOWN-EDGE" if edge_key(a, b) in known else "NEW"
             print(f"  {a} ~ {b}: shared {nfact - dmin} perms "
                   f"(d={dmin}, {orient}) {status}")
         return 0

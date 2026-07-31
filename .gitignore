@@ -28,6 +28,9 @@
 # were computed from (~280 KB; makes the s43 discovery reproducible/checkable
 # from a fresh clone without re-running the 22k-walk sweeps).
 !/data/tailconj/
+!/data/lift873_n6/
+!/data/lift5907_n7/
+
 *.jsonl
 .DS_Store
 __pycache__/

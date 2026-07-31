@@ -40,11 +40,15 @@ ROOT = os.path.join(HERE, "..", "..")
 sys.path.insert(0, os.path.join(ROOT, "analysis", "counting"))
 from loopswap_apply import parse_rule, relab_rule, rule_id, serialize_rule  # noqa: E402
 
+# s49: the s48 cover-twin table joined the vocabulary (862 -> 864 directed
+# rules = 398 objects).  Order matters only for `source_tables` tie-breaks,
+# which are sorted, so appending is safe: the 862 rows are unchanged.
 TABLES = {
     7: ["data/loopswap/rules_n7.tsv",
         "data/loopswap/rules_n7_a256.tsv",
         "data/loopswap/rules_n7_a4840_gen2.tsv",
-        "data/loopswap/rules_n7_a4840_band200.tsv"],
+        "data/loopswap/rules_n7_a4840_band200.tsv",
+        "data/loopswap/rules_n7_s48_covertwin.tsv"],
     6: ["data/loopswap/rules_n6.tsv",
         "data/loopswap/rules_n6_a360.tsv"],
 }

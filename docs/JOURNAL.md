@@ -6,6 +6,170 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 49) — **the blind spot's isolation is now a PROOF, not a law: exhaustive depth-1 closure (0 hits over all 4,354,560 rule instances × 9,456 forced frames) and TARGETED FUSED depth-2 closure (0 over 4,249,684 fused pairs + a 5.2×10⁹-pair direction-symmetric sumset probe) — with the discovery that rigidity + replay-determinism make targeted composition a REPLAY-FREE set-membership question**; plus two theorems from the w≥4 front: **R-BND's weight-3 is FORCED by the length identity (Δlen = 3 − w — the w4 FWD trade is not a generalization, it IS the record-break move, and it is 100% replay-dead when forced, 1,732/1,732)** and **no length-conserving w≥4 door-for-boundary trade exists** (needs two loop closures from one door deletion; the chain structure permits at most one); the consolation is a new instrument's territory: **the R-BND REV-w4 lift materializes the first w4-bearing shells the field has — 448 novel-territory 873 classes and 232 5907 classes in six d4=1 allocations no known n=7 string ever occupied** (committed as `data/lift873_n6/` + `data/lift5907_n7/`; lift-and-drop is an exact involution, 824/824 + 360/360 self-edges, so the value is the intermediate shell and two sweeps are QUEUED to ask whether loop-swap MOVES inside it); the n=6 REV-fingerprint census (full 22,062, ~40 s — s48's 22-min sizing was 33× conservative) is a positive-but-one-sided verdict: **313 classes (1.42%) carry the exact s48 fingerprint** (not an n=7 exclusive; perfect on the (142,6) FWD side of all four R-unit edges, 4/6 vs 0/13 — but 0/301 on the (143,5) REV side and anti-correlated with connectivity — an allocation-conditional property, identically zero on the records class), and a second asymmetry is EXACTLY the w4 indicator (415/415 set identity, mechanism proven: **the w4 door itself occupies R-BND's REV-START door slot, 821/821**)
+
+Session run as three parallel Opus subagents (items 1, 3, and hygiene);
+the orchestrator re-verified every load-bearing claim (recounts from the
+committed TSVs, byte-identity diffs, both lift specimens re-validated,
+rulesizes re-run, blind-spot lists cross-checked between two independent
+agents — equal). Corpus language: project shell still **198**, published
+still **194 — PR #52 open, no comments** (checked at session start).
+
+**1 — Blind-spot composition chains (the s49 top item; menu item 1).**
+(a) **Sequential vacuity, now written down**: every applier gates each
+step through replay + length-5906, so given the s48 fixed point, every
+sequential chain from a corpus class walks recorded union-graph edges
+only; the 12 blind classes have degree 0; hence sequential composition
+is vacuous at EVERY depth, unconditionally. s48's "no depth-1
+composite" was sequential — the fused object had never been tested.
+(b) **Fused semantics**: a fused pair is `δ_f = δ1 + δ2` applied as ONE
+edit + ONE replay (cancellation `EO∩EI` is the entire difference from
+sequential; the intermediate need not be a valid walk). A fused pair of
+9-column rules is still a 9-column object, so rigidity applies —
+R-BND-involving fusions (re-rooting) are out of scope. The 6k law is
+closed under fusion (`|EO_i ∩ EI_j| ≡ 0 mod 6`, 8000/8000 — entry
+blocks of distinct 2-loops are disjoint). (c) **The decisive trick**:
+rigidity forces the frame per (source, target) orientation pair and
+replay is deterministic, so the required edit `δ_req` is an IDENTITY —
+targeted composition needs no replay at all, and the 97.8–99.998%
+replay-kill statistic simply does not apply. 4.25M fused firings in 6
+min single-core. (d) **Results, all negative, all controlled**
+(positive controls: 200/200 recorded edges re-found at depth 1; 12/12
+synthetic 2-step paths hit by the sumset; a first control run that
+returned a false 0/200 due to a bug IN THE CONTROL is the trap to
+remember): depth-1 exhaustive **0/9,456**; strict fused depth-2
+**0/4,249,684**; liberal sumset (`δ_req ∈ Δ+Δ`, precondition-free,
+direction-symmetric because **Δ = −Δ exactly, 0/864** — the vocabulary
+is closed under reversal as absolute edits, stronger than s47's pair
+count) **0/1,200 nearest triples ≈ 5.2×10⁹ pairs**. Full-coverage
+sumset (~84 min) + the untargeted fused sweep (~33 h, the ONE remaining
+loop-swap-tier idea: fused escape to a class OUTSIDE the 198) are
+QUEUED. (e) **Two corrections to committed claims**: (i) the metric
+law's "max |ents_out| = 228" is wrong — true max **534** (k=89), and 8
+rules sit at exactly 216 = the requirement of the two nearest blind
+classes, so **"single rules provably can't cross" was empirical until
+today**; the depth-1 exhaustion is the actual proof. (ii) s48's
+"entry-diff 531, 531 ∤ 6" (Kristan → the four) is a free-frame minimum;
+the admissible-frame (rigidity-forced) edits are **622–735 entries PLUS
+15–18 doors** — the impossibility survives twice over (doors: no pure
+loop-swap rule has any; size: all nine values exceed 534; and none is
+≡ 0 mod 6). Never quote 531 again. (f) Structure: `up-1b8244ba04bb`
+(the only 23-door blind class, (838,23)) has **ZERO door-identical
+partners in the 198** in any admissible frame — no door-free fusion at
+ANY depth connects it to the corpus; its nearest neighbour is a
+novel5906c class. Full metric table committed:
+`data/loopswap/blindspot_admdiff_n7.tsv` (2,364 ordered pairs; mod-6
+histogram {0:1582, 1:87, 2:272, 3:75, 4:282, 5:66}; 1,192 shape-legal —
+divisibility does NOT close the question, the exhaustive negatives do).
+
+**2 — R-BND extensions (menu item 3).** (a) **The w-question is
+algebra**: with the general identity `len = (n!+n−2) + S − 2D + Σw_j`
+(verified 830/830 n=6 w4 orientations + 396/396 n=7), a door-for-
+boundary unit trade has `Δlen = 3 − w`. So w=3 (R-BND) is the ONLY
+length-conserving weight — forced, not chosen; **w4 FWD is Δlen = −1 =
+the record-break move itself** (an 871/5905 if it ever fired). It never
+fires naturally (the strict precondition selects a w3 door on 830/830 +
+396/396 tight orientations despite 866 w4 doors available) and is
+100% replay-dead when forced (1,732/1,732 killed). **Impossibility
+theorem**: a length-conserving w≥4 trade needs Δ(S,D) = (+2,−1) — two
+loop closures from one door deletion — but deleting one door closes at
+most one chain. ∎ (b) **REV-w4 (Δlen = +1) survives at 10.6%/16.2%**
+(n=6/n=7) — three orders of magnitude above w3 REV's 0.005% (lengthening
+moves have replay slack) — and every survivor lands at exactly the
+predicted 873/5907 (validator-confirmed specimens). The lift-and-drop
+composite is a strict involution (824/824, 360/360 self-edges, 0 novel,
+0 shorter): **the w4 tier of R-BND is closed on itself at both n**. The
+prize is the intermediate: `data/lift873_n6/` (448 classes, (139,6,2) +
+(137,8,2)) and `data/lift5907_n7/` (232 classes, six d4=1 allocations —
+the only previously known 5907s are 3 pure-w3 classes at (858,4)).
+These are ABOVE-record (873/5907) — no m3_check novelty language
+applies; zero products ≤872/≤5906 anywhere this session. Two sweeps
+queued (both need a `--record` parameter patch to loopswap_apply —
+without it every above-record product is silently discarded and the
+run reports a vacuous 0). (c) **n=7 w4 preconditions are vacuous at
+the source**: all 198 classes re-censused pure-w3 (the committed
+`upstream5906_structure` output predates novel5906b/c — 95 rows only).
+(d) n=6 archive-wide R-BND closure now FULL-corpus (not s48's 2,000
+sample): survivors = exactly the four M-4a R-unit pairs; FWD
+universality 44,124/44,124; REV multiplicity ≈2 (99.3%/97.4%).
+
+**3 — The n=6 REV-fingerprint census** (Part A of item 3;
+`data/loopswap/rbnd_rev_census_n6_full.tsv`, 22,062 rows, both
+orientations). **313 classes carry the exact s48 mirror-consistent
+fingerprint** (profile (1,2,2,1); 1.42% vs n=7's 2.02%) — the clean
+negative did NOT happen. But as a bridge detector it is ONE-SIDED:
+perfect on the (142,6) FWD-source side of all four R-BND edges (4/6
+fingerprint vs 0/13 non-), ZERO on the (143,5) REV-source side (0/301
+vs 4/169), under-represented among i4a endpoints, slightly LESS
+loop-swap-connected than baseline (47.6%/deg 1.38 vs 54.1%/1.62), and
+identically zero on all 21,144 records-class walks — an
+allocation-conditional property, not a topological one. **Kind-2
+asymmetry** (`F_REVEND ≠ R_REVSTART`, invisible at n=7): its class set
+is EXACTLY the 415 w4-bearing classes (symmetric difference 0), and the
+mechanism is proven — **the w4 door's source perm occupies one of the
+two door slots the REV-START boundary trade needs, 821/821 collisions**.
+Parts A and B are the same phenomenon seen from two sides. Unguarded
+REV candidate counts satisfy the reversal identity 22,062/22,062 — the
+asymmetry lives entirely in the guard. (Lists:
+`data/loopswap/n6_fingerprint_classes.txt`, `n6_w4_classes.txt`.)
+
+**4 — Hygiene (the s48 debts, all paid).** (a)
+`rule_annotation_n7.tsv` regenerated over all **864** directed rules (5
+tables — never say "the four tables"): 862 rows byte-identical (2 new
+rows inserted in hash order), new object #398 = `4004c6042131` orbit,
+shape 48,48,0,0, edge-group E0397; the s47 "symmetry partition =
+edge-set partition" identity survives exactly (398 = 398). Known-stale
+cell deliberately preserved: `ab88abce72ba` census_undirected_edges
+reads 302, truth is 304 (s48 appended its two pocket edges without
+refreshing) — fix at next full regeneration. Also: the table carries
+DUPLICATED columns 17–18/19–20 (s47 ran final_stats.py twice;
+values identical on every row; `cut -f1-18` is the lossless cleanup).
+(b) **KNOWN-EDGE trap killed at the source**:
+`tail_conjugacy_census.py` now takes repeatable `--edges` with hash12
+normalization (default behavior proven byte-identical); the committed
+1,577-pair census re-annotated against the full union — **KNOWN-EDGE
+41 → 1,546** (the handoff's "~340 short" was off by 5×: the stale
+reference had 41 of 2,014 edges). All 8 R-BND edges now marked. (c)
+**`data/loopswap/blindspot_n7.tsv` is the canonical target list**: 12
+classes, 186+12=198 verified, i4a contributes zero blind-spot coverage;
+**11 of 12 sit in (844,17)**, one in (838,23); all upstream, all
+pure-w3. (d) **The committed `rbnd_edges_n7.tsv` WAS the trap** — it
+was literally the 30-row `NEW-…` pseudo-vertex table s48 warned about;
+replaced with the corrected 32-row table (identical 8 undirected edges,
+verified). The 26/13 i4a edge union now lives at
+`data/i4a_products_sym_rev/i4a_sym_edges_n7_198.tsv` instead of
+scratch-only. (e) Headline-number audit: ALL_union 2,006 PASS;
+vocabulary 864-across-5-tables PASS; tail_pairs 1,577 PASS.
+
+**Committed:** `data/loopswap/{rule_annotation_n7.tsv (864),
+rbnd_edges_n7.tsv (32-row), blindspot_n7.tsv, blindspot_admdiff_n7.tsv,
+rbnd_rev_census_n6_full.tsv, n6_fingerprint_classes.txt,
+n6_w4_classes.txt}`, `data/tailconj/tail_pairs_n7_a4840_198.tsv`
+(KNOWN-EDGE corrected), `data/i4a_products_sym_rev/i4a_sym_edges_n7_198.tsv`,
+`data/lift873_n6/` (448 + NOTE), `data/lift5907_n7/` (232 + NOTE),
+`analysis/counting/s49/` (11 instruments + README),
+`analysis/counting/{revquot_audit.py,tail_conjugacy_census.py}`
+(surgical patches), 4 new SWEEP-QUEUE entries (all approved: NO).
+Scratch (regenerable, gitignored): `out/s49/item{1,2,3}/` (fuse.py
+indexes rebuild in ~45 s).
+
+**Next (s50 front):** (1) the four queued sweeps await Andrew — the
+**lifted-5907 loop-swap sweep** is the strategic one (a move inside the
+w4 5907 shell + FWD-w4 drop is the only known composite shape that
+leaves the pocket's length band; ~49 min extrapolated, dry-run first),
+the **full sumset** (~84 min) + **untargeted fused sweep** (~33 h /
+~1.4 h farm) close fused depth 2 completely, the lifted-873 control is
+~10 min; all four need the small `--record` patch or the promoted s49
+instruments. (2) PR #52 watch (on merge: NOTE.md → PUBLISHED, published
+shell → 198). (3) The w4 demotion trade `(S+1, d3+1, d4−1)`, Δlen = 0 —
+the only length-conserving w4 move, connects occupied n=6 allocations
+(140,6,1)×388 ↔ (141,7)×4, and NO instrument implements it (menu
+candidate, not a sweep). (4) `up-1b8244ba04bb` deserves its own
+anatomy: 23 doors, zero door-identical partners, nearest neighbour a
+novel5906c class. (5) Older opens unchanged: n=6 SWEEP-QUEUE approvals,
+run-losing-pair anatomy, M-4b/M-4d, ip=1, per-allocation NRPA/beam,
+Track C v2 overhead cut.
+
 ## 2026-07-30 (session 48) — **the 198 is RE-CLOSED under every tier — and the re-closure pays: the first Δalloc=0 conjugated cover twin (`rbnd-0dad` ~ `rbnd-2641`, both (843,18)) with its realizing rule DERIVED IN THE SAME SESSION** — the door-free 48-entry loop-swap rule `4004c6042131`/`9233133e9c39`, oracle-verified byte-identically both directions, a genuinely NEW object under S₇×ι×τ (closed 2-element orbit, no image among the 862) — **vocabulary 862 → 864 directed = 397 → 398 distinct moves** (`data/loopswap/rules_n7_s48_covertwin.tsv`); plus a hard impossibility: **no single loop-swap rule can EVER connect the four novel classes to Kristan's** (entry-diff 531 to all four; 531 ∤ 6, and every pure loop-swap rule has |ents| = 6k) — the (843,18) pocket splits {Kristan} ⊔ {the four} under the whole tier
 
 Session run as three parallel Opus subagents (the s47 working mode); the
