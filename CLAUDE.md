@@ -35,12 +35,12 @@ planned learned value function.
    cover-sharing quadruple = complete K₄); the m3 gate covers all 220;
    `up-1b8244ba04bb` is ARITHMETICALLY blind
    (536 > 534, door 34 > 24-fused, 536 ≢ 0 mod 6) — distinct from the
-   (844,17) eleven. PUBLISHED shell still 194 (PRs #52 AND #53 open). Older
+   (844,17) eleven. PUBLISHED shell 218 (PRs #52 AND #53 MERGED 2026-07-31, s56). Older
    state of the world, the engine-first premise, the executable natural-move tiers
    (i4a; loop-swap = I5, 102 novel classes PR #51; R-BND boundary-trade
    tier, spec `docs/RBND-RULE.md`, whose 4 novel (843,18) classes,
-   `data/novel5906c/`, are SUBMITTED as PR #52 — published n=7 shell 194
-   until it merges, project shell 198; vocabulary = **398 moves = 864
+   `data/novel5906c/`, are PUBLISHED via PR #52 (merged 2026-07-31) —
+   published n=7 shell 218, project shell 220; vocabulary = **398 moves = 864
    directed rules across FIVE tables**, annotation covers all 864;
    graph = `lswap_sym_edges_n7_ALL_union.tsv` (2,006) +
    `rbnd_edges_n7.tsv` (32-row) — hash12-normalize before unions; the

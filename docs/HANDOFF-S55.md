@@ -44,8 +44,10 @@ s55 annotations inline.
    queued (`approved: NO`).
 7. n=6 window still {869..872} pending P0; n=7 window [5888, 5906]
    unchanged, 5905 = δ21 the sole record front.
-8. Project shell unchanged: 220 classes / 9 allocations; PUBLISHED
-   194 — PRs #52/#53 still open upstream (checked s55).
+8. Project shell unchanged: 220 classes / 9 allocations; **PUBLISHED
+   218 as of 2026-07-31** — PRs #52 AND #53 merged (s56 verified
+   upstream master `77dc0d1`, 24 files added; the only unpublished
+   project-shell classes are Kristan's two).
 9. Everything the neighborhood program closed stays closed
    (HANDOFF-S53 §"State of the world" items 1–2, 9–10 unchanged).
 
@@ -71,8 +73,8 @@ s55 annotations inline.
    data-shape check) — the two remaining instruments.
 5. THEORY §7: fold in Gheorghe's elementary per-edge reproof of the
    loop-count theorem (it also bounds v, which we never did).
-6. PR watch (#52, #53); on merge flip NOTE.md files per the
-   /community-pr skill (194→198→218).
+6. ~~PR watch (#52, #53)~~ DONE s56: both merged 2026-07-31; NOTE.md
+   files flipped to PUBLISHED, shell 194→218.
 7. Andrew's standing calls: Kristan outreach; grammar-of-5906s
    publication (the provenance split is a new headline line for it);
    whether to send Grayzel/Gheorghe our findings (ledger staleness

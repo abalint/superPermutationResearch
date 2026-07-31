@@ -1,12 +1,13 @@
-# novel5906d — the 20 s51 K₄-tier classes (SUBMITTED as PR #53; provenance caveat below)
+# novel5906d — the 20 s51 K₄-tier classes (PUBLISHED as PR #53; provenance caveat below)
 
-**STATUS UPDATE 2026-07-31:** submitted to superpermutators/superperm as
+**STATUS: PUBLISHED** — merged into superpermutators/superperm master
+2026-07-31 (17:52Z) as
 **PR #53** (https://github.com/superpermutators/superperm/pull/53, branch
-`abalint:twenty-new-5906s-two-profiles`), per Andrew's instruction, with the
-Kristan-derivation credit note in the PR body (his two source solutions
-deliberately excluded — they are his to publish). On merge: published shell
-grows by 20 (and by 4 more when PR #52 merges); flip this NOTE to PUBLISHED
-and update the counts in HANDOFF + CLAUDE.md.
+`abalint:twenty-new-5906s-two-profiles`), with the Kristan-derivation credit
+note in the PR body (his two source solutions deliberately excluded — they
+are his to publish). Upstream master `77dc0d1` carries all 20 (verified by
+tree diff s56, together with PR #52's four: 24 files added). Published shell
+194 → 218 (both PRs merged the same day).
 
 20 record-tying n=7 5906 classes discovered 2026-07-31 (s51) by applying the s51
 rule tier (`data/loopswap/rules_n7_s51.tsv`: unit rules R-K7 / S51A / S51C of
@@ -37,7 +38,8 @@ to his strings; Andrew decides publication and should coordinate credit with
 Kristan (his two classes are HIS to publish). Supplementary m3 indexes:
 `analysis/counting/novel5906d_canon_index.tsv` +
 `kristan5906_web_canon_index.tsv` (project shell now 220 = 198 + his 2 + these
-20; PUBLISHED shell is still 194 pending PR #52).
+20; PUBLISHED shell 218 since 2026-07-31 — his 2 remain the only unpublished
+classes in the project shell).
 
 Files: `5906.s51-<canon-sha12>.txt`, regenerable from the committed rule table +
 corpora via `analysis/counting/loopswap_apply.py apply-sym` (run-twice

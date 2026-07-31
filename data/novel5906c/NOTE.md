@@ -1,11 +1,12 @@
 # novel5906c — the s47 R-BND discoveries (4 novel 5906 classes)
 
-**STATUS: SUBMITTED** — Andrew approved publication 2026-07-30;
-submitted as superpermutators/superperm
+**STATUS: PUBLISHED** — merged into superpermutators/superperm master
+2026-07-31 (17:52Z) as
 [PR #52](https://github.com/superpermutators/superperm/pull/52)
 (branch `four-new-5906s-843-18` on the abalint fork, files
-`superpermutations/7/7_5906_derived_<hash12>.txt`). Update this line
-to PUBLISHED when merged.
+`superpermutations/7/7_5906_derived_<hash12>.txt`; upstream master
+`77dc0d1` carries all four, verified by tree diff s56). Published
+shell 194 → 198 (→ 218 with PR #53, merged the same day).
 
 Four length-5906 n=7 superpermutation classes, all at allocation
 **(843,18)** — the allocation where Kristan's class previously sat
