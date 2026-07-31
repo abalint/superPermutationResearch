@@ -51,6 +51,20 @@ queue entry: start time, PID, log path, projected end.
    per-walk lines; with it, silence until the summary is normal.
 4. On completion, copy the summary line verbatim into the queue entry
    and mark it `done`. Then commit (see Git discipline).
+5. **Watch WALKS, not the heartbeat** (n6a450r2tightprobe, 2026-07-31).
+   `STATUS.txt` freshness proves the SUPERVISOR is alive, not that the
+   run is progressing — the supervisor keeps rewriting the file happily
+   while every remaining worker is wedged in one instance. That run sat
+   at `90/96, rate=0 walks/s` for **12.4 h** with `AGE` never above 30 s,
+   so `ta_watch.sh`'s stall detector (which keys on `AGE > 300`) stayed
+   silent the whole time and its decile trigger had nothing to fire on.
+   Silence there looked identical to health. The real signal is
+   **`WALKS` unchanged across consecutive polls**: if it has not moved
+   in ~1 h while `ALIVE > 0`, the run is in its divergent tail — diagnose
+   with `Get-Process superperm` (100 % CPU + tiny working set = genuinely
+   searching, not hung; the logs' `LastWriteTime` LIES on this box, so
+   read log CONTENT for the last un-resulted walk filename). `ta_watch.sh`
+   has no no-progress detector; add one before trusting it on a long run.
 
 ## The alarm path — read this twice
 
@@ -90,6 +104,7 @@ n=6 (corpus `data/upstream872`, 22,062 walks):
 | tail-atsp anchor ≥ 450 (≤ 50 blocks) | **2.0 s/walk** (the s28b 0.6 s figure was sorted-order bias — quote round-robin probes only) | ~12 h (farm: ~49 min) |
 | tail-atsp --ties, 585 / 520 band | 6.6 ms / 0.26 s per walk (farm-measured) | 40 s / ~1.6 h |
 | tail-atsp --recomp, 585 band | ~5.4 s/walk (s31 probe) | ~33 h (farm: ~5 h) |
+| tail-atsp --recomp2 --recomp2-tight, 450 band (≤ 56 blocks) | **907 s/walk mean, ~717 s median** (farm-measured, 84 walks of a 96-walk round-robin probe) — but **3 of 96 never finished**, one ≥ 14.8 h on a single walk | ≈ 9.6 days on 24 cores **and unbounded**: the band has non-terminating instances. NOT VIABLE — see the aborted `n6a450r2tightprobe` entry in SWEEP-QUEUE |
 
 n=7 (corpus `data/upstream5906` + `data/upstream5907`, 87 walks, COMMITTED
 — s33; anchor bands scale by perm count: 4905/5040 ≈ n=6's 585/720,

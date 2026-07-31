@@ -5,6 +5,26 @@ executes them top-down, fills in status/results, and never edits the
 spec of a pending entry. Andrew's go-ahead is per-entry (`approved:`),
 required for anything projected > 30 min. One `running` entry at a time.
 
+## Execution order (set by Andrew, 2026-07-31) — overrides file order
+
+Work the pending entries in THIS sequence, not top-down file order:
+
+1. **n=6 I4-A conjugated sweep, FORWARD directions** — local, ~100 min
+2. **fused-pair UNTARGETED sweep on the blind spot** — 33 h single-core /
+   4.2 h 8-way / 1.4 h farm (mode not yet chosen)
+3. **n=6 loop-swap conjugated sweep, EXPANDED rule table** — local, ~2 h
+4. **n=6 full-corpus PROMOTION hunt (w3→w4, Δlen = 0)** — local, ~3.4 h
+
+**HELD: n=6 recomp2, 520 band** — "hold off on n=6 recomp2 for now"
+(Andrew, 2026-07-31). Do not launch. Its sibling 450-band run was aborted
+the same day for non-termination; before this one is reconsidered it needs
+a round-robin probe and a per-walk timeout, not its current single-walk
+projection.
+
+Ordering is not consent: every entry above still carries its own
+`approved:` field and the > 30 min launch protocol applies to each
+individually.
+
 Entry template:
 
 ```
@@ -311,8 +331,14 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   core-hours ≈ **3.9 days wall on 24 cores**; `--recomp2-tight` cuts
   solves ~4× (27.5k/walk measured split) → ≈ **1 day wall**. Farm
   binary MUST be reshipped first (s38 changed `src/tailatsp.rs`).
+  **Caveat added 2026-07-31:** this projection descends from a SINGLE-walk
+  probe, and the 450-band sibling run proved this instrument has
+  non-terminating instances at 54 blocks with no block-count predictor.
+  Treat "≈ 1 day wall" as unvalidated until a round-robin probe says
+  otherwise, and do not launch without a per-walk timeout.
 - approved: NO
-- status: pending
+- status: **pending — HELD** (Andrew, 2026-07-31: "hold off on n=6 recomp2
+  for now"). Do not launch; see the execution-order block at the top.
 - result: —
 
 ## n=6 recomp2, 450 band — probe only, then decide
@@ -326,9 +352,43 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   54-block walk) — full-net full-corpus is off the table;
   `--recomp2-tight` + round-robin probe sizes the real cost before
   any decision.
-- approved: NO
-- status: pending
-- result: —
+- approved: NO **on this entry** — the run was nonetheless launched
+  2026-07-30 13:38:36 as `n6a450r2tightprobe` (96-walk round-robin
+  probe, 24 workers × 4 walks). The go-ahead was given outside this
+  file and never recorded here; the entry sat `pending` for the whole
+  15 h of the run. Bookkeeping gap, noted at abort.
+- status: **aborted** (farm run `n6a450r2tightprobe`, 24 workers,
+  2026-07-30 13:38:36 → `ABORTED by tastop.ps1 at 2026-07-31 05:55:24
+  (killed 3)`; 90/96 walks, 21/24 shards; Andrew's call after the
+  no-progress diagnosis below)
+- result: **the decision this entry asked for is NO — the 450-band
+  recomp2 sweep is not viable as specced.** Zero on every alarm path
+  over 4,892,204 recomp2 re-solves: `IMP=0 TIES=0 MIMP=0 MEQ=0 RIMP=0
+  REQN=0 REQS=0 R2IMP=0 R2EQN=0 SEAM=0 LAMBDA=0 ALARM=0`.
+  - **Rate (21 finished shards, 84 walks, 76,223.8 s total):** mean
+    **907 s/walk**, median ~717 s/walk; shard times 890.8 s → 10,170.8 s
+    (w08 13:53:48 → w21 16:28:37). Extrapolated to the 22,062-class
+    archive: ≈ 5,560 core-hours ≈ **9.6 days wall on 24 cores** — and
+    that figure is a floor, because it counts only walks that finish.
+  - **Three walks did not finish.** w09/w12/w14 each entered one walk
+    and stayed there: last ledger row 16:28:37, then `rate=0 walks/s`
+    for **12.4 h** until the abort. Not a hang and not swap — each
+    straggler held 54,705 s CPU at ~100 % of a core with a 7 MB
+    working set, i.e. genuinely searching. w09's log pins the
+    instance: `872.up-009579d4b6ec.txt` (anchor=451 blocks=54),
+    entered ~14:03, no result line after **~14.8 h**.
+  - **Block count does not predict divergence** (new trap): the same
+    worker cleared `872.up-001636390089.txt` at **54 blocks** in
+    239.9 s and `872.up-00658203dd95.txt` at 51 blocks in 664.3 s,
+    then stalled indefinitely on another **54-block** instance. The
+    exact-B&B edge at this band is instance-structural, not a block
+    threshold — so no `--max-blocks` setting makes this band safe.
+  - Confirms and sharpens the s38 record (§10.8): `--recomp2-tight`
+    bought its ~4× and still did not make these instances terminate.
+  - If this band is ever revisited, it needs a per-walk wall-clock
+    cap in the instrument (skip-and-log on timeout), not a bigger
+    farm. The 6 unswept walks are the only gap in an otherwise
+    all-zero 90-walk sample.
 
 ## n=6 I4-A conjugated sweep, FORWARD directions (full archive) — local, ~90 min
 - spec: `python3 analysis/counting/i4a_apply.py apply-sym data/upstream872 --only fwd --out data/i4a_products_sym_fwd`
@@ -348,8 +408,14 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
 - projected: ≈ 100 min local single-core (probe-calibrated,
   round-robin). No farm, no reship. Heartbeats per the launch
   protocol if run by the operator.
-- approved: NO
-- status: pending
+- approved: **YES (Andrew, 2026-07-31 — "queue the n=6 I4-A job" first of
+  four, execution-order block at top)**
+- status: **running** (pid in `logs/i4a_fwd_n6.pid`, launched 2026-07-31
+  ~06:05, log `logs/i4a_fwd_n6.log`, abort = `kill $(cat
+  logs/i4a_fwd_n6.pid)`). Launched with `python3 -u`: without it Python
+  block-buffers the redirected stdout and the run is invisible for its
+  whole 100 min. Progress prints every 2,000 of 22,062 walks (~9 min
+  apart); watch has a no-progress detector, not just a liveness check.
 - result: —
 
 ## n=6 loop-swap conjugated sweep, EXPANDED rule table (30 shallow-tier rules) — local, ~2 h
@@ -370,8 +436,9 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   normal work). Two rules dominate (5.6M candidates each — the 5-entry
   atoms); `--skip-rules` can defer them for a 3× cheaper first pass if
   preferred.
-- approved: NO
-- status: pending
+- approved: **YES (Andrew, 2026-07-31)** — third in the execution-order
+  block, after the I4-A fwd sweep and the fused-pair item.
+- status: pending (queued behind `i4a_fwd_n6`; one long job at a time)
 - result: —
 
 ## lifted-873 loop-swap control (n=6, w4-bearing 873 shell) — local, ~10 min + small patch
@@ -480,8 +547,25 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   8 ms → 10.7 h. TOTAL ~33 h single-core; 8-way Mac ~4.2 h wall; 24-way farm
   ~1.4 h. RSS ~250 MB/shard (measured). Optional 3× cut: prefilter on the
   tightness identity |flat| + #doors = 861 before replay.
-- approved: NO
-- status: pending
+- approved: **YES (Andrew, 2026-07-31), farm mode (~1.4 h) chosen** — second
+  in the execution-order block.
+- status: **BLOCKED — not launchable as written.** Two gaps, both real:
+  1. **The instrument does not exist yet.** `analysis/counting/s49/fuse.py`
+     dispatches exactly `index` / `depth1` / `depth2`; the string
+     "untargeted" appears 0 times in the file. This entry's own spec says
+     the mode is "to be added to the committed instrument" — so this is a
+     BUILD task first, and it belongs to the research agent (s51 lists the
+     untargeted fused sweep as its front), not to an operator launch.
+  2. **The farm has no Python harness.** `~1.4 h on 24-way` is a
+     compute-time arithmetic from `sizing_untargeted.py`, not evidence of a
+     runnable path: the existing farm harness ships a cross-compiled
+     `superperm.exe` plus PowerShell supervisors and knows nothing about
+     Python instruments, corpora, or shard dirs. Farm mode needs that
+     harness built (ship Python + the s49 caches + a supervisor/ledger),
+     which is itself a chunk of work.
+  Recommended: build the mode, run the 24-shard split, and only then decide
+  farm-vs-8-way — an 8-way Mac run at ~4.2 h needs no new farm plumbing at
+  all and may beat farm-with-setup on wall clock.
 - result: —
 
 ## liberal sumset, FULL coverage (s49 item1) — ~84 min single-core / ~11 min 8-way
@@ -505,3 +589,23 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   9,456 = 216 (nothing closer than the s49 nearest set — the isolation is
   structural). Product: `data/loopswap/blindspot_sumset_n7_full.tsv`;
   `sumset.py` gained S49_SOURCES/S49_TAG sharding.
+
+## n=6 full-corpus PROMOTION hunt (w3→w4, Δlen = 0) — every product is an M3 event
+- spec: `python3 analysis/counting/s51/demotion.py promote 6 data/upstream872 --shard i/8 --out out/s51/demotion/promfull_i` (i = 0..7, xargs -P pool),
+  then union the `edges.tsv` shards and `m3_check.py` + `validate -n 6 --complete` every product.
+- product: s51 proved all 866 w4 doors in the 415 known w4-bearing 872 classes
+  have every demotion gate closed (three independent gates + brute-force-verified
+  enumeration completeness), so NO known 872 can be a promotion product — any
+  product of this sweep is a NOVEL 872 class by construction. The 419 w4-bearing
+  + (141,7) carriers are already done (9,395 admissible completions, 100%
+  replay-killed, 0 products); this entry is the remaining ~21,600 pure-w3 walks.
+- projected: ~3.4 h single-core (measured 0.555 s/walk on a 200-walk (145,3)
+  round-robin sample); ~26 min 8-way on the Mac (more with foreign compute).
+  Deterministic; run-twice byte-agreement demonstrated on every s51 run.
+- approved: **YES (Andrew, 2026-07-31)** — fourth in the execution-order
+  block.
+- status: pending (queued last). **Launch caveat:** the instrument
+  `analysis/counting/s51/demotion.py` is still UNTRACKED and was being
+  edited at 05:55 today by the live s51 session. Pin the version (commit or
+  copy) before launching a 3.4 h job against a file that is moving under it.
+- result:

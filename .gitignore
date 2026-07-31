@@ -62,3 +62,13 @@ __pycache__/
 # Andrew decides; NOTE.md has provenance + gates; gate index
 # analysis/counting/novel5906c_canon_index.tsv is in m3_check SUPPLEMENTARY)
 !/data/novel5906c/
+
+# s51 K4-tier discoveries: 20 novel 5906 classes, 16x(838,23) + 4x(834,27)
+# (UNPUBLISHED — publication caveat in NOTE.md: rules derive from Kristan's
+# unpublished strings; gate index novel5906d_canon_index.tsv in SUPPLEMENTARY)
+!/data/novel5906d/
+
+# Kristan's two unpublished 5906 classes (V0004/V0005, website+email,
+# NOT in the community corpus — HIS discoveries, archived with provenance;
+# gate index kristan5906_web_canon_index.tsv in SUPPLEMENTARY)
+!/data/kristan5906_web/

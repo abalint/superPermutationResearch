@@ -8,8 +8,22 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S50.md` right after it** — state of the
-   world, the engine-first premise, the executable natural-move tiers
+   **Fresh agent: read `docs/HANDOFF-S51.md` right after it** (supersedes S50) —
+   headline state: the project shell is **220 classes / 9 allocations**
+   (198 + Kristan's 2 unpublished (842,19) classes at
+   `data/kristan5906_web/` + 20 project classes at `data/novel5906d/`
+   incl. the ninth allocation (834,27)); the **s51 rule tier**
+   (`data/loopswap/rules_n7_s51.tsv`: unit rules R-K7/S51A/S51C of
+   shape (0,1,2,1) + 3 composites) and the **K₄ law** (every
+   cover-sharing quadruple = complete K₄, unit star from an old
+   anchor); the m3 gate covers all 220 via two new supplementary
+   indexes; the w4 demotion trade is a unit family (DEMOTION(3) =
+   R-BND FWD), structurally infeasible at n=6 record level, whose
+   corollary makes the queued full-corpus promotion sweep a can't-lose
+   M3 hunt (NOT approved); `up-1b8244ba04bb` is ARITHMETICALLY blind
+   (536 > 534, door 34 > 24-fused, 536 ≢ 0 mod 6) — distinct from the
+   (844,17) eleven. PUBLISHED shell still 194 (PR #52 open). Older
+   state of the world, the engine-first premise, the executable natural-move tiers
    (i4a; loop-swap = I5, 102 novel classes PR #51; R-BND boundary-trade
    tier, spec `docs/RBND-RULE.md`, whose 4 novel (843,18) classes,
    `data/novel5906c/`, are SUBMITTED as PR #52 — published n=7 shell 194
