@@ -55,7 +55,8 @@ PER_N = {
 SUPPLEMENTARY = {
     6: [],
     7: ["novel5906_canon_index.tsv",
-        "novel5906b_canon_index.tsv"],  # s44 loop-swap discoveries
+        "novel5906b_canon_index.tsv",  # s44 loop-swap discoveries
+        "novel5906c_canon_index.tsv"],  # s47 R-BND discoveries
 }
 
 

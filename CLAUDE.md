@@ -8,17 +8,20 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S46.md` right after it** — state of the
+   **Fresh agent: read `docs/HANDOFF-S47.md` right after it** — state of the
    world, the engine-first premise, the executable natural-move tiers
    (cover-preserving rules via i4a; the s43/s44 loop-swap tier via
-   loopswap_apply = I5, which produced the 102 novel 5906 classes in
-   `data/novel5906b/`, PUBLISHED as superpermutators/superperm PR #51 —
-   the published n=7 shell is 194 classes, 110 of them ours; s45+s46
-   closed that tier: the full 862-rule loop-swap vocabulary AND the i4a
-   tier are FIXED POINTS on the 194 — graph file
-   `data/loopswap/lswap_sym_edges_n7_ALL_union.tsv`; s46's open lead is
-   the (842,19)↔(844,17) conjugated cover twins), traps,
-   and the session-end ritual (supersedes HANDOFF-S45).
+   loopswap_apply = I5 — 102 novel classes, PR #51; the s47 R-BND
+   boundary-trade tier via `analysis/counting/rbnd.py`, spec
+   `docs/RBND-RULE.md`, which resolved s46's conjugated cover twins and
+   produced **4 novel 5906 classes at (843,18)**, `data/novel5906c/`,
+   CANDIDATES unpublished — published n=7 shell 194, project shell 198;
+   the 862-rule loop-swap vocabulary = **397 distinct moves** under
+   S₇×ι×τ, annotation `data/loopswap/rule_annotation_n7.tsv`; loop-swap
+   graph file `data/loopswap/lswap_sym_edges_n7_ALL_union.tsv`, R-BND
+   edges separate in `rbnd_edges_n7.tsv`; ALL closure claims are
+   REOPENED over the 198 — s48's top item), traps,
+   and the session-end ritual (supersedes HANDOFF-S46).
 2. `docs/ROADMAP.md` — which phase we're in and its success ladder.
 3. The active design doc named by the journal's latest entry — **currently
    `docs/SURGERY-DESIGN.md` (s28 built I1 `tail-atsp`; §9 has the M-R laws;

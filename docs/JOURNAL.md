@@ -6,6 +6,141 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-30 (session 47) — the cover twins give up their move: **R-BND, the boundary/door unit trade — the R-unit lift to n=7 — derived from the three twin pairs, oracled 3/3 byte-identically, and its sweep produces 4 NOVEL 5906 classes, ALL at (843,18), the allocation where Kristan's class sat ALONE** (`data/novel5906c/`, every gate re-run by the orchestrator: upstream re-pull unchanged at `235a074`, m3_check exit 2 vs all 194, pairwise-distinct canonicals, validator-complete — first novel classes since s44's 102; **the blind-spot twin pair connects through new class `e9623244f6b1`, blind spot 14 → 12**); the twins' rewrite is the SAME literal move on all three pairs (2 entries + 2 doors in the σ-frame) but it lives at the two extreme ENDS of the walk and needs a degree of freedom no 9-column rule has — **the walk's ORIGIN** (rigidity theorem, proven independently by two agents: replay from the source's start perm forces the relabeling uniquely, so "relabel-minimized" has nothing to minimize) — hence R-BND is an i4a-style rigid rule WITH a re-rooting action, parameter-free, whose FWD preconditions hold EXACTLY ONCE on every tight walk measured (388 n=7 + 44,124 n=6 orientations; the filter is entirely replay); at n=6 its edges are exactly the four M-4a R-unit pairs (i4a's R-unit IS REV-END) and the full 22,062-class archive is CLOSED under it; the alignment-free synthesizer verdict is the honest negative that sharpens everything: **it is TOTAL — an oracle-passing 9-column rule exists for EVERY ordered class pair (120/120 random controls) — so synthesized reach is vacuous** and the natural-move graph has content only because its rules are extracted elsewhere; what survives is the **metric law** (min admissible entry-diff: touched classes median 48, max 384; the 14 untouched min 432 — zero overlap, the blind spot is a metric fact in entry space); and the reversal-quotient audit lands the recount s46 asked for: **862 directed rules = 397 distinct moves under S₇×ι×τ (54% frame/direction duplicates)**, the census edge-set partition matches the symmetry partition EXACTLY (397 = 397, zero groups mixed), **s46's "240 NEW" band survives fully** (0 band rules are images of earlier ones; 622 → 281 objects, band +116), plus a correction: a23d is NOT the rule-level reversal of R-K7 — that identity is a target-frame (half-reversal) fact at class level, provably not a rule-table symmetry
+
+HANDOFF-S46 menu items 1–3 as three parallel Opus subagents; the
+orchestrator cross-wired them mid-flight (item 2's σ-frame/rigidity
+findings were forwarded to item 1 while it ran, and item 1's derivation
+targets exactly the re-rooting bridge item 2 proved necessary), re-ran
+every novelty gate itself, promoted the artifacts, and wrote the docs.
+
+**1 — R-BND (menu item 1, the discovery).** Full spec in
+`docs/RBND-RULE.md`; instrument `analysis/counting/rbnd.py`. The move,
+in theorem coordinates (identical perms on all three twin pairs, σ =
+swap 5↔6): delete doors `7314625>4625137` + `7651234>1234567`, add
+entries `3462517` + `5123467`, two loops promoted partial→full, one
+re-terminated door→END, two cycles split once more, **re-root** start
+`1234657→1234567` / end `7134625→7314625`. The difference is NOT a
+contiguous region: the edited objects sit at depths ~34 and ~5004 of
+5040, and the composite re-orders the entire run sequence (common
+prefix 0 of ~256 runs — the most order-scrambling move measured; the
+n=6 R-compound was 4–13). The s43 swap signature SPLITS the three pairs
+(1+2) despite the byte-identical rewrite — **swap-signature equality is
+a carrier invariant, not a move invariant**. Four directed variants
+(FWD-END/FWD-START trade a door for a walk-boundary at Δ(S,D)=(+1,−1);
+REV-* the inverse; FWD-END/FWD-START are exact reversal conjugates; the
+twin move = FWD-START ∘ FWD-END, and they COMMUTE); length conservation
+`len = 5045 + S + D` keeps everything at 5906, tightness is preserved
+(deficit 0 on every product). **Law: every tight walk admits each FWD
+variant exactly once** — universal precondition, replay is the entire
+filter. None of the six canonical ids (nor their shapes) occurs in the
+862-rule vocabulary; R-BND is not R-K7. **Unification: at n=6 R-BND's
+edges are exactly the four M-4a R-unit pairs — R-BND IS the R-unit
+lift** the roadmap wanted. Oracle 3/3 pairs both directions
+byte-identical (via the (843,18) intermediate — the twin trade is a
+2-step path, not a single edge). Sweeps: intrinsic over 194×2 to a
+gen-2 fixed point (1,832 replays, 98.6% killed, 30 directed/16
+undirected edges, 4 novel, 0 shorter) and the standard conjugated
+apply-sym cross-check (30,240 instances, 744,506 replays, 99.998%
+killed, ~11 min, same 4 classes); n=6 full-archive sweep (263,283
+applications, 99.994% killed) reproduces exactly the 4 R-unit pairs, 0
+novel. The empty-`ents_out` door-posting fallback (s46 fix) is the code
+path R-BND's 9-column encodings exercise — it worked; no new bugs.
+
+**2 — The synthesizer negative (menu item 2), and what it leaves
+behind.** Built (`out/s47/item2/synth.py`, scratch): rules from the
+literal flat-entry-set difference in the FORCED frame (the rigidity
+theorem kills relabel-minimization; the only free variable is the
+source walk). 14/14 oracle-passing rules for the untouched classes
+(k = 36–84, all obeying the 6k law; none in the vocabulary), sharded
+sweep dry-run-exact (141,120 instances → 101 preconditioned replays,
+59 survive, every edge exactly its own source pair, 0 novel): formally
+the graph reaches 2,017 undirected edges and zero isolated vertices —
+**but the control kills the instrument: 120/120 random ordered pairs
+ALSO yield oracle-passing rules.** Synthesis is total, ergo vacuous;
+reach only means something when the rule was extracted elsewhere. NOT
+carried forward as a discovery tool. Kept: the **metric law** (min
+admissible entry-diff, touched: min 1 / median 48 / max 384 vs
+untouched: min 432 / median 600 / max 1078 — no overlap; an
+independent, cheap confirmation of s46's replay-kill separation), the
+per-class nearest-cover-neighbor table (`out/s47/item2/`), and the
+free-vs-admissible frame analysis that handed item 1 its target.
+
+**3 — The reversal-quotient audit (menu item 3).** Committed:
+`data/loopswap/rule_annotation_n7.tsv` (862 rows; + n=6, 33 rows),
+`tau_collision_classes_n7.tsv` (84 pairs); instrument
+`analysis/counting/revquot_audit.py` — its numpy relabel-table
+canonicalizer re-derives all 862 committed ids in **42 s** (vs ~72 min
+naive `canon_rule`; future audits are cheap). Numbers: union verified
+862 directed = **436 undirected** (426 exact-reverse pairs + 10
+self-inverse, ZERO unpaired) = **778 under S₇×τ** (105 τ-fixed, 84
+collision pairs, 589 τ-images absent — the tables are far from
+τ-closed) = **397 full objects** (10×1 + 348×2 + 39×4). Independent
+confirmation: grouping the 862 by per-rule census edge sets gives
+exactly the same 397-way partition (0 groups span two objects) — the
+symmetry group explains ALL census-visible redundancy. Band
+recalibration: **0 of the 240 band rules are τ- or ι-images of earlier
+rules** — s46's claim survives as 622 → 281 objects, band +116, total
+397. Correction worth its own line: **a23d is NOT the rule-level
+reversal image of R-K7** (four distinct canonical ids measured); the
+s46 identification is a target-frame (half-reversal) identity at class
+level — `struct(A)→struct(B)` vs `struct(A)→struct(rev B)` — which
+depends on the carrier and provably cannot be a rule-table symmetry.
+Practical rule: within the loop-swap tables S₇×ι×τ is complete;
+cross-TIER "same move" still needs the carrier-level product test.
+Validation: τ move-oracle 873/873; walk-wise 181/194 with the 13
+failures exactly the repeat-window (Kristan-type) walks — note the
+script's own `REVERSAL MAP: BROKEN` banner in `out/s47/item3/out/
+SUMMARY.txt` is a false alarm (it counts any walk-wise failure; the
+per-directory numbers show fails ≡ repeat-window walks). n=6: 33 → 24
+→ 23 objects. Cost ~19 min wall.
+
+**Committed artifacts.** `data/novel5906c/` (4 classes + NOTE.md —
+**CANDIDATES, unpublished; publication is Andrew's decision**);
+`analysis/counting/novel5906c_canon_index.tsv` wired into m3_check's
+SUPPLEMENTARY (index now 198); `docs/RBND-RULE.md`;
+`analysis/counting/rbnd.py`, `revquot_audit.py`;
+`data/loopswap/rules_n7_rbnd.tsv` (9-column encodings — see caveat),
+`rbnd_edges_n7.tsv`, `rbnd_provenance_n7.tsv`,
+`rule_annotation_n7.tsv`, `rule_annotation_n6.tsv`,
+`tau_collision_classes_n7.tsv`. Scratch (gitignored, regenerable):
+`out/s47/item{1,2,3}/` — anatomies, oracles, sweeps, calibration,
+audit pickles, logs.
+
+**Caveats.** (1) The published shell is still 194; 198 is
+project-shell. The 4 novel classes are at (843,18) — pure-w3 like the
+rest; Kristan's class is no longer alone there. (2) **Every closure
+claim was proven over the 194 and is now REOPENED over the 198**: the
+862 loop-swap rules, i4a/R-K7, and the tail-conjugacy census have not
+seen the 4 new classes (R-BND itself IS at fixed point — the gen-2
+sweep included its own products). (3) The 9-column encoding of R-BND
+is strictly weaker than the rule (a w3 door has 6 relabel-classes;
+only the start-preserving variants are faithfully executable there —
+the literal composite fired 6× and died 6/6, exactly item 2's
+negative). (4) Quote the vocabulary as **397 objects** (862 directed
+ids) from now on. (5) R-BND edges live in their own TSV;
+`lswap_sym_edges_n7_ALL_union.tsv` remains loop-swap-only by design.
+
+**Next session, concretely (s48).** (1) TOP: re-close the 198 —
+sweep the 862 loop-swap vocabulary + conjugated i4a/R-K7 + the
+tail-conjugacy census over/including the 4 novel (843,18) classes
+(a ~2% marginal corpus; size with --dry-run, shard per the 12k rule,
+should be well under the 30-min box) and re-run the conjugated-cover
+census over 198 — do NEW cover twins appear, and do the twins' twins
+close under R-BND ∘ loop-swap composites? (2) Publication decision on
+`data/novel5906c/` (Andrew's; PR prep is ready work). (3) R-BND
+extensions: the REV variants' preconditions are NOT universal —
+census where they fire across the 198; boundary trades at w≥4 doors
+(Kristan-adjacent); does iterating R-BND with loop-swap rules between
+generations escape the (843,18) pocket? (4) Blind-spot endgame: 12
+remain, all metric-isolated (min diff ≥ 432) — the only live idea is
+rule COMPOSITION chains through intermediate classes (nearest touched
+neighbors 36–74 loops away). (5) Pending approvals, unchanged: n=6
+expanded sweep (~2 h), n=6 i4a forward sweep (~100 min), recomp2
+520/450 bands. (6) Still open: run-losing-pair fine anatomy;
+M-4b/M-4d; ip=1; per-allocation NRPA/beam; Track C v2's 2.4×
+overhead cut.
+
 ## 2026-07-30 (session 46) — the S45 menu's top three items executed in parallel by Opus subagents (new working mode; Fable orchestrates): the sub-256 band is MINED TO CLOSURE — 312/312 extractable pairs oracle byte-identically, **240 new canonical rules (vocabulary 622 → 862)**, sharded sweep of 140,937 replays → **0 novel, 0 shorter** — but the band was NOT redundant: **328 of its 338 undirected edges are new, union graph 1,675 → 2,003, giant 75 → 85, 3 previously-unreachable classes now touched**; the "three near-pure door-move rules" are **FOUR rules = two objects, and they are R-K7** (reversal-frame variant + its allocation-neutral self-composite — proven three ways, incl. exact algebraic composition), no new seam, but the hunt exposed a real instrument bug (`run_apply_sym` silently SKIPPED empty-`ents_out` rules — FIXED; s45's closure survives complete) and a new closure: **the 194-class shell is closed under the i4a cover-preserving tier too** (first full-194 R-K7 sweep; s41 only ever swept 92); the blind spot is **17 classes, not 19 → 14 after the band**, and it is GENUINE isolation (5,384/5,384 preconditioned firings on them die at replay; perfect separation from the touched); and the discovery of the session: **conjugated cover twins — canonicalizing used-loop covers over all 5,040 relabelings collapses 194 → 180, and every (842,19) class has a relabel-identical cover twin at (844,17): a PROVEN cover-preserving 2-unit allocation trade (S−2, #w3+2) that NO rule in any tier realizes**
 
 HANDOFF-S45 menu items 1–3, run as three parallel Opus subagents plus a
