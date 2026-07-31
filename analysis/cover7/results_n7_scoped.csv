@@ -1,0 +1,224 @@
+index,pattern,K,Sigma,verdict,zero_candidate_columns,cadical_pass1,dlx_sweep,V,chain_frame,cover_language_scope,verdict_scope,corpus_in_frame,corpus_total,corpus_frame_fraction
+0,666646664666466466646664666,27,12,OPEN,0,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+1,666646664664666466466646666,27,12,OPEN,0,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+2,666646646664666466466646666,27,12,OPEN,0,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+3,666646664664666466646646666,27,12,OPEN,0,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+4,666466646664664666466646666,27,12,OPEN,0,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+5,66466466646664664666466646666,29,14,UNSAT,0,UNSAT,UNSAT,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+6,66466646646664666466466646666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+7,66466646664664666466466646666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+8,66466646664664666466646646666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+9,66646646664664666466466646666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+10,66646646664666466466646664666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+11,66646664664666466466646646666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+12,66646664664666466646646664666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+13,66646664666466466646664664666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+14,66664664666466466646646664666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+15,66664664666466646646664666466,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+16,66664666446664664666466646666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+17,66664666446664666466466646666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+18,66664666466466644666466646666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+19,66664666466466646646664664666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+20,66664666466466646646664666466,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+21,66664666466466646664466646666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+22,66664666466466646664664666466,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+23,66664666466644666466466646666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+24,66664666466646646664466646666,29,14,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+25,66664666466646646664666466466,29,14,UNSAT,0,UNSAT,UNSAT,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+26,566466466646664664666466646666,30,15,UNSAT,0,UNSAT,UNSAT,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+27,566466646646664666466466646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+28,566466646664664666466646646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+29,566646646664664666466466646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+30,566646646664666466466646664666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+31,566646664664666466466646646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+32,566646664664666466646646664666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+33,566646664666466466646664664666,30,15,STRUCTURAL,1,UNSAT,UNSAT,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+34,666466466646663664666466646666,30,15,STRUCTURAL,1,TIMEOUT-KILLED,UNSAT,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+35,666466466646664664666466646665,30,15,STRUCTURAL,1,UNSAT,UNSAT,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+36,666466646646664664666466636666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+37,666466646646664666366466646666,30,15,STRUCTURAL,1,TIMEOUT-KILLED,UNSAT,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+38,666466646646664666466466646665,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+39,666466646663664664666466646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+40,666466646663664666466646646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+41,666466646664663666466646646666,30,15,STRUCTURAL,1,TIMEOUT-KILLED,UNSAT,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+42,666466646664664666466646646665,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+43,666636466646664664666466646666,30,15,UNSAT,0,UNSAT,UNSAT,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+44,666636646646664666466466646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+45,666636646664664666466466646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+46,666636646664664666466646646666,30,15,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+47,666636664666466466646646664666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+48,666646636664666466466646646666,30,15,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+49,666646646664664666466466646665,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+50,666646646664664666466636646666,30,15,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+51,666646646664666366466466646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+52,666646646664666366466646664666,30,15,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+53,666646646664666466366646664666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+54,666646646664666466466366646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+55,666646646664666466466646636666,30,15,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+56,666646646664666466466646664665,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+57,666646663646664666466466646666,30,15,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+58,666646663664664666466466646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+59,666646663664664666466646646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+60,666646664663666466646646664666,30,15,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+61,666646664664663666466646646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+62,666646664664666466466366646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+63,666646664664666466466646636666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+64,666646664664666466466646646665,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+65,666646664664666466646366646666,30,15,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+66,666646664664666466646646636666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+67,666646664664666466646646664665,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+68,666646664666463664666466646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+69,666646664666466364666466646666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+70,666646664666466366646664664666,30,15,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+71,666646664666466466366646664666,30,15,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+72,666646664666466466646664636666,30,15,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+73,666646664666466466646664664665,30,15,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+74,4666466466646664664666466646666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+75,4666466646646664666466466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+76,4666466646664664666466646646666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+77,5666466466646663664666466646666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+78,5666466466646664664666466646665,31,16,STRUCTURAL,1,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+79,5666466646646664666466466646665,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+80,5666466646664663666466646646666,31,16,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+81,5666466646664664666466646646665,31,16,STRUCTURAL,1,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+82,6466466466646664664666466646666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+83,6466466646664664666466646646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+84,6466646646664664666466466646666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+85,6466646646664666466466646664666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+86,6466646664664666466646646664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+87,6646646646664666466466646664666,31,16,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+88,6646646664664666466466646646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+89,6646646664666466466646664664666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+90,6646664664666466466646646664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+91,6646664664666466646646664666466,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+92,6646664666446664664666466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+93,6646664666466466644666466646666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+94,6646664666466466646646664666466,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+95,6646664666466466646664664666466,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+96,6646664666466644666466466646666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+97,6664466466646664664666466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+98,6664466646646664666466466646666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+99,6664664666446664664666466646666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+100,6664664666446664666466466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+101,6664664666466466644666466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+102,6664664666466466646646664664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+103,6664664666466466646664466646666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+104,6664664666466644666466466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+105,6664664666466646646664466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+106,6664664666466646646664666466466,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+107,6664666446664664666466466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+108,6664666446664664666466646646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+109,6664666446664666466466646646666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+110,6664666466466644666466646646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+111,6664666466466646646664466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+112,6664666466466646646664664666466,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+113,6664666466466646663666366646666,31,16,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+114,6664666466466646664466646646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+115,6664666466466646664664666446666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+116,6664666466466646664664666466646,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+117,6664666466626664664666466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+118,6664666466636663664666466646666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+119,6664666466636663666466646646666,31,16,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+120,6664666466644666466466646646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+121,6664666466644666466466646664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+122,6664666466646644664666466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+123,6664666466646646662666466646666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+124,6664666466646646664466646664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+125,6664666466646646664666466446666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+126,6664666466646646664666466466466,31,16,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+127,6664666466646646664666466466646,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+128,6664666466646662666466466646666,31,16,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+129,6666266646646664666466466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+130,6666366466646663664666466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+131,6666366636646664664666466646666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+132,6666366636664666466466646646666,31,16,STRUCTURAL,3,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+133,6666366646664663666466646646666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+134,6666446466646664664666466646666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+135,6666446646646664666466466646666,31,16,STRUCTURAL,1,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+136,6666446646664664666466466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+137,6666446646664666466466646664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+138,6666446664664666466466646646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+139,6666446664664666466646646664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+140,6666466266646664664666466646666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+141,6666466266646664666466466646666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+142,6666466466626664664666466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+143,6666466466626664666466646646666,31,16,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+144,6666466466644666466646646664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+145,6666466466646646662666466646666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+146,6666466466646646664466646664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+147,6666466466646646664664666446666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+148,6666466466646646664664666466466,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+149,6666466466646646664666366636666,31,16,STRUCTURAL,3,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+150,6666466466646646664666446664666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+151,6666466466646663664666466636666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+152,6666466466646663664666466646665,31,16,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+153,6666466466646663666366466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+154,6666466466646663666366646664666,31,16,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+155,6666466466646664466646646664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+156,6666466466646664663666366646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+157,6666466466646664664666266646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+158,6666466466646664664666446664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+159,6666466466646664664666466646646,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+160,6666466466646664664666466646664,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+161,6666466466646664666266646646666,31,16,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+162,6666466626664664666466466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+163,6666466626664664666466646646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+164,6666466636646663664666466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+165,6666466636646664666366466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+166,6666466636646664666466366646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+167,6666466636663664664666466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+168,6666466636663664666466466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+169,6666466636663664666466646646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+170,6666466636663666466646646664666,31,16,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+171,6666466644646664666466466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+172,6666466644666466466646646664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+173,6666466644666466466646664664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+174,6666466644666466646646664664666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+175,6666466644666466646664466646666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+176,6666466646636663666466646646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+177,6666466646636664666466366646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+178,6666466646644664664666466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+179,6666466646646644664666466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+180,6666466646646662664666466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+181,6666466646646662666466466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+182,6666466646646662666466646664666,31,16,STRUCTURAL,2,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+183,6666466646646664466646664664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+184,6666466646646664466646664666466,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+185,6666466646646664663666366646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+186,6666466646646664664666266646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+187,6666466646646664664666446664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+188,6666466646646664664666466446666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+189,6666466646646664664666466466646,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+190,6666466646646664666446664664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+191,6666466646646664666464466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+192,6666466646646664666466466446666,31,16,STRUCTURAL,1,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+193,6666466646646664666466466626666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+194,6666466646646664666466466644666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+195,6666466646646664666466466646664,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+196,6666466646646664666466626646666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+197,6666466646662666466466646646666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+198,6666466646662666466466646664666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+199,6666466646664466646646664664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+200,6666466646664466646646664666466,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+201,6666466646664644664666466646666,31,16,STRUCTURAL,1,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+202,6666466646664662664666466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+203,6666466646664662666466466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+204,6666466646664663666366646664666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+205,6666466646664663666466366646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+206,6666466646664663666466646636666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+207,6666466646664663666466646646665,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+208,6666466646664664464666466646666,31,16,STRUCTURAL,1,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+209,6666466646664664466466466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+210,6666466646664664466466646664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+211,6666466646664664663666366646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+212,6666466646664664664466466646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+213,6666466646664664666266646646666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+214,6666466646664664666266646664666,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+215,6666466646664664666446664664666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+216,6666466646664664666446664666466,31,16,OPEN,0,TIMEOUT-KILLED,TIMEOUT,15,pivot-homogeneous;reversal-door,COMPLETE,no claim (OPEN),188,221,0.8507
+217,6666466646664664666466366636666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+218,6666466646664664666466626646666,31,16,STRUCTURAL,1,TIMEOUT-KILLED,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+219,6666466646664664666466646446666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+220,6666466646664664666466646644666,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+221,6666466646664664666466646646646,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507
+222,6666466646664664666466646646664,31,16,UNSAT,0,UNSAT,,15,pivot-homogeneous;reversal-door,COMPLETE,CHAIN-COMPLETE: no cover of THIS chain exists in the full cover language; census-level claims scoped to the pivot-homogeneous/reversal-door chain family,188,221,0.8507

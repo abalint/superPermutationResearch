@@ -8,19 +8,26 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S56.md` right after it (supersedes
-   S55; s56 headlines: the §6.1 known-SAT control gate is PASSED —
-   177/177 expressible controls re-derived byte-identically from their
-   own chain+cover-atom assumptions, decidability cliff at pool ≈ 3×R,
-   chains #0/#24 need an ATOM PROPOSER not budget; the certificate
-   encoding cannot express 44/221 known words → census "no cover"
-   verdicts are sublanguage-scoped; slack-tax PARTIAL — target
-   reframed to the j-tax, proven floor j≥1 ⇒ ≥868, per-edge door law
-   68,999/68,999, first j≥1 n=6 walk materialized at 874, 22 O5 cells
-   OPEN; PRs #52/#53 MERGED — published shell 218; s55 headlines it
-   carries: Grayzel Lean FAITHFUL but all-`native_decide`; Gheorghe's
-   frame = our loop-cover grammar; Kramer–Mesner |G|>2 = NO; fl1577
-   proxy built; cover freeze fully quotiented = 178), then
+   **Fresh agent: read `docs/HANDOFF-S57.md` right after it (supersedes
+   S56; s57 headlines: **a(6)=872 is a machine-checked theorem** modulo
+   Lean native-compiler trust — Grayzel's proof built clean on the farm
+   PC (8518 jobs rc=0, 0 sorries, main_theorem axioms = the standard
+   three + native_decide), the n=6 871 hunt is OVER; all 221/221 known
+   n=7 words are now certificate-expressible via four encoding
+   extensions (first-visit alone recovers ZERO — s56's labels were
+   first-error labels) and the scope trap INVERTS: the 85 closed
+   chains are closed UNCONDITIONALLY, only chain-FAMILY census claims
+   are frame-scoped (188/221 in-frame; door() is 1 of 6 legal blocks;
+   see analysis/cover7/results_n7_scoped.csv); the s56 atom-proposer
+   milestone (≤3×R pool) is REFUTED as specified (131 controls = one
+   chain, atom union 4.39×R, intersection 2) and the 3×R cliff was a
+   no-restart artifact (`--epsilon 0.15` solves the 4.39×R recall-floor
+   instance in 112 s) — s58's milestone is a WALK-ORDER PREFIX proposer
+   (30 rows ⇒ SAT 1.18 s); #0/#24 are the only chains that admit sound
+   pruning (new open-vs-SAT separator), 4×300 s probes each = honest
+   UNKNOWN; s56 headlines it carries: P1a gate 177/177, j-tax reframe
+   with proven floor j≥1 ⇒ ≥868, per-edge door law, 22 O5 cells OPEN,
+   published shell 218), then
    `docs/NOVELTY-DESIGN.md` — the active design doc** —
    headline state: **the neighborhood/rewrite-rule program is EXHAUSTED
    at both n** (s53 K₄ hunt closes the n=7 tier at 220 — no incomplete

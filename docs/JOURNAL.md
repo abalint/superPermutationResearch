@@ -6,6 +6,131 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-31 (session 57) — **The a(6)=872 question is, pending only compiler trust, SETTLED: the concurrent launch session's Grayzel `lake build` on the farm PC came back DECISIVE-PASS while this session ran (8518 jobs rc=0, stock Lean 4.30.0/mathlib, both AxiomAudit stages rc=0, zero sorries, `Superperm6.main_theorem` depends on propext + Classical.choice + Quot.sound + `native_decide` compiler axioms ONLY — every finite fact re-verified by a fresh compile on a second platform, so with the Lean-formalized LB 869 and the known 872s the n=6 window collapses to a THEOREM a(6)=872, and the n=6 record hunt is over: 871 does not exist). Meanwhile both s57 menu items landed with their s56 premises REFUTED and something better in each slot. (1) Expressibility: ALL 221/221 known n=7 record words are now certificate-expressible (was 177) and every one re-derives byte-identically through the A1 gate — but first-visit normalization alone recovers ZERO words, not 23 (s56's 23/11/10 labels were FIRST-ERROR labels hiding stacked defects); the true repair is four extensions (first-visit reading, generalized cost-3 doors — `door(w,c)` is 1 of 6 legal blocks, 5 unconditionally so —, parent-share rows, mixed-pivot kernels/slack containment), and the 33 "repeated-perm + non-swap-door" words are ONE species (exactly two generalized hops each, blocks B2/B5). The scope trap INVERTS at chain level: all 85 closed census chains stay closed UNCONDITIONALLY (the full covers of all 11 in-frame s56-inexpressible words already sit inside the committed unpatched chain instances, 11/11) — what is frame-scoped is the census chain FAMILY (188/221 = 85.1% of records in-frame, invariant under relabel+reversal); a 5-block extended enumerator reproduces the census exactly and is EXHAUSTED at Σ≤14 (88.8M nodes: the 26 chains are provably complete there; Σ15–16 ≈ 5×10⁹ nodes, queued spec). (2) The atom proposer: the s56 "557→≤350 (≤3×R) unlock" is REFUTED AS SPECIFIED — the 177 controls are only 9 distinct chains and 131 of them are 131 distinct covers of ONE chain whose atom union is 544/658 = 4.39×R with intersection TWO loops, so no chain-only 100%-recall filter can reach 3×R and per-loop scoring is impossible in principle; and the "sharp 3×R cliff" was a BUDGET+DETERMINISM ARTIFACT — `p1a_assume.run_dlx` never passes `--epsilon`, and with restarts (ε=0.15) the 4.39×R/1425-row instance is SAT in 112.5 s. What matters is absolute instance size (rows AND loops), revised s58 target ≲1500 rows with a cover retained. A SOUND proposer (100% recall by construction, iterated capped refutation + unit-column fixing) was built and gate-checked (177/177 recall, 11-control panel across all 9 chains SAT/validated/byte-identical/0 rows lost) and yields the first measured structural DIFFERENCE between the open 5905 chains and the SAT 5906/5907 chains: #0/#24 admit sound pruning (−12%/−6% rows, 4 and 1 provably-in-every-cover rows) while ALL NINE control chains admit none; #0/#24 themselves: 4×300 s restart probes each, honest UNKNOWN. The tractable object is a WALK-ORDER PREFIX proposer: ~30 correct rows of ~124 buys the entire 3×R reduction AND decidability (SAT 1.18 s) — prefix precision, not pool precision, is s58's milestone.**
+
+Two Opus agents (expressibility repair; atom proposer), launched in
+parallel; the orchestrator re-verified every load-bearing claim fresh:
+expressibility — s56 baseline re-diagnosed (177/23/11/10 exact), full
+221-word A1 gate re-run (221/221 PASS), no-regression control (flags
+off ⇒ 221/221 identical to s56), rescope Q1/Q2 re-run (11/11 committed-
+instance covers; 188/221 in-frame; scoped CSV verified a PURE column
+addition, 0 shared-cell changes over 223 rows), extended-enumerator
+exhaustion re-run fresh (88,834,046 nodes, EXHAUSTED, 26 chains, 0
+excursions), leave-one-out attribution table reproduced; proposer —
+group census re-run (9 chains / 131-cover group0 / union 544 = 4.39×R /
+intersection 2), 11-control panel gate re-run (all SAT + validated +
+identical + 0 true rows lost), per_control.tsv recounted (177, 0 atom-
+and 0 row-recall failures), farm #0/#24 pruning stats confirmed from
+prune_all.json (525/2346/4 forced; 531/2372/1 forced), prefix-probe
+trajectory re-run row-identical, longrun restart probes re-run (same
+verdicts). Grayzel facts observed directly off the run dir (build rc=0
+8518 jobs, audit logs sorry-grep 0, main_theorem axiom list read).
+
+**1 — Grayzel build (the concurrent session's launch; P0): DECISIVE
+PASS.** Farm PC, `D:\superpermFarm\grayzel\runs\g3` (rehomed off exFAT
+F: for elan hardlinks), BGray-wrl/superperm6 @ d8a932d, Lean 4.30.0 +
+stock mathlib cache: build rc=0 in 123.6 min, auditmain + audits57
+rc=0, `sorry` count 0 across both audit logs, 20 audited theorems,
+`Superperm6.main_theorem` depends on exactly propext, Classical.choice,
+Quot.sound + `*._native.native_decide.ax_*` — the s55 trust surface,
+now COMPILER-RECONFIRMED on a second platform/toolchain build. With
+urdvr's Lean LB S(6) ≥ 869 and the known 872s: **a(6) = 872 is a
+machine-checked theorem modulo Lean's native-compiler trust.** The n=6
+871 hunt is over; n=6 theory work (j-tax, O5 cells) continues as
+STRUCTURE for the n=7/n≥8 game, not as record search. Consequences for
+the roadmap are s58 item 6; folding the queue-entry result fields
+belongs to the launch session that owns SWEEP-QUEUE.md. fl1577 study:
+not yet started at session end (grayzel ran first, as queued).
+
+**2 — Expressibility repair (QS-C): 177→221/221, mechanism corrected.**
+`out/s57/express/` (express.py, certpatch.py, fvnorm.py, enum_ext.py,
+rescope.py, REPORT.md). Stage/leave-one-out attribution: E1 first-visit
+alone +0 (S0=S1=177); +E2 generalized doors still 177; +E3 parent-share
+188; +E4/E5 mixed-pivot/slack 221. Necessity: 23 words need E1, 33 need
+E2+E4, 24 need E3. Acceptance: all 44 recovered words SAT + byte-
+identical + five laws YYYYY (median 0.01 s); selfcheck 44/44. The
+census re-scope is BETTER than s56 feared: per-chain closures
+unconditional (E1/E3 never touch the DLX instance; 11/11 committed-
+instance cover check), frame scope lives at census-family level only
+(188/221 = 85.07% in-frame; all 4123 corpus hops cost 3). Extended
+5-block enumerator: oracle-exact vs census at Σ≤12 (5=5) and Σ≤14
+(26=26), then EXHAUSTED at Σ≤14 / ≤2 pivot excursions, 0 new chains —
+the census family is provably complete at that budget. Σ15–16 (197
+chains, ~5×10⁹ nodes) = queue spec. Committed:
+`analysis/cover7/results_n7_scoped.csv` (7 added scope columns beside
+the canonical, which is untouched). Limits: claim is exactly "all 221
+known n=7 words"; n=6 unswept; conditional block B4 unused by corpus
+and absent from the move table.
+
+**3 — Atom proposer: milestone refuted, better object found.**
+`out/s57/proposer/` (propose.py, dlxrun.py — the restart-capable runner
+s56 lacked —, REPORT.md filed by orchestrator; agent's Write of it was
+harness-blocked). The refutation is arithmetic, not empirical: a
+proposer sees only the chain ⇒ one pool per chain; 100% recall on
+group0's 131 covers forces pool ⊇ union = 544 loops = 4.39×R > 3×R;
+intersection 2 ⇒ "true atom" is not a function of (loop, chain). Sound
+pruning saturates at propagation depth (0/80 refutations at cap 10⁶);
+scoring features all fail (best row feature 73.6% vs 44.1% base). The
+restart correction: with `--epsilon 0.15` the recall-floor instance
+(544 loops/1425 rows, 131 covers inside) is SAT at 112.5 s after being
+UNKNOWN under s56's deterministic 15 s protocol — s56's cliff/QS-B
+numbers must be regenerated with restarts before citation. Chains
+#0/#24: pruned to 525/2346 (4 forced rows) and 531/2372 (1 forced) —
+the only chains of the eleven that prune AT ALL (new structural
+separator open-vs-SAT); 4×300 s seeds each → UNKNOWN, depth plateau
+~75/114 and ~80/112, no trend ⇒ the 32-core-hour witness-lane launch
+spec (REPORT §9) is written but NOT recommended on current evidence.
+The productive redirect (prefix_probe.py): fixing m walk-order rows,
+m=30 of ~124 gives pool 381 = 3.07×R and SAT 1.18 s (m=20: 11.4 s;
+m=60: 0.02 s) — a sequential prefix proposer with capped-completion
+gate (131 independent positive prefixes exist in group0 alone) is the
+s58 milestone.
+
+**4 — Ops.** The Mac was carrying five orphaned s15-era processes
+(3.9 days: 2× PermutationChains_asan, 3× sat_chain.py from the dead
+July-27 session's scratchpad) — identified, Andrew killed them, load
+19→3. This session launched nothing >15 min locally; total in-session
+compute ≈ 50 min verification re-runs at ≤3 cores.
+
+**New traps (s57).** (a) s56 trap (a) SPLITS: per-chain census "no
+cover" verdicts are NOT sublanguage-scoped (unconditional at chain
+level) — the scope caveat applies to the census chain FAMILY
+(enumerator is `door(s,c)`-restricted; 33/221 records outside). Cite
+`results_n7_scoped.csv`. (b) `certificate.door` is 1 of 6 cost-3
+blocks, 5 unconditionally legal — every door()-based enumerator is
+frame-restricted. (c) First-visit normalization ALONE recovers zero
+words: the s56 failure labels are FIRST-ERROR labels; leave-one-out
+attribution or nothing. (d) `p1a_assume.run_dlx` never passes
+`--epsilon` — every s56 §6.1 hardness number is a deterministic-15s
+artifact; dlx7g has `--epsilon/--seed/--col-epsilon/--col-seed`; use
+`out/s57/proposer/dlxrun.py`. (e) Control COUNT ≠ instance diversity:
+the 177 controls are 9 distinct chains; 131 share one instance. (f) A
+restart lane (ε>0) can never return honest UNSAT — witness and
+refutation lanes must not be mixed (REPORT §9). (g) Grayzel's repo
+section "Section57Closure" is his §5.7, unrelated to our session 57.
+
+**Committed:** this entry; `analysis/cover7/results_n7_scoped.csv`;
+HANDOFF-S57 (supersedes S56); CLAUDE.md repoint. Scratch (regenerable,
+uncommitted): `out/s57/express/` and `out/s57/proposer/` (all scripts,
+instances, logs, REPORTs). SWEEP-QUEUE.md again left uncommitted (the
+launch session's in-flight edits + its grayzel/fl1577 result fields).
+
+**Next (s58 front):** (1) **Walk-order prefix proposer** — sequential
+proposal of 25–30 correct cover rows with ~2 s capped completions;
+gate = prefixes-tried-per-SAT on the 131 group0 positive prefixes;
+this replaces the retired pool-precision milestone. (2) Row-shrink for
+#0/#24 toward ≲1500 rows with a cover retained; the pairwise cut store
+(~9 core-hours, queue spec) is the next sound tool. (3) Extended-census
+Σ15–16 sweep (~5×10⁹ nodes; queue spec, farm PC). (4) Regenerate s56
+cliff/QS-B numbers with restarts (cheap, on-Mac). (5) j-tax closure
+unchanged from s56 (n=5 cap-154 queued; n=6 midgame probe needs
+design; 868→872 gap needs structure). (6) **Roadmap reckoning post-
+a(6)=872**: rewrite ROADMAP.md's n=6 rungs as theory targets, decide
+what the engine's next validation ladder is (5905 evidence, n≥8
+Egan−1), Andrew's calls on Grayzel/Gheorghe contact + Kristan
+outreach. (7) Watch the fl1577 study when the launch session starts
+it; fold SWEEP-QUEUE results when that session commits.
+
 ## 2026-07-31 (session 56) — **The known-SAT control gate is PASSED — the s15 "no engine can re-derive a known record" wall falls at the right assumption level (all 177 expressible 5906/5907 controls re-derived byte-identically from their own chain + cover-atom assumptions, median 0.01 s, max 0.06 s, every SAT validator-green), and the gate LOCALIZES the field's completion hardness: it is atom-catalog slop, with a sharp decidability cliff at pool ≈ 3× the true cover size — Houston's open 5905 chains #0/#24 sit at 4.6–4.9×R, so deciding them needs an atom PROPOSER eliminating ~37% of the candidate pool, not solver budget (realizer throughput ~100 atom-set decisions/s/core, so §6.4's cover master is provably realizable IF a proposer hits ≤~3×R precision; random sampling is 10¹³⁰-dead); a cover atom set is a RIGID minimal certificate (delete any one true atom → UNSAT, 365/365) and the chain frame's V = K−Σ satisfies #2loops = (720−V)/5, so the s34 "142 2-loops" law IS V=10 and Houston's "score-15" IS our 141-2-loop 5905 frame — same number; MAJOR SCOPE TRAP: the certificate encoding cannot express 44/221 known record words (100% of the i4a and s51 families — repeated-perm readings, non-swap doors, parent-shares), so every census "no cover" verdict incl. the 85 closed chains is a ~80%-sublanguage statement, and the repair (first-visit normalization + generalized doors) is now a named work item. The slack-tax attack returns a PARTIAL with a reframe: the O5 discharge target is the J-TAX, not the deficit-tax (slack deficit-1/j=0 873s EXIST — 46 of the 448 lift873 walks, in-corpus all along, correcting THEORY §7's "off-shell 873s are tight"), j is priced exactly (+1 char/unit, new identity length = 843 + v + j + x), the classical bound's slack is characterized (j + x + splits/5, giving j≥1 ⇒ length ≥ 868 — proven floor, 4 short of target), a new exceptionless per-edge door law lands (all 68,999 doors close-AND-refresh, all 3.1M inter-w2 edges do exactly one — j=0 in per-edge, engine-enforceable form; door count corrected from s27's 66,999), the first j≥1 n=6 walk is materialized (874, j=2 = two spent-door re-entries, exactly the predicted species) and exhaustive tail re-completion (cap 873, r=160, all 8 allocations, 0 aborts) finds NO j≥1 ≤873 — but the 22 O5-held cells stay OPEN (their arithmetic forces D∈[19,26], splits ≤ 8 — the far ledger corner). Plus: PRs #52 AND #53 MERGED upstream (published shell 194→218, committed s56a) — the only unpublished project-shell classes are Kristan's two.**
 
 Two Opus agents (slack-tax; P1a control gate), launched in parallel;
