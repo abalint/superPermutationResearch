@@ -54,3 +54,8 @@ __pycache__/
 # NOTE.md has provenance + verification; gate index
 # analysis/counting/novel5906b_canon_index.tsv is in m3_check SUPPLEMENTARY)
 !/data/novel5906b/
+
+# s47 R-BND discoveries: 4 novel 5906 classes at (843,18) (UNPUBLISHED —
+# Andrew decides; NOTE.md has provenance + gates; gate index
+# analysis/counting/novel5906c_canon_index.tsv is in m3_check SUPPLEMENTARY)
+!/data/novel5906c/
