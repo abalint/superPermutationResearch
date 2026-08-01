@@ -1145,3 +1145,46 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
     60-90s) where stock LKH and the controls are expected to fail more
     often, to get a real discriminating signal before spending n=7 CPU —
     Andrew's call on whether/when to queue that.
+
+## pairwise cut store, chain #0 (s57 REPORT §8.3 — the next sound tool)
+- spec: adapt `out/s57/proposer/propose.py`'s capped refutation probe to
+  enumerate row PAIRS on the pruned #0 instance
+  (`out/s57/proposer/inst_lr_farm0.txt`, 2346 rows): for each pair (i,j),
+  assert both rows, propagate/refute at the s57 cap (10⁶ nodes ≈ 0.012 s);
+  a refuted pair is a reusable sound no-good ("not both i and j in any
+  cover"). Shard 24-way by i on the farm (Python sweeps run on the farm —
+  Andrew, 2026-07-31); harness build step required first (mirror the
+  `fl*`/`ta*` house style in `analysis/farm/`). REFUTATION LANE ONLY
+  (ε=0) — no-goods must be unconditional.
+- product: a committed no-good store for #0 (and, if cheap, #24) that any
+  later witness/refutation run can load; the sound row-shrink route
+  toward the ≲1500-row target (HANDOFF-S57 menu item 2). Singleton cuts
+  saturated at s57 (4 forced rows, −12%); pairs are the unexplored layer.
+- projected: ~2.7M pairs × 0.012 s ≈ **9 core-hours** on #0 (s57 REPORT
+  §8.3 figure, from measured singleton probe rate); ~24 min wall on 24
+  farm cores + harness build. Round-robin probe first per house rule —
+  pair probes may not price like singleton probes.
+- approved: NO
+- status: pending
+- result: —
+
+## extended-census Σ15–16 sweep (5-block frame at the 5905-relevant scores)
+- spec: `out/s57/express/enum_ext.py` (the 5-block extended enumerator,
+  oracle-exact vs the census at Σ≤12 and Σ≤14) run at target V=15/16,
+  pmax=16, ≤2 pivot excursions — sharded by search root on the farm.
+  Harness build step required (no farm wrapper exists yet; same pattern
+  as above). Exact spec of shard key: whatever enum_ext.py's outermost
+  loop iterates (verify before sharding — untested claim).
+- product: does the 5-block frame (generalized cost-3 doors) add ANY
+  chains beyond the 26 known at the 5905-relevant scores? Closes or
+  extends the s57 exhaustion (Σ≤14: 88.8M nodes, EXHAUSTED, 26 chains,
+  0 excursions). A new chain at Σ15–16 would be a new 5905/5906 route
+  candidate feeding the cover pipeline.
+- projected: ~5×10⁹ nodes (s57 estimate) at the measured Σ≤14 rate
+  (88,834,046 nodes / 169.9 s ≈ 523k nodes/s on a Mac core) ≈ **2.7
+  core-hours**; minutes-to-~1 h wall on the farm depending on shard
+  balance. Rate is Mac-measured — probe on a PC core before quoting wall
+  time.
+- approved: NO
+- status: pending
+- result: —

@@ -6,6 +6,126 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-31 (session 59) — **The s58 milestone is REFUTED with a mechanism, and the hardness-number story inverts a second time: the walk-order prefix proposer was built, gated properly, and fails structurally — 18,750 legal walk-order prefixes on three known-SAT control chains produced ZERO SATs (proposer AND random baseline; cap ruled out as confounder first: known-true prefixes complete 62–100% at m=30/2 s) because a walk-order prefix has ZERO error tolerance (corrupt exactly 1 row of 30 in a genuine cover prefix: SAT rate 0.583 → 0.000, ≥75% provably dead; required per-step accuracy ≈ 1.0 over ~30 steps vs measured oracle-guided top-1 of 0.20–0.39) — the same rigid-certificate fact that killed pool precision in s57 kills prefix precision, so assumption-GUESSING devices are retired as a class; #0/#24 stay honest UNKNOWN (witness lane, 2×560 s each, no witness, the record ritual never triggered). Meanwhile menu item 4 OVERTURNS ITS OWN PREMISE: the s56 "3×R cliff" was a BUDGET artifact, not a determinism artifact — at a common 120 s budget the DETERMINISTIC lane (ε=0) matches or beats ε=0.15 on every cell where they differ (3.50×R cell: ε=0 SAT 10.8 s at 5.02M nodes, i.e. s56's "unreachable" timeout was 0.6M nodes short of its own solution; on the 3.44×R cell restarts LOSE a solution ε=0 finds in 86.7 s), the cliff band shifts only 2.45–3.46 → 2.69–3.50×R (no collapse: all six full-pool cells 4.87–5.72×R stay UNKNOWN in BOTH lanes), s57's absolute-size claim is CONFIRMED lane-robustly by a controlled pair (same chain, same 4.39×R: 1,425 rows SAT both lanes, 2,734 rows UNKNOWN both lanes; a LOWER-multiplier 3.42×R/2,154-row instance is UNKNOWN) — and QS-B, which s56 specified but NEVER RAN (its "~100 decisions/s/core" was 3 cells at ≤2×R), is now measured for real: ~200 decisions/s at ≤3×R collapsing ~900× to 0.21–0.23/s at 4.8×R with the verdict mix flipping to 26–29/30 UNKNOWN, so NOVELTY-DESIGN §6.4's "cover master provably realizable IF a proposer hits ≤3×R" clause fails at the open chains' 4.6–4.9×R at every precision any proposer has achieved. The surviving front on the open chains is ROW-SHRINK ONLY: the pairwise cut store (queued this session), harvesting the proposer's ~31k sound prefix refutations as minimized no-good cuts, and prefix RETRIEVAL (lookup vs the 1,425 known group0 cover rows) — not another guessing device.**
+
+Two Opus agents (prefix proposer; cliff/QS-B regeneration), launched in
+parallel per the delegation protocol; all compute local Mac, ≤4 cores,
+no single process >10 min, nothing on the farm, ~100 min combined. The
+orchestrator independently re-verified every load-bearing claim from
+the raw ledgers before accepting either report: prefix — zero SAT
+confirmed across all 20,733 ledger records outside the oracle files
+(all 207 SATs are known-true calibration prefixes, where SAT is the
+point), per-cell "prefixes tried" totals recounted to exact agreement,
+corrupt and oracle tables recounted exactly, rebuilt #0/#24 instances
+byte-identical to s57's pruned instances (re-run here), smoke
+reproduction re-run (m=30 ⇒ 470 cols/1486 rows, SAT 0.89 s vs s57's
+1.18 s), rule-of-three bounds recomputed; cliff — the three headline
+cells read directly out of trials.tsv (incl. the 5,015,911-node ε=0
+SAT vs s56's 4.41M-node timeout), the controlled pair confirmed in
+both lanes, QS-B collapse confirmed from qsb_summary.json, 36/36
+instance regeneration re-checked byte-identical here, cited
+JOURNAL/HANDOFF line numbers spot-checked.
+
+**1 — Walk-order prefix proposer (the s58 milestone): BUILT, GATED,
+REFUTED AS A ROUTE.** `out/s59/prefix/` (prefixlib.py, prefix_propose
+.py — feedback DFS with refutation-lane step checks —, gate.py/gate2
+.py, farm_run.py, full ledgers; REPORT.md filed by the orchestrator,
+agent Write harness-blocked as in s57). Controls built per-chain
+(trap e respected): group0 = 131 covers of ONE chain (R=124, 3228
+rows), group1 = 20 (R=118), group2 = 11 (R=124). Oracle calibration
+first: m=20 at cap ≤5 s is a DEAD CELL (0% of known-true prefixes
+complete — any m=20 gate number is uninformative); m=30/2 s recovers
+62–100%, m=35 100%. Gate: v1 (2,400 sampled prefixes) + v2 (16,350
+DFS prefixes) = 18,750 legal prefixes, 0 SAT, scored AND random; 95%
+rule-of-three bounds: >980/>1,190/>450 prefixes-per-SAT at m=25 per
+chain. The proposer's per-step edge is real (10–18× more prefixes
+survive DLX refutation; instant-refutation rate 0–21% vs 97–99%
+random) and worthless: the corrupt experiment shows one wrong row
+kills the prefix, and overlap measurement shows proposals sit at
+9–17% inside any known cover (best of 60: 33%). depthprobe: the
+refutation signal only arrives at depth ~19 — after the damage.
+#0/#24: witness lane, m=30, cap 5 s, 2 seeds × 560 s each, 95–96% of
+step checks refuted in ≤0.2 s, 20 depth-30 completions all refuted
+≤0.01 s — honest UNKNOWN ×4, and explicitly WEAKER evidence than
+s57's probes (walk-order branching is strictly worse than MRV).
+Productive residue: (a) the ~31k sound prefix refutations thrown away
+this session are harvestable as minimized no-good cuts — the cheapest
+converter of the refutation stream into a persistent asset; (b)
+prefix RETRIEVAL (are an open chain's rows relabel-conjugate to any
+of the 1,425 known group0 cover rows?) is the only prefix idea left
+standing — lookup against known structure, not a 30-step guess.
+
+**2 — Cliff/QS-B regeneration (menu item 4): the premise inverts.**
+`out/s59/cliff/` (geninst.py, run_gradient.py, stage3.py, qsb.py,
+trials.tsv 142 runs, qsb_trials.tsv 1,160 samples, REPORT.md). s56's
+36 surviving AP instances regenerate byte-identical (36/36) and its
+protocol reproduces 23/24 — the one mismatch IS the finding (timeout
+0.6M nodes short of the solution). HANDOFF-S57 trap (d) ("use
+restarts") is half right: the 15 s budget was the artifact; restarts
+are NOT automatically better and on one cell are strictly worse.
+Corrected cliff: lastSAT band 2.69–3.50×R (mean 3.15 vs s56's 2.96),
+six panel controls verified = six distinct chains. Multiplier vs
+absolute size: the decoy gradient CANNOT distinguish them (rows ≈
+5.2×pool, pearson 0.990) — the controlled pair settles it for
+absolute size, lane-robustly. QS-B measured for the first time:
+decisions/s ~200 (≤3×R, matching s56's 3-cell figure) → 4.9–5.8
+(4.0×R) → 0.21–0.23 (4.8×R), verdict mix 100% UNSAT → mostly
+UNKNOWN; identical in both lanes (claims cited on ε=0). NOT
+corrected and flagged loudly: the A0 gate "0/6" (JOURNAL s56 §1) is
+the same 15 s-deterministic defect — do not cite "no engine finds a
+cover from the chain alone" until it is re-run at 120 s/both lanes
+(~90 min, local, queued as an s60 item). The AX/unique.json 365/365
+uniqueness results are ε=0 EXHAUSTIONS and need no correction.
+
+**3 — Docs work this session.** ROADMAP.md: dated "n=6 is SOLVED"
+section added (a(6)=872 rungs retired as search goals, n=6 recast as
+theory testbed, validation ladder formally moved to n=7: 5905
+evidence, shell growth, n≥8 Egan−1 stretch; stale 867–872 lines
+struck in place; Andrew's outreach calls flagged, not made).
+SWEEP-QUEUE.md: two new entries, both `approved: NO` — pairwise cut
+store on #0 (~9 core-hours farm, refutation lane, sizing from s57
+§8.3; s59's step-check data says it may run cheaper) and the
+extended-census Σ15–16 sweep (~2.7 core-hours at the measured 523k
+nodes/s). Git note: s58's launch session had already committed its
+own state (1af7bfc) — the "fold uncommitted SWEEP-QUEUE state" item
+was moot on arrival.
+
+**New traps (s59).** (a) s57 trap (d) is CORRECTED, not extended:
+s56 hardness numbers were 15 s-BUDGET artifacts; report both lanes
+at a stated budget — ε>0 is not automatically better and can lose
+solutions ε=0 finds. (b) The A0 "0/6" baseline is an UNCORRECTED
+budget artifact — do not cite it as a field fact until re-run. (c)
+Walk-order prefix/pool assumption-guessing devices are retired as a
+CLASS: rigid minimal certificates (365/365 single-deletion UNSAT)
+mean any device that must guess ~30 independent choices cannot be
+gated. (d) m=20 at cap ≤5 s is a dead gate cell by construction —
+oracle-calibrate the cap before gating anything. (e) "~100
+decisions/s/core" (NOVELTY-DESIGN §6.4) was 3 cells at ≤2×R;
+throughput collapses ~900× by 4.8×R — realizer arithmetic must use
+the measured curve, not the flat figure. (f) dlx7g rc 2 under ε>0
+is arguably sound (restart loop exhausts the complete residual tree;
+source read s59) — but no s59 verdict relies on it; keep recording
+ε>0 rc 2 as UNKNOWN until that soundness note is independently
+audited.
+
+**Committed:** this entry, HANDOFF-S59 (supersedes S57), CLAUDE.md
+repoint, ROADMAP.md reckoning, SWEEP-QUEUE.md queue specs. Scratch
+(regenerable, uncommitted): `out/s59/prefix/`, `out/s59/cliff/`.
+
+**Next (s60 front):** (1) **Pairwise cut store** on #0/#24 — queued,
+farm, Andrew's approval; the no-good-harvesting variant
+(`prefix_propose.py --check-from 6` + greedy minimization) is the
+cheap local complement. (2) **A0 gate re-run** at 120 s/both lanes
+(~90 min, local) — the last uncorrected s56 hardness number. (3)
+**Prefix retrieval** probe: relabel-conjugacy lookup of open-chain
+rows against the 1,425 known group0 cover rows (cheap, local, novel
+signal if it hits). (4) Extended-census Σ15–16 — queued, farm. (5)
+NOVELTY-DESIGN §6.0/§6.4 edits per `out/s59/cliff/REPORT.md` §8
+(apply with the measured QS-B curve). (6) j-tax closure unchanged
+(n=5 cap-154 queued; n=6 midgame probe needs design). (7) Andrew's
+calls: Grayzel/Gheorghe contact, Kristan outreach, grammar writeup,
+and the two new queue approvals.
+
 ## 2026-07-31 (session 58, launch/ops session — ran concurrently with s56/s57) — **Both queued SWEEP-QUEUE P0/P5a jobs built their own toolchains from scratch on the farm PC and ran back to back: Grayzel's Lean build is the DECISIVE PASS s57 already narrates (this session independently re-verified it: `grep -i sorry` over all three fetched logs = 0, `lake-build.log` confirms `Build completed successfully (8518 jobs)`); and the fl1577 P4 gate CRACKS — comprehensively, which inverts its own premise: at a 600s single-core budget stock LKH itself cracks fl1577 4/10 (the published "0/10" was a `MAX_TRIALS` budget artifact, not a landscape barrier), two new recipes clear the now-weak bar (`kickburst` 6/10, `popga` 10/10), and an ancillary control shows recombination roughly doubles the crack rate over bare restarting (5/10 → 10/10) — so "cracks fl1577" no longer discriminates and P4 recipes need re-gating on time-to-optimum or a shorter budget before any spend n=7 CPU.**
 
 Andrew's instruction this session: "use opus agents to build the tool chains required for pc run and then run them both back to back." Both SWEEP-QUEUE entries (grayzel lake build, fl1577 recipe study) were sitting `approved: NO`, Mac-targeted, from s55. Two things changed the plan before launch: (1) the Mac was running the live s56 P1a chain-solving campaign at ~full CPU (load avg ~7-8/8 — the same processes s57 later reports Andrew killed as orphaned), so a resource-contention check with Andrew got the explicit redirect "build the tool chain on the pc and run the sweeps on the pc, do not run anything on the mac"; (2) both entries as specced were Mac-only/Mac-preferred (no PC Lean toolchain, no Windows LKH build) — so "build the tool chain" was real work, not just re-running an existing harness. Two Opus agents, launched sequentially (grayzel first per P0 priority, fl1577 second), each doing 100% of its heavy work over `ssh transcribe` — no compute on the Mac. Every load-bearing claim in both reports was independently re-checked here: grep for `sorry` across the fetched Grayzel logs (0 hits, confirming the agent's own claim), and — for fl1577 — an independent from-scratch tour-length recomputation from the raw `fl1577.tsp` coordinates for 4 sampled `.tour` files (TSPLIB EUC_2D nint rounding), matching the ledger exactly (3 files at 22249, 1 at the known-stall 22254).

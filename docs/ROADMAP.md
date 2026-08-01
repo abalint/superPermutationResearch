@@ -26,6 +26,30 @@ every n=6 instrument that matures should be pointed at the n=7 corpus,
 where the record-to-bound gap (5906 vs 5888) is far wider than n=6's
 (872 vs 869).
 
+## 2026-07-31 — n=6 is SOLVED; the validation ladder moves (s57/s59)
+
+**a(6) = 872 is a machine-checked theorem** (Grayzel's Lean proof, farm-PC
+`lake build` clean: 8518 jobs rc=0, 0 sorries, `main_theorem` axioms =
+propext/Classical.choice/Quot.sound + `native_decide`; with urdvr's Lean
+LB S(6) ≥ 869 and the known 872s, the window collapses). In the premise's
+own terms the n=6 game is **fully solved** — found length meets the proven
+bound. Consequences, applied below in place:
+
+- Every "attack 871 / the 867–872 gap" rung is RETIRED as a search goal.
+  n=6 remains the *theory testbed*: its laws (j-tax, door pricing, loop
+  covers, O5 cells) are engine components for n≥7, and 872-re-derivation
+  stays as the oracle/correctness harness.
+- **The engine's validation ladder is now n=7 (and n≥8 constructions):**
+  (1) evidence on the two open 5905 chains #0/#24 — Houston's abandoned
+  program, ours alone (no E−3 target exists elsewhere); a SAT is a world
+  record, a sound refutation closes the last known 5905 route in-frame;
+  (2) shell growth / novel-class publication at 5906 (published shell
+  218); (3) n≥8 Egan−1 tree-like territory (Raudvere/Echols species) as
+  the stretch tier. The n=7 record-to-bound gap (5906 vs 5888) is the
+  live hunting ground.
+- Andrew's open calls (unchanged, his to make): Grayzel/Gheorghe contact,
+  Kristan outreach, the grammar writeup.
+
 ## Phase 1 — search infrastructure & baselines (n ≤ 5 testbed)
 
 - [x] Permutation overlap graph: lex ranking, weight-w successor generation, 1-cycle decomposition
@@ -80,7 +104,10 @@ where the record-to-bound gap (5906 vs 5888) is far wider than n=6's
    seeding via the stratified beam (phase-3 item 1).
 2. Beam finds 872 (matches the world record) — out of reach of the phase-2 design
    point (move-level beam + 8 features); requires generating record-like midgames.
-3. < 872 is a new world record; 867–871 is open territory above the proven bound.
+3. ~~< 872 is a new world record; 867–871 is open territory above the proven
+   bound.~~ **CLOSED 2026-07-31: a(6)=872 is a machine-checked theorem (see the
+   dated section above) — rung 3 is unreachable; rung 2 (find 872) remains the
+   engine's n=6 oracle target.**
 
 **Exit criterion (minimum): at equal wall-clock, learned-score beam beats hand-bound
 beam at n=6. — ✅ MET 2026-07-27 (874 vs 890 at width 2000; hand bound needs 4× the
@@ -232,9 +259,13 @@ compute class (~10¹⁵× the 2019 distributed effort) — everything below is t
        width-pruned. This proof-grade-pruning + learned-guidance + structural-moves
        combination is the configuration nobody has run.
 6. [ ] Multi-core parallel search once 1–5 fix *what* is searched
-7. [ ] n=6: attack the 867–872 gap with the above
-8. [ ] n=7: bootstrap from n=6 net; attack the 5884–5906 gap (cloud CPU burst if
-       bottlenecked)
+7. [x] ~~n=6: attack the 867–872 gap with the above~~ **RETIRED 2026-07-31:
+       a(6)=872 settled (dated section above). n=6 work continues only as
+       theory-for-n=7 (j-tax closure, O5 cells, door laws).**
+8. [ ] n=7: bootstrap from n=6 net; attack the **5888**–5906 gap (Lean LB
+       superseded the 5884 figure) — now the PRIMARY validation ladder: 5905
+       chain evidence (#0/#24), shell growth, then n≥8 Egan−1 (cloud CPU burst
+       if bottlenecked)
 
 Anti-goals within phase 3: no more re-tuning of the 8-feature move-level scorer
 (s6 proved that pit empty three ways); no joining the waste-146 proving race.

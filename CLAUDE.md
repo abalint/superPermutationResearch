@@ -8,26 +8,32 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S57.md` right after it (supersedes
-   S56; s57 headlines: **a(6)=872 is a machine-checked theorem** modulo
-   Lean native-compiler trust — Grayzel's proof built clean on the farm
-   PC (8518 jobs rc=0, 0 sorries, main_theorem axioms = the standard
-   three + native_decide), the n=6 871 hunt is OVER; all 221/221 known
-   n=7 words are now certificate-expressible via four encoding
-   extensions (first-visit alone recovers ZERO — s56's labels were
-   first-error labels) and the scope trap INVERTS: the 85 closed
-   chains are closed UNCONDITIONALLY, only chain-FAMILY census claims
-   are frame-scoped (188/221 in-frame; door() is 1 of 6 legal blocks;
-   see analysis/cover7/results_n7_scoped.csv); the s56 atom-proposer
-   milestone (≤3×R pool) is REFUTED as specified (131 controls = one
-   chain, atom union 4.39×R, intersection 2) and the 3×R cliff was a
-   no-restart artifact (`--epsilon 0.15` solves the 4.39×R recall-floor
-   instance in 112 s) — s58's milestone is a WALK-ORDER PREFIX proposer
-   (30 rows ⇒ SAT 1.18 s); #0/#24 are the only chains that admit sound
-   pruning (new open-vs-SAT separator), 4×300 s probes each = honest
-   UNKNOWN; s56 headlines it carries: P1a gate 177/177, j-tax reframe
-   with proven floor j≥1 ⇒ ≥868, per-edge door law, 22 O5 cells OPEN,
-   published shell 218), then
+   **Fresh agent: read `docs/HANDOFF-S59.md` right after it (supersedes
+   S57; s59 headlines: the **walk-order prefix proposer is REFUTED as a
+   route** — 18,750 legal prefixes on known-SAT chains, 0 SAT, mechanism
+   = zero error tolerance (1 wrong row of 30 kills a prefix), so
+   assumption-GUESSING devices are retired as a class and the surviving
+   #0/#24 front is row-shrink (pairwise cut store queued) + no-good
+   harvesting + prefix RETRIEVAL; the s56 "3×R cliff" was a BUDGET
+   artifact, not a determinism artifact — ε=0 at 120 s matches or beats
+   ε=0.15 everywhere they differ, corrected band 2.69–3.50×R, s57's
+   absolute-size claim CONFIRMED lane-robustly (same 4.39×R: 1,425 rows
+   SAT / 2,734 rows UNKNOWN, both lanes); QS-B measured for the first
+   time: ~200 decisions/s at ≤3×R collapsing ~900× to ~0.22/s at 4.8×R,
+   so §6.4's realizer arithmetic fails at the open chains' 4.6–4.9×R;
+   the s56 A0 "0/6" baseline is an UNCORRECTED budget artifact — do not
+   cite until re-run; s57 headlines it carries: **a(6)=872 is a
+   machine-checked theorem** modulo Lean native-compiler trust — the
+   n=6 871 hunt is OVER (ROADMAP has the reckoning: n=6 = theory
+   testbed, validation ladder = n=7 5905 evidence / shell growth / n≥8
+   Egan−1); all 221/221 known n=7 words certificate-expressible via
+   four encoding extensions, the 85 closed chains closed
+   UNCONDITIONALLY, only chain-FAMILY census claims frame-scoped
+   (188/221 in-frame; see analysis/cover7/results_n7_scoped.csv);
+   #0/#24 the only chains admitting sound pruning (open-vs-SAT
+   separator), all probes honest UNKNOWN; s56 headlines: P1a gate
+   177/177, j-tax reframe with proven floor j≥1 ⇒ ≥868, per-edge door
+   law, 22 O5 cells OPEN, published shell 218), then
    `docs/NOVELTY-DESIGN.md` — the active design doc** —
    headline state: **the neighborhood/rewrite-rule program is EXHAUSTED
    at both n** (s53 K₄ hunt closes the n=7 tier at 220 — no incomplete
