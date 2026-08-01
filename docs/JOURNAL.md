@@ -6,6 +6,57 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-08-01 (session 62) — **The j-tax front moves four ways: a new proven rung, an exact small-n decision, a mechanism-level refutation, and a transferable n=7 pruning rule. (1) MASTER: taking the ceiling in the loop-supply bound gives `length ≥ n!+(n−1)!+(n−3)+⌈S/(n−1)⌉+j+xp` (pure walks; verified on 22,062+448+87+10 corpus walks and exhaustive n=3/4, 0 violations, exactly TIGHT on 22,052/22,062 records), whose n=6 corollary ladder is `j≥1 ∧ splits≥16 ⇒ ≥872` (11⇒871, 6⇒870, 1⇒869) — so the whole 868→872 j-gap lives at splits ≤ 15, below every known 872 allocation except (135,9,2,0,0) on the boundary, and tail re-completion from record prefixes (splits 25) could never have probed the live cells. (2) Rung 869 PROVEN unconditionally (`j≥1 ⇒ ≥869` at n=6): MASTER forces the single cell (v=24, j=1, xp=0, splits=0, D=24, len 868), where supply-tightness makes the 24 entered loops EXACTLY COVER the 120 one-cycles and determine every arc-start (the perfect-ride rigidity); the family is finite (10,068 exact covers; 1,678 after relabeling WLOG) and `cover_search.py` exhausts it — 36,304,934 nodes, NO walk (none at j=0 either; the engine's positive controls re-derive a(4)=33 and a(5)=153 as in-family minima). First rung produced by the repo's own j-machinery; numerically subsumed by the Lean S(6)≥869 but the piece that transfers. (3) The mechanism provably STOPS there: the two v=24 cells at 869 are killed exhaustively (1.06e9 nodes, ~605 s) but six v=25 cells (supply slack 5) survive — excess incidences un-determine the arc-starts — and NONE of the 22 O5 cells is supply-tight (slacks 1–14), so this composition has zero reach into the O5 discharge at any budget; any rung above 869 must price loop-supply SLACK. Cost growth ×29 nodes per +1 char. Cell universe (identity+supply only): j≥1 cells 868→1, 869→8, 870→26, 871→60, 872→115, the 60/115 independently matching s56's cell_squeeze from a different frame; of the 115 at 872 EXACTLY ONE lies in a known allocation — (140,8,0,0,0), splits=20, D=8, v=28, supply-TIGHT — a rigid enumerable multi-cover object, the best-shaped remaining target. (4) n=5 j-tax DECIDED = 1 at zero compute: a length-154 j=1 witness materialized (`out/s62/jtax/witness/n5_j1_154.txt`, validator-green, probe-confirmed, itself a perfect-ride walk), so with s56's cap-153 exhaustive the queued ~40-min cap-154 run is SUPERSEDED (entry filed recommending CANCEL). Tax ladder now n=3→3, n=4→1, n=5→1, n=6 ≥1 (observed 874) — the ladder does NOT grow with n. n=7 transfer: `length = 5764+v+j+xp` (the s34 law is its j=0 shadow; a 5905 is v+j+xp=141), MASTER `≥ 5884+⌈splits/6⌉+j+xp` (verified 87/87, tight on 3), and the priced rule `j≥1 ∧ S≥841 ⇒ ≥5906` — any 5905 with S ≥ 841 has j=0, making the per-edge door law a HARD constraint there (the (844,17) family and Kristan's (843,18) qualify). BONUS: THEORY §7's s56 block conflated two quantities under one symbol `x` — the identity needs `xp = Σ_doors(w−3)`, deficit needs `v−L` (in-corpus counterexample `872.up-022441b7b1ff`: v−L=0, xp=1) — CORRECTED in THEORY §7 this session.**
+
+One Opus agent (delegation protocol); all compute local Mac, 1 core,
+longest shot 10:05, everything deterministic (lexicographic orders, no
+RNG); no farm launch from this session, nothing outside `out/s62/jtax/`
+touched by the agent. The orchestrator independently re-verified every
+load-bearing claim from scratch: lib62-vs-probe ledger (16 walks, 0
+mismatches), MASTER on all four corpora incl. the full 22,062 (ALL
+PASS, 22,052 tight, the 46 lift873 slack walks exactly s56's 46), the
+rung-869 negative reproduced with byte-identical node count
+(36,304,934), the TMAX-869 branch re-run (1,061,001,933 nodes, NO
+walk), cells62 (1/8/26/60/115/196) + the two-frame 60/115 agreement
+with cell_squeeze re-run, o5_crosscheck (22/22 admissible, 0
+supply-tight), exhaustive n=3/4 taxes (3/1 and 1/1), cover counts
+(4/25/10,068), engine positive controls, witness validation (154,
+120/120, complete; probe V1/V2/V3 true), and the x-bug one-liner
+(871 ≠ 872 on the specimen). Report filed by the orchestrator at
+`out/s62/jtax/REPORT.md` (verdict table up front, limits §9).
+
+Reusable assets: `out/s62/jtax/lib62.py` (first-visit ledger with the
+corrected xp reading, cross-checked against loop_ledger_probe),
+`verify_master.py` (per-walk identity+SUPPLY+MASTER checker — also the
+alarm instrument for any future j-candidate), `cover_search.py` (the
+perfect-ride family enumerator; n-generic, re-derives a(4)/a(5)),
+`cells62.py`, `covers.py`, `o5_crosscheck.py`, `exhaust_small.py`.
+Known-buggy and unused: `nearcovers.py` (undercounts; the v=25 loop-set
+count is unmeasured).
+
+Concurrent (Andrew's sweep agent, same day): the A0 gate re-run landed
+— farm run `a0g1`, 18/18 UNKNOWN at 600 s both lanes, 6.8e9 nodes, no
+alarms, the s56 field fact now citable at a 40× budget (its entry also
+records two pre-launch premise corrections: A0 is known-SAT by
+construction so the gate measures findability, and the "0/6 at 15 s"
+baseline was itself a reconstruction). Its SWEEP-QUEUE edits were left
+untouched; s62's two entries (midgame j-probe draft with the
+mcover_search.py build prerequisite; cap-154 SUPERSEDED/CANCEL) were
+appended at the tail.
+
+Next (s63): (1) Andrew's queue calls — pairwise cut store still the
+only surviving #0/#24 tool; QS-B full map and Σ15–16 census still
+pending; the midgame j-probe needs its mcover_search.py build + sizing
+re-probe before it is launchable; cap-154 recommended CANCEL. (2) The
+(140,8,0,0,0) supply-tight multi-cover cell — the one j=1 872 cell in
+a known allocation — is the sharpest new object; enumerate it or price
+supply slack. (3) Wire the S≥841 ⇒ j=0 door-law hard constraint into
+the #0/#24 instances (check their S first). (4) Grammar writeup /
+outreach — Andrew's calls. HANDOFF-S62 supersedes S61; CLAUDE.md
+repointed. cargo test 139 green, clippy `-D warnings` clean, fmt clean.
+
+---
+
 ## 2026-08-01 (session 61) — **The near-miss residual anatomy question (S60 menu item 2) is ANSWERED: generic row geometry plus one exact mechanism — no tool, no evidence, #0/#24 unchanged. A residual column set admits a row only if some non-kernel loop has ≥5 of its 6 orbits inside it (closed form: cand(S) = #{m=5} + 6·#{m=6}, verified on 1,183 residual sets, 0 violations), and the exact hypergeometric expectation for a 10-column residual on #0's instance is 1.36e-06 candidate rows — a fifth-power law (~5.0e3·(t/114)⁵), so every small residual is dead whatever produced it: #0's celebrated 112/114 "instant death" needed no explanation beyond size. Where residuals ARE large (70–100 columns) the observed candidate counts run 100×–1,254× ABOVE the exact null, and the enrichment's source is identified exactly: a foreign-mapped residual decomposes into ORPHAN columns (images of source-chain roots — the only supply of usable loops, mostly intact images of A's kernel loops) plus ≤4-column DEBRIS from failed mapped rows (a single donor gives ≤4 columns of its own loop, ≤2 of any other; ≥2 donors must conspire — 0 violations in the donor decomposition of every m≥4 loop). Since placed ≤ R_B − ⌈orphans/5⌉, maximising overlap minimises orphans and thereby destroys the only structure that could finish the residual — on #0 exactly 2 of 10,080 symmetries bury all 100 of A's roots in B's 150, and they are precisely the two s60 maximizers: the near-miss and the zero-candidate death are two readings of one event, so a foreign-mapped packing near-miss is ANTI-evidence (s60 trap upgraded from empirical to explained). The counting bound U(S) = #usable loops ≥ |S|/5 is a sound theorem (60,390 real-cover prefixes across 162 covers × 3 orders, 0 firings, min slack 0; tight at t ≤ 20, slack ~500 by t = 120) but USELESS as a search rule: in 360 random descents it never fired before a free DLX dead column (0 wins, 23 ties in the most favourable cover+100 family; median first dead column depth 6–18 vs first firing 60–70). Native drop-j sub-cover residuals have usable = j = need by construction (every one of ~3,660 trials); foreign U/need declines monotonically with placement and crosses 1 at ~70–76% of R — and the best foreign packing is NOT a truncated cover (shares ≤10/≤14 of its rows with any known cover of the target). s61 closed a question without opening a front.**
 
 One Opus agent (per the delegation protocol); all compute local Mac,

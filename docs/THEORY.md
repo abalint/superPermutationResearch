@@ -222,17 +222,36 @@ door-terminated single chains.**
 **s56 additions (the slack-tax / j-tax frame; instrumentation in
 `loop_ledger_probe.py` modes `slack`/`hunt`/`exhaust`, artifacts
 `out/s56/slacktax/`).** Write `v` = # distinct ENTERED marked loops,
-`j = splits + D + 1 − v`, `x = v − L`, so `deficit = j + x` (the s55
-Gheorghe-dictionary bridge). Then, for every pure complete first-visit walk:
+`j = splits + D + 1 − v`. **s62 CORRECTION: this block originally used one
+symbol `x` for two different quantities.** The two are `xp := Σ_doors(w−3)`
+(the door overweight) and `v − L ≥ 0`; they coincide only when
+`deficit = j`. Counterexample in-corpus: specimen `872.up-022441b7b1ff`
+(allocation (140,6,1,0,0)) has `v−L = 0` but `xp = 1`, so
+`843+v+j+(v−L) = 871 ≠ 872`. The correct pair of statements is the identity
+below (with `xp`) AND `deficit = j + (v − L)` (the s55 Gheorghe-dictionary
+bridge). Then, for every pure complete first-visit walk:
 
-- **Exact length identity:** `length = n! + (n−1)! + (n−3) + v + j + x`
+- **Exact length identity:** `length = n! + (n−1)! + (n−3) + v + j + xp`
   (verified per-walk on all 22,062 + 87 + 755 local corpus walks and on
-  exhaustive n=3/4 enumerations). Each unit of j costs exactly +1 char.
+  exhaustive n=3/4 enumerations; re-verified with the corrected `xp`
+  reading on 22,062 + 448 + 87 + 10 walks in s62, 0 violations).
+  Each unit of j costs exactly +1 char. The identity is a definition-chase
+  from purity + completeness + first-visit alone (s62 §2.1) — it does not
+  use the loop-count theorem.
 - **Loop-supply bound:** `v ≥ ((n−1)! + splits)/(n−1)` (a 2-loop has n−1
   perms, so supplies ≤ n−1 arc starts) — Gheorghe's T3 `s ≤ 5l` rederived
-  on our side. Combining: `length ≥ n! + (n−1)! + (n−2)! + (n−3) + j + x +
-  splits/(n−1)` — the classical bound's slack IS `j + x + splits/(n−1)`.
+  on our side. Combining: `length ≥ n! + (n−1)! + (n−2)! + (n−3) + j + xp +
+  splits/(n−1)` — the classical bound's slack IS `j + xp + splits/(n−1)`.
   At n=6 this proves `j ≥ 1 ⇒ length ≥ 868` (4 short of the 872 target).
+  **s62 sharpening — take the ceiling (MASTER):**
+  `length ≥ n! + (n−1)! + (n−3) + ⌈S/(n−1)⌉ + j + xp`, since the supply
+  lemma's underlying fact is exact: the n−1 perms of a 2-loop lie in n−1
+  DISTINCT 1-cycles (a loop parks the last symbol; two perms of one cycle
+  cannot share a last symbol), so `S ≤ (n−1)·v` in integers. At n=6:
+  `length ≥ 867 + ⌈splits/5⌉ + j + xp`; at n=7:
+  `length ≥ 5884 + ⌈splits/6⌉ + j + xp`. Verified on 22,062 + 448 + 87 + 10
+  corpus walks and exhaustive n=3/4, 0 violations; exactly TIGHT on
+  22,052/22,062 n=6 records (`out/s62/jtax/verify_master.py`).
 - **Ledger inequality:** `(n−2)L ≥ (n−1)! − 1 − D`; at n=6,
   `4·splits + 5·D ≥ 115 + 4·deficit` (tight on 3/8 allocation specimens).
   At length 871: `D ≥ 7 + 4x + 4·deficit` — a slack 871 needs ≥ 11 doors
@@ -257,4 +276,55 @@ Gheorghe-dictionary bridge). Then, for every pure complete first-visit walk:
   above record, so a "deficit tax to 872" is false-adjacent). Their cell
   arithmetic forces D ∈ [19,26] and splits ≤ 8 — the opposite ledger
   corner from every known walk. `j ≥ 1 ⇒ length ≥ 872` remains OPEN
-  (proved floor: 868).
+  (proved floor: 868; **s62: raised to 869**, see below).
+
+**s62 additions (the MASTER rungs and the perfect-ride family;
+artifacts `out/s62/jtax/`, report there).** All statements are for pure
+complete first-visit walks.
+
+- **Conditional rungs (corollary of MASTER at n=6):** `j ≥ 1 ⇒ length ≥
+  868 + ⌈splits/5⌉ + xp`, so splits ≥ 1 (or xp ≥ 1) ⇒ ≥ 869; splits ≥ 6 ⇒
+  ≥ 870; splits ≥ 11 ⇒ ≥ 871; **splits ≥ 16 (S ≥ 136) ⇒ ≥ 872**. The whole
+  868→872 j-gap therefore lives at splits ≤ 15 — below every known 872
+  allocation except (135,9,2,0,0), which sits exactly on the boundary. In
+  particular tail re-completion from record prefixes (splits 25) can never
+  probe the live cells: the record classes are excluded ≤ 871 for free.
+- **Rung 869 (unconditional): `j ≥ 1 ⇒ length ≥ 869` at n=6.** Proof: MASTER
+  forces the single surviving cell (v=24, j=1, xp=0, splits=0, D=24, len
+  868); splits=0 + supply-tightness (S = 5v = 120) makes every entered loop
+  supply all 5 of its perms as arc-starts, so the 24 loops EXACTLY COVER the
+  120 one-cycles and every cycle's arc-start is determined by the cover (the
+  perfect-ride rigidity); the resulting family is finitely enumerable
+  (10,068 exact covers at n=6; 1,678 containing λ(123456) after relabeling
+  WLOG) and `cover_search.py 6 868 --jmin 1` exhausts it: 36,304,934 nodes,
+  NO walk (also none at jmin 0 — 867 is unreachable in-family, consistent
+  with a(6)=872). Positive controls: the same engine re-derives a(4)=33 and
+  a(5)=153 as its in-family j=0 minima.
+- **Where the mechanism provably stops:** at length 869 six of the eight
+  j≥1 cells have v=25 (loop-supply slack 5), where the cover no longer
+  determines arc-starts and the rigidity evaporates; the two v=24 cells at
+  869 are killed exhaustively (1.06e9 nodes). Rung 870 is NOT proven. And
+  **none of the 22 O5 cells is supply-tight** (slacks 1–14,
+  `o5_crosscheck.py`), so this composition has zero reach into the O5
+  discharge at any budget — any rung above 869 must price loop-supply
+  SLACK (entered-loop perms that are not arc-starts).
+- **Cell universe (identity + supply only, `cells62.py`; independently
+  matches s56's `cell_squeeze.py` 60/115 from a different frame):** j≥1
+  cells by length: 868→1, 869→8, 870→26, 871→60, 872→115. Of the 115 at
+  872, EXACTLY ONE lies in a known allocation: (140,8,0,0,0) with
+  splits=20, D=8, v=28 — and it is supply-tight, i.e. a j=1 872 there must
+  be a 28-loop multi-cover of the 120 cycles with all 140 incidences
+  supplying. Rigid, enumerable, the best-shaped remaining target.
+- **n=5 j-tax DECIDED = 1** (was {1,2}): explicit witness
+  `out/s62/jtax/witness/n5_j1_154.txt` (154, j=1, validator-green,
+  probe-confirmed, itself a perfect-ride walk), lower bound from s56's
+  cap-153 exhaustive. Tax ladder: n=3→3, n=4→1, n=5→1 (all exact),
+  n=6 ≥ 1 with observed min 874. The ladder does NOT grow with n.
+- **n=7 transfer:** `length = 5764 + v + j + xp` (the s34 law
+  `length = 5764 + #2loops` is its j=0 shadow; a 5905 is `v+j+xp = 141`),
+  and MASTER gives `length ≥ 5884 + ⌈splits/6⌉ + j + xp` (verified on all
+  87; tight on 3). Priced rule: **`j ≥ 1 ∧ S ≥ 841 ⇒ length ≥ 5906`** — so
+  any 5905 with S ≥ 841 has j = 0 and the per-edge door law becomes a HARD
+  constraint there (the known 5906s sit at S ∈ {838,840,843,844}; the
+  (844,17) family and Kristan's (843,18) qualify). A j≥1 5905 needs
+  v ≤ 140, S ≤ 840, D ≥ 20.

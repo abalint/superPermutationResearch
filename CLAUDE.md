@@ -8,8 +8,29 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S61.md` right after it (supersedes
-   S60; s61 headline: the near-miss residual anatomy question (S60 menu
+   **Fresh agent: read `docs/HANDOFF-S62.md` right after it (supersedes
+   S61; s62 headline: the j-tax front moved four ways — MASTER, the
+   ceiling-sharpened loop-supply bound `length ≥ n!+(n−1)!+(n−3)+
+   ⌈S/(n−1)⌉+j+xp` (pure walks; 0 violations on 22,062+448+87+10 corpus
+   walks + exhaustive n=3/4; tight on 22,052/22,062 records), puts the
+   whole n=6 868→872 j-gap at splits ≤ 15 (record prefixes could never
+   probe it); rung 869 PROVEN (`j≥1 ⇒ ≥869`, the supply-tight cell
+   rigidifies into the perfect-ride family — 24 loops exactly cover the
+   120 one-cycles — exhaustively empty at 36.3M nodes, engine controls
+   re-derive a(4)=33/a(5)=153); the mechanism provably STOPS at 869
+   (none of the 22 O5 cells is supply-tight, slacks 1–14 — any higher
+   rung must price loop-supply SLACK); of the 115 j≥1 cells at 872
+   exactly ONE is in a known allocation ((140,8,0,0,0), supply-tight, a
+   rigid 28-loop multi-cover object — the sharpest new target); n=5
+   j-tax DECIDED = 1 by a length-154 j=1 witness (cap-154 queue entry
+   SUPERSEDED/CANCEL; ladder 3,1,1 does not grow); n=7 transfer:
+   `length = 5764+v+j+xp` (s34 law = its j=0 shadow; a 5905 is
+   v+j+xp=141) and `j≥1 ∧ S≥841 ⇒ ≥5906` so any S≥841 5905 has j=0 and
+   the per-edge door law is a HARD constraint there ((844,17) family +
+   Kristan qualify); TRAP fixed: THEORY §7's s56 `x` conflated
+   `xp=Σ(w−3)` with `v−L` — corrected in place; concurrent sweep-agent
+   result: A0 gate re-run DONE, 18/18 UNKNOWN at 600 s both lanes,
+   citable; s61 headline it carries: the near-miss residual anatomy question (S60 menu
    item 2) is ANSWERED as generic geometry + one exact mechanism — a
    residual admits a row only iff some non-kernel loop has ≥5 of its 6
    orbits inside it (exact hypergeometric null: E ≈ 1.4e-06 candidates
