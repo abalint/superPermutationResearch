@@ -8,8 +8,21 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S60.md` right after it (supersedes
-   S59; s60 headlines: **prefix RETRIEVAL is closed as a verified
+   **Fresh agent: read `docs/HANDOFF-S61.md` right after it (supersedes
+   S60; s61 headline: the near-miss residual anatomy question (S60 menu
+   item 2) is ANSWERED as generic geometry + one exact mechanism — a
+   residual admits a row only iff some non-kernel loop has ≥5 of its 6
+   orbits inside it (exact hypergeometric null: E ≈ 1.4e-06 candidates
+   for a 10-column residual, a fifth-power law), large residuals are
+   100×–1,254× enriched over the null but the source is orphan columns
+   (images of A's roots/kernel loops) vs ≤4-column debris, and since
+   placed ≤ R_B − ⌈orphans/5⌉ maximising overlap destroys the residual's
+   finishability — #0's 112/114 near-miss and its 0-candidate death are
+   one event (the 2 root-burying symmetries ARE the 2 maximizers), so a
+   foreign-packing near-miss is ANTI-evidence; the counting bound
+   U ≥ |S|/5 is a sound theorem (60,390 prefixes, 0 firings) but never
+   beats a free DLX dead column (0/360) — no tool, no evidence, #0/#24
+   stay OPEN/UNKNOWN; s60 headlines it carries: **prefix RETRIEVAL is closed as a verified
    negative** — zero strict conjugacies (0/10,080 symmetries map the
    group0 chain onto #0/#24), and the relaxed census is provably
    uninformative (refuted chains outscore open ones; #0's 112/114

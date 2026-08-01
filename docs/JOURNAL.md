@@ -6,6 +6,53 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-08-01 (session 61) — **The near-miss residual anatomy question (S60 menu item 2) is ANSWERED: generic row geometry plus one exact mechanism — no tool, no evidence, #0/#24 unchanged. A residual column set admits a row only if some non-kernel loop has ≥5 of its 6 orbits inside it (closed form: cand(S) = #{m=5} + 6·#{m=6}, verified on 1,183 residual sets, 0 violations), and the exact hypergeometric expectation for a 10-column residual on #0's instance is 1.36e-06 candidate rows — a fifth-power law (~5.0e3·(t/114)⁵), so every small residual is dead whatever produced it: #0's celebrated 112/114 "instant death" needed no explanation beyond size. Where residuals ARE large (70–100 columns) the observed candidate counts run 100×–1,254× ABOVE the exact null, and the enrichment's source is identified exactly: a foreign-mapped residual decomposes into ORPHAN columns (images of source-chain roots — the only supply of usable loops, mostly intact images of A's kernel loops) plus ≤4-column DEBRIS from failed mapped rows (a single donor gives ≤4 columns of its own loop, ≤2 of any other; ≥2 donors must conspire — 0 violations in the donor decomposition of every m≥4 loop). Since placed ≤ R_B − ⌈orphans/5⌉, maximising overlap minimises orphans and thereby destroys the only structure that could finish the residual — on #0 exactly 2 of 10,080 symmetries bury all 100 of A's roots in B's 150, and they are precisely the two s60 maximizers: the near-miss and the zero-candidate death are two readings of one event, so a foreign-mapped packing near-miss is ANTI-evidence (s60 trap upgraded from empirical to explained). The counting bound U(S) = #usable loops ≥ |S|/5 is a sound theorem (60,390 real-cover prefixes across 162 covers × 3 orders, 0 firings, min slack 0; tight at t ≤ 20, slack ~500 by t = 120) but USELESS as a search rule: in 360 random descents it never fired before a free DLX dead column (0 wins, 23 ties in the most favourable cover+100 family; median first dead column depth 6–18 vs first firing 60–70). Native drop-j sub-cover residuals have usable = j = need by construction (every one of ~3,660 trials); foreign U/need declines monotonically with placement and crosses 1 at ~70–76% of R — and the best foreign packing is NOT a truncated cover (shares ≤10/≤14 of its rows with any known cover of the target). s61 closed a question without opening a front.**
+
+One Opus agent (per the delegation protocol); all compute local Mac,
+1 core, longest script 8 s, full deterministic re-run ≈ 19 s (seeds
+recorded per log); no farm launch, no dlx7g call, no witness-lane
+spend, nothing outside `out/s61/anatomy/` touched. The orchestrator
+independently re-verified every load-bearing claim: all five scripts
+re-run from scratch (exit 0), logs checked claim-by-claim against the
+filed report — incidence (every orbit in exactly 7 loops, loop pairs
+share ≤2 orbits, same-loop rows overlap ≥4), instance row counts
+re-derived exactly from the a_L histograms (2662/2662 farm0,
+2517/2517 farm24, and the three controls), the exact-null table
+(farm0 k=10 → 1.362e-06), the s60 packing reproduction row-for-row
+(112/10/0, 98/70/13, 100/90/38, 104/100/52, 106/30/1, 105/30/0), the
+13/13 counting refutations with every exact DFS terminating UNSAT at
+1 node (no cap hit anywhere), the enrichment ratios (192×/109×/172×/
+161×/1254×), the orphan/debris tables incl. farm0's 100/100 root
+burial and ctrlgroup2's 8-of-12 kernel-image usable loops, the
+2-of-10,080 root-burial count, the native/foreign discriminator
+tables, and the 60,390-prefix soundness + 0/360 power results. One
+wording defect corrected in the filed report (the agent's "fired
+strictly later in 360/360" contradicted its own 23 ties; the accurate
+statement — never earlier, 0 wins, 23 ties — is what the log shows).
+Report filed by the orchestrator at `out/s61/anatomy/REPORT.md` (the
+harness blocks subagent Writes, same as s60); verdict table up front,
+limits §9, re-verification commands §10.
+
+Reusable asset: `out/s61/anatomy/anatlib.py` — exact hypergeometric
+candidate-null for any instance, the m-vector/usable-loop machinery,
+and the one-call orphan/debris provenance decomposition of any
+packing (imports s60's symlib.py, does not fork it). The counting
+bound survives as an instant sanity CHECK on any proposed
+residual/packing — but not as a search rule (measured strictly
+dominated by free DLX propagation).
+
+Next (s62): unchanged menu — (1) Andrew's queue calls (four pending
+`approved: NO` entries: pairwise cut store ~9 core-h, the only
+surviving #0/#24 tool; A0 gate re-run ~90 min LOCAL, the last
+uncorrected 15 s artifact; QS-B full map ~2.5 core-h; Σ15–16 census
+~2.7 core-h); (2) j-tax closure (n=5 cap-154 exhaustive queued, n=6
+midgame probe design, the 868→872 gap); (3) grammar writeup /
+outreach (Andrew's calls). HANDOFF-S61 supersedes S60; CLAUDE.md
+repointed. cargo test 139 green, clippy `-D warnings` clean, fmt
+clean.
+
+---
+
 ## 2026-07-31 (session 60) — **The last prefix idea dies and the row-shrink fork resolves itself: prefix RETRIEVAL is closed as a verified negative (zero strict conjugacies — 0 of 10,080 symmetries map the group0 chain onto #0/#24, positive control returns its 2 automorphisms — and the relaxed census is provably uninformative: provably-coverless chains outscore open ones on median, #0's rank-1 near-miss of 112/114 mapped rows dies on 10 residual columns that NO row of the whole 2,662-row instance covers, and between two chains that both provably have covers the best of 131 covers × 10,080 relabelings reproduces only 25.4%/22.6% of a real target cover), so all three assumption-transfer ideas are now dead (pool guessing s57, prefix guessing s59, prefix lookup s60) and #0/#24 is row-shrink ONLY; meanwhile the no-good harvest is BUILT, SOUND, and REUSABILITY-NEGATIVE — 269 minimized cuts (115 #0 / 107 #24 / 47 control), every one re-confirmed rc 2 in fresh processes, 0 soundness violations across 6,157 cut×known-cover subset tests — but prefix refutations minimize to ~8 rows, not pairs, and an 8-row no-good over 2,346 rows fires on 0 of 3,599 fresh legal prefixes (P = 2.6e-16 per prefix; ~10¹⁵ cuts needed for 50%), so the queued 20.8 core-hour full harvest is recommended AGAINST as specified and the budget belongs to the PAIRWISE cut store (~9 core-h, size-2 cuts need only ~4.4e3 for the same hit rate, and pairs consume as instance reductions — dlx7g has no clause facility). The row-shrink menu entered s60 with two candidate tools and leaves it with one.**
 
 Two Opus agents (retrieval probe; no-good harvest pilot), launched in
