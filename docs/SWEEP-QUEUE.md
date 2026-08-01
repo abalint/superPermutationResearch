@@ -949,10 +949,84 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   = `tail -1 lake-build.log` on the usual cadence; stall = log mtime
   unchanged 30 min (native_decide jobs can legitimately run long — check
   CPU% before declaring a hang).
-- abort: `pkill -f "lake build"` (child `lean` processes die with it).
-- approved: NO
-- status: pending
-- result:
+- abort: `pkill -f "lake build"` (child `lean` processes die with it) — on
+  the PC, via the run's own abort script (see result for the as-built path).
+- approved: **YES (Andrew, 2026-07-31 — "build the tool chain on the pc and
+  run the sweeps on the pc, do not run anything on the mac")**. RETARGETED
+  from Mac to the farm PC: the Mac is running the live s56 P1a chain-solving
+  campaign at ~full CPU (load avg ~7-8/8), so both this and the fl1577 study
+  move to the (idle, 28-core) farm PC. Toolchain (elan/lake/lean) does not
+  exist there yet and must be built as part of this launch.
+- status: **done** — farm PC, tag `g3`, 2026-07-31 13:14:52 → 15:18:26 local
+  (**123.6 min**, of which `lake build` itself was 7,143 s / 119 min).
+  Toolchain: elan 4.2.3, Lean 4.30.0, Lake 5.0.0, installed fresh on the PC
+  this session. Repo pinned at `d8a932d` as specced. Verified independently
+  (orchestrator, not just the agent's own report): `grep -i sorry` over all
+  three fetched logs = 0 hits; `lake-build.log` tail confirms
+  `Build completed successfully (8518 jobs)` with `[8517/8518]` as the last
+  numbered job; `STATUS.txt`/`ALARM.txt` both fetched and consistent with the
+  agent's narrative (see below). Logs: `out/grayzel_lake_build/{lake-build.log,
+  axiom-audit-main.log,axiom-audit-s57.log,STATUS.txt,ALARM.txt,ledger.csv,
+  SPEC.txt}` on the Mac (gitignored scratch); farm side
+  `D:\superpermFarm\grayzel\` (repo + toolchain) and
+  `D:\superpermFarm\grayzel\runs\g3\logs\` (this run's logs).
+- result: **THE PROOF COMPILES CLEAN. `main_theorem : IsMinimumLength 872`
+  type-checks with ZERO `sorryAx`, ZERO errors, 57 cosmetic-only warnings
+  (unused mathlib linter nits).** `lake exe cache get` pulled mathlib
+  8,459/8,459 files from cache; all 44 of the project's own modules (27
+  `Superperm6/` + 13 `Section57Closure/`) were elaborated fresh in this run,
+  not cached. Every one of the 38 audited declarations (20 in
+  `AxiomAudit.lean`, 18 in `Section57Closure/AxiomAudit.lean`) depends on
+  exactly `propext, Classical.choice, Quot.sound` plus its own
+  `native_decide` evaluation axioms — including **`main_theorem` itself**
+  (3 core + 99 native axioms) and both halves of the bound
+  (`no_hamiltonian_route_of_weight_at_most_865` /
+  `lower_bound_from_boundary`, 97 native axioms each). Static scan of all 44
+  project files: 0 `sorry`/`admit`/`axiom`/`unsafe`/`@[extern]`/
+  `@[implemented_by]`/`debug.skipKernelTC`; the only non-default `set_option`s
+  are heartbeat/recursion-depth/profiler knobs, with `maxHeartbeats 0` used
+  exactly once, on `witness_isSuperpermutation` — reproduces the s55 static
+  audit now with a real compile behind it.
+  - **One correction to the s55 expected-axiom-set text.** `Lean.ofReduceBool`
+    does not appear anywhere — Lean 4.30's `native_decide` no longer routes
+    through one global axiom; it emits a separately-named axiom per
+    declaration (e.g. `Superperm6.witness_isSuperpermutation._native
+    .native_decide.ax_1_1`, 574 such axioms total in the main audit, 170 in
+    s57). Same trust surface in kind (compiler-trusted native evaluation,
+    not kernel-trusted), itemized differently than s55 anticipated.
+  - Witness cross-check: `Witness.lean` embeds `data/superperm6_872_clean.txt`
+    (sha `c3edd395…0ff6dff2`) via `include_str`; the agent independently
+    re-verified it on the Mac (872 chars, all 720 permutations of `123456`
+    present) and confirmed `Witness.olean`/`Main.olean` were both freshly
+    built this run — `main_theorem` really does depend on the file we think
+    it does, not a stale cached artifact.
+  - **False-positive stall, for the record (matches the OPERATIONS.md
+    liveness lesson):** `ALARM.txt` fired at 45 min of flat log size during
+    the `lake build` stage; CPU on the `lean.exe` child was pinned at 100%
+    the whole time (one `native_decide` module ran silent for ~55 min,
+    accumulating 3,111 CPU-seconds). Not a hang — `native_decide` at
+    `maxHeartbeats 0` can legitimately go quiet for a long time. Recommend
+    60–75 min stall threshold if this class of job is re-run.
+  - **Farm/Windows-toolchain traps worth keeping** (new, this session):
+    `F:\` is exFAT (no hard links, no ownership records) — elan and git both
+    misbehave there; toolchain work must go on an NTFS volume (`D:\` used
+    here, 993→239 GB free after). `cmd /c "exe" args > "log" 2>&1` silently
+    strips the outer quotes and the redirect never fires — don't quote when
+    no farm path has spaces. `$ErrorActionPreference='Stop'` + any native
+    command writing to stderr (git always does) throws `NativeCommandError`
+    even at rc=0 — run native calls under `Continue`, check `$LASTEXITCODE`.
+    `Get-CimInstance` HANGS (not just denies) for the farm account — use
+    `[System.IO.DriveInfo]` / `$env:NUMBER_OF_PROCESSORS` instead. Lake
+    5.0.0 has no `-j`/`--jobs` flag at all.
+  - **Bottom line: a(6)=872's minimality now has a machine-checked, 0-sorry
+    Lean proof, independently built and audited on our own hardware — not
+    just a hand-verified statement.** Combined with Gheorghe's independent
+    209-cell preliminary proof (s55), this is the strongest evidence yet
+    that 871 is dead. Trust surface is exactly what s55 said: compiler
+    trust in Lean's native evaluator for every finite fact, both bounds
+    included — a different kind of trust than kernel-checked arithmetic,
+    but a real, reproducible compile, not an announced-and-unexamined claim.
+    NOVELTY-DESIGN P0 update and JOURNAL entry to follow.
 
 ## fl1577 recipe study — P4 gate (P5a instrument, s55)
 - spec: harness `out/s55/fl1577/run_fl1577.sh` (LKH-3.0.13 at
@@ -983,7 +1057,91 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   ALARM-REGEX CHECK (s52b trap): harness emits no NOVEL/ESCAPES strings;
   ledger `cracked` column is 0/1 — do not alarm on `cracked 0` rows.
 - abort: `pkill -f 'out/s55/fl1577/bin/LKH'` (matches only this study's
-  binary path).
-- approved: NO
-- status: pending
-- result:
+  binary path) — on the PC, via the run's own abort script (see result).
+- approved: **YES (Andrew, 2026-07-31 — same instruction as the grayzel
+  entry above)**. RETARGETED from Mac to the farm PC (idle, 28 cores) —
+  the existing `out/s55/fl1577/bin/LKH` binary is Mac-built (arm64
+  Mach-O) and does not run on Windows, so the PC needs its own LKH-3.0.13
+  build as part of this launch; the 2 missing escape-oriented recipes
+  (kick/perturbation- or population-based) also get finalized at launch
+  time per the original spec.
+- status: **done** — farm PC. Toolchain: LKH-3.0.13 built natively from
+  source (winlibs mingw-w64 gcc 16.1.0, no admin/winget needed) at
+  `D:\superpermFarm\fl1577\bin\LKH.exe`, 6 s build, sha256 `a3e378ab…`.
+  Source fetched straight from `webhotel4.ruc.dk` (up, unlike the Heidelberg
+  TSPLIB mirror JOURNAL s55 flagged as down). Study `s1`: 50 cells, 25
+  workers of 28 cores, BELOW_NORMAL, **20.0 min wall**. Ancillary control
+  `c1` (`restartctl`, 10 cells): 10 min. Verified independently
+  (orchestrator): `ledger_all.tsv`'s per-recipe cracked counts match the
+  agent's table exactly; **I recomputed tour length from raw fl1577.tsp
+  coordinates myself** for 4 sampled `.tour` files (TSPLIB EUC_2D nint
+  rounding) — `default_s3`/`default_s10`/`popga_s4` all independently
+  recompute to exactly 22249, `lkh3_special_s1` to exactly 22254 (the known
+  stall value) — the crack is real, not a logging artifact. Recipe files at
+  `data/../out/s55/fl1577/cfg/{kickburst,popga,restartctl}.par` (committed
+  location: `out/s55/fl1577/cfg/`, gitignored scratch but kept for re-runs).
+  Full artifacts: `out/fl1577_pc_study/` (ledgers, 50 `lkh.log`+`row.tsv`
+  per cell, 4 sampled `.tour` files, harness scripts, build log).
+- result: **fl1577 IS CRACKABLE — comprehensively — which inverts the P4
+  gate's premise.** `cracked_total = 24/50` (cracked = best == 22249):
+
+  | recipe | cracked/10 | min gap | median gap | note |
+  |---|---|---|---|---|
+  | `default` (stock LKH, control) | **4** | 0 | 12 | — |
+  | `lkh3_special` (published-stall control) | **4** | 0 | 5 | reproduces the +5 stall on the other 6 |
+  | `gaincrit_patch` (control, demoted s55) | **0** | 17 | 38 | confirms s55: much worse than stock |
+  | `kickburst` (new: KICKS=3, KICK_TYPE=6) | **6** | 0 | 0 | perturbation escape |
+  | `popga` (new: POPULATION_SIZE=12 + finite per-run budget) | **10** | 0 | 0 | recombination escape, fastest (median 11.9s to optimum) |
+  | `restartctl` (ancillary: popga minus population) | **5** | 0 | 0 | isolates restart-alone from recombination |
+
+  - **The headline is not "which recipe wins" — it's that the CONTROL
+    passes.** Stock LKH cracks fl1577 4/10 at a 600s single-core budget.
+    The published "LKH 0/10 at 22254" result (Ochoa–Veerapen 2018,
+    verified against primaries at s55) is a **budget artifact**: the
+    published runs used `MAX_TRIALS = DIMENSION` (short, per-run-capped),
+    not a sustained single 600s chained-LK run. So "cracks fl1577" is now
+    a very weak P4 filter — failing it still disqualifies a recipe
+    (`gaincrit_patch` did), but passing it says little. **P4 recipes
+    should be re-gated on time-to-optimum or a harder (shorter) budget**,
+    where the recipes visibly separate (popga median 11.9s vs default's
+    30.5s vs lkh3_special's 201.4s).
+  - **popga's 10/10 needed the ancillary control to interpret.** popga's
+    finite per-run budget (`MAX_TRIALS=1577 TIME_LIMIT=15`) is itself a
+    restart mechanism (~40 runs/cell) independent of recombination —
+    `restartctl` (same budget, no population) isolates that: **5/10**.
+    So **ERX recombination roughly doubles the crack rate over bare
+    restarts (5/10 → 10/10)**, and drives by far the fastest
+    time-to-optimum. The population/recombination mechanism is carrying
+    real, measurable weight — not just "more restarts help."
+  - **kickburst (6/10) is a genuine second escape mechanism**, distinct
+    from restarting (it makes ONE long run, no `MAX_TRIALS` cap) — a
+    strong-kick (k=6 double-bridge x3/trial) chained-LK run beats both
+    stock LKH and the published stall recipe.
+  - Design notes worth keeping: both new recipes are individually
+    documented inline in their `.par` files with the mechanism, the
+    LKH-3 source lines that gate it (`ChooseInitialTour.c:38` for kicks,
+    `LKHmain.c:154` for `STOP_AT_OPTIMUM`'s population-only early exit),
+    and — for popga — an explicit trap noted and dodged (without a finite
+    per-run budget the genetic layer never engages and `POPULATION_SIZE`
+    silently no-ops).
+  - **Toolchain/measurement traps for future PC LKH work:** the Windows
+    build's `TIME_LIMIT`/`TOTAL_TIME_LIMIT` measure true wall time
+    (MSVCRT `clock()`), NOT the ~1.35× overshoot the Mac harness measured
+    (macOS/Linux `getrusage` excludes preprocessing) — **do not apply the
+    1.35× factor to PC sweep sizing.** Overriding LKH's `CFLAGS` on the
+    make line drops `-DTWO_LEVEL_TREE` silently (wrong tree type) unless
+    re-added explicitly. PowerShell `*>` redirection writes UTF-16LE —
+    Mac-side grep/Python silently found zero matches until logs were
+    converted to UTF-8 (indistinguishable from "pattern absent"). The
+    generic `Trials = (\d+)` regex substring-matches LKH's echoed
+    `MAX_TRIALS`/`POPMUSIC_TRIALS` parameter lines — use LKH's own
+    `Trials.max` summary line instead (this also explains why the
+    original Mac s55 ledger showed `trials=0`: those logs never echoed
+    parameters). `secs` is not comparable across recipes — only `popga`
+    (and anything else gating `STOP_AT_OPTIMUM` on population) exits
+    early on cracking; every other recipe burns the full 600s regardless.
+  - **Next step this opens, not yet run:** re-gate the two winning
+    recipes (popga, kickburst) at a much shorter per-cell budget (e.g.
+    60-90s) where stock LKH and the controls are expected to fail more
+    often, to get a real discriminating signal before spending n=7 CPU —
+    Andrew's call on whether/when to queue that.

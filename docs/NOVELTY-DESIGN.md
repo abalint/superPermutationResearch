@@ -189,6 +189,21 @@ the same measured pathology. n=7 at 5040 nodes = LAUNCH.
      the GAIN_CRITERION=NO / PATCHING_C=5 recipe named in P4 is
      40–60× WORSE than stock LKH here — demoted from candidate to
      control. Recipe study = SWEEP-QUEUE entry.)**
+     **(next session: recipe study RUN on the farm PC (SWEEP-QUEUE) —
+     THE GATE PREMISE FLIPS. At a 600s single-core budget, stock LKH
+     itself cracks fl1577 4/10 (the published 0/10 was a budget
+     artifact of `MAX_TRIALS=DIMENSION`, not a landscape barrier), so
+     "cracks fl1577" barely discriminates anymore — 24/50 cells cracked
+     across 5 recipes, independently re-verified from raw coordinates.
+     Two new recipes both clear the (now weak) bar with room to spare:
+     `kickburst` (strong double-bridge kicks, K=6×3) 6/10, `popga`
+     (LKH's population/ERX-recombination layer + finite per-run budget)
+     10/10 — and an ancillary control isolates recombination from mere
+     restarting (restart-only control 5/10 vs popga's 10/10, so
+     recombination roughly doubles the crack rate and is by far the
+     fastest to optimum). Before spending n=7 CPU on either, re-gate at
+     a shorter budget where the field actually separates — not run yet,
+     Andrew's call.)**
   b. **Aut groups of our known classes** (math survey #1 first step):
      decides Kramer–Mesner |G|>2 viability either way.
      **(s55: DONE, verdict NO on buying a |G|>2 engine. Theorem:
