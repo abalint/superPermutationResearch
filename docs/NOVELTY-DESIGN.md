@@ -280,6 +280,18 @@ completion decidability makes the pipeline busier while lowering its
 information per CPU-hour. Every generator idea answers one question
 first: what fraction of its output can the realizer DECIDE?
 
+**s56/s59 answer (folded in s60, from `out/s59/cliff/REPORT.md`): not a
+pool-precision threshold.** The s56 "sharp cliff at ≈3×R" is a property
+of the decoy-pool instance family, in which pool size and row count are
+collinear (r = 0.99) — at a fixed 4.39×R the same chain is SAT at 1,425
+rows and UNKNOWN at 2,734, and a lower 3.42×R / 2,154-row instance is
+UNKNOWN, in both solver lanes. The controlling variable is absolute
+instance size (rows, and loops through rows). The s56 boundary was
+measured at a 15 s budget; at 120 s it moves up one step on half the
+panel (2.45–3.46 → 2.69–3.50 ×R) but does not dissolve, its edge cell
+is seed-dependent, and randomized restarts are neutral-to-harmful here
+— every "unreachable" in the s56 record is an UNKNOWN at 15 s.
+
 ### 6.1 The three-valued completion contract (binding on all P1 work)
 
 Every completion call receives explicit structural assumptions (cover
@@ -304,6 +316,23 @@ from that 5906/5907 — witness corpora become certificate factories).
 known 5906s from their own cover/chain assumptions at usable rates
 (the known-SAT control gate) and convert a meaningful fraction of
 candidates into witnesses or certified cuts.**
+
+**Milestone status (s60 fold-in).** The control gate itself PASSED in
+s56 (177/177, extended to 221/221 in s57). But both successor
+milestones that were supposed to open the generative tier are now
+retired, for one shared structural reason: **assumption-guessing
+devices are dead as a class on rigid certificates** (delete one true
+atom ⇒ UNSAT, 365/365). The §6.1-gated pool-precision milestone
+(557→≤350, ≤3×R) was refuted as specified in s57 (131 of 177 controls
+are covers of ONE chain; no chain-only 100%-recall filter reaches
+3×R); its replacement, the walk-order prefix proposer, was refuted in
+s59 (18,750 legal prefixes on three known-SAT control chains, 0 SAT,
+scored AND random; mechanism: a walk-order prefix has zero error
+tolerance — 1 wrong row of 30 drops SAT 0.583 → 0.000, vs measured
+per-step accuracy 0.20–0.39 even oracle-guided). The surviving P1
+directions on the open chains are SOUND ones only: row-shrink
+(pairwise cut store), no-good harvesting from the refutation stream,
+and prefix RETRIEVAL against known cover rows — not guessing.
 
 ### 6.2 Vocabulary-completeness instruments (cheap, standalone, P5-grade)
 
@@ -376,6 +405,12 @@ tie-plateau diagnosis rule out bounds as midgame ranking fixes.
 - **Branch-and-price** if the atom catalog outgrows enumeration
   (columns = legal sojourn chains / loop blocks; duals = a global
   scarcity signal).
+- **Realizability arithmetic (s60 fold-in):** the realizer's "~100
+  atom-set decisions/s/core" is a multiplier ≤3 figure — measured
+  ~200/s at ≤3×R, 5/s at 4.0×R and 0.22/s at 4.8×R with 26–29/30
+  non-decisions (`out/s59/cliff/qsb_summary.json`), while the open
+  chains sit at 4.6–4.9×R — so the cover master's realizability must
+  be re-argued against the decision-rate curve, not a scalar.
 - **5905 lanes**: separate deficit lanes (tight Λ=141 per the s34
   2-loop law, plus slack lanes); scoped outcomes only — "no cover
   under the current atom catalog" is NOT "no 5905" unless the catalog

@@ -8,21 +8,32 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S59.md` right after it (supersedes
-   S57; s59 headlines: the **walk-order prefix proposer is REFUTED as a
-   route** — 18,750 legal prefixes on known-SAT chains, 0 SAT, mechanism
-   = zero error tolerance (1 wrong row of 30 kills a prefix), so
-   assumption-GUESSING devices are retired as a class and the surviving
-   #0/#24 front is row-shrink (pairwise cut store queued) + no-good
-   harvesting + prefix RETRIEVAL; the s56 "3×R cliff" was a BUDGET
-   artifact, not a determinism artifact — ε=0 at 120 s matches or beats
-   ε=0.15 everywhere they differ, corrected band 2.69–3.50×R, s57's
-   absolute-size claim CONFIRMED lane-robustly (same 4.39×R: 1,425 rows
-   SAT / 2,734 rows UNKNOWN, both lanes); QS-B measured for the first
-   time: ~200 decisions/s at ≤3×R collapsing ~900× to ~0.22/s at 4.8×R,
-   so §6.4's realizer arithmetic fails at the open chains' 4.6–4.9×R;
-   the s56 A0 "0/6" baseline is an UNCORRECTED budget artifact — do not
-   cite until re-run; s57 headlines it carries: **a(6)=872 is a
+   **Fresh agent: read `docs/HANDOFF-S60.md` right after it (supersedes
+   S59; s60 headlines: **prefix RETRIEVAL is closed as a verified
+   negative** — zero strict conjugacies (0/10,080 symmetries map the
+   group0 chain onto #0/#24), and the relaxed census is provably
+   uninformative (refuted chains outscore open ones; #0's 112/114
+   near-miss dies on a 10-column residual with ZERO candidate rows) —
+   so with pool guessing (s57) and prefix guessing (s59) all three
+   assumption-transfer ideas are dead and **the #0/#24 front is the
+   pairwise cut store ONLY**: the s60 no-good harvest pilot is built
+   and sound (269 cuts, 100% re-confirmed, 0 violations vs 131 known
+   covers) but reusability-NEGATIVE (8-row cuts fire on 0/3,599 fresh
+   prefixes, P≈2.6e-16; size-2 cuts need only ~4.4e3), so the full
+   harvest entry recommends against itself; reusable assets:
+   `out/s60/retrieval/symlib.py` (validated S₇×rev action; 0.1 s
+   chain-equivalence test) and `out/s60/nogood/cutlib.py`/`confirm.py`
+   (the ≥10×-cap re-confirmation harness — minimized cuts sit at the
+   cap boundary by construction, a new trap); NOVELTY-DESIGN
+   §6.0/§6.1/§6.4 now carry the s57/s59 corrections in the text
+   proper; SWEEP-QUEUE holds four pending approved: NO entries incl.
+   the fully-specced LOCAL A0 re-run (~90 min — the last uncorrected
+   15 s artifact); s59 headlines it carries: the walk-order prefix
+   proposer REFUTED (18,750 legal prefixes, 0 SAT, zero error
+   tolerance mechanism); the s56 "3×R cliff" was a BUDGET artifact —
+   corrected band 2.69–3.50×R, absolute-size claim CONFIRMED
+   lane-robustly; QS-B measured: ~200 decisions/s at ≤3×R collapsing
+   ~900× to ~0.22/s at 4.8×R; s57 headlines: **a(6)=872 is a
    machine-checked theorem** modulo Lean native-compiler trust — the
    n=6 871 hunt is OVER (ROADMAP has the reckoning: n=6 = theory
    testbed, validation ladder = n=7 5905 evidence / shell growth / n≥8

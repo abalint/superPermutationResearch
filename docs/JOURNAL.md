@@ -6,6 +6,103 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-07-31 (session 60) — **The last prefix idea dies and the row-shrink fork resolves itself: prefix RETRIEVAL is closed as a verified negative (zero strict conjugacies — 0 of 10,080 symmetries map the group0 chain onto #0/#24, positive control returns its 2 automorphisms — and the relaxed census is provably uninformative: provably-coverless chains outscore open ones on median, #0's rank-1 near-miss of 112/114 mapped rows dies on 10 residual columns that NO row of the whole 2,662-row instance covers, and between two chains that both provably have covers the best of 131 covers × 10,080 relabelings reproduces only 25.4%/22.6% of a real target cover), so all three assumption-transfer ideas are now dead (pool guessing s57, prefix guessing s59, prefix lookup s60) and #0/#24 is row-shrink ONLY; meanwhile the no-good harvest is BUILT, SOUND, and REUSABILITY-NEGATIVE — 269 minimized cuts (115 #0 / 107 #24 / 47 control), every one re-confirmed rc 2 in fresh processes, 0 soundness violations across 6,157 cut×known-cover subset tests — but prefix refutations minimize to ~8 rows, not pairs, and an 8-row no-good over 2,346 rows fires on 0 of 3,599 fresh legal prefixes (P = 2.6e-16 per prefix; ~10¹⁵ cuts needed for 50%), so the queued 20.8 core-hour full harvest is recommended AGAINST as specified and the budget belongs to the PAIRWISE cut store (~9 core-h, size-2 cuts need only ~4.4e3 for the same hit rate, and pairs consume as instance reductions — dlx7g has no clause facility). The row-shrink menu entered s60 with two candidate tools and leaves it with one.**
+
+Two Opus agents (retrieval probe; no-good harvest pilot), launched in
+parallel per the delegation protocol; all compute local Mac, ≤3 cores,
+no process >10 min, nothing on the farm, ~24 s + 23.0 min solver time.
+The orchestrator independently re-verified every load-bearing claim:
+retrieval — all seven scripts re-run from scratch (~24 s), logs
+byte-identical modulo wall-clock lines (L2 zeros, the 112/114 packing
+and its 0-candidate residual, the 223-chain sweep ranks and per-verdict
+medians, the 30/28-row cover-into-cover maxima all read from the
+regenerated ledgers); harvest — all three stores re-confirmed in fresh
+`confirm.py` runs (115/115, 107/107, 47/47, exit 0), control
+cross-check re-run (VIOLATIONS 0), reuse probe re-tallied from the
+JSONs (3,599 prefixes, 0 hits), the combinatorics recomputed (P₈ =
+2.6e-16 confirmed; cuts-for-50% recomputes to 3.1e15 vs the report's
+2.7e15 — same order, noted in the filed report; the size-2 figure
+4,382 exact), s59 stream recount 31,026 exact, and the ε=0 lane audit
+checked at `dlxrun.py:22` source.
+
+**1 — Prefix retrieval probe (menu item 3): CLOSED NEGATIVE.**
+`out/s60/retrieval/` (symlib.py — a validated G = S₇×{1,rev} action on
+chains/rows/covers, all 10,080 elements, reversal verified
+*semantically* by round-tripping a reversed word through
+`p1a_assume.extract` — plus 7 probe scripts, full ledgers; REPORT.md
+orchestrator-filed). Three tiers: L0 row-signature is VACUOUS (G acts
+transitively on the 5,040-row universe — "∃g" carries zero
+information); L2 strict instance-isomorphism is ZERO for every target
+(ctrlgroup1/2, farm0/24) with the self-control correctly returning 2
+(id + the chain's one reversal automorphism, `Aut = {id, rev*5264137}`);
+L1 relaxed (whole relabeled cover into the target instance as a legal
+partial packing) is large everywhere and MEANS NOTHING — the decisive
+null runs the same statistic over all 223 census chains: the 85
+provably-coverless chains score the same or higher (median 97–100 vs
+96 for open), with refuted chains showing the identical
+near-miss-then-instant-death anatomy (#5/#25: 106/112 with a 6-column,
+1-candidate residual). Every top packing was completed EXACTLY
+(exhaustive residual DFS, no caps hit): all UNSAT; #0's best packing
+(112 of 114 rows, relabeling `6512437`) leaves 10 columns with zero
+candidate rows in the entire instance. #0/#24 stay honest UNKNOWN —
+nothing here bears on their coverability either way. Keep: symlib.py
+is a 0.1 s "is this chain G-equivalent to one already refuted?" test.
+New cheap theory question: on every chain, open and refuted alike, the
+best packing dies on a residual with 0–1 candidate rows — is there a
+proof behind that?
+
+**2 — No-good harvest pilot (menu item 1's local complement): BUILT,
+SOUND, REUSABILITY-NEGATIVE.** `out/s60/nogood/` (cutlib.py — cut
+semantics with a one-directional soundness argument: rc 2 exhaustion
+of the S-fixed residual refutes every cover ⊇ S, valid on arbitrary
+subsets, which is what licenses minimization —, harvest.py, confirm.py,
+5 audit scripts, LEDGER.txt; REPORT.md orchestrator-filed with
+re-verification note). Yield ~22 cuts/min/core on the open chains,
+shrink 1.71×/2.04×, stores are exact antichains — but that reflects a
+tiny explored region (199/279 DFS nodes; two rows appear in 108 of
+115 #0 cuts). Found-then-cleared defect worth keeping as a trap:
+greedy minimization drives every cut to the cap boundary BY
+CONSTRUCTION, so re-running at the harvest cap is a coin flip (11/60
+first-pass failures); at 2 s every one of 269 cuts re-confirms.
+Always re-confirm minimized cuts at ≥10× the probe cap (the
+`confirmed_*.jsonl` stores carry each cut's own exhaustion time). The
+known-SAT control separates cleanly (18.7-row cuts, 1.25× shrink vs
+8.1–8.3 rows on the open chains) and passes the falsification gate:
+no cut is a subset of any of the 131 known covers, and 15 genuine
+cover prefixes are never refuted. Verdict mechanism: cut LENGTH is
+everything — the reusability floor sits at ~6.5 rows even at 10× cap
+(5.5× cost), and pairs are provably not reachable from prefix
+refutations. Queue effect: full-harvest entry FILED with a
+recommendation against itself (approved: NO); pairwise cut store
+entry ANNOTATED with the supporting arithmetic and the cutlib/confirm
+harness + cap-boundary build note.
+
+**3 — Docs folded (menu item 5) + specs filed (item 2).**
+NOVELTY-DESIGN gets the s56/s59 corrections in the text proper: §6.0
+the "not a pool-precision threshold" verdict (absolute instance size
+controls; the cliff is a property of the decoy-pool family), §6.1 a
+milestone-status block retiring both assumption-guessing milestones
+with the shared zero-error-tolerance mechanism, §6.4 the measured
+QS-B decision-rate curve replacing the ~100/s scalar. SWEEP-QUEUE
+gains three entries, all approved: NO — the QS-B full verdict-mix map
+(drafted s59, filed s60), the A0 gate re-run at ≥300 s both lanes
+(menu item 2: ~90 min at 3 cores LOCAL, spec complete with heartbeat
++ abort, ready for Andrew's launch agent — the last uncorrected 15 s
+artifact, flagged as the most citation-dangerous line in the repo),
+and the full no-good harvest (with its own negative recommendation).
+
+**Next session (s61), concretely:**
+- Andrew's queue calls, now sharpened: the pairwise cut store is the
+  ONLY surviving #0/#24 tool (~9 core-h, farm) — s60 removed its
+  competitor; A0 re-run (~90 min local) unblocks citing the s56
+  baseline; QS-B map and Σ15–16 census remain pending.
+- The near-miss residual anatomy question (retrieval REPORT §8): why
+  do best packings on every chain die with 0–1 candidate rows? Pencil
+  first; if it survives, it may be a new sound pruning rule.
+- j-tax closure (S56 menu item 3, still open): n=5 cap-154 exhaustive,
+  n=6 midgame probe design, the 868→872 gap.
+- Grammar writeup / Grayzel–Gheorghe/Kristan outreach (Andrew).
+
 ## 2026-07-31 (session 59) — **The s58 milestone is REFUTED with a mechanism, and the hardness-number story inverts a second time: the walk-order prefix proposer was built, gated properly, and fails structurally — 18,750 legal walk-order prefixes on three known-SAT control chains produced ZERO SATs (proposer AND random baseline; cap ruled out as confounder first: known-true prefixes complete 62–100% at m=30/2 s) because a walk-order prefix has ZERO error tolerance (corrupt exactly 1 row of 30 in a genuine cover prefix: SAT rate 0.583 → 0.000, ≥75% provably dead; required per-step accuracy ≈ 1.0 over ~30 steps vs measured oracle-guided top-1 of 0.20–0.39) — the same rigid-certificate fact that killed pool precision in s57 kills prefix precision, so assumption-GUESSING devices are retired as a class; #0/#24 stay honest UNKNOWN (witness lane, 2×560 s each, no witness, the record ritual never triggered). Meanwhile menu item 4 OVERTURNS ITS OWN PREMISE: the s56 "3×R cliff" was a BUDGET artifact, not a determinism artifact — at a common 120 s budget the DETERMINISTIC lane (ε=0) matches or beats ε=0.15 on every cell where they differ (3.50×R cell: ε=0 SAT 10.8 s at 5.02M nodes, i.e. s56's "unreachable" timeout was 0.6M nodes short of its own solution; on the 3.44×R cell restarts LOSE a solution ε=0 finds in 86.7 s), the cliff band shifts only 2.45–3.46 → 2.69–3.50×R (no collapse: all six full-pool cells 4.87–5.72×R stay UNKNOWN in BOTH lanes), s57's absolute-size claim is CONFIRMED lane-robustly by a controlled pair (same chain, same 4.39×R: 1,425 rows SAT both lanes, 2,734 rows UNKNOWN both lanes; a LOWER-multiplier 3.42×R/2,154-row instance is UNKNOWN) — and QS-B, which s56 specified but NEVER RAN (its "~100 decisions/s/core" was 3 cells at ≤2×R), is now measured for real: ~200 decisions/s at ≤3×R collapsing ~900× to 0.21–0.23/s at 4.8×R with the verdict mix flipping to 26–29/30 UNKNOWN, so NOVELTY-DESIGN §6.4's "cover master provably realizable IF a proposer hits ≤3×R" clause fails at the open chains' 4.6–4.9×R at every precision any proposer has achieved. The surviving front on the open chains is ROW-SHRINK ONLY: the pairwise cut store (queued this session), harvesting the proposer's ~31k sound prefix refutations as minimized no-good cuts, and prefix RETRIEVAL (lookup vs the 1,425 known group0 cover rows) — not another guessing device.**
 
 Two Opus agents (prefix proposer; cliff/QS-B regeneration), launched in

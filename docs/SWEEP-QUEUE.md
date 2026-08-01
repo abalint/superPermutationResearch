@@ -1165,7 +1165,14 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   farm cores + harness build. Round-robin probe first per house rule —
   pair probes may not price like singleton probes.
 - approved: NO
-- status: pending
+- status: pending — **s60 pilot evidence STRENGTHENS this entry** (`out/
+  s60/nogood/REPORT.md`): prefix-derived no-goods minimize to ~8 rows and
+  never fire on fresh prefixes (0/3,599), while at size 2 a 50% hit rate
+  needs only ~4.4e3 cuts, and pairs are consumable as instance reductions.
+  Build note: reuse `out/s60/nogood/cutlib.py` (cut semantics + capped
+  check) and `confirm.py` as the verification harness, and adopt the
+  cap-boundary lesson — re-confirm every stored cut in a fresh process at
+  ≥ 10× the probe cap before storing it.
 - result: —
 
 ## extended-census Σ15–16 sweep (5-block frame at the 5905-relevant scores)
@@ -1187,4 +1194,78 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   time.
 - approved: NO
 - status: pending
+- result: —
+
+## QS-B full realizer verdict-mix map, chains #0/#24 (s59 item 4 follow-on)
+- spec: `out/s59/cliff/qsb.py` extended — multipliers 3.0, 3.25, 3.5, 3.75,
+  4.0, 4.25, 4.5, 4.75, full on chains #0 and #24, N=200 samples/cell, TL
+  30 s, REFUTATION LANE (ε=0) only: the product is a decision-rate and
+  UNSAT-fraction curve, and only ε=0 can report the UNSAT fraction soundly.
+  Sampling stream must stay `random.Random(12345+idx)` so cells stay
+  comparable to s56/s59. Shard by (chain, mult); a SAT is a 5905 → stop,
+  `p1a_assume.confirm_sat`, `cargo run --release -- validate -n 7 --file
+  <abspath> --complete`, and `analysis/counting/m3_check.py -n 7 <abspath>`,
+  all green before any claim.
+- product: the curve NOVELTY-DESIGN §6.0/§6.4 actually needs ("what fraction
+  of a generator's output can the realizer DECIDE?") as a function of the
+  precision a proposer achieves, replacing the single ~100/s scalar.
+- projected: 2 chains × 9 mults × 200 samples; measured s59 mean 0.006 s at
+  ≤3×R, 0.2 s at 4.0×R, 4.8 s at 4.8×R → ~2.5 core-hours dominated by the
+  top three cells; ~7 min wall on 24 farm cores. Round-robin probe first per
+  house rule — high-mult cells may not price like low-mult cells.
+- approved: NO
+- status: pending (drafted in out/s59/cliff/REPORT.md §7, filed s60)
+- result: —
+
+## A0 gate re-run at 120 s, both lanes (s60 menu item 2 — LOCAL, not farm)
+- spec: re-run the s56 A0 baseline ("cover from the chain alone, no atom
+  assumptions" — JOURNAL s56 §1's "0/6") on the six s56 panel control
+  instances at TL ≥ 300 s, BOTH lanes (ε=0 and ε=0.15 via
+  `out/s57/proposer/dlxrun.py`), 1 seed ε=0 + 2 seeds ε=0.15 per cell.
+  Instances regenerated via `out/s59/cliff/geninst.py` conventions and
+  byte-checked against s56 where applicable. Every run row appended to a
+  trials.tsv ledger (stage tag `a0_120`); verdicts three-valued, a timeout
+  is UNKNOWN, never a negative result. Heartbeat: STATUS file updated
+  per-run + ledger append (OPERATIONS.md conventions); abort =
+  `pkill -f dlxrun`.
+- product: replaces the LAST uncorrected 15 s budget artifact in the repo —
+  currently the most citation-dangerous line ("no engine finds a cover from
+  the chain alone", out/s59/cliff/REPORT.md §7 flags it). Either the field
+  fact survives at a real budget (citable at last) or a control chain
+  completes from the chain alone and the A-ladder premise changes.
+- projected: 6 instances × 3 runs × ≤300 s ≈ **≤ 90 min at 3 cores local
+  Mac** (cliff REPORT §7 sizing). No farm needed.
+- approved: NO
+- status: pending (spec written s60 for Andrew's launch agent)
+- result: —
+
+## full no-good harvest of the s59 prefix-refutation stream, #0/#24 (s60 pilot verdict attached)
+- spec: `out/s60/nogood/harvest.py --spec farm{0,24} --check-from 6
+  --step-cap 0.2 --m 30 --beam 24 --mode score`, sharded by seed, one shard
+  per core; every rc 2 greedily minimized by one deletion pass
+  (`cutlib.minimize`, drop kept ONLY on rc 2 within the cap — a timeout is
+  never a cut), then EVERY surviving cut re-confirmed in a fresh process at
+  a ≥ 10× cap (`confirm.py`, mandatory: minimization lands cuts at the cap
+  boundary — 8.7–29% of pilot cuts exhaust above the harvest cap).
+  Refutation lane only, ε = 0, deterministic; store = JSONL antichain keyed
+  by the base-instance sha256. Ledger per shard.
+- product: a persistent sound no-good store over the s59 stream (~31,026
+  refutations) for chains #0 and #24.
+- projected: 31,026 refutations × 2.41 s measured minimization cost =
+  **20.8 core-hours** (12.8 with the measured 31–46% in-run subsumption
+  skip); ~55 min wall on 24 farm cores. Yield ~31k cuts of mean 8.2 rows
+  (measured pilot: 22.9 and 21.3 cuts/min/core, shrink 1.71× / 2.04×,
+  0 soundness violations vs 131 known covers).
+- approved: NO
+- status: pending — **and the s60 pilot recommends NOT approving it as
+  specified** (`out/s60/nogood/REPORT.md`): the consuming side was
+  measured — 3,599 fresh legal prefixes on three chains hit a
+  115/107/47-cut store ZERO times, and P(random 30-prefix ⊇ fixed 8-set)
+  = 2.6e-16, so ~10¹⁵ cuts of this length are needed before the store
+  prunes anything it did not itself generate. 20.8 core-hours buys an
+  asset with no measured consumer. Redirect the budget to the PAIRWISE
+  cut store (entry above, ~9 core-hours): at size 2 the same 50% hit rate
+  needs 4.4e3 cuts — twelve orders of magnitude cheaper per cut — and
+  pairs are consumable as instance reductions, which 8-row sets are not
+  (dlx7g has no clause facility).
 - result: —
