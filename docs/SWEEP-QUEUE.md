@@ -1164,16 +1164,98 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   §8.3 figure, from measured singleton probe rate); ~24 min wall on 24
   farm cores + harness build. Round-robin probe first per house rule —
   pair probes may not price like singleton probes.
-- approved: NO
-- status: pending — **s60 pilot evidence STRENGTHENS this entry** (`out/
-  s60/nogood/REPORT.md`): prefix-derived no-goods minimize to ~8 rows and
-  never fire on fresh prefixes (0/3,599), while at size 2 a 50% hit rate
-  needs only ~4.4e3 cuts, and pairs are consumable as instance reductions.
-  Build note: reuse `out/s60/nogood/cutlib.py` (cut semantics + capped
-  check) and `confirm.py` as the verification harness, and adopt the
-  cap-boundary lesson — re-confirm every stored cut in a fresh process at
-  ≥ 10× the probe cap before storing it.
-- result: —
+- approved: **YES — go-ahead given OUTSIDE this file and never recorded** (same
+  gap as `ex1` and `n6a450r2tightprobe`; third occurrence). Probe `pcprobe1`
+  and full run `pc1` both executed 2026-08-01 overnight while the entry read
+  `approved: NO / status: pending`. Reconstructed by the sweep runner
+  2026-08-01. **Record the approval when you give it.**
+- status: **done** — farm run `pc1`, 24 shards, 2026-08-01 → 01:22:16,
+  **184.4 min wall / 72.93 core-hours**, 24 ok / 0 failed, 0 errors, no ALARM.
+  Preceded by round-robin probe `pcprobe1` (24 shards, 3.8 min). Verified
+  independently 2026-08-01 (`out/s58/analysis_pc1/`).
+  - Build note above is **WRONG on two counts, corrected here.** (a) It says to
+    reuse `out/s60/nogood/confirm.py`/`cutlib.py` as the verification harness —
+    **do not.** Those render via the `propose.py` RELAXATION, whose fingerprint
+    is the relax sha `73dc4dd5…`, not this store's base sha `4f05c1b5…`; the
+    assert fails outright, and semantically relaxation-UNSAT implies
+    fixed-column-UNSAT but **not the reverse**, so following the note literally
+    manufactures false soundness alarms on sound cuts. (b) The "re-confirm at
+    ≥10× cap" clause was **already implemented inside the instrument** —
+    `paircuts.py --reconfirm-mult` defaults to 10 — so the pass it demands ran
+    inline on every cut, and there is no separate artifact to look for.
+- result: **The store is SOUND — fully verified, not sampled — and it is also
+  nearly worthless: its entire instance-reduction product is 54 row deletions
+  that a 9.3-second local singleton pass reproduces exactly.**
+  Ledger: 2,350 rows, 2,760,075 pairs (= C(2350,2) exactly), 101,513
+  structural skips, 2,658,562 probed, **147,561 no-goods**, 2,511,001 UNKNOWN,
+  0 errors, 0 duplicate cuts, single `base_sha` across all 24 shards.
+  - **Soundness, established four ways.** (1) **All 147,561 cuts re-confirmed**
+    in fresh processes at cap 2,000,000 = **1000× the probe cap** (100× the
+    mandated 10×): 147,561/147,561 UNSAT, 0 failures, 0.43 core-hours local —
+    population, not sample. (2) **Node counts are IDENTICAL** for all 147,561
+    cuts between the Windows farm run and the macOS re-run — the stronger check,
+    since verdict-matching alone would pass even if two engines disagreed about
+    the tree. (3) The reduction is machine-checked on the real target: `kill[r]`
+    is exactly the conflict set for all 2,350 rows, no stored cut is
+    structurally conflicting, and forcing is exact — giving the theorem that
+    exit 2 means "no cover contains both". (4) A **solver-free independent
+    prover** (dead-column + unit propagation, ignoring dlx7g entirely) proves
+    20,708 cuts with no search — and the 20,300 it closes at round 1 are
+    **exactly** the 20,300 dlx7g exhausted in 1 node.
+  - **Positive controls: 0 violations, three ways.** Rows {0,21,690,691} are
+    unit-propagated into every cover of #0, and none of their 6 pairs appears in
+    the store (a real control on an OPEN chain). Instrument-level on a
+    known-cover chain: 323,536 probes, 11,008 cuts, **0 violations** vs all 131
+    known covers. Oracle at scale: PASS, 0 failures, including 1,200 pairs drawn
+    from real covers, 0 refuted.
+  - **No jackpot, provably:** `probed = nogoods + unknown` exactly with
+    `errors = 0`, so the SAT count is identically zero — every probe accounted
+    for. Corroborated by 0 JACKPOT files, 0 ALARM, 0 stderr bytes, all rc=0.
+  - **The usefulness verdict is blunt: it bought ~9 seconds of unique product.**
+    Coverage is 5.35% of all pairs; **91.0% of pairs are UNKNOWN — nothing was
+    learned about them.** Sound propagation to a fixpoint deletes **54 rows and
+    nothing else** (fixpoint at round 2, **no cascade**): 2,350 → 2,296 alive,
+    −2.30%, closing 6.4% of the gap to the ≲1500-row target. **Every one of the
+    54 comes from a pair `(f,x)` with `f` one of the 4 already-forced rows —
+    i.e. logically a SINGLETON refutation.** Running the singleton layer in the
+    same fixed-column render: 2,350 probes, **the identical 54 rows**, 5.4 s
+    wall / 30.9 core-seconds; to a fixpoint 9.3 s. **72.93 core-hours vs 9.3
+    seconds for the same result — a ~28,000× cost ratio.**
+  - **What IS genuinely new**, and it is untested: after the 54 dead rows are
+    removed, 120,878 of the cuts (81.9%) reference a row the store itself proves
+    is in no cover. The residual is **26,683 live cuts** over 2,296 rows = +23.2
+    forbidden partners per row on top of 84.7 structural conflicts, a **+27%
+    forward-checking pruning increase**. Unlike s60's 8-row cuts these DO fire
+    (6× over s60's own 50%-hit-rate bar). Whether +27% converts into a DECIDED
+    instance is completely untested.
+  - **A bigger cap will not help — do not run one.** 4,000 random UNKNOWN pairs
+    re-probed at 100× cap: **0 newly refuted, 0 SAT, 100% still UNKNOWN**, at 24×
+    the cost. Rule-of-three 95% bound ⇒ ≤0.075% refutation rate ⇒ at most ~1,880
+    further cuts from all 2.51M UNKNOWNs, for ~980 core-hours / 41 h wall on 24
+    farm cores.
+- **THE REUSABLE FINDING is not the store — it is the RENDER.** s57's claim that
+  the singleton layer "saturated" is **render-relative**: it saturated in the
+  `propose.py` relaxation, which forces a row by DELETING its child columns and
+  thereby relaxes the first-visit ordering. `paircuts.py`'s fixed-column render
+  holds columns fixed and deletes only conflicting rows, keeping the ordering
+  constraint intact — strictly stronger, and at the same 2,000-node cap it
+  refutes **54 more rows in 31 core-seconds**. Cheap next move, no farm, no
+  approval needed at that price: a fixed-column singleton pass on chain #24 and
+  the `ctrlgroup*` pool.
+- **SIZING LESSON — the house rule worked and was then ignored.** Projected 9
+  core-hours from an s57 SINGLETON rate measured on a Mac; realized 72.93, an
+  **8.1× overrun**. But `pcprobe1` predicted **71.7 core-hours — within 1.7% of
+  realized** — and that number was evidently never multiplied through into a
+  re-sizing decision before launch. Two concrete rules: (1) **quote wall/probe,
+  not the instrument's `secs_per_probe`** — the latter times only the dlx7g
+  subprocess and misses everything else, a 1.08× gap on macOS but **4.9× on the
+  farm**; the apparent "13× slower than local" is really 2.7× platform + 4.9×
+  metric mismatch. (2) **Price the file-write, not the search.** `paircuts.py`
+  writes a 57,547-byte instance file and spawns a fresh process **per probe**,
+  to run a search of median depth **7 nodes** — **78.5% of the 72.93 core-hours
+  went to writing instance files** (77.55 ms of the 98.75 ms wall per probe, vs
+  0.58 ms on macOS). At these node counts the engine is free and I/O is
+  everything.
 
 ## extended-census Σ15–16 sweep (5-block frame at the 5905-relevant scores)
 - spec: `out/s57/express/enum_ext.py` (the 5-block extended enumerator,
@@ -1192,9 +1274,151 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   core-hours**; minutes-to-~1 h wall on the farm depending on shard
   balance. Rate is Mac-measured — probe on a PC core before quoting wall
   time.
-- approved: NO
-- status: pending
-- result: —
+- approved: **YES — but the go-ahead was given OUTSIDE this file and never
+  recorded here** (the same bookkeeping gap as `n6a450r2tightprobe`). Farm run
+  `ex1` executed 2026-08-01 ~07:15 → 07:19 and the entry still read
+  `approved: NO / status: pending` for six hours afterwards. Found and
+  reconstructed by the sweep runner 2026-08-01 while checking what to run next
+  — a re-run would have been launched on top of a completed sweep. **Record the
+  approval when you give it.**
+- status: **done — CLOSED by three runs, and closable as written.** `ex1`
+  (`--target 15`) ran 2026-08-01 07:15:47 → 07:19:29 and was PARTIAL: the spec
+  says **"target V=15/16"** but only target 15 was launched, which
+  systematically drops 16 census chains (see result). The sweep runner found
+  this 2026-08-01 and closed it the same day with two follow-ons:
+
+  | run | target | terminal skip | nodes | chains | gen/pivbreak | wall |
+  |---|---|---|---|---|---|---|
+  | `ex1` | 15 | 0 | 540,659,889 | 238 | 27 / 27 | 3.7 min |
+  | `ex2` | 16 | 1 | 540,660,629 | 54 | 0 / 0 | 3.7 min |
+  | `ex3` | 17 | 2 | 540,660,819 | 16 | 0 / 0 | 3.7 min |
+
+  All three 24 shards, 24 ok / 0 failed, **every shard EXHAUSTED**, 62,425
+  subtrees each. Total cost **11.1 min wall / ~2.0 core-hours**. Artifacts
+  `out/s58/farm/ex{1,2,3}/`, analysis `out/s58/analysis_ex1/`.
+- result: **The census is confirmed exhaustive in its own frame at Σ≤16 — 0 new
+  IN-FRAME chains — and 27 chains at the 5905 score exist OUTSIDE the frame,
+  which no tool in this repo can currently turn into a cover instance.**
+  62,425 subtrees, 540,659,889 nodes, 238 chains, 27 pivbreak, 27 gen.
+  - **Coverage is real, and the STATUS line that says otherwise is a display
+    artifact.** `STATUS.txt` reads `intermediates 4824/62425 (7.7%)`, which
+    looks like a truncated run. It is not: `enumext_sweep.py:224` throttles
+    heartbeats to `len(mine)//200`, so every shard writes exactly 201 ticks —
+    24 × 201 = 4,824 exactly. Every shard ends `DONE … EXHAUSTED`. Verified
+    the hard way as well: the depth-5 frontier rebuilds locally to 62,425
+    roots / 0 above-frontier hits, round-robin `k % 24` sums to exactly
+    62,425, and **five shards (13, 17, 18, 19, 22) were re-run from scratch
+    locally and are byte-identical to the farm's output.**
+    **TRAP: do not read this supervisor's percentage as coverage for any
+    instrument that throttles its heartbeat.**
+  - **The 238 chains:** 207 are rediscoveries of census chains
+    (`results_n7_merged.csv`: 131 OPEN / 47 STRUCTURAL / 29 UNSAT), including
+    all 26 s57 chains. 31 are not in the census — 24 at Σ≤16 (all outside the
+    frame) and 7 at Σ=17 (an incomplete by-catch band, see below).
+    **0 new in-frame chains at Σ≤16**, which upgrades the s57 exhaustion
+    (Σ≤14) by two Σ steps for terminal-skip-0 chains.
+  - **The 27 outside-frame chains, and why "27 gen" and "27 pivbreak" are the
+    SAME 27:** exactly 5,040 of 20,160 extended hops are pivot-preserving and
+    they are precisely the reversal door, so a generalized block always
+    changes pivot and leaving pivot 7 always requires one. Not a coincidence —
+    a property of the move table. All 27 have K + R = 141, i.e. **all sit at
+    the 5905 score**; 24 are in the exhaustively-swept band. Shapes:
+    out-and-back excursions of length 1 (×12) or 2 (×10), plus 5 chains that
+    TERMINATE on a non-pivot-7 loop. Only blocks `(2,0,1)` and `(0,2,1)` are
+    ever used.
+  - **Nothing is gateable, and the ALARM banner's ritual does not apply.** The
+    run emitted no word and no solution file — only chain path tuples. A chain
+    is a kernel skeleton; turning one into a word needs the exact-cover
+    instance BUILT and SOLVED, which is the open step (85 closed / 138 open
+    across the census). The `validate -n 7 --complete` + `m3_check` text in
+    ALARM.txt is boilerplate emitted verbatim by `untargeted_super.ps1:289`
+    for any `***` line. **Nothing was gated because there was nothing to
+    gate.** What is established is exactly: 27 chains at the 5905 score exist
+    outside the frame and survive the free structural test. Not a cover, not a
+    candidate word.
+  - **No existing tool can build an instance for them.** `chain7.verify_chain`
+    asserts pivot-homogeneity AND the reversal door; s57's
+    `express.verify_chain_ext` relaxes the pivot assert but still demands
+    `t == certificate.door(s,c)`. All 27 fail both (211/238 pass both,
+    27/238 fail both — checked directly).
+  - **A systematic gap, proven per-chain THEN closed: the target-15 run misses
+    16 census chains.** Indices 35, 38, 42, 49, 56, 64, 67, 73, 78, 79, 81,
+    152, 160, 195, 207, 222 (7 OPEN / 5 STRUCTURAL / 4 UNSAT). All 16 have a
+    terminal loop riding only 5 orbits (13 chains) or 4 (3 chains).
+    `kf2chain.py:29` permits a terminal skip; `enumext_sweep.is_hit` requires
+    `K − Σ_hops == target` with the terminal treated as a FULL ride — so the
+    census's V counts the terminal skip and enum_ext's does not, differing by
+    exactly that skip. Each of the 16 was replayed on the sweep's own `expand`
+    relation: all 16 reachable, full terminal ride legal in all 16, `is_hit`
+    True at `target = 15 + skip` and False at 15.
+    **`ex2` and `ex3` recovered all 16 at EXACTLY the predicted target** — 13
+    skip-1 chains by target 16, 3 skip-2 chains (160, 195, 222) by target 17,
+    with **zero terminal-skip mismatches across all 223 census matches**. That
+    per-chain agreement, not the headcount, is what confirms the V-convention
+    diagnosis. Tables: `missed16.tsv`, `missed16_RESOLVED.tsv`.
+  - **UNION RESULT (ex1 ∪ ex2 ∪ ex3): 223/223 census chains recovered, 0
+    missing.** 308 distinct chains total, 0 cross-run duplicates (structurally
+    forced — a fixed chain has one `K − Σ_hops` so it can satisfy only one
+    target). **0 new IN-FRAME chains at Σ≤16; 24 new OUTSIDE-FRAME**, all at
+    the 5905 score. That is the entry's product question answered: yes, the
+    5-block frame adds chains, exactly 24, and every one needs BOTH a
+    generalized door AND a pivot excursion.
+  - **The 54 non-census chains from ex2/ex3 are NOT a novelty claim.** All 41
+    (ex2) sit at K=32 and all 13 (ex3) at K=33 — outside the census's K≤31
+    band, so "not in `results_n7_merged.csv`" is trivially true and carries no
+    information. `analysis/cover7/NOTES.md:43` already records **+392 K=32 and
+    +1189 K=33 known from Egan's KernelFinder**, so these are very likely a
+    subset of a known population. **UNDETERMINED-novelty, most likely known** —
+    the patterns are not stored anywhere in this repo (only `KernelFinder.c`),
+    so it could not be checked. Do not cite them as new.
+  - **THIRD OCCURRENCE of the terminal-skip trap, and it was already written
+    down.** `analysis/cover7/NOTES.md:41` says verbatim: "223 chains at K<=31
+    (terminal partial rides included — **my initial enum missed 16**)". An
+    earlier enumeration in this project missed the SAME 16 chains;
+    `enum_ext.py` then reintroduced the identical blind spot; and the s57
+    oracle passed only because all 26 chains at Σ≤14 happen to have skip 0.
+    **Read NOTES.md before writing an enumerator.**
+  - **CONVENTION TRAP for the next agent:** `enum_ext`'s `target` = census V +
+    terminal skip. Nothing in `enum_ext.py` or `enumext_sweep.py` says so, and
+    the s57 oracle passed only because all 26 chains at Σ≤14 happen to have
+    terminal skip 0. Reconcile the two V conventions in writing before
+    trusting any cross-comparison.
+  - Σ=17 rows are **incomplete by-catch**, not a census: the `ssum > pmax`
+    prune is applied at expansion, so Σ=17 hits reachable only through a Σ=17
+    parent are missed.
+  - **Sizing fact worth keeping: `--target` is COST-NEUTRAL.** Subtree 1 of
+    shard 0 costs 35,066,249 / 35,066,735 / 35,066,857 / 35,066,879 nodes at
+    target 15/16/17/20. `--pmax` dominates entirely. So each additional target
+    sweep costs what the whole run cost: ~540M nodes ≈ 40 core-min ≈ **4 min
+    wall on 24 farm cores**. The `--max-break 2` cap IS binding (12 of the 27
+    saturate it), so ≥3-excursion chains are UNKNOWN, and max_break=3 is
+    unmeasured — probe before quoting.
+- open gaps, explicitly UNKNOWN (not negatives): chains where a *skipped*
+  terminal orbit was ridden elsewhere are unreachable at ANY target (no census
+  chain is of this species, but the extended frame permits it — needs an
+  instrument change to even measure); conditional block B4 (`p1p0p2`) is still
+  absent from enum_ext's move table (s57 flagged this, still true); ≥3 pivot
+  excursions; and whether any of the 27 admits a cover (the free structural
+  test refutes none of them, which is evidence in neither direction — 131 of
+  the 207 rediscovered census chains are OPEN under exactly the same test).
+- next, sized (NOT run, needs approval). **(1) is one instrument edit that
+  strictly dominates three more sweeps — do that, not the target ladder.**
+  The required terminal ride is DETERMINED by the node, not by a parameter:
+  `r = 21 − K + ssum`, hit iff `1 ≤ r ≤ 6` and the first `r` orbits from the
+  arrival are unridden; emit `terminal_skip = 6 − r`. That reproduces targets
+  15–20 **in a single pass** and simultaneously admits the G2 species that no
+  `--target` value can reach (chains where a skipped terminal orbit was ridden
+  elsewhere). Cost is unchanged — target is cost-neutral — so **~540M nodes,
+  ~40 core-min, ~4 min wall**, replacing 3 sweeps and closing a gap they
+  cannot. Requires a small edit to `enumext_sweep.py` (not made; the analysis
+  agent was scoped read-only). Then: (2) Σ=17 closure at `--pmax 17`,
+  budget ~1.5–2 G nodes/sweep, probe first; (4) `--max-break 3`, unmeasured,
+  probe first. **Non-farm prerequisite for the real prize:** extend the door
+  check in `express.verify_chain_ext` (`t == door(s,c)` → `t ∈ legal_blocks(s)`)
+  so the 27 become buildable — one line, but the honest gate is round-tripping
+  s57's 33 out-of-frame corpus words through the extended builder (~half a day
+  with validation). Only then is (5) worthwhile: run the 27 through the real
+  refutation pipeline at s18 budget ≈ 27 × 30 min ≈ 14 core-hours farm.
 
 ## QS-B full realizer verdict-mix map, chains #0/#24 (s59 item 4 follow-on)
 - spec: `out/s59/cliff/qsb.py` extended — multipliers 3.0, 3.25, 3.5, 3.75,
@@ -1213,9 +1437,67 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   ≤3×R, 0.2 s at 4.0×R, 4.8 s at 4.8×R → ~2.5 core-hours dominated by the
   top three cells; ~7 min wall on 24 farm cores. Round-robin probe first per
   house rule — high-mult cells may not price like low-mult cells.
-- approved: NO
-- status: pending (drafted in out/s59/cliff/REPORT.md §7, filed s60)
-- result: —
+- approved: **YES (Andrew, 2026-08-01 — "continue with the next item in the
+  queue running on the farm")**. Recorded BEFORE launch this time.
+- status: **done** — probe `qsbp1` (18 cells × 10, 1.7 min) then full run
+  `qsb1`, 24 shards, 2026-08-01 → 14:24:17, **17.7 min wall**, 24 ok / 0 failed,
+  3,600/3,600 units, no ALARM. New instrument
+  `analysis/counting/s62/qsbsweep.py` + `analysis/farm/qsb_{ship.sh,shim.py,
+  env.ps1,fetch.sh}` on the generic Python farm path. Artifacts
+  `out/s62/farm/qsb{p1,1}/`.
+- result: **The realizer's decision rate decays smoothly from 1.00 to 0.00
+  across 3.0–4.9×R, and at BOTH open chains' own full pool it is exactly
+  0.000 — NOVELTY-DESIGN §6.4's realizer clause fails where it matters, now at
+  full resolution. 0 SAT in 3,600 draws.**
+
+  | ×R | 3.00 | 3.25 | 3.50 | 3.75 | 4.00 | 4.25 | 4.50 | 4.75 | full |
+  |---|---|---|---|---|---|---|---|---|---|
+  | #0 decided | 1.000 | 1.000 | 1.000 | 1.000 | 0.995 | 0.885 | 0.640 | 0.295 | **0.000** (4.886) |
+  | #24 decided | 1.000 | 1.000 | 1.000 | 1.000 | 0.975 | 0.705 | 0.325 | 0.095 | **0.000** (4.839) |
+
+  Totals: n=3,600, **SAT=0**, UNSAT=2,583, UNKNOWN=1,017. Every decided draw is
+  UNSAT — the engine never found a cover of a sampled sub-pool at any size.
+  - **It is a smooth sigmoid, NOT the "sharp cliff" earlier work implied.** 50%
+    decided at **~4.60 ×R** (#0) and **~4.38 ×R** (#24) by linear interpolation.
+    Both chains' own pools sit 0.28 / 0.45 ×R PAST that crossing — which is the
+    quantitative form of "these chains are out of reach of this instrument".
+  - **Confirms and sharpens s59** (which measured TL 5 s, N=30–100): decisions/s
+    fall 53.05 → 0.03 on #0, a **1,768× collapse**, against s59's ~900×. The
+    direction and the mechanism hold; the magnitude was understated.
+  - **A SAT here WOULD have been a world record** — both chains have K+R=141 and
+    length = 5764 + #2-loops with #2-loops pinned at K+R, so any cover compiles
+    to a **5905**. Verified from the instrument's own chain arithmetic
+    (27+114 and 29+112). The shard was built to stop and banner on one. None
+    occurred.
+  - **UNKNOWN is a timeout, not a negative.** 1,017 draws are undecided at 30 s;
+    they say nothing about whether those sub-pools admit covers.
+- spec defects found in this entry BEFORE launch, all corrected in the as-built
+  instrument (the entry text above is left as written for the record):
+  1. **`mult = full` is degenerate.** `k = |pool|` makes every draw the WHOLE
+     pool, so "N=200 samples" is **1 distinct atom set** — 200 identical
+     deterministic runs at ε=0, ~1.7 core-hours of duplicate work per chain.
+     Verified directly: 1 distinct set over 200 draws at `full`, 200 distinct at
+     every other multiplier. The instrument keeps all 200 sample rows (the
+     statistic is unaffected) but solves each distinct set once — 3,248 real
+     solver calls for 3,600 draws. Note the dedup is PER-SHARD under unit-level
+     round-robin, so `full` cost 24 solves (one per shard), not 1.
+  2. **The ~2.5 core-hour / ~7 min projection was extrapolated from TL 5 s
+     data** and is low: probe-measured 5.87 core-hours / 14.7 min wall,
+     realized 17.7 min.
+  3. **"Shard by (chain, mult)" would idle half the farm.** Cell cost spans four
+     orders of magnitude (0.019 s to 30 s mean), so 18 cell-shards means the
+     wall is set by one shard while the rest finish in seconds. Unit-level
+     round-robin instead — every shard gets 1/N of every cell, so all finish
+     together and each shard is its own round-robin probe.
+  4. **"decisions/s" is a time-limit artifact and should not be the headline.**
+     Cost is bimodal, not a rising mean: every UNSAT exhausts in ~0.016 s
+     (median unchanged across ALL multipliers — 0.016 s at 3.0×R and at 4.5×R),
+     while undecided draws burn the full budget. So the mean rises only because
+     the UNKNOWN fraction rises. **The sound product is the decided fraction**,
+     which is what the table above reports.
+  5. Seconds are not comparable to s59's: `qsb.py` ran cells under an internal
+     `ThreadPoolExecutor(max_workers=3)`; shards here are single-threaded.
+     Verdicts are comparable (deterministic lane, byte-identical instances).
 
 ## A0 gate re-run at 120 s, both lanes (s60 menu item 2 — LOCAL, not farm)
 - spec: re-run the s56 A0 baseline ("cover from the chain alone, no atom
@@ -1235,9 +1517,151 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   completes from the chain alone and the A-ladder premise changes.
 - projected: 6 instances × 3 runs × ≤300 s ≈ **≤ 90 min at 3 cores local
   Mac** (cliff REPORT §7 sizing). No farm needed.
-- approved: NO
-- status: pending (spec written s60 for Andrew's launch agent)
-- result: —
+- approved: **YES (Andrew, 2026-08-01 — "build the system to make number one run
+  on pc with sub agents then run it")**. RETARGETED from local Mac to the farm
+  PC per the standing instruction ("run the sweeps on the pc, do not run
+  anything on the mac", 2026-07-31; "we have the farm for a reason"). Two
+  deviations from the spec above, both recorded before launch:
+  - **TL 600 s, not 120 s.** The entry's TITLE says 120 s while its own spec
+    body says "TL ≥ 300 s"; the s59 REPORT §7 sizing that produced it also says
+    ≥300 s. 600 s satisfies the spec's floor with margin, and at 18 cells on 28
+    cores the extra budget is free in WALL time (~10-12 min either way) while
+    making a surviving UNKNOWN materially more citable. Taking the larger
+    budget is the conservative choice for a run whose product is a negative.
+  - **abort is NOT `pkill -f dlxrun`** (that is the local-Mac form). On the farm
+    it is `untargeted_abort.ps1 -Tag <tag>`, which uses the pid+name+start-time
+    process-identity guard so an abort can never kill the transcription
+    service's python.
+- status: **done** — farm run `a0g1`, 18 shards / 18 workers, 2026-08-01
+  12:52:22 → 13:02:36 PC time, **10.2 min wall / 3.00 core-hours**, 18 ok /
+  0 failed / 0 stalled, **no ALARM.txt**. New instrument
+  `analysis/counting/s62/a0gate.py` + `analysis/farm/a0_{ship.sh,shim.py,
+  env.ps1,fetch.sh}`, driven through the existing generic Python farm path
+  (`pysweep_run.ps1` + `untargeted_super.ps1`) — no new supervisor was
+  written. Artifacts: `out/s62/farm/a0g1/` (18 stats rows + 18 ledger rows +
+  per-cell instance/solution files).
+- result: **18/18 UNKNOWN at 600 s in BOTH lanes — the field fact survives a
+  40× budget increase, and is citable at last.** Verdict mix: refutation
+  (ε=0) 6 cells SAT=0 UNSAT=0 UNKNOWN=6; witness (ε=0.15, 2 seeds) 12 cells
+  SAT=0 UNSAT=0 UNKNOWN=12. Every cell ran the full 600.0 s (min=max=600.0 —
+  none decided early), for **6,809,758,292 nodes** total.
+  - **THE PREMISE OF THIS ENTRY NEEDED TWO CORRECTIONS, both found before
+    launch and both load-bearing.**
+    1. **A0 is known-SAT BY CONSTRUCTION, so this gate measures FINDABILITY,
+       never existence.** Verified from source two ways: `reduce_instance`
+       with no fixed rows and no atom filter is the identity (nothing is
+       deleted), and `p1a_assume.extract` *asserts* every row of the source
+       word's cover is present in the instance (`cert row {key} absent from
+       instance rows`). So a cover provably exists in all six. Consequences
+       the entry did not state: a SAT would be a findability event and **NOT
+       a new record** — the chain pins `length = 5764 + (K+R)`, so any cover
+       compiles to a word the same length as its source — and an **UNSAT
+       would be a soundness CONTRADICTION**, not a result. The instrument
+       alarms on UNSAT for that reason. (Both harness scripts initially
+       carried the overclaim "on the 5906 controls a SAT is a 5905
+       CANDIDATE"; corrected in all three sites before launch.)
+    2. **The "0/6 at 15 s" being corrected was ITSELF unbacked.** A grep of
+       all of `out/s56/` finds exactly ONE surviving A0 record anywhere:
+       `out/s56/p1a/probe_gate.json`, one control, `--time-limit 30`,
+       UNKNOWN, 13,719,552 nodes. **Five of the six controls have no A0
+       artifact at any budget, and the one that does was run at 30 s, not
+       15 s.** So "six 15 s UNKNOWNs" was a reconstruction, and the 15 s
+       figure should not be cited either. This run produces the first
+       per-control A0 ledger that has ever existed.
+  - **The one control with an s56 number, measured head to head:**
+
+    | | nodes | maxdepth | verdict |
+    |---|---|---|---|
+    | s56, 30 s | 13,719,552 | 83 | UNKNOWN |
+    | s62, 600 s (ε=0) | 383,881,216 | 93 | UNKNOWN |
+
+    20× the budget buys **28× the nodes and +10 depth** — and still no
+    decision. The instance is byte-identical between the two runs (sha256
+    `6cb3ae0b4db3…`, checked against the committed s56 file), so this is a
+    like-for-like comparison, not a re-derivation.
+  - **How far the search actually gets** (best maxdepth over the 3 cells vs
+    the cover size the chain requires):
+
+    | control | R = need | depths (ref/wit/wit) | % of cover |
+    |---|---|---|---|
+    | 5906.up-02d771908307 | 124 | 93 / 92 / 93 | 75.0% |
+    | 5906.rbnd-2641d60c9d5c | 123 | 84 / 87 / 87 | 70.7% |
+    | 5906.up-331228e22360 | 122 | 83 / 87 / 84 | 71.3% |
+    | 5906.up-6f42b3603dac | 120 | 85 / 91 / 85 | 75.8% |
+    | 5906.up-0a065898a821 | 118 | 93 / 94 / 93 | 79.7% |
+    | 5907.up-6f2e8d9df51c | 138 | 110 / 102 / 108 | 79.7% |
+
+    Every control stalls at **70–80% of a cover it is guaranteed to
+    contain**. The last ~25-30% of the descent is where the whole difficulty
+    lives — consistent with the A1 contrast in the same s56 file, where
+    supplying the true atom pool drops the instance 3,228 → 664 rows and it
+    goes SAT in **0.01 s / 166 nodes**.
+  - **The witness lane buys nothing**, a third independent confirmation of
+    the s59 lane correction: 8 restart attempts (ε=0.15) reach the same
+    depth band as 1 deterministic attempt (ε=0), and on two of six controls
+    the ε=0 cell reaches the DEEPEST point of the three. Restarts are not
+    automatically better — do not assume they are.
+  - **Sizing was as predicted and the prior was right.** A0 sits at
+    **4.92–5.73 ×R**, while s59 measured this instance family as
+    SAT-reachable only to 2.69–3.50 ×R, with throughput collapsing ~900×
+    between 3.0 and 4.8 ×R. 18 UNKNOWNs was the honest expectation before
+    launch and was stated as such. The product is not a surprise; it is the
+    difference between "we did not look" and "we looked hard", which is
+    exactly what makes the line quotable.
+  - **What may now be said, and what may not.** SAY: "at 600 s per cell,
+    both lanes, no engine we have finds a cover from the chain alone on any
+    of the six controls — 18/18 undecided, 6.8e9 nodes, best descent 70–80%
+    of the required cover." DO NOT SAY: "no cover exists from the chain
+    alone" (a cover provably exists), or anything sourced to the 15 s
+    figure. The instrument writes the reading into every row verbatim:
+    `nothing-learned (budget exhausted; NOT a negative result)`.
+  - **Provenance is closed end to end.** All six A0 instances regenerate
+    byte-identically on the Mac; the farm reproduces all six sha256s
+    (across a CPython 3.14 → 3.11 jump); 13 payload files byte-identical
+    both ends; the 18 cells partition 0..17 exactly; and the farm-solved
+    instance for the anchor control is byte-exactly the committed s56 file.
+- ops notes (three generic traps, two of them NEW):
+  1. **A fourth false-alarm site, in a NEW place.** `untargeted_status.ps1`
+     banners `.txt` files under the run out dir as "ESCAPE CANDIDATES", and
+     it counted this instrument's 18 `work/inst_*.txt` DLX *input* files as
+     18 escapes. The three previously-documented instances of this trap
+     (fuse.py `ESCAPES 0`, demotion.py `novel-candidate classes: 0`, and the
+     s52b supervisor scan) were all in the **stdout** scan of
+     `untargeted_super.ps1`, which was fixed; this one is in the **status
+     reporter** and counts **FILES, not log lines**, so that fix does not
+     reach it. Harmless here (no ALARM.txt; the supervisor's own scan was
+     clean) but it would bury a real product file. **Fix before the next
+     Python sweep: exclude a `work\` subdir from the status reporter's
+     product counter, or keep scratch out of the run dir.**
+  2. **A control word path can self-banner.** One panel control lives in
+     `data/novel5906c/`, and that path printed next to a timestamp genuinely
+     matches the supervisor's `NOVEL[^:\r\n]*:\s*[1-9]` branch. The
+     instrument prints base names only, behind a rewrite guard on every
+     print. **Any instrument touching `data/novel*` has this problem.**
+  3. **`-StallMinutes 20`, not the default 10.** One shard = one cell here,
+     so a healthy shard is legitimately silent for the whole 600 s solve
+     plus instance build; at the default every shard would have been flagged
+     STALL. Sharding finer than the heartbeat granularity is what creates
+     this — check the ratio before launching.
+  - Harness defect for the record: `a0_ship.sh`'s manifest omitted the s56
+    anchor file `out/s56/p1a/inst_5906.up-02d771908307_A0_0.txt`, so the
+    farm-side byte-check degraded to `anchor-file-absent` on 3 cells (it
+    records the degradation rather than passing silently — correct
+    behaviour). Recovered after the fact by hashing: the solved instance
+    matches the committed s56 file exactly. **Add the anchor to the manifest
+    if this is re-run.**
+  - Also fixed pre-launch: the instrument's first draft wrote a `3/3` field
+    on its terminal `DONE` STATUS row, which the supervisor would have
+    counted as a fourth progress row (tally `4/3`) — the s52b progress-tally
+    defect re-manifesting in new code. Terminal/event rows now carry no
+    `\t<d>/<d>\t` field.
+- next (NOT run, needs approval): the natural follow-on is an A-ladder
+  gradient — A0 is 4.9–5.7×R and A1 (true atom pool, ~1.4×R) is SAT in
+  0.01 s, so the interesting object is where between them the cliff sits.
+  `AP` at graded noise already exists in `p1a_assume` and `geninst.py`
+  regenerates that whole family, so this is instrument-free. It would give
+  the row-count-vs-findability curve that NOVELTY-DESIGN §6.4 wants, at
+  roughly the cost of this run per band.
 
 ## full no-good harvest of the s59 prefix-refutation stream, #0/#24 (s60 pilot verdict attached)
 - spec: `out/s60/nogood/harvest.py --spec farm{0,24} --check-from 6
@@ -1268,4 +1692,167 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   needs 4.4e3 cuts — twelve orders of magnitude cheaper per cut — and
   pairs are consumable as instance reductions, which 8-row sets are not
   (dlx7g has no clause facility).
+- **UPDATE 2026-08-01 — the recommended REDIRECT TARGET has now been run, and
+  it is spent.** The pairwise cut store this entry defers to was executed as
+  farm run `pc1` (72.93 core-hours, 147,561 sound size-2 cuts). Its verified
+  product as an instance reduction is **54 row deletions, reproducible by a
+  9.3-second local singleton pass** — see that entry's result. So the s60
+  argument "size-2 cuts are the cheap consumable layer" was RIGHT that they
+  fire (the live store clears s60's own 50%-hit bar by 6×) and WRONG that
+  firing converts into reduction: 81.9% of the cuts reference rows the store
+  itself proves dead, and the sound propagation closure hits a fixpoint at
+  round 2 with no cascade. **The recommendation against this entry therefore
+  stands and STRENGTHENS — but the redirect it offered is no longer available.**
+  If the no-good direction is revisited at all, the open question is whether
+  the residual 26,683 live pairwise cuts convert +27% forward-checking pruning
+  into a DECIDED instance; that is untested and costs nothing to test locally.
+  Read alongside `qsb1`: at these chains' own pool size the realizer decides
+  0.000 of draws at 30 s, so the margin any pruning layer must close is large.
 - result: —
+
+## n=6 midgame j-probe — supply-tight multi-cover sweep (levels 60–450) (s62)
+- spec:
+    # PART 1 (sound global negative, no seeds — the supply-tight corner)
+    python3 out/s62/jtax/cover_search.py 6 870 --jmin 1        # v=24 branch, ~5 core-h
+    python3 out/s62/jtax/mcover_search.py 6 872 --v 28 --splits 20 --jmin 1
+    python3 out/s62/jtax/mcover_search.py 6 872 --v 27 --splits 15 --jmin 1
+    python3 out/s62/jtax/mcover_search.py 6 872 --v 26 --splits 10 --jmin 1
+    python3 out/s62/jtax/mcover_search.py 6 872 --v 25 --splits  5 --jmin 1
+    # mcover_search.py = cover_search.py generalized from exact covers to
+    # k-loop MULTI-covers with prescribed cycle multiplicities — TO BE BUILT
+    # (~150 lines; the DFS is unchanged, only the arc-start table becomes an
+    # assignment enumerated over the excess incidences). ~1 day agent work,
+    # no compute.
+    # PART 2 (honest sampling frame, midgame, existing machinery)
+    for L in 60 180 300; do
+      python3 analysis/trackb/record_to_seed.py <walk> 6 $L > out/s62/seed_$L.txt
+      cargo run --release -- sojourn-dfs -n 6 --class 140,8,0,0,0 \
+        --profile-file analysis/trackb/profiles/a140_8_0_0_0.txt \
+        --depth 6 --dedup exact --dump-frontier out/s62/f_$L.tsv
+      cargo run --release -- beam -n 6 --width 8000 --seed-file out/s62/f_$L.tsv \
+        --bound residual --max-len 873 --endgame 20 --endgame-top 400
+    done
+- product: PART 1 is a SOUND NEGATIVE on the supply-tight corner of every
+  j>=1 cell at length <= 872 — including the ONLY j>=1 872 cell in a known
+  allocation ((140,8,0,0,0): splits=20, D=8, v=28, supply-tight; see
+  out/s62/jtax/REPORT.md §5). A j>=1 walk <= 872 either lives there or has
+  loop-supply slack >= 1 — the precise residual obligation for the next
+  mechanism. PART 2 is explicitly a SAMPLING frame, not a negative: it
+  measures whether any j>=1 structure is reachable in the blocked zone
+  (levels 60–450) from non-record allocations. Any completion <= 873 is
+  scored with out/s62/jtax/verify_master.py; if j >= 1 it is a
+  first-of-species event. Rationale for this shape: tail re-completion from
+  record prefixes (splits 25) is excluded <= 871 by MASTER for free — the
+  live cells are low-splits/high-D, unreachable from any record prefix.
+- projected: PART 1: cover_search growth measured x29 nodes per +1 char
+  (3.63e7 nodes / 21.5 s at TMAX 868; 1.06e9 / 605 s at 869, single-core
+  Mac, ~1.75e6 nodes/s) => TMAX 870 v=24 branch ~3.1e10 nodes ~5 core-h.
+  Multi-cover branch counts UNMEASURED (the s62 nearcovers.py sizer is
+  buggy and was discarded) — re-probe with --count-only before launch and
+  quote a round-robin rate, not a first-K rate (OPERATIONS.md). Working
+  budget: 8–30 core-h, 8-way => 1–4 h wall. PART 2 cut to 2 allocations
+  ((140,8),(135,9,2)) x 3 anchors => ~7 core-h.
+- alarm paths: any candidate <= 872 -> validate --complete THEN m3_check
+  (exit 2 = novel = M3 event, banner + stop). Any PART 1 solution at all is
+  a first materialized j>=1 walk below 874 -> stop and report. Any
+  verify_master.py violation (exit 1) is a THEORY-level alarm -> stop
+  everything.
+- approved: **YES (Andrew, 2026-08-01 — "we should be using the PC as much as
+  possible, there is nothing running on it, these are like 15 minute runs over
+  there")** — recorded at approval time. Scope of the approval as given: FARM
+  execution (the PC), covering PART 1 once mcover_search.py passes its positive
+  controls and the count-only sizing re-probe lands within ~2× the 8–30 core-h
+  working budget (if sizing blows past that, come back before launching).
+  PART 2 rides under the same approval but launches only after PART 1's sizing
+  is in hand (it needs the Rust binary — confirm the farm path can host it or
+  run PART 2 locally and say so in the run record).
+- status: **sizing DONE (s63, 2026-08-01) — PART 1 as specced NOT launched
+  (sizing ≥ ~1,240 core-h, 20×+ past the 60 core-h stop threshold, so per the
+  approval scope it comes back to Andrew); line 1 of PART 1 (v=24 @ TMAX 870)
+  was instead RUN TO COMPLETION locally: 3,405,635,896 nodes, 1.57 core-h,
+  NO walk — a complete negative killing the supply-tight v=24 cells at
+  868/869/870. RESHAPE recommended** (drop v=25/v=26 at ≥290/≥752 core-h;
+  rebuild v=28 around the new forest law — see out/s63/mcover/REPORT.md §6/§9:
+  the (140,8,0,0,0) cell forces the loop-cycle incidence graph to be a FOREST,
+  cutting the branch to ~N_forest(28) × 0.178 s ≥ 10 core-h; N_forest(28)
+  count-to-completion in flight). mcover_search.py BUILT and two-tier
+  controlled (node-for-node vs cover_search.py incl. the 36,304,934-node s62
+  negative; census-exact vs an independent n=4 brute force; validated n=5
+  multi-cover witnesses). NOTE: cover_search.py measured to search a strict
+  SUPERSET family (missing door-mid test) — harmless to every s62 claim (all
+  negatives/unmoved minima) but any future FIND from it needs re-checking;
+  mcover_search.py has the test on by default.
+- result: supply-tight v=24 j≥1 family EMPTY to length 870 (n=6, pure walks);
+  PART 1 as-specced sizing ≥ ~1,240 core-h (lower bound); reshaped
+  forest-restricted v=28 branch pending N_forest(28) count + Andrew's call
+- **RESHAPE approval (Andrew, 2026-08-01, recorded at decision time):
+  v=28 FOREST branch ONLY** — launch on the farm once the N_forest(28)
+  count-to-completion confirms the branch fits ~2× the 8–30 core-h budget
+  (count in flight, orchestrator-local). The v=27 forest+1 branch and the
+  v=24 @ TMAX 871 extension were offered and NOT selected — do not launch
+  them. Alarm paths unchanged from the spec (any solution = first-of-species
+  j≥1 walk ≤ 872 in the (140,8,0,0,0) cell = M3 ritual + stop; any
+  verify_master exit 1 = THEORY alarm).
+- **TWO-STEP amendment (Andrew, 2026-08-01, second decision, recorded at
+  decision time).** The 2 h count PARTIALed at N_forest(28) ≥ 939,294 (78%
+  of the 1.2M gate), and the stride-sharded farm shape would duplicate the
+  full ≥2 h enumeration in every DFS shard (the stride filter skips
+  processing, not enumeration — a sizing defect in the original shape).
+  Offered: two-step rebuild / launch-tonight-as-is / hold. **Andrew chose
+  TWO-STEP**: (1) add `--emit-covers` / `--covers-file` modes to
+  mcover_search.py (enumerate ONCE locally — which also yields the exact
+  N_forest(28) — ship the cover file, shards process balanced slices with
+  zero duplicated enumeration; controls mandatory, file sha-verified both
+  ends, fetch adjudication sums against the file's own total); (2) launch
+  when the exact N gives a statable wall: N ≤ ~1.2M (≈ ≤4.5 h wall at 24
+  shards, farm per-cover ~0.325 s = 1.91× Mac) → launch under the standing
+  approval; N > 1.2M → back to Andrew. mc28 harness v1 (stride shape) is
+  built, PC-verified, dry-run-proven — being reworked to the covers-file
+  shape; its two pre-flight catches (GATE.txt escape-scan trap; bash-3.2
+  mapfile silently emptying the find list in fetch) are recorded in the s63
+  mcover addendum.
+- **GATE RAISED (Andrew, 2026-08-01, third decision, recorded at decision
+  time).** The emit crossed 1.2M covers with the enumeration still running —
+  the original gate failed early as designed. Offered: raise gate to 3M /
+  launch at any N / hold. **Andrew chose RAISE TO 3M**: auto-launch
+  overnight on emit completion if N_forest(28) ≤ 3,000,000 (wall =
+  N × ~0.325 s / 24 shards ≤ ~11.3 h; ≤ ~270 farm core-h); if N > 3M, back
+  to Andrew with the exact number. Covers-file design keeps cost strictly
+  linear so the commitment is bounded and statable up front.
+- **HOLD (Andrew, 2026-08-02 morning, recorded at decision time): "I want to
+  hold off on the runs until tonight."** No farm launch before tonight; the
+  local emit continues to completion for the exact N (info only). The
+  reshape menu (B: rigidity-specialized DFS, 10–100× on the 94% term,
+  ~4–8 h agent work, needs ≥200k-cover census-equality control; A:
+  tree-sharded enumeration, ~2–4 h, composes with B; D: as-specced ~14.6 h
+  wall at N=4M; C: reversal-only symmetry, ≤2×, low value) is priced in the
+  s63 mcover addendum — decision deferred to tonight with exact N in hand.
+- **3M GATE BREACHED (2026-08-02 ~00:30): N_forest(28) > 3,063,413 with the
+  enumeration still running — NO LAUNCH, farm untouched.** The emit
+  continues to completion (one local core; exact N is the morning decision
+  input). The old ×29-style intuition failed twice on this branch (206k at
+  600 s → 939k at 2 h → >3M at ~5.5 h; the enumeration rate varies 45–380
+  covers/s by subtree). Pending Andrew: launch at exact N (wall =
+  N × 0.325/24 s: 4M ≈ 15 h, 6M ≈ 22.6 h), a reshaped
+  tree-sharded/no-file variant, or hold. The mc28 covers-file harness
+  remains built, sha-matched, dry-run-proven, idle-ready either way.
+
+## n=5 cap-154 exhaustive (j-tax decider) — SUPERSEDED 2026-08-01 (s62)
+- spec: out/s56/slacktax/slack_dfs -n 5 --cap 154 --shards 64
+  --splitdepth 12 --shard $i   (i = 0..63, 8 concurrent)
+- product: WAS "decides the n=5 j-tax (1 vs 2)". SUPERSEDED:
+  out/s62/jtax/witness/n5_j1_154.txt is a validated length-154 j=1 n=5
+  superpermutation (Rust validator: 154, 120/120, complete;
+  loop_ledger_probe: j=1, deficit=1, V1/V2/V3 true). With s56's cap-153
+  exhaustive (1.6e9 nodes, 8 shards, 0 aborts, all walks <=153 tight/j=0)
+  the n=5 J-TAX IS EXACTLY 1. The run would only re-confirm it.
+- projected: ~40 min 8-way. TRAP (carried from S56): shard imbalance at
+  splitdepth 8 — the n=5 tree is front-loaded and a depth-8 split makes the
+  last worker run ~5x the mean; splitdepth 12 is the calibrated value.
+- approved: NO
+- status: **CANCELLED (Andrew, 2026-08-01 — chose "Cancel" over keeping it
+  for the two nice-to-have byproducts; recorded at decision time)**
+- result: n=5 j-tax = 1 (witness, s62). If run anyway, the only remaining
+  products are (a) the exhaustive COUNT of j>=1 walks at 154 and (b) a
+  cross-check of cover_search.py against slack_dfs.c at n=5 — both
+  nice-to-have, neither decision-relevant.

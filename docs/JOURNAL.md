@@ -6,6 +6,57 @@ mechanism — read it before touching code.
 
 ---
 
+## 2026-08-01/02 (session 63) — **Two fronts closed clean, one new rung, one launch correctly refused three times. (1) HANDOFF menu item 3 is a measured negative with a general reason: the `S≥841 ⇒ j=0` gate can NEVER fire on a chain instance — S(#0)=834, S(#24)=832, and across all 223 census chains plus all 130 V=15/V=20 enumeration chains S ∈ [756,834] (0 fire; the one family that would have, (K=18,Σ=3) at S=843, is the JOURNAL-s12 recorded-empty one) — and more fundamentally `j ≡ 0` IDENTICALLY in the chain7 frame (`j = R+(K−1)+1−(K+R)`), so NO j-based rung, present or future, can prune a chain instance; the door law is a theorem there (0 violations on 3,122 doors / 145,979 inter-w2 edges, 177/177 control words pure with all six ledger predictions holding). Corollary worth keeping: `V=15 ⟺ K+R+xp=141 ⟺ length 5905` — the score IS the ledger — and supply slack = Σ (at xp=0). (2) The pc1 postmortem questions are ANSWERED: the fixed-column singleton layer generalizes (37 new dead rows on #24, 70/40/20 on ctrlgroup0/1/2, all ≥10×-reconfirmed, 0 violations vs 131/20/11 known covers, no cascade — fixpoint at pass 2 everywhere) and the 26,683 live pairwise cuts DO NOT convert: null at singleton depth (identical 54-row result with cuts at 1× and 10× cap), and in branch-and-reduce a constant ~1.15–1.4× — effective branching 3.48 (cuts) vs 3.53 (none), growth rate unchanged. 600 s ε=0 probes on base and reduced instances: 5/5 UNKNOWN. #0/#24 stay OPEN. (3) `mcover_search.py` BUILT (the queued j-probe's prerequisite): supply-tight k-loop MULTI-covers with prescribed multiplicities, n-generic — and the queue's premise was wrong helpfully: at supply-tightness the cover still determines the arc-starts (excess incidences ≠ supply slack; `φ(e)=g(σ(e))`), so no assignment enumeration was needed. Controls: node-for-node vs cover_search.py (320 / 964,317 / 36,304,934 byte-identical, a(4)=33, a(5)=153), census-exact vs an independent n=4 brute force on a genuine multi-cover family (85 walks, 5 cells), validated n=5 multi-cover witnesses (j=0@153, j=1@154, verify_master ALL PASS). Found: cover_search.py searches a strict SUPERSET (missing door-mid test; harmless to every s62 claim — all negatives/unmoved minima — but a future FIND needs re-checking). (4) NEW NEGATIVE, run to completion locally instead of just sized: no j≥1 pure walk ≤ 870 exists in the supply-tight v=24 perfect-ride family (all 1,678 covers, 3,405,635,896 nodes, 1.57 core-h — 9.1× cheaper than the ×29 projection; extends the s62 rung-869 mechanism one character in its family). (5) NEW STRUCTURAL LAW from the sizing: `K = (v−splits) + 2s`, K even, `K = v−splits ⟺ the loop-cycle incidence graph G* is a FOREST` (derivation via σ-transposition merge/split + components invariant; measured on 400 v=26 + 5,061 v=28 covers, 0 exceptions) — which FORCES the (140,8,0,0,0) cell (R=9, xp=0 ⇒ K=8) to be a forest: 8 tree components, each `L` loops + `4L+1` cycles. (6) The launch was REFUSED three times, each correctly: PART 1 as specced sizes to ≥ ~1,240 core-h (20×+ past the stop threshold; v=25/26/27 branches ≥290/≥752/≥162 core-h); the reshaped forest branch's gate (N_forest(28) ≤ 1.2M) FAILED EARLY at 1.2M-still-counting; Andrew's raised 3M gate FAILED EARLY at 3M-still-counting. N_forest(28) > 4.2M and still enumerating at session close — the forest family is an order of magnitude bigger than every intuition, and the count's own history (206k @ 600 s → 939k @ 2 h → >4.2M @ 13 h, rate swinging 45–380/s by subtree) is the cautionary record. Decisive for the reshape: enumeration is 5.6% of cost, per-cover DFS is 94.4% — so the priced menu for tonight is B (rigidity-specialized DFS exploiting forced K=8/R=9: one split cycle, component-ordering search, plausible 10–100× on the dominant term, ~4–8 h agent work, medium-high risk requiring a ≥200k-cover census-equality control) > A (tree-sharded enumeration, ~2–4 h, composes) > D (as-specced, ~15+ h wall at current N) > C (reversal symmetry ≤2×; relabeling already fully spent by identity-fixing). (7) Farm harness mc28 BUILT AND SHIPPED though never launched: covers-file design (emit once, sha-verified stream, balanced shards, zero duplicated enumeration — the stride shape would have re-walked the FULL enumeration in every shard, a sizing defect caught before launch), with THREE would-be-silent bugs caught in pre-flight on the real platform: the status reporter's escape-scan counting scratch .txt files (s52b trap, 4th site), bash-3.2 `mapfile` silently emptying the find list (a FIND would have been reported as no-products), and Windows CRLF translation making every shard reject the emitted file's own sha. Andrew's decision trail all recorded at decision time in SWEEP-QUEUE: farm-first standing instruction, PART-1 approval with sizing gate, RESHAPE two-step, gate raised to 3M, HOLD until tonight; cap-154 CANCELLED.**
+
+Two Opus agents (chains; mcover+harness, the latter continued across five
+resumes) + one Explore surveyor for the refactor brief; orchestrator
+re-verified every load-bearing claim from scratch both fronts: chains —
+scope/door checks re-run (exit 0 ×2), S recomputed independently from raw
+chain files (223 + 130 chains, 0 fire), farm24/ctrlgroup0 singleton
+re-runs set-identical with 0 violations, farm0 54-set equal to BOTH s58
+artifacts, base-render sha recomputed = store sha, d4 DFS ladder re-run
+both lanes byte-identical under two hash seeds, all five probe ledgers +
+one full 600 s probe re-run (UNKNOWN, same depth band); mcover — full
+control ladder re-run (320/964,317/36,304,934 byte-identical, brute-force
+census equal, witnesses re-validated ALL PASS), the 870 negative re-run
+COMPLETE with all 24 per-shard node counts byte-identical (Σ =
+3,405,635,896 exactly, 1,678/1,678, 0 PARTIAL, 0 walks), zcount/kstruct
+byte-identical, §6 derivation independently checked (s ≤ cyclomatic need
+not bind; the load-bearing `K=v−splits ⟺ forest` direction is what v=28
+uses). Reports orchestrator-filed (subagent REPORT writes harness-blocked,
+as s60/s61): `out/s63/chains/REPORT.md`, `out/s63/mcover/REPORT.md`, both
+with verification appendices; working trails `LOG.md` in each.
+
+Instrument-bug catalogue this session (all caught by controls or extra
+data points, none by luck): cutconvert's MRV iterated a SET of strings
+(PYTHONHASHSEED nondeterminism — two runs of the same lane explored
+different trees) + a shared-scratch write/exec race (both fixed,
+determinism re-verified across seeds; the discarded first ladder's
+"compounding 1.28×/level" number is an ARTIFACT — do not cite it); the
+three mc28 pre-flight catches above; mcover build's 3× over-count from a
+non-canonical decomposition (caught by the n=4 brute-force census);
+`pgrep -f` matching the monitor's own command line (wrong-PID reading);
+buffered stdout losing the hedge count's total when it was killed. New
+generic traps for OPERATIONS: quote round-robin rates measured on the
+TARGET platform (farm = 1.91× Mac per core here); stride-sharding
+enumerative engines duplicates the enumeration per shard — count-only
+sizing does not reveal it; heartbeat cadence should be work-based
+(per-N-covers), not fraction-based, so it is independent of total size.
+
+Reusable assets: `out/s62/jtax/mcover_search.py` (sha `77d2b8dd…`, with
+`--forest`, `--emit-covers`/`--covers-file` incl. sha+total+param header
+guards, `--stride/--offset` exact partitioning, PARTIAL-on-cap
+discipline), `out/s63/mcover/{brute_tight,zcount,kstruct}.py`,
+`out/s63/chains/{scope_check,doorlaw_check,singleton_pass,cutconvert,
+probe_reduced}.py`, `analysis/farm/mc28_{ship.sh,shim.py,env.ps1,
+fetch.sh}` (idle-ready; fetch adjudicates rc+DONE+sha+sum-to-total and
+runs the three-gate ritual on any product automatically).
+
+Session close state: emit still running (info only, N_forest(28) exact
+value for tonight); NOTHING on the farm; next session = Andrew's B/A/D/C
+call tonight, plus the REFACTOR (brief at `docs/REFACTOR-BRIEF.md`,
+prepared this session per Andrew — docs only, no refactor work started).
+
 ## 2026-08-01 (session 62) — **The j-tax front moves four ways: a new proven rung, an exact small-n decision, a mechanism-level refutation, and a transferable n=7 pruning rule. (1) MASTER: taking the ceiling in the loop-supply bound gives `length ≥ n!+(n−1)!+(n−3)+⌈S/(n−1)⌉+j+xp` (pure walks; verified on 22,062+448+87+10 corpus walks and exhaustive n=3/4, 0 violations, exactly TIGHT on 22,052/22,062 records), whose n=6 corollary ladder is `j≥1 ∧ splits≥16 ⇒ ≥872` (11⇒871, 6⇒870, 1⇒869) — so the whole 868→872 j-gap lives at splits ≤ 15, below every known 872 allocation except (135,9,2,0,0) on the boundary, and tail re-completion from record prefixes (splits 25) could never have probed the live cells. (2) Rung 869 PROVEN unconditionally (`j≥1 ⇒ ≥869` at n=6): MASTER forces the single cell (v=24, j=1, xp=0, splits=0, D=24, len 868), where supply-tightness makes the 24 entered loops EXACTLY COVER the 120 one-cycles and determine every arc-start (the perfect-ride rigidity); the family is finite (10,068 exact covers; 1,678 after relabeling WLOG) and `cover_search.py` exhausts it — 36,304,934 nodes, NO walk (none at j=0 either; the engine's positive controls re-derive a(4)=33 and a(5)=153 as in-family minima). First rung produced by the repo's own j-machinery; numerically subsumed by the Lean S(6)≥869 but the piece that transfers. (3) The mechanism provably STOPS there: the two v=24 cells at 869 are killed exhaustively (1.06e9 nodes, ~605 s) but six v=25 cells (supply slack 5) survive — excess incidences un-determine the arc-starts — and NONE of the 22 O5 cells is supply-tight (slacks 1–14), so this composition has zero reach into the O5 discharge at any budget; any rung above 869 must price loop-supply SLACK. Cost growth ×29 nodes per +1 char. Cell universe (identity+supply only): j≥1 cells 868→1, 869→8, 870→26, 871→60, 872→115, the 60/115 independently matching s56's cell_squeeze from a different frame; of the 115 at 872 EXACTLY ONE lies in a known allocation — (140,8,0,0,0), splits=20, D=8, v=28, supply-TIGHT — a rigid enumerable multi-cover object, the best-shaped remaining target. (4) n=5 j-tax DECIDED = 1 at zero compute: a length-154 j=1 witness materialized (`out/s62/jtax/witness/n5_j1_154.txt`, validator-green, probe-confirmed, itself a perfect-ride walk), so with s56's cap-153 exhaustive the queued ~40-min cap-154 run is SUPERSEDED (entry filed recommending CANCEL). Tax ladder now n=3→3, n=4→1, n=5→1, n=6 ≥1 (observed 874) — the ladder does NOT grow with n. n=7 transfer: `length = 5764+v+j+xp` (the s34 law is its j=0 shadow; a 5905 is v+j+xp=141), MASTER `≥ 5884+⌈splits/6⌉+j+xp` (verified 87/87, tight on 3), and the priced rule `j≥1 ∧ S≥841 ⇒ ≥5906` — any 5905 with S ≥ 841 has j=0, making the per-edge door law a HARD constraint there (the (844,17) family and Kristan's (843,18) qualify). BONUS: THEORY §7's s56 block conflated two quantities under one symbol `x` — the identity needs `xp = Σ_doors(w−3)`, deficit needs `v−L` (in-corpus counterexample `872.up-022441b7b1ff`: v−L=0, xp=1) — CORRECTED in THEORY §7 this session.**
 
 One Opus agent (delegation protocol); all compute local Mac, 1 core,

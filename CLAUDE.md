@@ -8,8 +8,27 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S62.md` right after it (supersedes
-   S61; s62 headline: the j-tax front moved four ways — MASTER, the
+   **Fresh agent: read `docs/HANDOFF-S63.md` right after it (supersedes
+   S62; if your session is the CODE REFACTOR — Andrew's queued next task —
+   your brief is `docs/REFACTOR-BRIEF.md` and you can skip the theory
+   stack. s63 headline: menu item 3 closed as a general negative — `j ≡ 0`
+   identically in the chain7 frame, so no j-rung can ever prune a chain
+   instance (S(#0)=834/S(#24)=832, 0 of 223+130 chains reach S≥841; door
+   law = a theorem there, 0/3,122 + 0/145,979; corollary `V=15 ⟺ 5905`,
+   supply slack = Σ); the pc1 cuts DO NOT convert (constant 1.15–1.4×,
+   branching 3.48 vs 3.53) though the fixed-column singleton layer
+   generalizes (37/#24, 70/40/20 ctrlgroups, 0 violations); NEW RUNG: the
+   supply-tight v=24 j≥1 family is EMPTY to length 870 (mcover_search.py,
+   3.4e9 nodes complete, re-verified byte-identically); NEW LAW:
+   `K=(v−splits)+2s`, `K=v−splits ⟺ incidence graph is a FOREST`, forcing
+   the (140,8,0,0,0) cell to 8-tree forests; the j-probe launch was
+   correctly refused three times — N_forest(28) > 4.2M and still counting,
+   per-cover DFS is 94.4% of cost, reshape menu B (rigidity-specialized
+   DFS, 10–100×) > A (tree-sharded enum) > D (as-specced ~15+ h) > C
+   awaits Andrew TONIGHT with exact N; mc28 covers-file farm harness
+   built/shipped/dry-run-proven, idle-ready; cap-154 CANCELLED; Andrew's
+   five-decision trail recorded in SWEEP-QUEUE at decision time; s62
+   headline it carries: the j-tax front moved four ways — MASTER, the
    ceiling-sharpened loop-supply bound `length ≥ n!+(n−1)!+(n−3)+
    ⌈S/(n−1)⌉+j+xp` (pure walks; 0 violations on 22,062+448+87+10 corpus
    walks + exhaustive n=3/4; tight on 22,052/22,062 records), puts the
