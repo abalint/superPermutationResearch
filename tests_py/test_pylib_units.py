@@ -242,15 +242,19 @@ def test_tracked_python_carries_only_the_sanctioned_sys_path_line():
     """P1's structural win, guarded against regrowth.
 
     275 `sys.path` mutation sites became one sanctioned bootstrap line.
-    The only tracked `.py` exceptions are the three farm shims that
-    search a two-candidate farm layout the repo-root walk cannot express
-    (docs/ARCHITECTURE.md names them).
+    The only tracked `.py` exceptions are the three frozen-legacy farm
+    shims that search a two-candidate farm layout the repo-root walk
+    cannot express (docs/ARCHITECTURE.md names them), and the s64 P5
+    template's `farmlayout.py` — the farm-side bootstrap itself, whose
+    job is resolving that layout BEFORE `pylib` is importable (on the
+    PC the payload lands at $ROOT\\...\\repo\\pylib, not a repo root).
     """
     import subprocess
     allowed_files = {
         "analysis/farm/i4a_shim.py",
         "analysis/farm/lswap_shim.py",
         "analysis/farm/promote_shim.py",
+        "analysis/farm/template/farmlayout.py",
     }
     out = subprocess.run(
         ["git", "grep", "-n", "sys.path", "--", "analysis/", "ml/"],
