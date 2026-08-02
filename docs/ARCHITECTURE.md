@@ -2,7 +2,8 @@
 
 Code map for the `superperm` crate (phases 1–3). Math background lives in
 `docs/THEORY.md` — this file only covers what the code does and where to change it.
-Binary + library crate: `src/lib.rs` exports the modules, `src/main.rs` is the CLI.
+Binary + library crate: `src/lib.rs` exports the modules, `src/main.rs` + `src/cli/`
+are the CLI.
 The Python training side lives in `ml/` (see its section below); the two halves talk
 only through rollout JSONL (Rust → Python) and model JSON (Python → Rust).
 
@@ -11,7 +12,7 @@ only through rollout JSONL (Rust → Python) and model JSON (Python → Rust).
 Dependency sketch (arrows point at dependencies):
 
 ```
-main.rs ─→ graph, greedy, beam, beam2, model, rollout, trace, validate
+main.rs ─→ cli/* ─→ graph, greedy, beam, beam2, model, rollout, trace, validate
 trace ───→ beam (Scorer), graph, walk
 greedy ──→ walk ──→ state ──→ bitset, bound, graph, lb_residual
 rollout ─→ walk, state, bound, graph  (+ rand, serde_json)
@@ -220,9 +221,21 @@ bitset ──→ no crate deps
 - **`src/validate.rs`** — `validate(n, s: &str) -> Validation { n, length, distinct,
   total, complete }`. Sliding-window checker; the only accepted proof that a string is
   a superpermutation.
-- **`src/main.rs`** — clap CLI (`struct Cli`, `enum Cmd`): subcommands `info`, `atlas`,
-  `sojourn-dfs`, `nrpa`, `grammar-check`, `recomb`, `union-dfs`, `greedy`, `beam`,
-  `beam2`, `trace`, `endgame`, `rollouts`, `cert-verify`, `validate`.
+- **`src/main.rs`** — the clap definition (`struct Cli`, `enum Cmd`) and the dispatch
+  match, and nothing else (112 lines; it was 2,521 before s64 P4). Each `Cmd` variant
+  wraps its module's `Args` struct, and the variant's doc comment is what the
+  top-level `--help` listing prints.
+- **`src/cli/`** — one module per subcommand (s64 P4): `info`, `atlas`, `sojourn_dfs`,
+  `nrpa`, `grammar_check`, `greedy`, `beam`, `beam2`, `trace`, `endgame`, `rollouts`,
+  `cert_verify`, `tail_atsp`, `recomb`, `union_dfs`, `validate` — each holding a
+  `#[derive(clap::Args)] pub struct Args` (the flags, with their `--help` doc
+  comments) and `pub fn run(Args) -> ExitCode`. `src/cli/mod.rs` holds only what more
+  than one subcommand uses: the `BoundArg`/`DedupArg` CLI adapters (thin mirrors of
+  `beam::Bound` / `sojourn::DedupMode` — they carry the CLI's possible-value help
+  text, which is deliberately not the library's own docs, so deriving `ValueEnum` on
+  the library types directly would change `--help` output), `load_model`,
+  `load_profile`, `write_log`, `agree`/`yn`. Binary-only: `src/lib.rs` does not
+  declare `mod cli`, so the library still has no clap dependency in its API.
 
 ## Core data structures
 
@@ -321,7 +334,7 @@ counters feeding the stratification bucket key — `bucket_key` reads them throu
 - Levels run `for _depth in 1..nfact` — every level visits exactly one more perm, so
   the final beam holds only complete walks (`debug_assert_eq!(best.r, 0)`).
 
-## CLI subcommand data flow (`src/main.rs`)
+## CLI subcommand data flow (`src/cli/<command>.rs`)
 
 All subcommands take `-n <3..=8>` and start with `Graph::new(n)`.
 
@@ -590,10 +603,13 @@ plug in:
   (including the residual terms, relative to its appending end) but still scores with
   the 8-feature contract only — enabling v2/residual scoring there is a deliberate
   future change, not a side effect (see `Scorer2::Learned` docs).
-- **Adding a CLI subcommand**: add a variant to `enum Cmd` in `src/main.rs` (clap
-  derive) and a match arm in `main()`; put the logic in a library module and export it
-  from `src/lib.rs`. Follow the existing pattern of printing a summary line then the
-  payload.
+- **Adding a CLI subcommand** (s64 P4 layout): write `src/cli/<command>.rs` with a
+  `#[derive(clap::Args)] pub struct Args` and `pub fn run(Args) -> ExitCode`, add its
+  `pub mod` line to `src/cli/mod.rs`, then a variant `Command(cli::command::Args)` in
+  `enum Cmd` (its doc comment is the subcommand's `--help` about text) plus one
+  dispatch arm in `main()`. The search logic itself still belongs in a library module
+  exported from `src/lib.rs` — the `cli/` module is argument plumbing and printing
+  only. Follow the existing pattern of printing a summary line then the payload.
 - **Phase 3 status**: item 1 (stratified beam, `beam_search_stratified`), item 2
   (two-ended beam, `src/beam2.rs` + `Preds` + `lb_arc2`), and item 4 (endgame
   tablebase, `src/endgame.rs::solve_endgame` — theorem-grade, m ≤ 25, use it as
