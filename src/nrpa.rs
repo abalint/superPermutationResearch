@@ -167,14 +167,14 @@ fn move_codes(g: &Graph, st: &State, mv: &SojournMove) -> [u64; 3] {
             // door context: weight, closing part length, target-cycle
             // residual count and completed-part count before entry
             let tc = g.cycle_id[mv.target as usize] as usize;
-            let rem = st.cycle_rem[tc] as u64;
+            let rem = st.cyc.cycle_rem[tc] as u64;
             let tparts = st.parts[tc] as u64; // 18 bits (6 parts x 3)
             (4 << 44) | (w as u64) << 36 | (st.cur_part as u64) << 28 | rem << 20 | tparts
         }
         // rides/skips carry the current part length as context
         _ => (5 << 44) | species << 8 | st.cur_part as u64,
     };
-    let ident = (6 << 44) | (st.cur as u64) << 20 | mv.target as u64;
+    let ident = (6 << 44) | (st.cyc.cur as u64) << 20 | mv.target as u64;
     [mix(species), mix(ctx), mix(ident)]
 }
 
@@ -227,11 +227,11 @@ impl Ctx<'_, '_, '_> {
         let mut st = self.grammar.root(false);
         let mut seq: Vec<u32> = Vec::with_capacity(self.switch);
         loop {
-            let visited = st.visited.popcount() as usize;
+            let visited = g.nfact - st.cyc.r as usize;
             if visited == g.nfact {
                 // completed in-grammar before the switch
                 self.note_depth(visited);
-                let score = st.len;
+                let score = st.cyc.len;
                 if self.cfg.max_len > 0 && score > self.cfg.max_len {
                     self.dead += 1;
                     return Rollout {

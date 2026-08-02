@@ -35,8 +35,8 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::bitset::BitSet;
 use crate::graph::Graph;
+use crate::state::CycleState;
 
 /// L0 allocation-class caps for the DFS (a prefix must stay completable
 /// within them).
@@ -232,11 +232,15 @@ pub enum DedupMode {
 /// Search state (cloned per child; opening depth keeps this cheap).
 /// Shared between the exhaustive DFS and the NRPA rollouts
 /// (`crate::nrpa`), which read the counters as move features.
+///
+/// The visit bookkeeping (visited set, per-cycle unvisited counts,
+/// current permutation, emitted length, `k`/`r`/`intact`) is the shared
+/// [`CycleState`] (s64 P3) — `cyc.intact` is what this searcher used to
+/// call `untouched`. Only the sojourn ledger below is local.
 #[derive(Clone)]
 pub(crate) struct State {
-    pub(crate) cur: u32,
-    pub(crate) visited: BitSet,
-    pub(crate) len: u32,
+    /// The shared per-cycle visit bookkeeping.
+    pub(crate) cyc: CycleState,
     /// Sojourns started so far (= doors taken + 1).
     pub(crate) s: u16,
     pub(crate) d3: u16,
@@ -247,10 +251,6 @@ pub(crate) struct State {
     pub(crate) parts: Vec<PackedParts>,
     /// Members covered by the current (open) sojourn.
     pub(crate) cur_part: u8,
-    /// Unvisited members per cycle (index = cycle id).
-    pub(crate) cycle_rem: Vec<u8>,
-    /// Cycles with no visited member yet.
-    pub(crate) untouched: u16,
     /// First-visit rank path (starts with rank 0); tracked only when
     /// frontier dumping is on, `None` otherwise.
     pub(crate) path: Option<Vec<u32>>,
@@ -309,10 +309,8 @@ impl<'g> Grammar<'g> {
     /// Root state at the identity permutation.
     pub(crate) fn root(&self, track_path: bool) -> State {
         let g = self.g;
-        let mut st = State {
-            cur: 0,
-            visited: BitSet::new(g.nfact),
-            len: g.n as u32,
+        State {
+            cyc: CycleState::root(g, None),
             s: 1,
             d3: 0,
             d4: 0,
@@ -320,13 +318,8 @@ impl<'g> Grammar<'g> {
             ip: 0,
             parts: vec![0; g.cycle_count],
             cur_part: 1,
-            cycle_rem: vec![g.n as u8; g.cycle_count],
-            untouched: g.cycle_count as u16 - 1,
             path: track_path.then(|| vec![0]),
-        };
-        st.visited.set(0);
-        st.cycle_rem[g.cycle_id[0] as usize] -= 1;
-        st
+        }
     }
 
     /// Replay a first-visit rank path (identity root excluded) through
@@ -354,14 +347,16 @@ impl<'g> Grammar<'g> {
         let g = self.g;
         let n = g.n;
         let mut kids = Vec::new();
-        if st.visited.popcount() as usize == g.nfact {
+        // `r == 0` iff every permutation is visited (the shared state's
+        // `r` is the maintained complement of the visited popcount).
+        if st.cyc.r == 0 {
             return kids;
         }
-        let cid = g.cycle_id[st.cur as usize] as usize;
+        let cid = g.cycle_id[st.cyc.cur as usize] as usize;
 
         // ride
-        let r1 = g.succ1(st.cur);
-        if !st.visited.get(r1 as usize) {
+        let r1 = g.succ1(st.cyc.cur);
+        if !st.cyc.visited.get(r1 as usize) {
             let mut c = st.clone();
             c.advance_within(g, r1, 1);
             if self.feasible(&c) {
@@ -378,17 +373,17 @@ impl<'g> Grammar<'g> {
         // skips (rotate-by-k): passed members must be visited, landing
         // unvisited; priced k-1 into ip
         if st.ip < self.caps.ip {
-            let mut passed = st.cur;
+            let mut passed = st.cyc.cur;
             for k in 2..n as u16 {
                 passed = g.succ1(passed); // member at rotation k-1
-                if !st.visited.get(passed as usize) {
+                if !st.cyc.visited.get(passed as usize) {
                     break; // T0 lemma: cannot pass an unvisited member
                 }
                 if st.ip + (k - 1) > self.caps.ip {
                     break;
                 }
                 let target = g.succ1(passed);
-                if st.visited.get(target as usize) {
+                if st.cyc.visited.get(target as usize) {
                     continue;
                 }
                 let mut c = st.clone();
@@ -407,8 +402,8 @@ impl<'g> Grammar<'g> {
         }
 
         // exit doors: w2x, then stored w3..w5 cross-cycle doors
-        let w2t = g.w2x[st.cur as usize];
-        if !st.visited.get(w2t as usize) {
+        let w2t = g.w2x[st.cyc.cur as usize];
+        if !st.cyc.visited.get(w2t as usize) {
             if let Some(c) = self.door_child(st, w2t, 2, cid) {
                 kids.push((
                     SojournMove {
@@ -419,7 +414,7 @@ impl<'g> Grammar<'g> {
                 ));
             }
         }
-        for (si, &(q, w)) in g.succs[st.cur as usize].iter().enumerate() {
+        for (si, &(q, w)) in g.succs[st.cyc.cur as usize].iter().enumerate() {
             if w < 3 {
                 continue;
             }
@@ -428,18 +423,20 @@ impl<'g> Grammar<'g> {
                 4 => st.d4 >= self.caps.d4,
                 _ => st.d5 >= self.caps.d5,
             };
-            if over || g.cycle_id[q as usize] as usize == cid || st.visited.get(q as usize) {
+            if over || g.cycle_id[q as usize] as usize == cid || st.cyc.visited.get(q as usize) {
                 continue;
             }
             // fresh-doors cap: heavy doors only open untouched cycles
-            if self.fresh_doors && (st.cycle_rem[g.cycle_id[q as usize] as usize] as usize) != g.n {
+            if self.fresh_doors
+                && (st.cyc.cycle_rem[g.cycle_id[q as usize] as usize] as usize) != g.n
+            {
                 continue;
             }
             // emergent-edge filter: an unvisited interior perm means the
             // decomposed line builds the same string — skip the composed edge
-            if self.interiors[st.cur as usize][si]
+            if self.interiors[st.cyc.cur as usize][si]
                 .iter()
-                .any(|&ir| !st.visited.get(ir as usize))
+                .any(|&ir| !st.cyc.visited.get(ir as usize))
             {
                 continue;
             }
@@ -459,7 +456,7 @@ impl<'g> Grammar<'g> {
     fn door_child(&self, st: &State, target: u32, w: u8, exit_cid: usize) -> Option<State> {
         let g = self.g;
         // the exit closes the current part on the exited cycle
-        let completes = st.cycle_rem[exit_cid] == 0;
+        let completes = st.cyc.cycle_rem[exit_cid] == 0;
         if let Some(p) = &self.profile {
             if !p.part_ok(st.parts[exit_cid], st.cur_part, completes) {
                 return None;
@@ -474,14 +471,7 @@ impl<'g> Grammar<'g> {
             4 => c.d4 += 1,
             _ => c.d5 += 1,
         }
-        let tcid = g.cycle_id[target as usize] as usize;
-        if c.cycle_rem[tcid] as usize == g.n {
-            c.untouched -= 1;
-        }
-        c.visited.set(target as usize);
-        c.cycle_rem[tcid] -= 1;
-        c.len += w as u32;
-        c.cur = target;
+        c.cyc.visit(g, target, w as u32, None);
         c.cur_part = 1;
         if let Some(p) = c.path.as_mut() {
             p.push(target);
@@ -500,13 +490,13 @@ impl<'g> Grammar<'g> {
             return false;
         }
         let g = self.g;
-        let cid = g.cycle_id[st.cur as usize] as usize;
+        let cid = g.cycle_id[st.cyc.cur as usize] as usize;
         // every untouched cycle and every partial non-active cycle owes
         // >= 1 more sojourn (sharper with a split profile)
-        let mut owed = st.untouched as u64;
+        let mut owed = st.cyc.intact as u64;
         if let Some(p) = &self.profile {
             for c in 0..g.cycle_count {
-                if st.cycle_rem[c] == 0 || st.cycle_rem[c] as usize == g.n || c == cid {
+                if st.cyc.cycle_rem[c] == 0 || st.cyc.cycle_rem[c] as usize == g.n || c == cid {
                     continue;
                 }
                 match p.min_more_parts(st.parts[c]) {
@@ -519,7 +509,7 @@ impl<'g> Grammar<'g> {
             }
         } else {
             for c in 0..g.cycle_count {
-                if st.cycle_rem[c] != 0 && (st.cycle_rem[c] as usize) < g.n && c != cid {
+                if st.cyc.cycle_rem[c] != 0 && (st.cyc.cycle_rem[c] as usize) < g.n && c != cid {
                     owed += 1;
                 }
             }
@@ -712,6 +702,28 @@ impl SojournDfs<'_> {
                 }
             }
             stats.nodes += 1;
+            // Drift guard (s64 P3): in the library's own test build every
+            // expanded state's shared visit bookkeeping is re-derived from
+            // scratch and compared, so a wrong grammar update fails
+            // immediately on a real DFS path. Compiled out of every
+            // release build (see `counters_match_scratch_on_dfs_paths`).
+            #[cfg(test)]
+            {
+                let scratch = crate::state::SearchState::recount(
+                    g,
+                    &st.cyc.visited,
+                    st.cyc.cur,
+                    st.cyc.len,
+                    0,
+                    None,
+                );
+                assert!(
+                    st.cyc.counters_eq(&scratch.cyc),
+                    "sojourn state drift\n  inc {}\n  ref {}",
+                    st.cyc.counters(),
+                    scratch.cyc.counters()
+                );
+            }
             if st.s > self.depth {
                 stats.frontier += 1;
                 let key = self.canonical_key(&st, &reps);
@@ -722,7 +734,7 @@ impl SojournDfs<'_> {
                         *c += 1;
                         stats.dump.push(FrontierSeed {
                             class_key: key,
-                            len: st.len,
+                            len: st.cyc.len,
                             s: st.s,
                             d3: st.d3,
                             d4: st.d4,
@@ -734,7 +746,7 @@ impl SojournDfs<'_> {
                 }
                 continue;
             }
-            if st.visited.popcount() as usize == g.nfact {
+            if st.cyc.r == 0 {
                 stats.completed += 1;
                 continue;
             }
@@ -751,8 +763,8 @@ impl SojournDfs<'_> {
     }
 
     fn state_hash(&self, st: &State) -> u128 {
-        let mut h = mix128(st.cur as u64 ^ 0x51ed_2701);
-        for (wi, &w) in st.visited.words().iter().enumerate() {
+        let mut h = mix128(st.cyc.cur as u64 ^ 0x51ed_2701);
+        for (wi, &w) in st.cyc.visited.words().iter().enumerate() {
             if w != 0 {
                 h ^= mix128(w ^ (wi as u64).wrapping_mul(0xabcd_ef01_2345_6789));
             }
@@ -770,10 +782,10 @@ impl SojournDfs<'_> {
     /// relabeling taking `cur` to the identity permutation. Sound
     /// quotient by the relabeling group (see [`DedupMode::Orbit`]).
     fn orbit_hash(&self, st: &State, tabs: &OrbitTables) -> u128 {
-        let t = tabs.inv_rank[st.cur as usize] as usize;
+        let t = tabs.inv_rank[st.cyc.cur as usize] as usize;
         let row = &tabs.apply[t];
-        let mut words = vec![0u64; st.visited.words().len()];
-        for (wi, &w) in st.visited.words().iter().enumerate() {
+        let mut words = vec![0u64; st.cyc.visited.words().len()];
+        for (wi, &w) in st.cyc.visited.words().iter().enumerate() {
             let mut bits = w;
             while bits != 0 {
                 let b = bits.trailing_zeros() as usize;
@@ -801,7 +813,7 @@ impl SojournDfs<'_> {
     fn canonical_key(&self, st: &State, reps: &[u32]) -> u128 {
         let g = self.g;
         let n = g.n;
-        let cur_cid = g.cycle_id[st.cur as usize] as usize;
+        let cur_cid = g.cycle_id[st.cyc.cur as usize] as usize;
         // per-cycle visit mask in rotation order rooted at the cycle
         // representative; canonical form = minimal rotation (necklace),
         // the current cycle carrying the walk position through the same
@@ -823,17 +835,17 @@ impl SojournDfs<'_> {
         let mut multiset: Vec<u64> = Vec::new();
         let mut cur_key = 0u64;
         for (c, &rep) in reps.iter().enumerate() {
-            if st.cycle_rem[c] as usize == g.n {
+            if st.cyc.cycle_rem[c] as usize == g.n {
                 continue; // untouched cycles carry no information
             }
             let mut mask = 0u8;
             let mut pos = u8::MAX;
             let mut m = rep;
             for i in 0..n {
-                if st.visited.get(m as usize) {
+                if st.cyc.visited.get(m as usize) {
                     mask |= 1 << i;
                 }
-                if m == st.cur {
+                if m == st.cyc.cur {
                     pos = i as u8;
                 }
                 m = g.succ1(m);
@@ -859,12 +871,11 @@ impl State {
     /// Advance within the current sojourn (ride or skip) to `target`,
     /// appending `w` characters.
     fn advance_within(&mut self, g: &Graph, target: u32, w: u32) {
-        let cid = g.cycle_id[target as usize] as usize;
-        debug_assert_eq!(cid, g.cycle_id[self.cur as usize] as usize);
-        self.visited.set(target as usize);
-        self.cycle_rem[cid] -= 1;
-        self.len += w;
-        self.cur = target;
+        debug_assert_eq!(
+            g.cycle_id[target as usize],
+            g.cycle_id[self.cyc.cur as usize]
+        );
+        self.cyc.visit(g, target, w, None);
         self.cur_part += 1;
         if let Some(p) = self.path.as_mut() {
             p.push(target);
@@ -941,6 +952,38 @@ mod tests {
         // open-part extension
         assert!(p.open_part_ok(done2, 3)); // can still grow to 4
         assert!(!p.open_part_ok(done2, 5));
+    }
+
+    /// Every counter the sojourn DFS maintains must equal a
+    /// from-scratch recount at every expanded state, on real DFS paths
+    /// (the comparison runs inside `SojournDfs::run` under
+    /// `#[cfg(test)]`; this case drives it through the door and
+    /// ride/skip move families at two `n`). The `Walk`/beam counterpart
+    /// lives in `tests/deficit_features.rs`.
+    #[test]
+    fn counters_match_scratch_on_dfs_paths() {
+        for (n, depth, s_cap) in [(4usize, 4u16, 8u16), (5, 3, 30)] {
+            let g = Graph::new(n);
+            let stats = SojournDfs {
+                g: &g,
+                caps: ClassCaps {
+                    s: s_cap,
+                    d3: 2,
+                    d4: 1,
+                    d5: 0,
+                    ip: 6,
+                },
+                profile: None,
+                depth,
+                max_nodes: 30_000,
+                dedup: DedupMode::Exact,
+                exemplars_per_class: 1,
+                dump_per_class: 0,
+                fresh_doors: false,
+            }
+            .run();
+            assert!(stats.nodes > 100, "n={n}: DFS barely ran");
+        }
     }
 
     #[test]

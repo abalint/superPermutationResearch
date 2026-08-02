@@ -585,13 +585,23 @@ Always benchmark and search in `--release`; debug builds are ~50× slower in the
 - Ranks are lexicographic (Lehmer). Cycle = weight-1 rotation class, `(n−1)!` of them.
 - New search features must be maintainable incrementally (O(1) or O(n) per expansion) —
   anything O(n!) per node is a non-starter at n ≥ 6.
-- `beam.rs` does NOT reuse `walk.rs` — it keeps its own `State` counters so candidates
-  score in O(1) without cloning, and `beam2.rs` keeps a third copy (`State2`, the deque
-  searcher). Any new incremental feature must be maintained in `Walk::advance` AND the
-  beam's `State`/`score_move` — and in beam2's `State2` if beam2 should score with it
-  (see ARCHITECTURE.md, extension points). Also note: beam dedup assumes the score is a
-  pure function of `(cur, visited, len)` (`(front, back, visited, len)` in beam2) — a
-  learned evaluator must preserve that or the keep-first dedup argument breaks.
+- **One incremental search state: `src/state.rs`** (s64 P3). `CycleState` (visited set,
+  `cycle_rem`, `cur`, `len`, `k`, `r`, `intact`, residual `door`/`long`) is embedded by
+  every engine — `Walk`, beam `State`, beam2 `State2`, the sojourn DFS and the union
+  DFS; `SearchState` adds the beam-family counters (`arcs`, `half_open`, `nearly_done`,
+  `w2_bridges`, `steps`). A new incremental feature is added **once**: a field plus one
+  `child_*` rule, applied by `visit`/`advance` and `child`, with its from-scratch
+  definition added to `SearchState::recount` (which is what the four drift tests check
+  every engine against). Consumers — including `score_move`, `bucket_key`, `model_pred`
+  and `rollout::child_features` — must READ the cached value or call the `child_*`
+  reader; re-deriving the arithmetic locally is the exact bug class this replaced.
+  The O(1)-no-clone contract still holds: the `child_*` readers give a child counter
+  from the parent's cached values without materializing the child. Also note: beam
+  dedup assumes the score is a pure function of `(cur, visited, len)`
+  (`(front, back, visited, len)` in beam2) — a learned evaluator must preserve that or
+  the keep-first dedup argument breaks. beam2 maintains all fourteen counters but
+  still scores with the 8-feature contract only; turning on its deficit/residual
+  scoring is a deliberate future change, not a free consequence.
 - **Python goes through `pylib/`** (s64 P1; ARCHITECTURE.md has the section).
   `pylib/` is at the repo root and its copies are **canonical** — the `out/sNN`
   originals are frozen history and must stay byte-untouched. One `first_visit_path`

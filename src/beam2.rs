@@ -39,6 +39,17 @@
 //! features stay pure functions of `(back, visited)`, so dedup remains
 //! sound, but nothing in the training distribution matches prepend
 //! dynamics; treat results accordingly.
+//!
+//! Counters (s64 P3): states carry the shared
+//! [`crate::state::SearchState`], whose `cur` is this searcher's
+//! `back`, so all fourteen counters — the deficit triple and the
+//! residual `door`/`long` terms included — are maintained here for the
+//! first time. A prepend visits a rank *without* moving the appending
+//! end, which is [`crate::state::Cursor::Keep`]; the counters that
+//! depend only on the visited set are unaffected by the distinction,
+//! and the residual terms take the `child_terms_keeping_cur`
+//! transition. None of the five recovered counters is read by any
+//! scorer: this searcher's output is unchanged.
 
 use std::collections::HashSet;
 use std::collections::VecDeque;
@@ -47,7 +58,9 @@ use crate::beam::{splitmix64, splitmix64_mix, Jitter};
 use crate::bitset::BitSet;
 use crate::bound::lower_bound_arc2;
 use crate::graph::{Graph, Preds};
+use crate::lb_residual::{ParentCtx, PredTable};
 use crate::model::Model;
+use crate::state::{Cursor, SearchState};
 
 /// How two-ended beam candidates are scored.
 #[derive(Clone, Copy)]
@@ -59,12 +72,15 @@ pub enum Scorer2<'m> {
     /// models). The model was trained on append-only trajectories.
     ///
     /// Only 8-feature ([`crate::model::FEATURE_ORDER`]) models are
-    /// supported: the phase-3 deficit-distribution features
-    /// (`half_open`, `nearly_done`, `w2_bridges`) are deliberately NOT
-    /// maintained in `State2` — the probe is a documented NO-GO
-    /// (JOURNAL s7) kept in-tree, so it was not worth a third copy of
-    /// the counter maintenance. [`beam2_search`] rejects v2 models with
-    /// a clear panic; the CLI refuses them up front.
+    /// supported. Since s64 P3 `State2` *does* maintain the phase-3
+    /// deficit-distribution counters (`half_open`, `nearly_done`,
+    /// `w2_bridges`) and the residual terms (`door`, `long`) — they come
+    /// free with the shared [`crate::state::SearchState`] — but nothing
+    /// scores with them yet: that refactor was parity-only, and
+    /// switching this NO-GO probe (JOURNAL s7) to v2 or residual
+    /// scoring is a deliberate change with its own measurement.
+    /// [`beam2_search`] rejects v2 models with a clear panic; the CLI
+    /// refuses them up front.
     Learned {
         /// Learned cost-to-go predictor (one-ended feature contract).
         model: &'m Model,
@@ -107,29 +123,33 @@ impl Jitter2Ctx {
 }
 
 /// One two-ended beam state: a deque walk `front → … → back`.
+///
+/// The counters live in the shared [`SearchState`] (s64 P3), whose
+/// `cur` is this state's **back** — the appending end, relative to
+/// which the one-ended quantities (`current_cycle_remaining`, the
+/// residual `door`/`long` terms) are defined here, exactly as the
+/// transfer feature vector of [`Scorer2::Learned`] already was. All 14
+/// counters are now maintained, the phase-3 deficit triple and the
+/// residual terms included; **none of the five that `State2` used to
+/// drop is read by any scorer** — the two-ended probe's scoring is
+/// unchanged (s64 P3 is parity-only).
 struct State2 {
+    /// The shared incremental counters; `st.cyc.cur` is `back`.
+    st: SearchState,
     /// Rank of the permutation the string currently starts with.
     front: u32,
-    /// Rank of the permutation the string currently ends with.
-    back: u32,
-    /// Characters in the string so far.
-    len: u32,
-    /// Visited permutations.
-    visited: BitSet,
-    /// Per-cycle unvisited counts.
-    cycle_rem: Box<[u8]>,
-    /// Cycles with ≥ 1 unvisited permutation.
-    k: u32,
-    /// Unvisited permutations.
-    r: u32,
-    /// Weight-1 arcs among unvisited permutations.
-    arcs: u32,
-    /// Cycles with all `n` members unvisited (intact).
-    intact: u32,
     /// Zobrist hash of the visited set (0 when jitter is off).
     zhash: u64,
     /// Index of this state's node in the path arena.
     node: u32,
+}
+
+impl State2 {
+    /// Rank of the permutation the string currently ends with.
+    #[inline]
+    fn back(&self) -> u32 {
+        self.st.cyc.cur
+    }
 }
 
 /// Result of a two-ended beam run.
@@ -145,27 +165,6 @@ pub struct Beam2Result {
     pub moves: Vec<(u32, bool)>,
 }
 
-/// Number of weight-1 arcs after `parent` visits `x` (by either move
-/// type — arcs depend only on the visited set), in O(1) from the
-/// parent's counters. Identical case analysis to the one-ended beam's
-/// `child_arcs` / `Walk::advance`.
-#[inline]
-fn child_arcs2(g: &Graph, parent: &State2, x: u32) -> u32 {
-    let cid = g.cycle_id[x as usize] as usize;
-    if parent.cycle_rem[cid] as usize == g.n {
-        return parent.arcs; // circular component becomes one open arc
-    }
-    let p_unvis = !parent.visited.get(g.pred1[x as usize] as usize);
-    let s_unvis = !parent.visited.get(g.succ1(x) as usize);
-    if p_unvis && s_unvis {
-        parent.arcs + 1
-    } else if !p_unvis && !s_unvis {
-        parent.arcs - 1
-    } else {
-        parent.arcs
-    }
-}
-
 /// Run the two-ended beam search of the given `width` on `g` and return
 /// the best complete superpermutation found. With `jitter = None` (or
 /// `eps == 0`) the search is deterministic and jitter-free.
@@ -179,14 +178,16 @@ pub fn beam2_search(
     if let Scorer2::Learned { model, .. } = scorer {
         assert!(
             model.n_features() <= crate::model::FEATURE_ORDER.len(),
-            "beam2's transfer scorer supports only the 8-feature contract; \
-             the v2 deficit-distribution features are not maintained in State2 \
+            "beam2's transfer scorer supports only the 8-feature contract \
              (NO-GO probe, see Scorer2::Learned docs)"
         );
     }
     let nfact = g.nfact;
     let n = g.n;
     let preds = Preds::new(g);
+    // The residual terms are maintained (never scored with — see
+    // `State2`), so the in-neighbour table is always built.
+    let tab = PredTable::new(g);
     let jctx = jitter
         .filter(|j| j.eps > 0.0)
         .map(|j| Jitter2Ctx::new(j, nfact));
@@ -196,36 +197,25 @@ pub fn beam2_search(
     // node stores (parent, rank, prepended?).
     let mut arena: Vec<(u32, u32, bool)> = vec![(u32::MAX, 0, false)];
 
-    let mut beam = {
-        let mut visited = BitSet::new(nfact);
-        visited.set(0);
-        let mut cycle_rem = vec![n as u8; g.cycle_count].into_boxed_slice();
-        cycle_rem[g.cycle_id[0] as usize] -= 1;
-        vec![State2 {
-            front: 0,
-            back: 0,
-            len: n as u32,
-            visited,
-            cycle_rem,
-            k: g.cycle_count as u32,
-            r: (nfact - 1) as u32,
-            arcs: g.cycle_count as u32,
-            // Rank 0's cycle is already broken by the initial visit.
-            intact: (g.cycle_count - 1) as u32,
-            zhash: jctx.map_or(0, |j| j.zobrist[0]),
-            node: 0,
-        }]
-    };
+    let mut beam = vec![State2 {
+        st: SearchState::root(g, Some(&tab)),
+        front: 0,
+        zhash: jctx.map_or(0, |j| j.zobrist[0]),
+        node: 0,
+    }];
 
     // Candidate = (score, len, prepend, rank, parent index in `beam`).
     let mut cands: Vec<(i64, u32, u8, u32, u32)> = Vec::new();
 
     for _depth in 1..nfact {
         cands.clear();
+        // One residual-bound transition context per parent, shared by
+        // all its append candidates (see [`ParentCtx`]).
+        let ctxs: Vec<ParentCtx> = beam.iter().map(|s| s.st.cyc.parent_ctx(g, &tab)).collect();
         for (pi, s) in beam.iter().enumerate() {
             let mut any = false;
-            for &(q, w) in &g.succs[s.back as usize] {
-                if s.visited.get(q as usize) {
+            for &(q, w) in &g.succs[s.back() as usize] {
+                if s.st.cyc.visited.get(q as usize) {
                     continue;
                 }
                 any = true;
@@ -234,7 +224,7 @@ pub fn beam2_search(
                 ));
             }
             for &(p, w) in &preds.lists[s.front as usize] {
-                if s.visited.get(p as usize) {
+                if s.st.cyc.visited.get(p as usize) {
                     continue;
                 }
                 any = true;
@@ -247,11 +237,12 @@ pub fn beam2_search(
                 // lowest unvisited rank so the state never silently
                 // dies. Its overlap with `back` is provably 0 (all
                 // positive-overlap successors of `back` are visited).
-                let q = s
-                    .visited
-                    .first_clear(nfact)
-                    .expect("state with r > 0 must have an unvisited perm")
-                    as u32;
+                let q =
+                    s.st.cyc
+                        .visited
+                        .first_clear(nfact)
+                        .expect("state with r > 0 must have an unvisited perm")
+                        as u32;
                 cands.push(score_move2(
                     g, s, q, n as u32, false, pi as u32, scorer, jctx,
                 ));
@@ -276,11 +267,11 @@ pub fn beam2_search(
             let prepend = prepend != 0;
             let parent = &beam[pi as usize];
             let (front, back) = if prepend {
-                (x, parent.back)
+                (x, parent.back())
             } else {
                 (parent.front, x)
             };
-            let mut visited = parent.visited.clone();
+            let mut visited = parent.st.cyc.visited.clone();
             visited.set(x as usize);
             let key = (front, back, visited);
             if seen.contains(&key) {
@@ -288,36 +279,53 @@ pub fn beam2_search(
             }
             let visited = key.2.clone();
             seen.insert(key);
-            let arcs = child_arcs2(g, parent, x);
-            let mut cycle_rem = parent.cycle_rem.clone();
-            let cid = g.cycle_id[x as usize] as usize;
-            let intact = parent.intact - u32::from(parent.cycle_rem[cid] as usize == n);
-            cycle_rem[cid] -= 1;
-            let k = parent.k - u32::from(cycle_rem[cid] == 0);
             let node = arena.len() as u32;
             arena.push((parent.node, x, prepend));
-            next.push(State2 {
+            // A prepend leaves the appending end (the shared state's
+            // `cur`) where it is; an append moves it onto `x`.
+            let cursor = if prepend { Cursor::Keep } else { Cursor::Onto };
+            let child = State2 {
+                st: parent
+                    .st
+                    .child(g, x, len, visited, cursor, Some((&tab, &ctxs[pi as usize]))),
                 front,
-                back,
-                len,
-                visited,
-                cycle_rem,
-                k,
-                r: parent.r - 1,
-                arcs,
-                intact,
                 zhash: jctx.map_or(0, |j| parent.zhash ^ j.zobrist[x as usize]),
                 node,
-            });
+            };
+            // Drift guard (s64 P3): in the library's own test build every
+            // constructed child's counters are re-derived from scratch and
+            // compared, so a wrong cursor or a wrong shared rule fails
+            // immediately on a real two-ended search path — the `State2`
+            // counterpart of the `Walk`-vs-beam pin in
+            // `tests/deficit_features.rs`. Compiled out of every release
+            // build (see the `counters_match_scratch_*` tests below).
+            #[cfg(test)]
+            {
+                let scratch = SearchState::recount(
+                    g,
+                    &child.st.cyc.visited,
+                    child.back(),
+                    child.st.cyc.len,
+                    child.st.steps,
+                    Some(&tab),
+                );
+                assert!(
+                    child.st.counters_eq(&scratch),
+                    "beam2 State2 drift (prepend={prepend}, x={x})\n  inc {}\n  ref {}",
+                    child.st.counters(),
+                    scratch.counters()
+                );
+            }
+            next.push(child);
         }
         beam = next;
     }
 
     let best = beam
         .iter()
-        .min_by_key(|s| s.len)
+        .min_by_key(|s| s.st.cyc.len)
         .expect("beam is never empty");
-    debug_assert_eq!(best.r, 0);
+    debug_assert_eq!(best.st.cyc.r, 0);
 
     // Reconstruct the decision order from the arena, then replay it
     // into a deque to recover string order, then rebuild the string by
@@ -349,7 +357,7 @@ pub fn beam2_search(
         let t = Graph::overlap(p, q);
         chars.extend_from_slice(&q[t..]);
     }
-    debug_assert_eq!(chars.len(), best.len as usize);
+    debug_assert_eq!(chars.len(), best.st.cyc.len as usize);
 
     Beam2Result {
         string: chars.iter().map(|&v| (b'0' + v) as char).collect(),
@@ -381,26 +389,27 @@ fn score_move2(
     scorer: Scorer2,
     jctx: Option<&Jitter2Ctx>,
 ) -> (i64, u32, u8, u32, u32) {
-    let len = parent.len + w;
-    let r = parent.r - 1;
+    let st = &parent.st;
+    let len = st.cyc.len + w;
+    let r = st.cyc.r - 1;
     // Child-end indicators, accounting for x becoming visited.
     let succ1_back_unvis = |b: u32| {
         let sb = g.succ1(b);
-        sb != x && !parent.visited.get(sb as usize)
+        sb != x && !st.cyc.visited.get(sb as usize)
     };
     let pred1_front_unvis = |f: u32| {
         let pf = g.pred1[f as usize];
-        pf != x && !parent.visited.get(pf as usize)
+        pf != x && !st.cyc.visited.get(pf as usize)
     };
     let score = match scorer {
         Scorer2::Arc2 => {
             let lb = if r == 0 {
                 0
             } else {
-                let arcs = child_arcs2(g, parent, x);
+                let arcs = st.child_arcs(g, x);
                 let (ind_b, ind_f) = if prepend {
                     // Child ends: front = x, back unchanged.
-                    (succ1_back_unvis(parent.back), pred1_front_unvis(x))
+                    (succ1_back_unvis(parent.back()), pred1_front_unvis(x))
                 } else {
                     // Child ends: front unchanged, back = x.
                     (succ1_back_unvis(x), pred1_front_unvis(parent.front))
@@ -412,19 +421,18 @@ fn score_move2(
         Scorer2::Learned { model, alpha } => {
             // One-ended feature contract, computed relative to the
             // child's back (the appending end).
-            let cid_x = g.cycle_id[x as usize] as usize;
-            let rem_x = u32::from(parent.cycle_rem[cid_x]); // ≥ 1: x is unvisited
-            let k = parent.k - u32::from(rem_x == 1);
-            let intact = parent.intact - u32::from(rem_x as usize == g.n);
-            let arcs = child_arcs2(g, parent, x);
+            let k = st.cyc.child_k(g, x);
+            let intact = st.cyc.child_intact(g, x);
+            let arcs = st.child_arcs(g, x);
             let (cur_rem, succ1_unvis) = if prepend {
                 // back unchanged; x may share its cycle.
-                let cid_b = g.cycle_id[parent.back as usize] as usize;
-                let rem_b = u32::from(parent.cycle_rem[cid_b]) - u32::from(cid_b == cid_x);
-                (rem_b, u32::from(succ1_back_unvis(parent.back)))
+                (
+                    st.cyc.child_rem_of(g, x, parent.back()),
+                    u32::from(succ1_back_unvis(parent.back())),
+                )
             } else {
                 // back = x; x's own visit leaves rem_x − 1 in its cycle.
-                (rem_x - 1, u32::from(succ1_back_unvis(x)))
+                (st.cyc.child_cur_rem(g, x), u32::from(succ1_back_unvis(x)))
             };
             let lb_cycle = if r == 0 {
                 0
@@ -455,7 +463,7 @@ fn score_move2(
         Some(j) => {
             let child_zhash = parent.zhash ^ j.zobrist[x as usize];
             let (front, back) = if prepend {
-                (x, parent.back)
+                (x, parent.back())
             } else {
                 (parent.front, x)
             };
@@ -464,4 +472,73 @@ fn score_move2(
         None => score,
     };
     (score, len, u8::from(prepend), x, parent_idx)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{Model, Target};
+    use crate::validate::validate;
+
+    /// Every counter `State2` maintains must equal a from-scratch
+    /// recount at every state the two-ended beam constructs, on a real
+    /// search path exercising both move types (append and prepend).
+    ///
+    /// The comparison itself runs inside `beam2_search` under
+    /// `#[cfg(test)]`; these cases drive it. Before s64 P3 `State2`
+    /// dropped five of the fourteen counters (`half_open`,
+    /// `nearly_done`, `w2_bridges`, `door`, `long`) and had no drift
+    /// test at all.
+    #[test]
+    fn counters_match_scratch_on_real_two_ended_paths() {
+        for (n, width) in [(4usize, 64usize), (5, 24)] {
+            let g = Graph::new(n);
+            let r = beam2_search(&g, width, Scorer2::Arc2, None);
+            assert!(validate(n, &r.string).complete, "n={n}");
+            // Both move types must actually occur, or the drift guard
+            // would only have seen appends.
+            assert!(
+                r.moves.iter().any(|&(_, p)| p),
+                "n={n}: no prepend on the pinned path"
+            );
+            assert!(
+                r.moves.iter().skip(1).any(|&(_, p)| !p),
+                "n={n}: no append on the pinned path"
+            );
+        }
+    }
+
+    /// Same guard along a jittered path and a learned-scorer path (both
+    /// reorder the frontier, so different states get constructed).
+    #[test]
+    fn counters_match_scratch_under_jitter_and_learned_scoring() {
+        let g = Graph::new(4);
+        beam2_search(
+            &g,
+            48,
+            Scorer2::Arc2,
+            Some(Jitter {
+                eps: 0.05,
+                seed: 11,
+            }),
+        );
+        let mut coef = vec![0.0f64; 8];
+        coef[7] = 1.0; // lb_arc
+        coef[2] = 0.5; // intact
+        let model = Model::Linear {
+            n: 4,
+            coef,
+            bias: 0.0,
+            target: Target::Absolute,
+        };
+        beam2_search(
+            &g,
+            48,
+            Scorer2::Learned {
+                model: &model,
+                alpha: 1.0,
+            },
+            None,
+        );
+    }
 }

@@ -97,7 +97,7 @@ fn lower_bound_never_exceeds_cost_to_go_on_greedy_trajectory_n4() {
         // Recover the edge weight: either a stored successor, or the
         // weight-n fallback (only taken when no successor was unvisited,
         // so the target is never in the successor list in that case).
-        let wt = g.succs[w.cur as usize]
+        let wt = g.succs[w.cur() as usize]
             .iter()
             .find(|&&(q, _)| q == next)
             .map(|&(_, wt)| wt)
@@ -671,11 +671,11 @@ fn score_trajectory_matches_walk_bounds_on_greedy_n4() {
     let mut w = Walk::new(&g);
     assert_eq!(scores[0], (0, 4, (4 + w.lb_arc()) as f64));
     for (i, &rank) in r.path[1..].iter().enumerate() {
-        let p = &g.perms[w.cur as usize];
+        let p = &g.perms[w.cur() as usize];
         let wt = (g.n - Graph::overlap(p, &g.perms[rank as usize])) as u8;
         w.advance(rank, wt);
         let expect = (w.len_chars() + w.lb_arc()) as f64;
-        assert_eq!(scores[i + 1], (w.steps, w.len_chars() as u32, expect));
+        assert_eq!(scores[i + 1], (w.steps(), w.len_chars() as u32, expect));
     }
 }
 

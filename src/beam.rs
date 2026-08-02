@@ -32,8 +32,9 @@ use std::collections::{HashMap, HashSet};
 
 use crate::bitset::BitSet;
 use crate::graph::Graph;
-use crate::lb_residual::{self, ParentCtx, PredTable};
+use crate::lb_residual::{ParentCtx, PredTable};
 use crate::model::Model;
+use crate::state::{Cursor, Residual, SearchState};
 
 /// Which admissible lower bound scores beam candidates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -206,41 +207,14 @@ impl JitterCtx {
 }
 
 /// One beam state: a walk that has visited `popcount(visited)` perms.
+///
+/// All 14 counters and every rule that maintains them live in the
+/// shared [`SearchState`] (s64 P3); the beam adds only its own two
+/// bookkeeping fields. The residual terms `door`/`long` stay 0 unless
+/// the residual bound is in use.
 struct State {
-    /// Rank of the permutation the walk currently ends with.
-    cur: u32,
-    /// Characters emitted so far.
-    len: u32,
-    /// Visited permutations.
-    visited: BitSet,
-    /// Per-cycle unvisited counts.
-    cycle_rem: Box<[u8]>,
-    /// Cycles with ≥ 1 unvisited permutation.
-    k: u32,
-    /// Unvisited permutations.
-    r: u32,
-    /// Weight-1 arcs among unvisited permutations.
-    arcs: u32,
-    /// Cycles with all `n` members unvisited (intact).
-    intact: u32,
-    /// Cycles with exactly 1 or 2 visited members
-    /// (`cycle_rem ∈ {n−1, n−2}`) — the "half-open" cycles the record
-    /// walks keep alive via w2 moves (JOURNAL s5).
-    half_open: u32,
-    /// Cycles with exactly 1 or 2 unvisited members
-    /// (`cycle_rem ∈ {1, 2}`) — nearly done.
-    nearly_done: u32,
-    /// Live cross-cycle weight-2 edges joining two partially-visited
-    /// cycles (see [`crate::graph::Graph::w2_bridges_delta`] for the
-    /// exact definition; phase-3 item 3). Pure function of the visited
-    /// set.
-    w2_bridges: u32,
-    /// `Σ_{x unvisited} (minin(x) − 1)` — the residual bound's `door`
-    /// term (0 unless the residual bound is in use).
-    door: u32,
-    /// The residual bound's dead-door singly-covered-class term (0
-    /// unless the residual bound is in use).
-    long: u32,
+    /// The shared incremental counters.
+    st: SearchState,
     /// Zobrist hash of the visited set (0 when jitter is off).
     zhash: u64,
     /// Index of this state's node in the path arena.
@@ -276,31 +250,12 @@ pub struct LevelCutoff {
     pub worst_kept_score: f64,
 }
 
-/// Number of weight-1 arcs in the child state after `parent` visits `q`,
-/// in O(1) from the parent's counters (see `Walk::advance` for the case
-/// analysis; `parent.visited` does not yet contain `q`).
-#[inline]
-fn child_arcs(g: &Graph, parent: &State, q: u32) -> u32 {
-    let cid = g.cycle_id[q as usize] as usize;
-    if parent.cycle_rem[cid] as usize == g.n {
-        return parent.arcs; // circular component becomes one open arc
-    }
-    let p_unvis = !parent.visited.get(g.pred1[q as usize] as usize);
-    let s_unvis = !parent.visited.get(g.succ1(q) as usize);
-    if p_unvis && s_unvis {
-        parent.arcs + 1
-    } else if !p_unvis && !s_unvis {
-        parent.arcs - 1
-    } else {
-        parent.arcs
-    }
-}
-
 /// Materialize the child state reached by visiting `q` from `parent`.
 /// `visited` is the already-cloned parent set with bit `q` set, `len`
-/// the child's length, `node` its already-pushed arena node. All
-/// counters update in O(1) from the parent's (`parent.visited` itself
-/// still excludes `q`, as `child_arcs` requires).
+/// the child's length, `node` its already-pushed arena node. Every
+/// counter updates in O(1) from the parent's through the shared
+/// [`SearchState::child`] rules (`parent`'s visited set itself still
+/// excludes `q`, as those rules require).
 #[allow(clippy::too_many_arguments)]
 fn child_state(
     g: &Graph,
@@ -310,57 +265,25 @@ fn child_state(
     visited: BitSet,
     node: u32,
     jctx: Option<&JitterCtx>,
-    res: Option<(&PredTable, &ParentCtx)>,
+    res: Residual,
 ) -> State {
-    let arcs = child_arcs(g, parent, q);
-    let w2_bridges = (parent.w2_bridges as i64
-        + g.w2_bridges_delta(&parent.visited, &parent.cycle_rem, q)) as u32;
-    let mut cycle_rem = parent.cycle_rem.clone();
-    let cid = g.cycle_id[q as usize] as usize;
-    let rem = cycle_rem[cid] as usize;
-    let intact = parent.intact - u32::from(rem == g.n);
-    let half_open = parent.half_open + u32::from(rem == g.n) - u32::from(rem == g.n - 2);
-    let nearly_done = parent.nearly_done + u32::from(rem == 3) - u32::from(rem == 1);
-    let (door, long) = match res {
-        Some((tab, ctx)) => {
-            lb_residual::child_terms(g, tab, &parent.visited, &parent.cycle_rem, ctx, q)
-        }
-        None => (0, 0),
-    };
-    cycle_rem[cid] -= 1;
-    let k = parent.k - u32::from(cycle_rem[cid] == 0);
     State {
-        cur: q,
-        len,
-        visited,
-        cycle_rem,
-        k,
-        r: parent.r - 1,
-        arcs,
-        intact,
-        half_open,
-        nearly_done,
-        w2_bridges,
-        door,
-        long,
+        st: parent.st.child(g, q, len, visited, Cursor::Onto, res),
         zhash: jctx.map_or(0, |j| parent.zhash ^ j.zobrist[q as usize]),
         node,
     }
 }
 
 /// Deficit-profile bucket key of the child reached by visiting `q` from
-/// `parent`, in O(1) from the parent's counters: the triple
-/// `(intact, half_open, nearly_done)` each divided by the granularity
-/// `b`, packed into a `u64`. The three counts are pure functions of the
+/// `parent`, in O(1) from the parent's cached counters: the triple
+/// `(intact, half_open, nearly_done)` — read from the shared child
+/// rules, not re-derived — each divided by the granularity `b` and
+/// packed into a `u64`. The three counts are pure functions of the
 /// visited set alone, so duplicate `(cur, visited)` dedup keys always
 /// land in the same bucket (the keep-first argument needs this).
 #[inline]
 fn bucket_key(g: &Graph, parent: &State, q: u32, b: u32) -> u64 {
-    let n = g.n;
-    let rem = parent.cycle_rem[g.cycle_id[q as usize] as usize] as usize;
-    let intact = parent.intact - u32::from(rem == n);
-    let half_open = parent.half_open + u32::from(rem == n) - u32::from(rem == n - 2);
-    let nearly_done = parent.nearly_done + u32::from(rem == 3) - u32::from(rem == 1);
+    let (intact, half_open, nearly_done) = parent.st.child_deficit_profile(g, q);
     (u64::from(intact / b) << 42) | (u64::from(half_open / b) << 21) | u64::from(nearly_done / b)
 }
 
@@ -663,42 +586,17 @@ fn replay_walk(
 ) {
     let n = g.n;
     for &q in ranks {
-        assert!(!root.visited.get(q as usize), "seed walk revisits rank {q}");
-        let w = (n - Graph::overlap(&g.perms[root.cur as usize], &g.perms[q as usize])) as u32;
-        let arcs = child_arcs(g, root, q);
-        let w2d = g.w2_bridges_delta(&root.visited, &root.cycle_rem, q);
-        if let Some(t) = tab {
-            let ctx = ParentCtx::new(
-                g,
-                t,
-                &root.visited,
-                root.cur,
-                &root.cycle_rem,
-                root.door,
-                root.long,
-            );
-            let (door, long) =
-                lb_residual::child_terms(g, t, &root.visited, &root.cycle_rem, &ctx, q);
-            root.door = door;
-            root.long = long;
-        }
-        root.visited.set(q as usize);
-        let cid = g.cycle_id[q as usize] as usize;
-        let rem = root.cycle_rem[cid] as usize;
-        root.intact -= u32::from(rem == n);
-        root.half_open = root.half_open + u32::from(rem == n) - u32::from(rem == n - 2);
-        root.nearly_done = root.nearly_done + u32::from(rem == 3) - u32::from(rem == 1);
-        root.w2_bridges = (root.w2_bridges as i64 + w2d) as u32;
-        root.cycle_rem[cid] -= 1;
-        root.k -= u32::from(root.cycle_rem[cid] == 0);
-        root.r -= 1;
-        root.arcs = arcs;
-        root.len += w;
+        assert!(
+            !root.st.cyc.visited.get(q as usize),
+            "seed walk revisits rank {q}"
+        );
+        let w =
+            (n - Graph::overlap(&g.perms[root.st.cyc.cur as usize], &g.perms[q as usize])) as u32;
+        root.st.advance(g, q, w, tab);
         root.zhash = jctx.map_or(0, |j| root.zhash ^ j.zobrist[q as usize]);
         let node = arena.len() as u32;
         arena.push((root.node, q));
         root.node = node;
-        root.cur = q;
     }
 }
 
@@ -744,32 +642,8 @@ fn beam_search_impl(
     let mut arena: Vec<(u32, u32)> = vec![(u32::MAX, 0)];
 
     let make_root = |jctx: Option<&JitterCtx>| -> State {
-        let mut visited = BitSet::new(nfact);
-        visited.set(0);
-        let mut cycle_rem = vec![n as u8; g.cycle_count].into_boxed_slice();
-        cycle_rem[g.cycle_id[0] as usize] -= 1;
-        // At the root every permutation is standable, so every `minin`
-        // is 1 and only rank 0's class is touched.
-        let door = tab.map_or(0, |t| lb_residual::door_scratch(g, t, &visited, 0));
-        let long = tab.map_or(0, |_| lb_residual::long_scratch(g, &visited, 0, &cycle_rem));
         State {
-            cur: 0,
-            len: n as u32,
-            visited,
-            cycle_rem,
-            k: g.cycle_count as u32,
-            r: (nfact - 1) as u32,
-            arcs: g.cycle_count as u32,
-            // Rank 0's cycle is already broken by the initial visit.
-            intact: (g.cycle_count - 1) as u32,
-            // ... and has exactly 1 visited member: half-open. It is
-            // also nearly done iff n − 1 ≤ 2. Only one cycle is touched,
-            // so no w2 bridge joins two touched cycles yet.
-            half_open: 1,
-            nearly_done: u32::from(n - 1 <= 2),
-            w2_bridges: 0,
-            door,
-            long,
+            st: SearchState::root(g, tab),
             zhash: jctx.map_or(0, |j| j.zobrist[0]),
             node: 0,
         }
@@ -847,11 +721,11 @@ fn beam_search_impl(
                     }
                     path.reverse();
                     let remaining: Vec<u32> = (0..nfact as u32)
-                        .filter(|&q| !s.visited.get(q as usize))
+                        .filter(|&q| !s.st.cyc.visited.get(q as usize))
                         .collect();
                     out.push(SnapState {
-                        len: s.len,
-                        cur: s.cur,
+                        len: s.st.cyc.len,
+                        cur: s.st.cyc.cur,
                         path,
                         remaining,
                         score_rank,
@@ -865,17 +739,14 @@ fn beam_search_impl(
         // One residual-bound transition context per parent: dropping
         // `cur` from the standable set is shared by all its candidates.
         let ctxs: Vec<ParentCtx> = match tab {
-            Some(t) => beam
-                .iter()
-                .map(|s| ParentCtx::new(g, t, &s.visited, s.cur, &s.cycle_rem, s.door, s.long))
-                .collect(),
+            Some(t) => beam.iter().map(|s| s.st.cyc.parent_ctx(g, t)).collect(),
             None => Vec::new(),
         };
         let res_of = |pi: usize| tab.map(|t| (t, &ctxs[pi]));
         for (pi, s) in beam.iter().enumerate() {
             let mut any = false;
-            for &(q, w) in &g.succs[s.cur as usize] {
-                if s.visited.get(q as usize) {
+            for &(q, w) in &g.succs[s.st.cyc.cur as usize] {
+                if s.st.cyc.visited.get(q as usize) {
                     continue;
                 }
                 // `any` tracks unvisited successors, not surviving
@@ -900,11 +771,12 @@ fn beam_search_impl(
                 // Weight-n fallback: jump to the lowest unvisited rank so
                 // the state never silently dies (uncapped searches only;
                 // under a cap the fallback is prunable like any move).
-                let q = s
-                    .visited
-                    .first_clear(nfact)
-                    .expect("state with r > 0 must have an unvisited perm")
-                    as u32;
+                let q =
+                    s.st.cyc
+                        .visited
+                        .first_clear(nfact)
+                        .expect("state with r > 0 must have an unvisited perm")
+                        as u32;
                 if let Some(c) = score_move(
                     g,
                     s,
@@ -944,7 +816,7 @@ fn beam_search_impl(
                         break;
                     }
                     let parent = &beam[pi as usize];
-                    let mut visited = parent.visited.clone();
+                    let mut visited = parent.st.cyc.visited.clone();
                     visited.set(q as usize);
                     let key = (q, visited);
                     if seen.contains(&key) {
@@ -993,7 +865,7 @@ fn beam_search_impl(
                     if *count >= st.quota {
                         continue;
                     }
-                    let mut visited = parent.visited.clone();
+                    let mut visited = parent.st.cyc.visited.clone();
                     visited.set(q as usize);
                     let key = (q, visited);
                     if seen.contains(&key) {
@@ -1020,7 +892,7 @@ fn beam_search_impl(
                         continue;
                     }
                     let parent = &beam[pi as usize];
-                    let mut visited = parent.visited.clone();
+                    let mut visited = parent.st.cyc.visited.clone();
                     visited.set(q as usize);
                     let key = (q, visited);
                     if seen.contains(&key) {
@@ -1071,7 +943,7 @@ fn beam_search_impl(
                     node = arena[node as usize].0;
                 }
                 let e = best_by_node.entry(node).or_insert(u32::MAX);
-                *e = (*e).min(s.len);
+                *e = (*e).min(s.st.cyc.len);
             }
             for st in out.iter_mut() {
                 st.best_descendant_len = best_by_node.get(&st.node).copied();
@@ -1082,8 +954,8 @@ fn beam_search_impl(
     // Under an admissible cap the whole beam can die (no explored walk
     // completes within `max_len`); uncapped searches always keep the
     // weight-n fallback candidate alive, so `None` is cap-only.
-    let best = beam.iter().min_by_key(|s| s.len)?;
-    debug_assert_eq!(best.r, 0);
+    let best = beam.iter().min_by_key(|s| s.st.cyc.len)?;
+    debug_assert_eq!(best.st.cyc.r, 0);
 
     // Reconstruct the visit order from the arena, then rebuild the
     // string by maximal-overlap concatenation.
@@ -1103,7 +975,7 @@ fn beam_search_impl(
         let t = Graph::overlap(p, q);
         chars.extend_from_slice(&q[t..]);
     }
-    debug_assert_eq!(chars.len(), best.len as usize);
+    debug_assert_eq!(chars.len(), best.st.cyc.len as usize);
 
     Some(BeamResult {
         string: chars.iter().map(|&v| (b'0' + v) as char).collect(),
@@ -1141,11 +1013,12 @@ fn score_move(
     parent_idx: u32,
     scorer: Scorer,
     jctx: Option<&JitterCtx>,
-    res: Option<(&PredTable, &ParentCtx)>,
+    res: Residual,
     max_len: Option<u32>,
 ) -> Option<(i64, u32, u32, u32)> {
-    let len = parent.len + w;
-    let r = parent.r - 1;
+    let st = &parent.st;
+    let len = st.cyc.len + w;
+    let r = st.cyc.r - 1;
     let (score, lb) = match scorer {
         Scorer::Bound(bound) => {
             let lb = if r == 0 {
@@ -1153,30 +1026,18 @@ fn score_move(
             } else {
                 match bound {
                     Bound::Cycle => {
-                        let rem = parent.cycle_rem[g.cycle_id[q as usize] as usize] as u32;
-                        let k = parent.k - u32::from(rem == 1);
-                        r + k - u32::from(rem > 1)
+                        let k = st.cyc.child_k(g, q);
+                        r + k - u32::from(st.cyc.child_cur_rem(g, q) > 0)
                     }
                     Bound::Arc => {
-                        let arcs = child_arcs(g, parent, q);
-                        let succ1_unvis = !parent.visited.get(g.succ1(q) as usize);
+                        let arcs = st.child_arcs(g, q);
+                        let succ1_unvis = !st.cyc.visited.get(g.succ1(q) as usize);
                         r + arcs - u32::from(succ1_unvis)
                     }
                     Bound::Residual => {
                         let (tab, ctx) = res.expect("residual bound needs its transition context");
-                        let (door, long) = lb_residual::child_terms(
-                            g,
-                            tab,
-                            &parent.visited,
-                            &parent.cycle_rem,
-                            ctx,
-                            q,
-                        );
-                        let intact = parent.intact
-                            - u32::from(
-                                parent.cycle_rem[g.cycle_id[q as usize] as usize] as usize == g.n,
-                            );
-                        r + door + intact + long
+                        let (door, long) = st.cyc.child_residual(g, tab, ctx, q);
+                        r + door + st.cyc.child_intact(g, q) + long
                     }
                 }
             };
@@ -1211,14 +1072,7 @@ fn score_move(
                         0
                     } else {
                         let (tab, ctx) = res.expect("residual bound needs its transition context");
-                        let (door, long) = lb_residual::child_terms(
-                            g,
-                            tab,
-                            &parent.visited,
-                            &parent.cycle_rem,
-                            ctx,
-                            q,
-                        );
+                        let (door, long) = st.cyc.child_residual(g, tab, ctx, q);
                         r + door + p.intact + long
                     }
                 }
@@ -1264,31 +1118,31 @@ struct PredOut {
 /// `(cur, visited)`, preserving the keep-first dedup argument.
 #[inline]
 fn model_pred(g: &Graph, parent: &State, q: u32, r: u32, model: &Model) -> PredOut {
-    let rem = parent.cycle_rem[g.cycle_id[q as usize] as usize] as u32;
-    let k = parent.k - u32::from(rem == 1);
-    let intact = parent.intact - u32::from(rem as usize == g.n);
-    let cur_rem = rem - 1;
-    let arcs = child_arcs(g, parent, q);
-    let succ1_unvis = u32::from(!parent.visited.get(g.succ1(q) as usize));
+    let st = &parent.st;
+    let k = st.cyc.child_k(g, q);
+    let intact = st.cyc.child_intact(g, q);
+    let cur_rem = st.cyc.child_cur_rem(g, q);
+    let arcs = st.child_arcs(g, q);
+    let succ1_unvis = u32::from(!st.cyc.visited.get(g.succ1(q) as usize));
     let lb_cycle = if r == 0 {
         0
     } else {
         r + k - u32::from(cur_rem > 0)
     };
     let lb_arc = if r == 0 { 0 } else { r + arcs - succ1_unvis };
-    let (half_open, nearly_done, w2_bridges) = if model.n_features()
-        > crate::model::FEATURE_ORDER.len()
-    {
-        let rem_n = rem as usize;
-        (
-            parent.half_open + u32::from(rem_n == g.n) - u32::from(rem_n == g.n - 2),
-            parent.nearly_done + u32::from(rem == 3) - u32::from(rem == 1),
-            (parent.w2_bridges as i64 + g.w2_bridges_delta(&parent.visited, &parent.cycle_rem, q))
-                as u32,
-        )
-    } else {
-        (0, 0, 0)
-    };
+    // The deficit-distribution features are computed only for v2 models
+    // (an 8-feature model reads only the FEATURE_ORDER prefix), so the
+    // O(n) w2-bridge scan stays off the v1 scoring path.
+    let (half_open, nearly_done, w2_bridges) =
+        if model.n_features() > crate::model::FEATURE_ORDER.len() {
+            (
+                st.child_half_open(g, q),
+                st.child_nearly_done(g, q),
+                st.child_w2_bridges(g, q),
+            )
+        } else {
+            (0, 0, 0)
+        };
     let x = [
         f64::from(r),
         f64::from(k),

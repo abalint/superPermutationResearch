@@ -9,14 +9,32 @@
 //! including the committed boot1 — scores bit-identically to the
 //! pre-phase-3 build; a zero-extended 11-feature model reproduces it
 //! move for move).
+//!
+//! Since s64 P3 all fourteen counters and their update rules live in
+//! one place (`superperm::state`), so this file is one of four drift
+//! guards over that module, each walking a *real* search path of its
+//! own engine and comparing against the from-scratch reference recount
+//! (`SearchState::recount`):
+//!
+//! * here — `Walk` vs the beam's `State`, through the score (the
+//!   learned-model encoding below) and through every admissible bound
+//!   (`arcs`, `intact`, `door`, `long`, `k`, `r`);
+//! * `state.rs` unit tests — the rules themselves, in-place vs child
+//!   construction vs the two-ended `Cursor::Keep` transition;
+//! * `beam2.rs` unit tests — every `State2` the two-ended beam builds
+//!   (both move types), including the five counters `State2` used to
+//!   drop entirely;
+//! * `sojourn.rs` unit tests — every state the sojourn DFS expands.
 
 use superperm::beam::{beam_search, beam_search_cutoffs, Bound, Scorer};
 use superperm::bound::Features;
 use superperm::graph::Graph;
 use superperm::model::{Model, Target, FEATURE_ORDER, FEATURE_ORDER_V2};
 use superperm::rollout::{run_rollouts, run_rollouts_guided, Guide};
+use superperm::state::SearchState;
 use superperm::trace::score_trajectory;
 use superperm::validate::validate;
+use superperm::walk::Walk;
 
 /// An 11-feature linear model whose prediction encodes exactly the
 /// three deficit-distribution counters with distinct place values:
@@ -73,6 +91,72 @@ fn beam_state_counters_agree_with_walk_replay_at_every_step() {
         // Terminal state: all three counters are 0, so the score is the
         // plain final length.
         assert_eq!(cuts.last().unwrap().best_score, b.len as f64);
+    }
+}
+
+/// The same Walk-vs-beam-`State` pin through every admissible bound
+/// (s64 P3): a width-1 beam scored by `len + lb` visits exactly the
+/// states it keeps, and replaying its path through a `Walk` must
+/// reproduce the identical fixed-point score at every level. Each bound
+/// reads a different subset of the shared counters — `Cycle` reads
+/// `k`/`r`, `Arc` reads `arcs`, `Residual` reads `door`/`intact`/`long`
+/// — so a divergence between the beam's cached counters and the walk's
+/// shows up here for all of them, not just the three deficit features.
+#[test]
+fn beam_state_bound_counters_agree_with_walk_replay_at_every_step() {
+    for (n, seed_prefix) in [(4usize, 0usize), (5, 0), (5, 40)] {
+        let g = Graph::new(n);
+        for bound in [Bound::Cycle, Bound::Arc, Bound::Residual] {
+            let scorer = Scorer::Bound(bound);
+            let (b, cuts) = beam_search_cutoffs(&g, 1, scorer, None, seed_prefix);
+            assert!(validate(n, &b.string).complete, "n={n} bound={bound:?}");
+            let traj = score_trajectory(&g, &b.path, scorer);
+            assert_eq!(cuts.len(), g.nfact - 1 - seed_prefix);
+            for c in &cuts {
+                let (step, _len, walk_score) = traj[c.level as usize];
+                assert_eq!(step, c.level, "n={n} bound={bound:?}");
+                assert_eq!(
+                    walk_score, c.best_score,
+                    "n={n} prefix={seed_prefix} bound={bound:?} level={}: beam \
+                     State counters disagree with Walk replay",
+                    c.level
+                );
+            }
+            assert_eq!(cuts.last().unwrap().best_score, b.len as f64);
+        }
+    }
+}
+
+/// Direct counter-level pin (s64 P3): replaying a real beam path
+/// through a `Walk` must reproduce the from-scratch reference recount
+/// of all fourteen counters at every step — the shared rules driven by
+/// the walk, checked against the definitions.
+#[test]
+fn walk_replay_of_a_beam_path_matches_the_reference_recount() {
+    for n in [4usize, 5] {
+        let g = Graph::new(n);
+        let b = beam_search(&g, 64, Scorer::Bound(Bound::Residual));
+        let mut w = Walk::new(&g);
+        for &q in &b.path[1..] {
+            let wt = (n - Graph::overlap(&g.perms[w.cur() as usize], &g.perms[q as usize])) as u8;
+            w.advance(q, wt);
+            let scratch = SearchState::recount(
+                &g,
+                &w.st.cyc.visited,
+                w.cur(),
+                w.len_chars() as u32,
+                w.steps(),
+                Some(w.pred_table()),
+            );
+            assert!(
+                w.st.counters_eq(&scratch),
+                "n={n} step={}\n  walk {}\n  ref  {}",
+                w.steps(),
+                w.st.counters(),
+                scratch.counters()
+            );
+        }
+        assert_eq!(w.string(), b.string, "n={n}");
     }
 }
 

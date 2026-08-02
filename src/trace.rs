@@ -88,7 +88,7 @@ pub fn trace_string(g: &Graph, s: &str) -> Result<Trace, String> {
     let mut walk = Walk::new(g);
     let mut weights = Vec::with_capacity(path.len() - 1);
     for &q in &path[1..] {
-        let p = &g.perms[walk.cur as usize];
+        let p = &g.perms[walk.cur() as usize];
         let w = (g.n - Graph::overlap(p, &g.perms[q as usize])) as u8;
         walk.advance(q, w);
         weights.push(w);
@@ -187,11 +187,11 @@ pub fn score_trajectory(g: &Graph, path: &[u32], scorer: Scorer) -> Vec<(u32, u3
     let mut out = Vec::with_capacity(path.len());
     out.push((0, walk.len_chars() as u32, score_state(&walk, scorer)));
     for &q in &path[1..] {
-        let p = &g.perms[walk.cur as usize];
+        let p = &g.perms[walk.cur() as usize];
         let w = (g.n - Graph::overlap(p, &g.perms[q as usize])) as u8;
         walk.advance(q, w);
         out.push((
-            walk.steps,
+            walk.steps(),
             walk.len_chars() as u32,
             score_state(&walk, scorer),
         ));

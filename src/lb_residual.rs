@@ -347,6 +347,94 @@ pub fn child_terms(
     (door, long)
 }
 
+/// The `(door, long)` terms after `q` is visited **without the current
+/// permutation moving onto it** — the two-ended beam's *prepend* move,
+/// which visits `q` at the string's front while `cur` (the appending
+/// end, relative to which [`crate::beam2`] keeps its one-ended terms)
+/// stays put.
+///
+/// `visited`/`cycle_rem`/`door`/`long` describe the parent (`q` not yet
+/// visited). The standable set goes from `A = R ∪ {cur}` to
+/// `A' = A ∖ {q}`: `q` leaves the residual set and, being visited, is
+/// not standable. Same shape as [`ParentCtx::new`] + [`child_terms`],
+/// with `q` rather than `cur` leaving `A`. O(n).
+#[allow(clippy::too_many_arguments)]
+pub fn child_terms_keeping_cur(
+    g: &Graph,
+    tab: &PredTable,
+    visited: &BitSet,
+    cycle_rem: &[u8],
+    cur: u32,
+    door: u32,
+    long: u32,
+    q: u32,
+) -> (u32, u32) {
+    debug_assert!(!visited.get(q as usize), "revisit of {q}");
+    debug_assert_ne!(cur, q, "a keep-cursor move never lands on cur");
+    let avail_parent = |y: u32| avail(y, visited, cur);
+    let avail_child = |y: u32| y != q && avail(y, visited, cur);
+
+    // door: `q` leaves R, so its own charge goes with it; every other
+    // charge can change only for the ≤ 3-weight successors of `q`,
+    // whose minimum in-edge may have used `q`.
+    let mut d = door - (tab.minin(q, avail_parent) - 1);
+    for &(x, w) in g.succs[q as usize].iter() {
+        if w as usize > MAX_PRED_WEIGHT {
+            break;
+        }
+        if visited.get(x as usize) {
+            continue; // not in R: carries no door charge
+        }
+        d += tab.minin(x, avail_child) - tab.minin(x, avail_parent);
+    }
+
+    let mut l = long;
+    let cur_cid = g.cycle_id[cur as usize] as usize;
+    let q_cid = g.cycle_id[q as usize] as usize;
+    let rem = cycle_rem[q_cid] as usize;
+    // (a) q's class gains a covered member. cur's own class is excluded
+    //     from `long` before and after, so it never contributes.
+    if q_cid != cur_cid {
+        if rem == g.n {
+            // q becomes its class's unique covered member.
+            let head = g.succ1(q);
+            if !avail_child(g.w2rev[head as usize]) {
+                l += 1;
+            }
+        } else if rem == g.n - 1 {
+            // The class had a unique covered member p; now it has two,
+            // so it stops qualifying — undo its contribution if it had
+            // one (O(n) to find p).
+            let mut p = g.succ1(q);
+            while !visited.get(p as usize) {
+                p = g.succ1(p);
+            }
+            let head = g.succ1(p);
+            if !avail_parent(g.w2rev[head as usize]) {
+                l -= 1;
+            }
+        }
+    }
+    // (b) the one door that dies when q stops being standable is the
+    //     door of h = w2x(q); it matters only if h heads the residual
+    //     arc of a singly-covered class other than cur's (h always lies
+    //     outside q's own class — w2x is the cross-class edge).
+    let h = g.w2x[q as usize];
+    let h_cid = g.cycle_id[h as usize] as usize;
+    debug_assert_ne!(h_cid, q_cid, "w2x leaves the rotation class");
+    if h_cid != cur_cid
+        && cycle_rem[h_cid] as usize == g.n - 1
+        && !visited.get(h as usize)
+        && visited.get(g.pred1[h as usize] as usize)
+    {
+        // Under A the door w2rev[h] == q was available, so this class
+        // contributed 0; under A' it contributes 1.
+        debug_assert_eq!(g.w2rev[h as usize], q);
+        l += 1;
+    }
+    (d, l)
+}
+
 /// **NOT ADMISSIBLE — ordering only (Tier 3 of the design doc).**
 ///
 /// Hunter's per-vertex price `q_k = 1 + 1/k + 1/(k(k−1)) + 1/((k−1)(k(k−1)(k−2)−k))`
@@ -456,22 +544,26 @@ mod tests {
                 let mut w = Walk::new(&g);
                 loop {
                     assert_eq!(
-                        w.door,
-                        door_scratch(&g, &tab, &w.visited, w.cur),
+                        w.st.cyc.door,
+                        door_scratch(&g, &tab, &w.st.cyc.visited, w.cur()),
                         "n={n} seed={seed} step={} door",
-                        w.steps
+                        w.steps()
                     );
                     assert_eq!(
-                        w.long,
-                        long_scratch(&g, &w.visited, w.cur, &w.cycle_rem),
+                        w.st.cyc.long,
+                        long_scratch(&g, &w.st.cyc.visited, w.cur(), &w.st.cyc.cycle_rem),
                         "n={n} seed={seed} step={} long",
-                        w.steps
+                        w.steps()
                     );
                     assert_eq!(
-                        w.intact,
-                        w.cycle_rem.iter().filter(|&&c| c as usize == n).count(),
+                        w.st.cyc.intact as usize,
+                        w.st.cyc
+                            .cycle_rem
+                            .iter()
+                            .filter(|&&c| c as usize == n)
+                            .count(),
                         "n={n} seed={seed} step={} intact",
-                        w.steps
+                        w.steps()
                     );
                     if w.done() {
                         break;
@@ -504,21 +596,21 @@ mod tests {
                     assert!(
                         w.lb_residual() >= w.lb_arc(),
                         "n={n} seed={seed} step={} residual={} arc={}",
-                        w.steps,
+                        w.steps(),
                         w.lb_residual(),
                         w.lb_arc()
                     );
                     // Small tails only: the tablebase is 2^m — the
                     // large-m sweep is gate GA's job, not a unit test.
-                    if w.r <= 12 {
+                    if w.st.cyc.r <= 12 {
                         let remaining: Vec<u32> = (0..g.nfact as u32)
-                            .filter(|&x| !w.visited.get(x as usize))
+                            .filter(|&x| !w.st.cyc.visited.get(x as usize))
                             .collect();
-                        let truth = crate::endgame::solve_endgame(&g, w.cur, &remaining).cost;
+                        let truth = crate::endgame::solve_endgame(&g, w.cur(), &remaining).cost;
                         assert!(
                             w.lb_residual() as u32 <= truth,
                             "n={n} seed={seed} step={} bound={} truth={truth}",
-                            w.steps,
+                            w.steps(),
                             w.lb_residual()
                         );
                     }

@@ -13,10 +13,12 @@ Dependency sketch (arrows point at dependencies):
 ```
 main.rs ─→ graph, greedy, beam, beam2, model, rollout, trace, validate
 trace ───→ beam (Scorer), graph, walk
-greedy ──→ walk ──→ bitset, bound, graph
-rollout ─→ walk, bound, graph        (+ rand, serde_json)
-beam ────→ bitset, bound, graph, model   (does NOT use walk — see Extension points)
-beam2 ───→ beam (Jitter, splitmix), bitset, bound, graph (Preds), model
+greedy ──→ walk ──→ state ──→ bitset, bound, graph, lb_residual
+rollout ─→ walk, state, bound, graph  (+ rand, serde_json)
+beam ────→ state, bitset, bound, graph, model
+beam2 ───→ state, beam (Jitter, splitmix), bitset, bound, graph (Preds), model
+sojourn ─→ state (CycleState), graph
+unionsearch → state (CycleState), corpus, graph, lb_residual
 model ───→ (serde_json only; pure inference)
 validate → graph (factorial, rank)
 bound ───→ (serde only; pure arithmetic + Features struct)
@@ -39,8 +41,8 @@ bitset ──→ no crate deps
   the O(1) `pred1` map. Phase-3 item 3 additions: `w2x`/`w2rev` (the unique
   *cross-cycle* weight-2 successor per rank — `P[2..] + P[1] + P[0]` — and its
   inverse; a bijection) and `Graph::w2_bridges_delta(visited, cycle_rem, q)`, the
-  shared incremental update for the `w2_bridges` feature used by `Walk::advance`,
-  the beam's `child_state`/`score_move`, and guided rollouts' `child_features`.
+  shared incremental update for the `w2_bridges` feature, called from the single
+  rule `SearchState::child_w2_bridges` in `src/state.rs`.
 - **`src/bound.rs`** — `lower_bound(r, k, current_cycle_has_unvisited) -> usize`, the
   admissible bound `r + k − [current cycle has unvisited]` (THEORY.md §3);
   `lower_bound_arc(r, arcs, succ1_unvisited)`, the tighter arc bound
@@ -51,10 +53,30 @@ bitset ──→ no crate deps
   (the `max` floor covers both free ends landing on the same arc; with the prepend
   side dead it reduces exactly to `lb_arc`); and `struct Features` (serde
   `Serialize`/`Deserialize`), the rollout JSONL record.
+- **`src/state.rs`** — **the shared incremental search state (s64 P3): one definition
+  of every counter update rule in the crate.** `struct CycleState` (visited set,
+  per-cycle unvisited counts, `cur`, `len`, `k`, `r`, `intact` and the residual bound's
+  `door`/`long`) is embedded by *every* engine — `Walk`, the beam's `State`, beam2's
+  `State2`, the sojourn DFS's `State` and the union DFS's `UnionState`.
+  `struct SearchState` = `CycleState` + the beam-family counters (`arcs`, `half_open`,
+  `nearly_done`, `w2_bridges`, `steps`) and is embedded by `Walk`/`State`/`State2`.
+  Three ways to apply the same rules: `visit`/`advance` (in place — walk, sojourn,
+  union DFS), `child(…, Cursor, Residual)` (build a child from a parent plus an
+  already-cloned visited set — the beams), and the individual `child_*` readers
+  (`child_arcs`, `child_k`, `child_intact`, `child_cur_rem`, `child_rem_of`,
+  `child_half_open`, `child_nearly_done`, `child_w2_bridges`,
+  `child_deficit_profile`, `child_residual`), which give one child counter in O(1)
+  from the parent's cached values *without materializing the child* — what beam
+  candidate scoring, `bucket_key` and the feature vectors call. `Cursor::Onto` is an
+  append/one-ended move; `Cursor::Keep` is beam2's prepend (the current permutation
+  stays standable — its residual transition is `lb_residual::child_terms_keeping_cur`).
+  `SearchState::recount` recomputes all fourteen counters from scratch and is the
+  reference implementation the four drift tests compare against.
 - **`src/walk.rs`** — `struct Walk<'g>`, the incremental search state shared by greedy
-  and rollouts. `Walk::new(&Graph)`, `advance(rank, weight)`, `first_unvisited_succ()`,
-  `unvisited_succs()`, `fallback_target()`, `lb()`, `features()`, `done()`,
-  `len_chars()`, `string()`, `graph()`.
+  and rollouts: the shared `SearchState` (field `st`) plus the emitted `chars`.
+  `Walk::new(&Graph)`, `advance(rank, weight)`, `first_unvisited_succ()`,
+  `unvisited_succs()`, `fallback_target()`, `cur()`, `steps()`, `lb()`, `features()`,
+  `done()`, `len_chars()`, `string()`, `graph()`.
 - **`src/greedy.rs`** — `greedy(&Graph) -> GreedyResult { string, len, path: Vec<u32> }`.
   Deterministic baseline; hits 9/33/153 for n=3,4,5 (hard invariant) and 873 for n=6.
 - **`src/beam.rs`** — `beam_search(&Graph, width, Scorer) -> BeamResult { string, len,
@@ -73,8 +95,8 @@ bitset ──→ no crate deps
   (+ `beam_search_stratified_cutoffs`) adds width reservation per structural class
   (phase-3 item 1): candidates are bucketed by the quantized deficit profile
   `(intact, half_open, nearly_done)` — `half_open` = cycles with exactly 1–2 visited
-  members, `nearly_done` = cycles with exactly 1–2 unvisited members, both new
-  O(1)-incremental `State` counters — and selection runs two passes over the globally
+  members, `nearly_done` = cycles with exactly 1–2 unvisited members, both
+  O(1)-incremental shared counters — and selection runs two passes over the globally
   sorted candidates: pass 1 keeps up to `Stratify::quota` best candidates per occupied
   bucket (counts divided by `Stratify::bucket` to form the key), pass 2 fills the rest
   of the width in global score order; kept states are re-sorted into global order.
@@ -82,8 +104,10 @@ bitset ──→ no crate deps
   `(cur, visited)`, so the keep-first minimum-length argument is unchanged.
   `stratify = None` (and `quota = 0`) is bit-identical to the plain beam (pinned by
   test against pre-stratification output strings; CLI: `beam --stratify
-  [--strat-quota Q --strat-bucket B]`). Private: `struct State`, `struct JitterCtx`,
-  `fn score_move`, `fn child_arcs`, `fn child_state`, `fn bucket_key`.
+  [--strat-quota Q --strat-bucket B]`). Private: `struct State` (= the shared
+  `SearchState` + `zhash` + arena `node`), `struct JitterCtx`, `fn score_move`,
+  `fn child_state`, `fn bucket_key` — the last three all read the shared `child_*`
+  rules of `src/state.rs` rather than re-deriving them (s64 P3).
 - **`src/beam2.rs`** — two-ended (deque) beam search, phase-3 item 2's decision-order
   probe (NO-GO at n=6 but kept in-tree; recovers 33/153 — n=5 needs width ≥ ~1000).
   `beam2_search(&Graph, width, Scorer2, Option<Jitter>) -> Beam2Result { string, len,
@@ -99,8 +123,13 @@ bitset ──→ no crate deps
   genuinely distinct states — and every score must be a pure function of
   `(front, back, visited, len)`; the weight-`n` fallback fires only when *both* ends
   are stuck. Jitter reuses `beam::Jitter` with a `(front, back, visited)`-pure
-  offset; ε=0 is bit-identical. Private: `struct State2` (the beam `State` counters
-  plus `front`/`back` instead of `cur`), `Jitter2Ctx`, `score_move2`, `child_arcs2`.
+  offset; ε=0 is bit-identical. Private: `struct State2` (the shared `SearchState`,
+  whose `cur` is this searcher's `back`, plus `front`, `zhash` and the arena node),
+  `Jitter2Ctx`, `score_move2`. Since s64 P3 `State2` maintains **all fourteen**
+  counters — before that it dropped `half_open`, `nearly_done`, `w2_bridges`, `door`
+  and `long`, so beam2 could not score with the deficit features or the residual
+  bound at all. The five recovered counters are maintained but **not scored with**:
+  enabling them is a future decision, and the probe's output is unchanged (pinned).
 - **`src/model.rs`** — `enum Model` (`Linear` | `Mlp`), loaded from JSON via
   `Model::load(path)` / `Model::from_json(text)`; `predict(&self, x: &[f64; 8]) -> f64`
   is pure CPU inference (dot product, or 2×64 MLP with ReLU); `n()` (the n the model
@@ -121,10 +150,12 @@ bitset ──→ no crate deps
   record format (used by `greedy --log` / `beam --log`).
 - **`src/sojourn.rs`** — Track B's L2 sojourn-level canonical opening DFS (s22):
   `SojournDfs { g, caps: ClassCaps, profile: Option<SplitProfile>, depth,
-  max_nodes, dedup: DedupMode, exemplars_per_class }.run() -> DfsStats`. Own
-  `State` (does not reuse `Walk`, beam2 precedent): visited `BitSet`, ledger
-  `(s, d3, d4, d5, ip)`, per-cycle `PackedParts` (3 bits per completed part),
-  `cur_part`, `cycle_rem`, `untouched`. Moves = T0 canonical grammar; door
+  max_nodes, dedup: DedupMode, exemplars_per_class }.run() -> DfsStats`. Its
+  `State` = the shared `CycleState` (`src/state.rs` — visited `BitSet`,
+  `cycle_rem`, `cur`, `len`, `k`, `r`, and `intact`, which this searcher's
+  feasibility test calls *untouched*) plus the sojourn ledger
+  `(s, d3, d4, d5, ip)`, per-cycle `PackedParts` (3 bits per completed part) and
+  `cur_part`. Moves = T0 canonical grammar; door
   legality uses `build_interiors(&Graph)` (interior perm windows per w≥3 edge,
   the emergent-edge filter). Dedup tiers documented on `DedupMode` (exact /
   orbit via the O(1) cur-inverse relabeling / abstraction with exemplar cap).
@@ -170,8 +201,9 @@ bitset ──→ no crate deps
 - **`src/unionsearch.rs`** — exhaustive DFS inside the corpus edge union
   (s26, RECOMB-DESIGN §5/§8.2): `UnionSearch::new(&Graph, corpus, UnionCfg
   { cap, bound, tt, tt_max, free, free_w, max_nodes }).run() -> UnionResult`.
-  Own undo-based state (trail + `BitSet::clear`; mirrors `Walk::advance`'s
-  residual-term rules incrementally), usage-ordered adjacency, `--tt`
+  `UnionState` = the shared `CycleState` (`src/state.rs`, residual terms
+  included) driven by `visit`/`unvisit` with an undo trail for the two
+  non-invertible terms, usage-ordered adjacency, `--tt`
   decision mode (exact keys; sound for existence/optimality only), `--free`
   off-union credits, and the STRAND prune (`live_in[q]` = unvisited union
   in-neighbours; lossless — records never strand; 2× the bound's prune rate,
@@ -225,42 +257,51 @@ Greedy's move rule "first unvisited entry of `succs[cur]`" therefore means: mini
 weight, ties broken by lexicographically smallest appended suffix. Reordering `succs`
 changes greedy's output — a hard invariant (see Testing).
 
-### `Walk` (`src/walk.rs`) — incrementally maintained fields
+### The incremental counters (`src/state.rs`) — one rule each
 
-Starts at rank 0 (identity) with its `n` chars already emitted. Per `advance(rank, weight)`,
-all of these update in O(1) or O(weight):
+Starts at rank 0 (identity) with its `n` chars already emitted. Per move all of these
+update in O(1) or O(weight), in `CycleState::visit` / `SearchState::advance` (in
+place) or `…::child` (parent → child), from the same `child_*` rules the beams read
+for candidate scoring:
 
 - `visited: BitSet` — set bit `rank`;
 - `cycle_rem: Box<[u8]>` — unvisited count per cycle; decrement `cycle_rem[cycle_id[rank]]`;
-- `k: usize` — cycles with ≥1 unvisited perm; decrement when a `cycle_rem` entry hits 0;
-- `r: usize` — total unvisited perms; decrement;
-- `arcs: usize` — weight-1 connected components (maximal unvisited rotation runs; a
+- `k: u32` — cycles with ≥1 unvisited perm; decrement when a `cycle_rem` entry hits 0;
+- `r: u32` — total unvisited perms; decrement;
+- `intact: u32` — cycles with all `n` members unvisited; decrement iff the move's
+  cycle was intact (the sojourn DFS calls this quantity `untouched`);
+- `door` / `long: u32` — the residual bound's terms, maintained only when a
+  `PredTable` is supplied (`lb_residual::ParentCtx` + `child_terms`, or
+  `child_terms_keeping_cur` for a two-ended prepend); 0 otherwise;
+- `arcs: u32` — weight-1 connected components (maximal unvisited rotation runs; a
   fully-unvisited cycle is one circular component): unchanged if the cycle was intact,
   else ±1/0 by the visited status of the two ring neighbors (`pred1`/`succ1`);
-- `half_open` / `nearly_done: usize` — cycles with exactly 1–2 visited / 1–2 unvisited
+- `half_open` / `nearly_done: u32` — cycles with exactly 1–2 visited / 1–2 unvisited
   members, O(1) from the pre-decrement `cycle_rem` (phase-3 item 3);
-- `w2_bridges: usize` — live cross-cycle weight-2 edges joining two partially-visited
+- `w2_bridges: u32` — live cross-cycle weight-2 edges joining two partially-visited
   cycles, via `Graph::w2_bridges_delta` (O(1) per move, O(n) exactly when the move
   first touches an intact cycle — once per cycle, so O(1) amortized);
-- `cur: u32` — rank the string currently ends with;
-- `chars: Vec<u8>` — append the last `weight` symbols of the target perm (a
-  `debug_assert_eq!` checks the overlap really matches);
-- `steps: u32` — advances taken.
+- `cur: u32` — rank the string currently ends with (the *appending* end in beam2);
+- `len: u32` — characters emitted (`Walk` additionally keeps `chars: Vec<u8>`, with a
+  `debug_assert_eq!` that the overlap really matches);
+- `steps: u32` — moves taken.
 
-`lb()` = `lower_bound(r, k, cycle_rem[cycle_id[cur]] > 0)` — O(1); `lb_arc()` =
-`lower_bound_arc(r, arcs, succ1_unvisited())` — O(1), dominates `lb()`.
-`features()` is O(cycle_count) (scans `cycle_rem` for `intact_cycles`); it is only
-called by the rollout generator, not in the greedy/beam hot path.
+`Walk::lb()` = `lower_bound(r, k, cycle_rem[cycle_id[cur]] > 0)` — O(1); `lb_arc()` =
+`lower_bound_arc(r, arcs, succ1_unvisited())` — O(1), dominates `lb()`;
+`lb_residual()` = `r + door + intact + long`, dominating both. `features()` is O(1)
+(every field is cached); it is only called by the rollout generator, not in the
+greedy/beam hot path.
 
 ### Beam state, arena, dedup (`src/beam.rs`)
 
-`State { cur, len, visited: BitSet, cycle_rem, k, r, arcs, intact, half_open,
-nearly_done, w2_bridges, zhash, node }` mirrors `Walk`'s counters but without `chars`
-— no state carries a string or path. `half_open` (cycles with exactly 1–2 *visited*
-members) and `nearly_done` (exactly 1–2 *unvisited*) are the phase-3 item-1 counters
-feeding the stratification bucket key; item 3 mirrored them (plus `w2_bridges`) into
-`Walk`/`Features` and the v2 model contract. `zhash` is the Zobrist hash of the
-visited set (0 when jitter is off), XOR-updated per move.
+`State { st: SearchState, zhash, node }` — since s64 P3 the counters *are* the shared
+`SearchState` (`src/state.rs`), not a second copy of it; the beam adds only the
+Zobrist hash of the visited set (0 when jitter is off, XOR-updated per move) and the
+arena index. No state carries a string or path. `half_open` (cycles with exactly 1–2
+*visited* members) and `nearly_done` (exactly 1–2 *unvisited*) are the phase-3 item-1
+counters feeding the stratification bucket key — `bucket_key` reads them through
+`SearchState::child_deficit_profile` instead of re-deriving the arithmetic, as do
+`score_move` and `model_pred`.
 
 - **Scoring without materialization**: `score_move(g, parent, q, w, parent_idx)`
   computes the child's `(len + lb, len, q, parent_idx)` tuple in O(1) from the parent's
@@ -533,20 +574,22 @@ plug in:
   `beam_search` requires every score be a pure function of `(cur, visited, len)` —
   the jitter offset and the `lb_arc` anchor show how to add variation without
   breaking it.
-- **Where new incremental features live**: `Walk` in `src/walk.rs` (add the field,
-  update it in `advance`, expose it in `features()`), **and also** `State` +
-  `score_move` in `src/beam.rs` — beam does not use `Walk`; it duplicates the counter
-  maintenance for O(1) candidate scoring — **and** `child_features` in
-  `src/rollout.rs`, the `Walk`-side mirror used by guided rollouts. `src/beam2.rs`
-  keeps a *third* copy (`State2`/`score_move2`); mirror a feature there only if the
-  two-ended searcher should score with it, and keep it a pure function of
-  `(front, back, visited)`. Keep them in sync, keep everything O(1)/O(n) per
-  expansion, and extend the feature contract **append-only** in `ml/common.py` +
-  `src/model.rs` (add the names to a new `FEATURE_ORDER_V<k>`, serde-default the JSONL
-  field for backward compat — old models keep consuming their prefix). Precedent:
-  item 3's deficit-distribution features (`half_open`/`nearly_done`/`w2_bridges`) are
-  maintained in `Walk` AND beam `State` (v2 contract), but deliberately NOT in beam2's
-  `State2` — the NO-GO probe rejects v2 models instead (see `Scorer2::Learned` docs).
+- **Where new incremental features live**: `src/state.rs`, **once** (s64 P3 — there
+  used to be five copies of the counters and their update rules, plus two more
+  re-derivations inside `score_move`/`bucket_key`). Add the field to `CycleState` (if
+  every engine needs it) or `SearchState`, write its rule as one `child_*` reader,
+  apply that reader in `visit`/`advance` *and* `child`, extend `recount` with the
+  from-scratch definition (the four drift tests then cover it automatically), and
+  expose it in `Walk::features()` if it is a model feature. Consumers read the cached
+  value or call the reader — never re-derive the arithmetic: that is exactly the
+  duplication this module removed. Keep everything O(1)/O(n) per expansion, and extend
+  the feature contract **append-only** in `ml/common.py` + `src/model.rs` (add the
+  names to a new `FEATURE_ORDER_V<k>`, serde-default the JSONL field for backward
+  compat — old models keep consuming their prefix). Note the *scoring* question is
+  separate from the *maintenance* question: beam2 now maintains all fourteen counters
+  (including the residual terms, relative to its appending end) but still scores with
+  the 8-feature contract only — enabling v2/residual scoring there is a deliberate
+  future change, not a side effect (see `Scorer2::Learned` docs).
 - **Adding a CLI subcommand**: add a variant to `enum Cmd` in `src/main.rs` (clap
   derive) and a match arm in `main()`; put the logic in a library module and export it
   from `src/lib.rs`. Follow the existing pattern of printing a summary line then the
@@ -662,8 +705,11 @@ module, do NOT patch `beam_search`.
   Total levels: `nfact − 1`.
 - `Walk::advance` is O(weight) (append) + O(1) counters; `first_unvisited_succ` is
   O(succ-list) worst case; `unvisited_succs` (rollouts only) allocates a Vec per step.
-  `Walk::features` is O(cycle_count) — fine for rollouts, don't call it per-candidate
-  in beam.
+  `Walk::features` is O(1) (all cached).
+- `SearchState::recount` (`src/state.rs`) is O(n! · n) — the from-scratch *reference*
+  for the drift tests only; never call it in a search loop. The `#[cfg(test)]` drift
+  guards inside `beam2_search` and `SojournDfs::run` that call it are compiled out of
+  every release build.
 - `Graph::new` is O(nfact · Σw! · n) time and memory — fine up to n=8 (40320 vertices,
   5913 successors each); build it once and share `&Graph`.
 - **Always run searches with `--release`**: debug builds are ~50× slower in the hot
@@ -677,7 +723,15 @@ module, do NOT patch `beam_search`.
 
 Unit tests live in each module (`graph.rs`: rank/unrank roundtrip, successor counts,
 sort order, brute-force weight oracle at n=4, cycle partition; `bitset.rs`; `bound.rs`;
-`walk.rs`; `validate.rs`). Integration tests in `tests/known_optima.rs` pin:
+`walk.rs`; `validate.rs`). **Counter-drift guards (s64 P3)** — four tests, all
+comparing a real search path against `SearchState::recount`, the from-scratch
+reference: `state.rs` (the rules themselves: in-place vs child construction vs the
+two-ended `Cursor::Keep` transition, random walks at n=4/5), `walk.rs` (ε-greedy
+random walks), `beam2.rs` (every `State2` the two-ended beam builds, both move
+types), `sojourn.rs` (every state the DFS expands) — plus
+`tests/deficit_features.rs`, which pins `Walk` against the beam's `State` through the
+exact fixed-point score at every level, for the learned features and for all three
+admissible bounds. Integration tests in `tests/known_optima.rs` pin:
 
 - `greedy_hits_known_optima` — greedy length is exactly 9/33/153 for n=3/4/5, the
   output validates as complete, and `path.len() == nfact`.

@@ -41,16 +41,16 @@ fn step(w: &mut Walk, rng: &mut StdRng, eps: f64) {
 fn truth(w: &Walk) -> u32 {
     let g = w.graph();
     let remaining: Vec<u32> = (0..g.nfact as u32)
-        .filter(|&x| !w.visited.get(x as usize))
+        .filter(|&x| !w.st.cyc.visited.get(x as usize))
         .collect();
-    solve_endgame(g, w.cur, &remaining).cost
+    solve_endgame(g, w.cur(), &remaining).cost
 }
 
 /// Replay a first-visit rank path into a fresh [`Walk`].
 fn replay<'g>(g: &'g Graph, path: &[u32]) -> Walk<'g> {
     let mut w = Walk::new(g);
     for &q in &path[1..] {
-        let wt = (g.n - Graph::overlap(&g.perms[w.cur as usize], &g.perms[q as usize])) as u8;
+        let wt = (g.n - Graph::overlap(&g.perms[w.cur() as usize], &g.perms[q as usize])) as u8;
         w.advance(q, wt);
     }
     w
@@ -86,15 +86,21 @@ fn residual_dominates_and_is_admissible_small() {
             let mut rng = StdRng::seed_from_u64(seed);
             let mut w = Walk::new(&g);
             while !w.done() {
-                assert_eq!(w.door, door_scratch(&g, &tab, &w.visited, w.cur));
-                assert_eq!(w.long, long_scratch(&g, &w.visited, w.cur, &w.cycle_rem));
+                assert_eq!(
+                    w.st.cyc.door,
+                    door_scratch(&g, &tab, &w.st.cyc.visited, w.cur())
+                );
+                assert_eq!(
+                    w.st.cyc.long,
+                    long_scratch(&g, &w.st.cyc.visited, w.cur(), &w.st.cyc.cycle_rem)
+                );
                 assert!(w.lb_residual() >= w.lb_arc());
                 assert!(w.lb_arc() >= w.lb());
-                if w.r <= 11 {
+                if w.st.cyc.r <= 11 {
                     assert!(
                         w.lb_residual() as u32 <= truth(&w),
                         "n={n} seed={seed} step={}",
-                        w.steps
+                        w.steps()
                     );
                 }
                 step(&mut w, &mut rng, 0.35);
@@ -154,10 +160,10 @@ fn gate_ga_admissibility() {
             // Randomized suffix down to a random tail size.
             let target = rng.gen_range(2usize..=18);
             let eps = [0.05, 0.2, 0.5, 1.0][rng.gen_range(0..4)];
-            while w.r > target && !w.done() {
+            while w.st.cyc.r as usize > target && !w.done() {
                 step(&mut w, &mut rng, eps);
             }
-            if w.r == 0 {
+            if w.st.cyc.r == 0 {
                 continue;
             }
             let b = w.lb_residual() as i64;
@@ -165,10 +171,11 @@ fn gate_ga_admissibility() {
             total += 1;
             if b > t {
                 violations += 1;
-                eprintln!("GA VIOLATION n={n} r={} bound={b} truth={t}", w.r);
+                eprintln!("GA VIOLATION n={n} r={} bound={b} truth={t}", w.st.cyc.r);
             }
             slacks.push(t - b);
-            let floor = heuristic_floor_not_admissible(n, w.r, w.lb_residual()) as i64;
+            let floor =
+                heuristic_floor_not_admissible(n, w.st.cyc.r as usize, w.lb_residual()) as i64;
             if floor > t {
                 floor_violations += 1;
             }
@@ -214,7 +221,7 @@ fn gate_ga_admissibility_large_m() {
             for rep in 0..2 {
                 let depth = rng.gen_range(1..g.nfact - m - 2);
                 let mut w = replay(&g, &greedy_path[..=depth]);
-                while w.r > m {
+                while w.st.cyc.r as usize > m {
                     step(&mut w, &mut rng, if rep == 0 { 0.1 } else { 0.6 });
                 }
                 let b = w.lb_residual() as i64;
@@ -273,7 +280,7 @@ fn gate_gb_strength() {
     let mut worse = 0usize;
     for s in &snaps {
         let w = replay(&g, &s.path);
-        assert_eq!(w.r, g.nfact - 200);
+        assert_eq!(w.st.cyc.r as usize, g.nfact - 200);
         sc += w.lb() as f64;
         sa += w.lb_arc() as f64;
         sr += w.lb_residual() as f64;

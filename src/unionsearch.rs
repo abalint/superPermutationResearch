@@ -29,7 +29,8 @@ use crate::bitset::BitSet;
 use crate::bound::lower_bound;
 use crate::corpus::CorpusRecord;
 use crate::graph::Graph;
-use crate::lb_residual::{self, ParentCtx, PredTable};
+use crate::lb_residual::{self, PredTable};
+use crate::state::CycleState;
 use crate::validate::validate;
 use std::collections::HashMap;
 
@@ -64,7 +65,7 @@ pub struct UnionResult {
     pub nodes: u64,
     pub bound_prunes: u64,
     /// Subtrees killed because an unvisited perm lost its last live
-    /// union in-neighbour (lossless; see `SearchState::live_in`).
+    /// union in-neighbour (lossless; see `UnionState::live_in`).
     pub strand_prunes: u64,
     pub dead_ends: u64,
     pub tt_prunes: u64,
@@ -106,29 +107,24 @@ pub fn union_adjacency(g: &Graph, corpus: &[CorpusRecord]) -> Vec<Vec<(u32, u8)>
 }
 
 /// Undo trail entry: everything `advance` changed that `retreat`
-/// cannot recompute.
+/// cannot recompute (the residual terms are not invertible; every other
+/// counter is restored by [`CycleState::unvisit`]).
 struct TrailEntry {
     rank: u32,
     weight: u8,
     prev_cur: u32,
     prev_door: u32,
     prev_long: u32,
-    prev_intact: usize,
 }
 
-struct SearchState<'g> {
+/// The union DFS's state: the shared per-cycle bookkeeping
+/// ([`CycleState`], s64 P3 — visited set, per-cycle counts, `k`/`r`/
+/// `intact` and the residual `door`/`long` terms) plus this searcher's
+/// own string, undo trail and stranding detector.
+struct UnionState<'g> {
     g: &'g Graph,
-    visited: BitSet,
-    cycle_rem: Box<[u8]>,
-    k: usize,
-    r: usize,
-    cur: u32,
-    len: u32,
+    cyc: CycleState,
     chars: Vec<u8>,
-    // Residual-bound terms (maintained only in residual mode).
-    door: u32,
-    long: u32,
-    intact: usize,
     tab: PredTable,
     residual: bool,
     trail: Vec<TrailEntry>,
@@ -147,21 +143,10 @@ struct SearchState<'g> {
     strand_z: u32,
 }
 
-impl<'g> SearchState<'g> {
+impl<'g> UnionState<'g> {
     fn new(g: &'g Graph, residual: bool, adj: &[Vec<(u32, u8)>]) -> Self {
-        let mut visited = BitSet::new(g.nfact);
-        visited.set(0);
-        let mut cycle_rem = vec![g.n as u8; g.cycle_count].into_boxed_slice();
-        cycle_rem[g.cycle_id[0] as usize] -= 1;
         let tab = PredTable::new(g);
-        let (door, long) = if residual {
-            (
-                lb_residual::door_scratch(g, &tab, &visited, 0),
-                lb_residual::long_scratch(g, &visited, 0, &cycle_rem),
-            )
-        } else {
-            (0, 0)
-        };
+        let cyc = CycleState::root(g, residual.then_some(&tab));
         // live_in from the union in-degrees, with rank 0 already visited.
         let mut live_in = vec![0u32; g.nfact];
         for (p, list) in adj.iter().enumerate() {
@@ -173,18 +158,10 @@ impl<'g> SearchState<'g> {
             }
         }
         let strand_z = (1..g.nfact).filter(|&q| live_in[q] == 0).count() as u32;
-        SearchState {
+        UnionState {
             g,
-            visited,
-            cycle_rem,
-            k: g.cycle_count,
-            r: g.nfact - 1,
-            cur: 0,
-            len: g.n as u32,
+            cyc,
             chars: g.perms[0].clone(),
-            door,
-            long,
-            intact: g.cycle_count - 1,
             tab,
             residual,
             trail: Vec::with_capacity(g.nfact),
@@ -198,9 +175,9 @@ impl<'g> SearchState<'g> {
     /// free-edge credits the subtree cannot complete.
     #[inline]
     fn stranded_beyond(&self, adj: &[Vec<(u32, u8)>]) -> u32 {
-        let exempt = adj[self.cur as usize]
+        let exempt = adj[self.cyc.cur as usize]
             .iter()
-            .filter(|&&(q, _)| !self.visited.get(q as usize) && self.live_in[q as usize] == 0)
+            .filter(|&&(q, _)| !self.cyc.visited.get(q as usize) && self.live_in[q as usize] == 0)
             .count() as u32;
         self.strand_z - exempt
     }
@@ -209,48 +186,17 @@ impl<'g> SearchState<'g> {
     fn advance(&mut self, rank: u32, weight: u8, adj: &[Vec<(u32, u8)>]) {
         let n = self.g.n;
         let w = weight as usize;
-        debug_assert!(!self.visited.get(rank as usize));
         let entry = TrailEntry {
             rank,
             weight,
-            prev_cur: self.cur,
-            prev_door: self.door,
-            prev_long: self.long,
-            prev_intact: self.intact,
+            prev_cur: self.cyc.cur,
+            prev_door: self.cyc.door,
+            prev_long: self.cyc.long,
         };
-        if self.residual {
-            let ctx = ParentCtx::new(
-                self.g,
-                &self.tab,
-                &self.visited,
-                self.cur,
-                &self.cycle_rem,
-                self.door,
-                self.long,
-            );
-            let (door, long) = lb_residual::child_terms(
-                self.g,
-                &self.tab,
-                &self.visited,
-                &self.cycle_rem,
-                &ctx,
-                rank,
-            );
-            self.door = door;
-            self.long = long;
-        }
-        let cid = self.g.cycle_id[rank as usize] as usize;
-        self.intact -= usize::from(self.cycle_rem[cid] as usize == n);
-        self.visited.set(rank as usize);
-        self.cycle_rem[cid] -= 1;
-        if self.cycle_rem[cid] == 0 {
-            self.k -= 1;
-        }
-        self.r -= 1;
+        let tab = self.residual.then_some(&self.tab);
+        self.cyc.visit(self.g, rank, u32::from(weight), tab);
         let q = &self.g.perms[rank as usize];
         self.chars.extend_from_slice(&q[n - w..]);
-        self.len += weight as u32;
-        self.cur = rank;
         // Strand bookkeeping: `rank` went unvisited → visited, so it
         // stops counting as a live in-neighbour of its union successors
         // (and stops counting as an unvisited zero itself, if it was one).
@@ -259,7 +205,7 @@ impl<'g> SearchState<'g> {
         }
         for &(t, _) in &adj[rank as usize] {
             self.live_in[t as usize] -= 1;
-            if self.live_in[t as usize] == 0 && !self.visited.get(t as usize) {
+            if self.live_in[t as usize] == 0 && !self.cyc.visited.get(t as usize) {
                 self.strand_z += 1;
             }
         }
@@ -270,41 +216,38 @@ impl<'g> SearchState<'g> {
     fn retreat(&mut self, adj: &[Vec<(u32, u8)>]) {
         let e = self.trail.pop().expect("retreat without advance");
         for &(t, _) in adj[e.rank as usize].iter().rev() {
-            if self.live_in[t as usize] == 0 && !self.visited.get(t as usize) {
+            if self.live_in[t as usize] == 0 && !self.cyc.visited.get(t as usize) {
                 self.strand_z -= 1;
             }
             self.live_in[t as usize] += 1;
         }
-        let cid = self.g.cycle_id[e.rank as usize] as usize;
-        if self.cycle_rem[cid] == 0 {
-            self.k += 1;
-        }
-        self.cycle_rem[cid] += 1;
-        self.visited.clear(e.rank as usize);
+        self.cyc.unvisit(
+            self.g,
+            e.rank,
+            u32::from(e.weight),
+            e.prev_cur,
+            e.prev_door,
+            e.prev_long,
+        );
         if self.live_in[e.rank as usize] == 0 {
             self.strand_z += 1;
         }
-        self.r += 1;
-        self.len -= e.weight as u32;
         self.chars.truncate(self.chars.len() - e.weight as usize);
-        self.cur = e.prev_cur;
-        self.door = e.prev_door;
-        self.long = e.prev_long;
-        self.intact = e.prev_intact;
     }
 
     #[inline]
     fn lb(&self) -> usize {
+        let c = &self.cyc;
         if self.residual {
             lb_residual::lower_bound_residual(
-                self.r,
-                self.door as usize,
-                self.intact,
-                self.long as usize,
+                c.r as usize,
+                c.door as usize,
+                c.intact as usize,
+                c.long as usize,
             )
         } else {
-            let cur_rem = self.cycle_rem[self.g.cycle_id[self.cur as usize] as usize];
-            lower_bound(self.r, self.k, cur_rem > 0)
+            let cur_rem = c.cycle_rem[self.g.cycle_id[c.cur as usize] as usize];
+            lower_bound(c.r as usize, c.k as usize, cur_rem > 0)
         }
     }
 
@@ -332,7 +275,7 @@ impl<'g> UnionSearch<'g> {
     /// Run to completion or node budget. Deterministic: children are
     /// explored in (weight, rank) order, free edges after union edges.
     pub fn run(&self) -> UnionResult {
-        let mut st = SearchState::new(self.g, self.cfg.bound == UnionBound::Residual, &self.adj);
+        let mut st = UnionState::new(self.g, self.cfg.bound == UnionBound::Residual, &self.adj);
         let mut res = UnionResult {
             complete: true,
             nodes: 0,
@@ -355,7 +298,7 @@ impl<'g> UnionSearch<'g> {
     /// Returns true if the node budget was hit (search truncated).
     fn dfs(
         &self,
-        st: &mut SearchState,
+        st: &mut UnionState,
         free_left: u32,
         res: &mut UnionResult,
         tt: &mut HashMap<(BitSet, u32), u32>,
@@ -365,16 +308,16 @@ impl<'g> UnionSearch<'g> {
             return true;
         }
         res.nodes += 1;
-        let depth = self.g.nfact - st.r;
+        let depth = self.g.nfact - st.cyc.r as usize;
         if depth > res.max_depth {
             res.max_depth = depth;
         }
-        if st.r == 0 {
+        if st.cyc.r == 0 {
             res.completions += 1;
             let s = st.string();
             let v = validate(self.g.n, &s);
             assert!(
-                v.complete && v.length == st.len as usize,
+                v.complete && v.length == st.cyc.len as usize,
                 "union DFS completed an invalid string"
             );
             if seen_finds.insert(s.clone()) {
@@ -390,20 +333,20 @@ impl<'g> UnionSearch<'g> {
                 break;
             }
             let list: &[(u32, u8)] = if pass == 0 {
-                &self.adj[st.cur as usize]
+                &self.adj[st.cyc.cur as usize]
             } else {
-                &self.g.succs[st.cur as usize]
+                &self.g.succs[st.cyc.cur as usize]
             };
             for &(q, w) in list {
                 if pass == 1 {
                     if w > self.cfg.free_w {
                         break; // sorted by weight
                     }
-                    if self.adj[st.cur as usize].contains(&(q, w)) {
+                    if self.adj[st.cyc.cur as usize].contains(&(q, w)) {
                         continue; // already tried as a union edge
                     }
                 }
-                if st.visited.get(q as usize) {
+                if st.cyc.visited.get(q as usize) {
                     continue;
                 }
                 moved = true;
@@ -414,23 +357,23 @@ impl<'g> UnionSearch<'g> {
                     st.retreat(&self.adj);
                     continue;
                 }
-                if st.len as usize + st.lb() > self.cfg.cap as usize {
+                if st.cyc.len as usize + st.lb() > self.cfg.cap as usize {
                     res.bound_prunes += 1;
                     st.retreat(&self.adj);
                     continue;
                 }
                 if self.cfg.tt {
-                    let key = (st.visited.clone(), st.cur);
+                    let key = (st.cyc.visited.clone(), st.cyc.cur);
                     match tt.get_mut(&key) {
-                        Some(best) if *best <= st.len => {
+                        Some(best) if *best <= st.cyc.len => {
                             res.tt_prunes += 1;
                             st.retreat(&self.adj);
                             continue;
                         }
-                        Some(best) => *best = st.len,
+                        Some(best) => *best = st.cyc.len,
                         None => {
                             if tt.len() < self.cfg.tt_max {
-                                tt.insert(key, st.len);
+                                tt.insert(key, st.cyc.len);
                             } else {
                                 res.tt_saturated = true;
                             }

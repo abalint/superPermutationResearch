@@ -23,6 +23,9 @@
 //! * [`lb_residual`] — the residual-graph admissible lower bound
 //!   (`docs/RESIDUAL-BOUND-DESIGN.md`): minimum-in-edge, intact-class
 //!   and dead-door terms, dominating the cycle and arc bounds;
+//! * [`state`] — the shared incremental search state: one definition of
+//!   every counter update rule, consumed by [`walk`], [`beam`],
+//!   [`beam2`], [`sojourn`] and [`unionsearch`] (s64 P3);
 //! * [`walk`] — incremental walk state shared by all searchers;
 //! * [`greedy`] — the deterministic greedy baseline (achieves the known
 //!   optima 9 / 33 / 153 for `n = 3, 4, 5`);
@@ -69,6 +72,7 @@ pub mod nrpa;
 pub mod recomb;
 pub mod rollout;
 pub mod sojourn;
+pub mod state;
 pub mod tailatsp;
 pub mod trace;
 pub mod unionsearch;

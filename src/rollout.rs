@@ -55,41 +55,25 @@ pub struct RolloutSummary {
 /// for the move `walk.cur → q`, computed in O(1) from the walk's
 /// counters without advancing it (O(n) when `q` first touches an intact
 /// cycle — the `w2_bridges` scan) — the [`Walk`] counterpart of the
-/// beam's `score_move`. `parent_intact` is the walk's intact-cycle
-/// count (O(cycle_count) to scan, so the caller computes it once per
-/// step).
-fn child_features(g: &Graph, walk: &Walk, parent_intact: u32, q: u32) -> ([f64; 11], u32) {
-    let r = (walk.r - 1) as u32;
-    let cid = g.cycle_id[q as usize] as usize;
-    let rem = walk.cycle_rem[cid] as u32;
-    let k = walk.k as u32 - u32::from(rem == 1);
-    let intact = parent_intact - u32::from(rem as usize == g.n);
-    let cur_rem = rem - 1;
-    let arcs = if rem as usize == g.n {
-        walk.arcs as u32 // circular component becomes one open arc
-    } else {
-        let p_unvis = !walk.visited.get(g.pred1[q as usize] as usize);
-        let s_unvis = !walk.visited.get(g.succ1(q) as usize);
-        if p_unvis && s_unvis {
-            walk.arcs as u32 + 1
-        } else if !p_unvis && !s_unvis {
-            walk.arcs as u32 - 1
-        } else {
-            walk.arcs as u32
-        }
-    };
-    let succ1_unvis = u32::from(!walk.visited.get(g.succ1(q) as usize));
+/// beam's `score_move`, reading the same shared child rules
+/// ([`crate::state`]).
+fn child_features(g: &Graph, walk: &Walk, q: u32) -> ([f64; 11], u32) {
+    let st = &walk.st;
+    let r = st.cyc.r - 1;
+    let k = st.cyc.child_k(g, q);
+    let intact = st.cyc.child_intact(g, q);
+    let cur_rem = st.cyc.child_cur_rem(g, q);
+    let arcs = st.child_arcs(g, q);
+    let succ1_unvis = u32::from(!st.cyc.visited.get(g.succ1(q) as usize));
     let lb_cycle = if r == 0 {
         0
     } else {
         r + k - u32::from(cur_rem > 0)
     };
     let lb_arc = if r == 0 { 0 } else { r + arcs - succ1_unvis };
-    let n = g.n as u32;
-    let half_open = walk.half_open as u32 + u32::from(rem == n) - u32::from(rem == n - 2);
-    let nearly_done = walk.nearly_done as u32 + u32::from(rem == 3) - u32::from(rem == 1);
-    let w2_bridges =
-        (walk.w2_bridges as i64 + g.w2_bridges_delta(&walk.visited, &walk.cycle_rem, q)) as u32;
+    let half_open = st.child_half_open(g, q);
+    let nearly_done = st.child_nearly_done(g, q);
+    let w2_bridges = st.child_w2_bridges(g, q);
     let x = [
         f64::from(r),
         f64::from(k),
@@ -109,16 +93,11 @@ fn child_features(g: &Graph, walk: &Walk, parent_intact: u32, q: u32) -> ([f64; 
 /// The option minimizing the learned beam score, ties broken by the
 /// sorted (weight, suffix) order of `options`.
 fn best_guided(g: &Graph, walk: &Walk, options: &[(u32, u8)], guide: Guide) -> (u32, u8) {
-    let parent_intact = walk
-        .cycle_rem
-        .iter()
-        .filter(|&&c| c as usize == g.n)
-        .count() as u32;
     let len = walk.len_chars() as u32;
     let mut best = options[0];
     let mut best_score = f64::INFINITY;
     for &(q, w) in options {
-        let (x, lb_arc) = child_features(g, walk, parent_intact, q);
+        let (x, lb_arc) = child_features(g, walk, q);
         let base = if guide.model.is_residual() {
             len + u32::from(w) + lb_arc
         } else {
@@ -236,7 +215,7 @@ pub fn log_trajectory(g: &Graph, path: &[u32], out: &mut impl Write) -> io::Resu
     let mut records: Vec<Features> = Vec::with_capacity(path.len());
     records.push(walk.features());
     for &rank in &path[1..] {
-        let p = &g.perms[walk.cur as usize];
+        let p = &g.perms[walk.cur() as usize];
         let w = (g.n - Graph::overlap(p, &g.perms[rank as usize])) as u8;
         walk.advance(rank, w);
         records.push(walk.features());
