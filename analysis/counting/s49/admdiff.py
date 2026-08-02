@@ -18,7 +18,9 @@ from itertools import permutations
 
 R = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))))
-sys.path.insert(0, os.path.join(R, 'analysis', 'counting'))
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+import pylib  # noqa: E402
+pylib.add_paths("analysis/counting")
 from i4a_apply import structure                          # noqa: E402
 from loop_ledger_probe import first_visit_path           # noqa: E402
 
@@ -73,8 +75,9 @@ for f in names:
 print("relabeled caches built", flush=True)
 
 
-def h12(x):
-    return re.findall(r'([0-9a-f]{12})', x)[-1]
+# s64 P1: one body, in pylib/canonical.py (the blindspot.py spelling, which
+# raises SystemExit with the offending name instead of a bare IndexError).
+from pylib.canonical import h12  # noqa: E402,F401
 
 
 blind = [l.strip() for l in

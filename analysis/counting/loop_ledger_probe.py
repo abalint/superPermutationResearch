@@ -67,52 +67,12 @@ from itertools import permutations
 from math import factorial
 
 
-def first_visit_path(s, n):
-    want = set(range(1, n + 1))
-    seen, path = set(), []
-    vals = [int(c) for c in s]
-    for i in range(len(vals) - n + 1):
-        win = tuple(vals[i : i + n])
-        if set(win) == want and win not in seen:
-            seen.add(win)
-            path.append(win)
-    return path
-
-
-def weight(a, b, n):
-    for k in range(n - 1, 0, -1):
-        if a[n - k :] == b[:k]:
-            return n - k
-    return n
-
-
-def rot(p):
-    return p[1:] + (p[0],)
-
-
-def rotc(p):
-    return min(p[i:] + p[:i] for i in range(len(p)))
-
-
-def g(q):
-    n = len(q)
-    return q[1 : n - 1] + (q[0], q[n - 1])
-
-
-_LAM = {}
-
-
-def lam(p):
-    c = _LAM.get(p)
-    if c is not None:
-        return c
-    orb = [p]
-    for _ in range(len(p) - 2):
-        orb.append(g(orb[-1]))
-    c = min(orb)
-    for q in orb:
-        _LAM[q] = c
-    return c
+# s64 P1: these six helpers now have ONE body, in pylib/walkio.py.  They
+# stay importable from this module because every s39-s51 consumer spells
+# them `from loop_ledger_probe import first_visit_path, g, rot, rotc, weight`.
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+from pylib.walkio import (  # noqa: E402,F401
+    first_visit_path, g, lam, rot, rotc, weight)
 
 
 def analyze(path, n, verbose=True):

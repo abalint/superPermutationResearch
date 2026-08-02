@@ -366,6 +366,83 @@ field is fine (old readers using serde ignore unknown fields only if configured;
 error on missing fields, so removals/renames break `Deserialize`); anything else needs
 an explicit version marker.
 
+## `pylib/` — the tracked Python instrument layer (s64 P1)
+
+**Package home: `pylib/` at the repo root. Its copies are CANONICAL; the
+`out/sNN` originals are FROZEN history and must stay byte-untouched.**
+(Andrew's decision, s64; `docs/REFACTOR-BRIEF.md` §3 P1. Full detail and
+the promotion table live in `pylib/README.md`.)
+
+Before s64 the Python side was 387 files, 24% tracked, zero packages,
+zero `__init__.py`, and 275 `sys.path` mutation sites — with ~1,940
+lines of engine-grade instruments sitting in gitignored `out/`, two of
+them hard-imported by tracked, farm-launched code. P1 promoted them by
+copy into `pylib/` and pointed all tracked code at the package.
+
+- **Promoted instruments** (byte copies + a provenance header naming the
+  origin): `lib62`, `cover_search`, `mcover_search`, `verify_master`
+  (from `out/s62/jtax/`), `dlxrun` (`out/s57/proposer/`), `symlib`
+  (`out/s60/retrieval/`), `cutlib` (`out/s60/nogood/`), `anatlib`
+  (`out/s61/anatomy/`), `paircuts` (`analysis/counting/s58/`), `chain7`
+  (`analysis/cover7/`). The only divergences from the originals are
+  import mechanics (`REPO` was computed three levels down; `pylib/` is
+  one), each stated in the file's own header.
+- **`pylib/walkio.py`** — the single `first_visit_path` (was 6 copies),
+  `renumber` (6), `weight` (3), plus `first_visit_starts`, `overlap`,
+  `rot`, `rotc`, `g`, `lam` and corpus loading.
+- **`pylib/canonical.py`** — **both** `canon` semantics, under distinct
+  names, because `canon` was overloaded across 17 definitions in two
+  incompatible meanings: `canon_rotation` (least cyclic rotation —
+  kernelchain/certificate frame, ships with `door`/`tv`/`inverse_tv`/
+  `loop_of`) and `canon_relabel_rev` (`min(renumber(s),
+  renumber(reverse(s)))` — the M3 class representative that every
+  committed `*_canon_index.tsv` is keyed by). No bare `canon` is
+  exported. Also `h12`/`hash12`.
+
+### The import mechanism (use this, nothing else)
+
+Scripts run as plain files from arbitrary depths, so Python puts the
+*script's* directory on `sys.path`, never the repo root. Every entry
+script carries exactly ONE line, identical everywhere — this is the only
+sanctioned `sys.path` text in `analysis/` and `ml/`:
+
+```python
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+```
+
+It is depth-independent and cwd-independent (the old spellings included
+`sys.path.insert(0, 'analysis/counting')`, which silently required the
+repo root as cwd). Everything downstream goes through the package:
+
+```python
+import pylib
+pylib.add_paths("analysis/counting")   # repo-relative, idempotent, front-inserted
+pylib.add_legacy_paths()               # prefixlib / p1a_assume / certificate / gain1
+from pylib.walkio import first_visit_path, weight
+from pylib.canonical import canon_relabel_rev
+```
+
+Importing `pylib` puts the repo root and `pylib/` itself on `sys.path`,
+so the promoted instruments' flat imports (`import lib62`, `import
+chain7`) resolve to the promoted copies — `add_legacy_paths()`
+deliberately re-prepends `pylib/` last so the frozen `out/` copies can
+never win.
+
+Still reached through `add_legacy_paths()` because P1 did not promote
+them: `prefixlib` (`out/s59/prefix`), `p1a_assume` (`out/s56/p1a`), and
+`certificate`/`gain1`, which live **outside this repo** in the sibling
+`../extraDocs/superpermutation-examples/scripts` checkout — a hard
+external dependency of the whole n=7 stack, since `chain7` imports
+`certificate`.
+
+Two exceptions keep their own probe and are NOT bootstrapped: the farm
+shims `analysis/farm/{i4a,lswap,promote}_shim.py` search a
+two-candidate farm layout (`$ROOT\repo\...` vs a Mac checkout) that the
+repo-root walk cannot express. `mc28_shim.py` keeps the same probe shape
+but now points it at `repo\pylib` instead of `repo\out\s62\jtax`, and
+`mc28_ship.sh`/`mc28_env.ps1`/`mc28_fetch.sh` ship and hash the payload
+from `pylib/` to match.
+
 ## `ml/` — Python training side
 
 Pure numpy (sklearn only for the optional GBT diagnostic); talks to Rust only through

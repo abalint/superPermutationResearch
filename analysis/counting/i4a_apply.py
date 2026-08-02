@@ -58,7 +58,9 @@ import sys
 from collections import Counter
 from math import factorial
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+import pylib  # noqa: E402
+pylib.add_paths("analysis/counting")
 from loop_ledger_probe import first_visit_path, g, rot, rotc, weight
 
 P = lambda t: tuple(int(c) for c in t)  # "541236" -> perm tuple

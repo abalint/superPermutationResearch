@@ -42,27 +42,10 @@ from collections import Counter
 from math import factorial
 
 
-def first_visit_path(s, n):
-    """First-visit permutation sequence of s (list of n-tuples)."""
-    want = set(range(1, n + 1))
-    seen = set()
-    path = []
-    vals = [int(c) for c in s]
-    for i in range(len(vals) - n + 1):
-        win = tuple(vals[i : i + n])
-        if set(win) == want and win not in seen:
-            seen.add(win)
-            path.append(win)
-    return path
-
-
-def overlap(p, q):
-    """Length of the longest suffix of p that is a prefix of q."""
-    n = len(p)
-    for k in range(n - 1, 0, -1):
-        if p[n - k :] == q[:k]:
-            return k
-    return 0
+# s64 P1: one body, in pylib/walkio.py.  Re-exported here because
+# analysis/counting/upstream5906_structure.py imports both from this module.
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+from pylib.walkio import first_visit_path, overlap  # noqa: E402,F401
 
 
 def cycle_key(p):

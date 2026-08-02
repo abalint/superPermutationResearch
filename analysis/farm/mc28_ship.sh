@@ -42,9 +42,11 @@
 # Farm layout touched (F: ONLY -- never C:, never F:\audioPrime):
 #   F:\superpermFarm\untargeted\
 #     mc28_shim.py  mc28_env.ps1  MC28_MANIFEST.tsv     <- this ship
-#     repo\out\s62\jtax\mcover_search.py                the engine
-#     repo\out\s62\jtax\cover_search.py                 build() -- shared tables
-#     repo\out\s62\jtax\lib62.py                        weight/rotc/lam
+#     repo\pylib\mcover_search.py                        the engine
+#     repo\pylib\cover_search.py                         build() -- shared tables
+#     repo\pylib\lib62.py                                weight/rotc/lam
+#   (s64 P1: the payload moved out/s62/jtax -> the tracked pylib/ package;
+#    the three files are byte-identical apart from a provenance header.)
 #
 # usage:  bash analysis/farm/mc28_ship.sh              # ship + verify
 #         bash analysis/farm/mc28_ship.sh --scripts    # shim/env only (fast)
@@ -61,15 +63,15 @@ sshq() { ssh "$HOST" "$@" 2>&1 | grep -viE "WARNING|post-quantum|store now|opens
 
 cd "$REPO"
 
-INSTRUMENT=out/s62/jtax/mcover_search.py
+INSTRUMENT=pylib/mcover_search.py
 
 # repo-relative payload; extracted under repo\ on the PC, so paths stay
 # repo-relative on both ends and the engine's own dirname(__file__) import
 # still resolves.
 FILES=(
   "$INSTRUMENT"
-  out/s62/jtax/cover_search.py
-  out/s62/jtax/lib62.py
+  pylib/cover_search.py
+  pylib/lib62.py
 )
 # the enumerated cover stream (large; shipped separately, gzipped)
 COVERS=out/s63/mcover/covers_v28_forest.txt
@@ -136,7 +138,7 @@ echo "== staging farm dirs =="
 # No path here contains a space, so nothing is quoted -- OPERATIONS/SWEEP-QUEUE
 # trap: `cmd /c "exe" args > "log"` silently strips the OUTER quotes and the
 # redirect never fires.  Quote only when a path actually needs it.
-sshq "cmd /c mkdir ${DEST_WIN}\\repo\\out\\s62\\jtax" >/dev/null
+sshq "cmd /c mkdir ${DEST_WIN}\\repo\\pylib" >/dev/null
 
 TAR=$(mktemp -t mc28_payload).tar.gz
 MAN=$(mktemp -t mc28_manifest).tsv
@@ -253,5 +255,5 @@ STATUS row so the supervisor raises ALARM.txt, and preserves the walk.  The PC
 cannot gate it (no Rust toolchain).  Gate on the Mac, all three, in order:
   cargo run --release -- validate -n 6 --file <f> --complete
   python3 analysis/counting/m3_check.py <f>          (exit 2 = novel)
-  python3 out/s62/jtax/verify_master.py 6 <f>        (exit 1 = THEORY ALARM -> stop everything)
+  python3 pylib/verify_master.py 6 <f>               (exit 1 = THEORY ALARM -> stop everything)
 EOF

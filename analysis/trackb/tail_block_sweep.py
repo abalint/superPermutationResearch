@@ -7,7 +7,9 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+import pylib  # noqa: E402
+pylib.add_paths("analysis/trackb")
 from tail_block_atsp import ARCHIVE, blocks_of, solve, walk_of
 
 TARGET = 585

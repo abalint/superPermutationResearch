@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """mc28_shim.py -- run the s63 v=28 supply-tight FOREST multi-cover branch under
-the farm supervisor's contract, WITHOUT modifying out/s62/jtax/mcover_search.py.
+the farm supervisor's contract, WITHOUT modifying pylib/mcover_search.py.
 
 WHAT THIS SWEEP IS.  docs/SWEEP-QUEUE.md, the n=6 midgame j-probe (s62 entry) as
 RESHAPED by out/s63/mcover/REPORT.md.  It exhausts the ONE j>=1 872 cell that
@@ -105,18 +105,20 @@ import sys
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-# 1st candidate = the normal farm layout ($ROOT\repo\...); 2nd = a checkout
-# where this shim sits in analysis/farm/ (lets the shim be smoke-tested on the
-# Mac without a farm).  Same two-candidate pattern as a0_shim.py / qsb_shim.py.
-for _cand in (os.path.join(HERE, "repo", "out", "s62", "jtax"),
-              os.path.join(HERE, "..", "..", "out", "s62", "jtax")):
+# s64 P1: the instrument now lives in the TRACKED pylib/ package, not in
+# gitignored out/s62/jtax.  The two-candidate probe is kept verbatim in
+# shape because the farm payload unpacks as $ROOT\repo\... while a Mac
+# checkout has this shim in analysis/farm/ -- same pattern as a0_shim.py /
+# qsb_shim.py.  Ship pylib/ with the payload (see analysis/farm/mc28_ship.sh).
+for _cand in (os.path.join(HERE, "repo", "pylib"),
+              os.path.join(HERE, "..", "..", "pylib")):
     if os.path.isdir(_cand):
         JTAX = os.path.abspath(_cand)
         break
 else:
-    print("mc28_shim: cannot locate out/s62/jtax", file=sys.stderr)
+    print("mc28_shim: cannot locate pylib/", file=sys.stderr)
     sys.exit(2)
-sys.path.insert(0, JTAX)
+sys.path.insert(0, JTAX)  # <- pylib bootstrap (farm-layout variant)
 if not os.path.isfile(os.path.join(JTAX, "mcover_search.py")):
     print(f"mc28_shim: instrument not found: {JTAX}/mcover_search.py",
           file=sys.stderr)
@@ -238,7 +240,7 @@ def main():
             "boilerplate.  The CORRECT gate for anything this run produces:\n"
             "  cargo run --release -- validate -n 6 --file <f> --complete\n"
             "  python3 analysis/counting/m3_check.py <f>        (exit 2 = novel)\n"
-            "  python3 out/s62/jtax/verify_master.py 6 <f>      (exit 1 = THEORY ALARM)\n"
+            "  python3 pylib/verify_master.py 6 <f>             (exit 1 = THEORY ALARM)\n"
             "A product here is a j >= 1 complete n=6 walk of length <= 872 --\n"
             "a FIRST OF ITS SPECIES.  Nothing may be claimed before all three\n"
             "pass on the MAC (the PC has no Rust toolchain).\n")

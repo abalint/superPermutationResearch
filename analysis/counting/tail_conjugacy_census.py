@@ -72,26 +72,10 @@ from collections import defaultdict
 from math import factorial
 
 
-def renumber(s):
-    m, nxt, out = {}, 0, []
-    for c in s:
-        if c not in m:
-            nxt += 1
-            m[c] = str(nxt)
-        out.append(m[c])
-    return "".join(out)
-
-
-def first_visit_starts(s, n):
-    """Start index of each first-visit permutation window, in order."""
-    want = set("123456789"[:n])
-    seen, starts = set(), []
-    for i in range(len(s) - n + 1):
-        w = s[i : i + n]
-        if len(set(w)) == n and set(w) <= want and w not in seen:
-            seen.add(w)
-            starts.append(i)
-    return starts
+# s64 P1: one body each, in pylib/walkio.py (tail_pair_anatomy.py imports
+# both from this module).
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+from pylib.walkio import first_visit_starts, renumber  # noqa: E402,F401
 
 
 class Walk:

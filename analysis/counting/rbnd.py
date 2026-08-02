@@ -36,7 +36,9 @@ import sys
 from collections import Counter
 
 R = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-sys.path.insert(0, os.path.join(R, 'analysis', 'counting'))
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+import pylib  # noqa: E402
+pylib.add_paths("analysis/counting")
 from loop_ledger_probe import first_visit_path, g, rot, rotc, weight  # noqa: E402
 from i4a_apply import replay, structure  # noqa: E402
 from m3_check import SUPPLEMENTARY, canon, load_index  # noqa: E402

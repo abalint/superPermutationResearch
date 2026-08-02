@@ -20,11 +20,13 @@ import sys, time
 N = 6
 ALPHA = "123456"
 
-def door(w, c): return w[c:] + w[:c][::-1]
-def tv(w): return w[1:-1] + w[0] + w[-1]
-def itv(w): return w[-2] + w[:-2] + w[-1]
-def canon(w): return min(w[i:] + w[:i] for i in range(len(w)))
-def loop_of(e): return (e[-1], canon(e[:-1]))
+# s64 P1: ONE copy of the rotation-frame quartet, in pylib/canonical.py.
+# `canon` here is the least-ROTATION canon -- NOT m3_check's relabel+reversal
+# canon.  pylib keeps the two apart by name (canon_rotation vs
+# canon_relabel_rev); the local alias preserves every call site below.
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+from pylib.canonical import (  # noqa: E402,F401
+    canon_rotation as canon, door, inverse_tv as itv, loop_of, tv)
 
 # ---------------------------------------------------------------- loops
 loops = []                      # list of (pivot, necklace)

@@ -543,6 +543,13 @@ cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.
 cargo run --release -- trace -n 6 --file data/records872/872.0053cad.txt --model ml/models/linear_n6_boot1.json --alpha 1 --score-log scores.tsv
 cargo run --release -- beam -n 6 --width 2000 --model ml/models/linear_n6_boot1.json --cutoff-log cutoffs.tsv  # per-level prune thresholds
 
+# s64 P1 — the tracked Python instrument layer lives in `pylib/` (ARCHITECTURE.md).
+# The pylib copies are CANONICAL; the out/sNN originals are FROZEN history (byte-
+# untouched, cited by REPORTs) — import from pylib, fix bugs in pylib, never in out/.
+python3 pylib/cover_search.py 4 40 --jmin 0                     # was out/s62/jtax/
+python3 pylib/mcover_search.py 5 155 --v 6 --splits 0 --jmin 0 --prune legacy --no-mids
+python3 pylib/verify_master.py 5 <walk.txt> [<walk.txt> ...]
+
 # training side (numpy only; see docs/ARCHITECTURE.md "ml/" section):
 python3 ml/fit_linear.py data/roll_n6_*.jsonl
 python3 ml/predict_check.py ml/models/linear_n6_boot1.json data/roll_n6_*.jsonl
@@ -573,6 +580,15 @@ Always benchmark and search in `--release`; debug builds are ~50× slower in the
   (see ARCHITECTURE.md, extension points). Also note: beam dedup assumes the score is a
   pure function of `(cur, visited, len)` (`(front, back, visited, len)` in beam2) — a
   learned evaluator must preserve that or the keep-first dedup argument breaks.
+- **Python goes through `pylib/`** (s64 P1; ARCHITECTURE.md has the section).
+  `pylib/` is at the repo root and its copies are **canonical** — the `out/sNN`
+  originals are frozen history and must stay byte-untouched. One `first_visit_path`
+  (`pylib/walkio.py`), and BOTH `canon` semantics under distinct names
+  (`pylib/canonical.py`: `canon_rotation` = least cyclic rotation, kernelchain frame;
+  `canon_relabel_rev` = m3_check's relabel+reversal class rep, what every committed
+  `*_canon_index.tsv` is keyed by). Never merge these two by name. Entry scripts carry
+  exactly ONE `sys.path` line, the pylib bootstrap; everything else uses
+  `pylib.add_paths(...)` / `pylib.add_legacy_paths()`. Do not add new `sys.path` hacks.
 - Every working session ends by appending a dated entry to `docs/JOURNAL.md` and, if
   results changed, updating the README results table.
 

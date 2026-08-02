@@ -54,7 +54,9 @@ import numpy as np
 R = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))))
 OUT = os.path.join(R, 'out/s49/item1')
-sys.path.insert(0, os.path.join(R, 'analysis', 'counting'))
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+import pylib  # noqa: E402
+pylib.add_paths("analysis/counting")
 from i4a_apply import structure                          # noqa: E402
 from loop_ledger_probe import first_visit_path           # noqa: E402
 
@@ -354,8 +356,7 @@ def apply_py(fset, dmap, tab, rule):
 def load_shell_index():
     """The 220-class project shell, m3_check convention (published
     n=7 index + every SUPPLEMENTARY project index)."""
-    sys.path.insert(0, os.path.join(R, 'analysis', 'counting'))
-    from m3_check import SUPPLEMENTARY, load_index
+    from m3_check import SUPPLEMENTARY, load_index  # path set at import
     here = os.path.join(R, 'analysis', 'counting')
     idx = load_index(os.path.join(here, 'upstream5906_canon_index.tsv'))
     for supp in SUPPLEMENTARY.get(7, []):
@@ -370,8 +371,7 @@ def _canon(s):
     gate can never drift from the committed indexes."""
     global _CANON
     if _CANON is None:
-        sys.path.insert(0, os.path.join(R, 'analysis', 'counting'))
-        from m3_check import canon as _c
+        from m3_check import canon as _c  # path set at import
         _CANON = _c
     return _CANON(s)
 
@@ -452,8 +452,7 @@ def run_untargeted(argv):
     plans = check_plans(rules, ids)
     rarr = [rules[r] for r in ids]
     idx220 = None if a.dry_run else load_shell_index()
-    sys.path.insert(0, os.path.join(R, 'analysis', 'counting'))
-    from loopswap_apply import make_tables, replay_ids
+    from loopswap_apply import make_tables, replay_ids  # path set at import
     TUP, _pid, ROT, G = make_tables(N)
     print(f"untargeted shard {shard_id}: {len(jobs)} (class, orientation) "
           f"job(s); {len(ids)} rules x {NP} sigmas = {len(ids)*NP} instances"

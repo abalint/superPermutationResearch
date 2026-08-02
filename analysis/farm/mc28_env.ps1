@@ -49,7 +49,7 @@ $ErrorActionPreference = "Continue"
 $ROOT  = "F:\superpermFarm\untargeted"
 $REPO  = "$ROOT\repo"
 $PY    = "$ROOT\pyenv\Scripts\upyw.exe"
-$JTAX  = "$REPO\out\s62\jtax"
+$JTAX  = "$REPO\pylib"     # s64 P1: instruments promoted to the tracked pylib/ package
 $PROBE = "$ROOT\_mc28probe"
 $fail  = 0
 function Ok  ($m) { Write-Output "  [ok]   $m" }

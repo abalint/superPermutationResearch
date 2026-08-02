@@ -57,7 +57,9 @@ from collections import Counter
 from itertools import permutations
 from math import factorial
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+import pylib  # noqa: E402
+pylib.add_paths("analysis/counting")
 from i4a_apply import edit, replay, structure
 from loop_ledger_probe import first_visit_path, weight
 from m3_check import SUPPLEMENTARY, canon, load_index

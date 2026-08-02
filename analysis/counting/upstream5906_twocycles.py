@@ -39,19 +39,12 @@ EXTRA = os.path.join(ROOT, os.pardir, "extraDocs", "known5906_corpus")
 N = 7
 
 
-def g(p):
-    return p[1:6] + (p[0], p[6])
-
-
-def loop_id(p):
-    orb = [p]
-    for _ in range(5):
-        orb.append(g(orb[-1]))
-    return min(orb)
-
-
-def rot(p):
-    return p[1:] + (p[0],)
+# s64 P1: g / loop_id / rot are pylib/walkio.py's g / lam / rot.  The local
+# g was the n=7 specialization of walkio.g and loop_id was lam's body
+# (both take the min of the same 6-element g-orbit at n=7).
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+from pylib.walkio import g, rot  # noqa: E402,F401
+from pylib.walkio import lam as loop_id  # noqa: E402,F401
 
 
 def parse_groups(path):
@@ -75,16 +68,13 @@ def parse_groups(path):
     return groups
 
 
+# s64 P1: the sixth first_visit_path copy.  pylib's takes n as a parameter
+# (the superset signature); this module's callers pass only the string.
+from pylib.walkio import first_visit_path as _first_visit_path  # noqa: E402
+
+
 def first_visit_path(s):
-    want = set(range(1, N + 1))
-    seen, path = set(), []
-    vals = [int(c) for c in s]
-    for i in range(len(vals) - N + 1):
-        win = tuple(vals[i : i + N])
-        if set(win) == want and win not in seen:
-            seen.add(win)
-            path.append(win)
-    return path
+    return _first_visit_path(s, N)
 
 
 def walk_loops(s):

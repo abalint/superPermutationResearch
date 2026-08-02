@@ -35,9 +35,11 @@ FARM = os.path.join(REPO, "analysis", "farm")
 EX_SCRIPTS = os.path.join(
     os.path.dirname(REPO), "extraDocs", "superpermutation-examples", "scripts"
 )
-for _p in (EX_SCRIPTS, COVER7):
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
+# s64 P1: chain7 is promoted (pylib/chain7.py); gain1/certificate still
+# live in the sibling extraDocs checkout, which add_legacy_paths() knows.
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+import pylib  # noqa: E402
+pylib.add_legacy_paths()
 
 import gain1  # noqa: E402
 import chain7  # noqa: E402

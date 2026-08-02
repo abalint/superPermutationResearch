@@ -6,17 +6,12 @@ import os, gzip, sys
 BASE = os.path.join(os.path.dirname(__file__), "upstream/superpermutations/6")
 HYB = "/Users/andrew/Documents/code/math/superperms/superPermutationResearch/data/hybrids872"
 
-def renumber(s):
-    m, nxt, out = {}, 0, []
-    for c in s:
-        if c not in m:
-            nxt += 1
-            m[c] = str(nxt)
-        out.append(m[c])
-    return "".join(out)
-
-def canon(s):
-    return min(renumber(s), renumber(s[::-1]))
+# s64 P1: one body each, in pylib/walkio.py + pylib/canonical.py.  `canon`
+# here is the RELABEL+REVERSAL class representative (m3_check semantics) --
+# pylib keeps it apart from the kernelchain least-rotation `canon` by name.
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+from pylib.canonical import canon_relabel_rev as canon  # noqa: E402,F401
+from pylib.walkio import renumber  # noqa: E402,F401
 
 def strings_from_text(text):
     for line in text.splitlines():

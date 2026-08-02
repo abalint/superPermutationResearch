@@ -19,12 +19,10 @@ for d in DIRS:
 print(f"corpus files: {len(files)}")
 
 
-def h12(name):
-    """Normalize any node spelling to its 12-hex hash."""
-    m = re.findall(r'([0-9a-f]{12})', name)
-    if not m:
-        raise SystemExit(f"no hash12 in {name!r}")
-    return m[-1]
+# s64 P1: one body, in pylib/canonical.py (this was the superset of the two
+# tracked spellings -- admdiff.py's let the empty match raise IndexError).
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+from pylib.canonical import h12  # noqa: E402,F401
 
 
 byhash = {}

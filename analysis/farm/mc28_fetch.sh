@@ -24,7 +24,7 @@
 # toolchain), so the gate runs HERE, all three, in order:
 #   cargo run --release -- validate -n 6 --file <f> --complete
 #   python3 analysis/counting/m3_check.py <f>        (exit 2 = novel)
-#   python3 out/s62/jtax/verify_master.py 6 <f>      (exit 1 = THEORY ALARM)
+#   python3 pylib/verify_master.py 6 <f>             (exit 1 = THEORY ALARM)
 # This script runs all three automatically on every product it finds and
 # refuses to summarise anything until it has.
 set -euo pipefail
@@ -181,7 +181,7 @@ if [ "$NFIND" -gt 0 ]; then
     echo "   validate rc=$vr"
     m3=0; python3 analysis/counting/m3_check.py "$f" || m3=$?
     echo "   m3_check rc=$m3 (2 = NOVEL)"
-    vm=0; python3 out/s62/jtax/verify_master.py 6 "$f" || vm=$?
+    vm=0; python3 pylib/verify_master.py 6 "$f" || vm=$?
     echo "   verify_master rc=$vm"
     if [ $vm -eq 1 ]; then
       echo "   *** THEORY ALARM: verify_master exit 1 -- STOP EVERYTHING ***"

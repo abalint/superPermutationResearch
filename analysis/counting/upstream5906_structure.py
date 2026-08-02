@@ -29,7 +29,9 @@ from collections import Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, os.pardir, os.pardir))
-sys.path.insert(0, os.path.join(ROOT, "analysis", "trackb"))
+import pathlib, sys; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+import pylib  # noqa: E402
+pylib.add_paths("analysis/trackb")
 from verify_identity import first_visit_path, overlap  # noqa: E402
 
 OUT = os.path.join(HERE, "upstream5906_structure.tsv")
