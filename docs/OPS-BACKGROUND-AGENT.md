@@ -136,11 +136,41 @@ How each shards, and why it is exact:
   non-progress line (e.g. PRESIZE) free of an `i/n` field, or it will be
   parsed as a total.
 
-To add another instrument, copy the pattern in `promote_*` / `*_shim.py`:
+**To add another instrument, use the TEMPLATE — do not clone a quartet
+(s64 P5).** `analysis/farm/template/` is one parameterized `farm_ship.sh` /
+`farm_fetch.sh` / `farm_env.ps1` driven by a per-instrument config, plus the
+shared STATUS emitter `pylib/farmstatus.py`. Read
+`analysis/farm/template/README.md` first; it has the full contract table and
+the two porting cases. In short:
+
+```bash
+bash analysis/farm/template/farm_ship.sh mc28 --dry     # manifest + PC config
+bash analysis/farm/template/farm_ship.sh mc28           # ship + verify (parity)
+bash analysis/farm/template/farm_fetch.sh mc28 <tag>    # fetch + adjudicate
+```
+
+- **Thin adapter** (instrument already speaks `--shard i/N --out DIR` and
+  writes STATUS): two lines, `farmlayout.exec_instrument(...)` — see
+  `a0_adapter.py` / `qsb_adapter.py`.
+- **Translating adapter** (arg shape wrong, or no heartbeat): drive
+  `farmstatus.FarmStatus` — see `mc28_adapter.py`. `demotion.py` needed one
+  for two reasons worth remembering: it reads positionals from `argv[0..2]`
+  (and the supervisor's only injection point, `ExtraArgs`, appends at the
+  END), and it writes no STATUS heartbeat.
+- The config carries the payload manifest, shard/worker counts, **stall
+  minutes**, launch args, gate commands and scope notes; `<tag>.parity.tsv`
+  carries the PC-side parity rows. `COPYFILE_DISABLE=1`, the AppleDouble scan,
+  the bash-3.2 product listing and the manifest-on-both-ends now exist in one
+  copy each, in `farm_ship.sh` / `farm_fetch.sh`.
+
+Ported so far: **mc28** (proving instrument, PC-verified 2026-08-02),
+**a0**, **qsb**. The per-instrument quartets stay tracked as frozen legacy —
+and `a0_env.ps1` / `qsb_env.ps1` still hold deep parity probes (instance SHAs,
+sample streams, verdict/node re-derivation) that the generic rows do NOT
+replace: run them before either of those launches.
+
+Legacy pattern, for reading the frozen scripts:
 - `promote_shim.py` — adapter, when the instrument's own CLI does not fit.
-  `demotion.py` needed one for two reasons worth remembering: it reads
-  positionals from `argv[0..2]` (and the supervisor's only injection point,
-  `ExtraArgs`, appends at the END), and it writes no STATUS heartbeat.
 - `promote_run.ps1` — launcher; keep every refusal (live-`upyw` check,
   existing-run-dir check, RAM headroom, corpus completeness).
 - `promote_ship.sh` — incremental ship; `COPYFILE_DISABLE=1` is
@@ -150,7 +180,11 @@ To add another instrument, copy the pattern in `promote_*` / `*_shim.py`:
 summary against the alarm regex** (see the alarm section below). Regression
 test: `powershell -File F:\superpermFarm\untargeted\untargeted_alarmtest.ps1`
 (source: `analysis/farm/untargeted_alarmtest.ps1`, 13 cases, expect
-"ALARM REGEX OK: 0 failures").
+"ALARM REGEX OK: 0 failures"; last run 2026-08-02, 0 failures). That rule is
+now also **executable on the Mac** (s64 P5): `farmstatus.check_summary(text)`
+returns the lines that would banner, `farmstatus.safe_print()` refuses to emit
+one at all, and `tests_py/test_farmstatus.py` mirrors all 13 PowerShell cases
+in Python — so the two readings of that one regex cannot diverge silently.
 
 Measured Python-instrument rates (24 farm shards):
 

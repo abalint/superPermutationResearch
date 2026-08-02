@@ -1856,3 +1856,20 @@ sweep into ~36 min. Details, scripts and the alarm path: `docs/OPERATIONS.md`
   products are (a) the exhaustive COUNT of j>=1 walks at 154 and (b) a
   cross-check of cover_search.py against slack_dfs.c at n=5 — both
   nice-to-have, neither decision-relevant.
+
+## s64 refactor P5 — farm-PC env-check + dry-run smoke (scratch tag only) — APPROVED 2026-08-02
+- spec: P5 of docs/REFACTOR-BRIEF.md — verify the unified farm harness
+  template by an env-check + `-DryRun` smoke on the PC, writing ONLY to a
+  scratch tag (mc28-template parity: 24/24 DONE, escape scan 0, per s63).
+  No real compute, no products, farm otherwise untouched.
+- product: parity evidence that the template harness reproduces the s63
+  mc28 dry-run behavior before a0/qsb configs are ported.
+- approved: YES (Andrew, 2026-08-02, daytime dry-run explicitly OK'd while
+  runs are HELD until tonight; recorded at decision time). Also decided:
+  package home = pylib/ at repo root; promoted package copies become
+  CANONICAL for future sessions (out/ originals frozen as history).
+- status: **DONE 2026-08-02** — template config `mc28` deployed to scratch
+  `F:\superpermFarm\untargeted\s64tpl_scratch`, `farm_env.ps1 -Full` ENV OK 0
+  failures (P3 real branch 29,609,908 nodes, K={8:200}), dry smoke `runs\s64tpl`
+  **24/24 DONE, ESCAPES=0, .txt products 0**, alarmtest 0 failures; both scratch
+  dirs removed, farm restored, no compute launched.

@@ -64,6 +64,15 @@ Current locations:
 24-way sharded corpus sweeps of `tail-atsp` on the PC. Everything lives under
 `F:\superpermFarm\tailatsp\`; scripts are committed in `analysis/farm/ta*`.
 
+> This is the Rust-instrument harness and is unchanged. **Python instruments
+> go through the parameterized template** — `analysis/farm/template/`
+> (`farm_ship.sh` / `farm_fetch.sh` / `farm_env.ps1` + a per-instrument
+> config) with the shared STATUS emitter `pylib/farmstatus.py`, driven by the
+> generic supervisor `pysweep_run.ps1` + `untargeted_super.ps1`. Do not clone
+> a per-instrument `<tag>_{ship,shim,env,fetch}` quartet; see
+> `analysis/farm/template/README.md` and `docs/OPS-BACKGROUND-AGENT.md`
+> (s64 P5).
+
 **Why:** the instrument is single-threaded and the corpus is embarrassingly
 parallel — 24 cores turn a ~12 h single-core anchor-450 sweep into ~36 min,
 leaving 4 cores for the transcription service (workers also run at

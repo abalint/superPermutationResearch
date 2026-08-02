@@ -1,0 +1,14 @@
+# a0 parity spec -- read by farm_env.ps1.  Columns (TAB separated):
+#   id  full  script  args  expect(regex)  desc
+#
+# *** THESE ROWS ARE IMPORT-CHAIN PARITY ONLY. ***  `--help` forces argparse to
+# build, which means the whole chain has already resolved farm-side:
+# the pylib bootstrap (parents-walk for a dir containing pylib/) -> dlxrun ->
+# p1a_assume -> chain7 -> certificate/gain1 in extraDocs.  That is a real check
+# -- it is what a broken payload fails first -- but it is NOT the deep parity
+# a0_env.ps1 does (six A0 instances rebuilt on the PC and SHA-compared against
+# the Mac, plus the dlxrun eps-lane probe).  RUN a0_env.ps1 BEFORE LAUNCH.
+P0	0	@adapter	--help	usage: a0gate\.py	adapter locates + execs the instrument (the -Mode drop path)
+P1	0	analysis/counting/s62/a0gate.py	--help	--time-limit TIME_LIMIT	instrument import chain resolves farm-side (pylib -> dlxrun/p1a_assume/chain7 -> certificate)
+P1	0	analysis/counting/s62/a0gate.py	--help	--shard SHARD	speaks the supervisor's --shard contract
+P1	0	analysis/counting/s62/a0gate.py	--help	--dry-run	speaks the supervisor's --dry-run contract

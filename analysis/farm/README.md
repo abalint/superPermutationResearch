@@ -4,6 +4,27 @@ Committed copies of what lives on `F:\superpermFarm`. Operating instructions
 are in `../cover7/REMOTE-FARM.md` (read that first); this directory is the
 version-controlled source of the scripts themselves.
 
+> **New harness work goes through `template/` (s64 P5).** One parameterized
+> `farm_ship.sh` / `farm_fetch.sh` / `farm_env.ps1` driven by a per-instrument
+> config, plus the shared STATUS emitter `pylib/farmstatus.py` which encodes
+> the heartbeat contract ONCE — read `template/README.md` before adding an
+> instrument, and do **not** clone another `<tag>_{ship,shim,env,fetch}`
+> quartet. mc28, a0 and qsb are ported (`template/configs/`).
+>
+> Everything else in this directory — including the per-instrument quartets
+> `mc28_*`, `a0_*`, `qsb_*`, `s58_*`, `untargeted_*`, `promote_*`, and the
+> `*_shim.py` family — is **tracked and FROZEN LEGACY**: the historical record
+> the session REPORTs cite, and what is currently deployed on the PC. Two
+> pieces of it are still load-bearing and are NOT superseded:
+> `a0_env.ps1` / `qsb_env.ps1` carry deep instrument parity (instance SHAs,
+> sample streams, verdict/node re-derivation) that the generic parity rows do
+> not replace — run them before either of those launches — and
+> `a0_fetch.sh` / `qsb_fetch.sh` carry those instruments' own result rollups.
+>
+> The supervisor stack (`pysweep_run.ps1`, `untargeted_super.ps1`,
+> `untargeted_status.ps1`, `untargeted_abort.ps1`,
+> `untargeted_alarmtest.ps1`) is unchanged — it was already generic.
+
 | file | what it is |
 |---|---|
 | `detach.c`, `builddetach.bat` | `detach.exe` — the Windows `nohup`: `CreateProcess` with `CREATE_BREAKAWAY_FROM_JOB \| DETACHED_PROCESS \| CREATE_NEW_PROCESS_GROUP \| BELOW_NORMAL_PRIORITY_CLASS`, opening its own log handles and restricting inheritance to exactly those three (otherwise the child inherits sshd's pipes and the ssh call hangs). This is what makes workers survive disconnect as a non-admin user. Usage: `detach.exe <workdir> <stdout> <stderr> <cmd> [args...]` |

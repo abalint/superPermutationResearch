@@ -1,0 +1,23 @@
+# mc28 parity spec -- read by farm_env.ps1.  Columns (TAB separated):
+#   id  full  script  args  expect(regex)  desc
+# `full=1` rows run only under -Full.  Rows sharing (script,args) run once.
+#
+# THE CHECK THAT MATTERS IS PARITY, NOT PRESENCE.  This engine's whole output
+# is deterministic integers -- node counts, cover counts and a (j,length)
+# census -- so parity is exact and cheap.  P1's census IS the independent
+# brute-force ground truth of out/s63/mcover/REPORT.md §3.2, so P1 is not a
+# self-consistency check: it is the PC re-deriving an externally verified
+# answer.  P2 is the designed-SAT control (REPORT §3.3) and exercises the FIND
+# path -- a shard that cannot find a walk that IS there would report a false
+# negative on the real branch and nobody would know.
+P1	0	pylib/mcover_search.py	4 38 --v 3 --splits 3 --jmin 0	total=12\b	covers 12
+P1	0	pylib/mcover_search.py	4 38 --v 3 --splits 3 --jmin 0	walk nodes=2127\b	nodes 2,127 (tree identical)
+P1	0	pylib/mcover_search.py	4 38 --v 3 --splits 3 --jmin 0	\{\(2, 36\): 12, \(2, 37\): 14, \(3, 37\): 14, \(3, 38\): 5, \(4, 38\): 40\}	census == independent brute force
+P2	0	pylib/mcover_search.py	5 154 --v 7 --splits 4 --jmin 0	total=224\b	covers 224
+P2	0	pylib/mcover_search.py	5 154 --v 7 --splits 4 --jmin 0	walk nodes=47623\b	nodes 47,623 (tree identical)
+P2	0	pylib/mcover_search.py	5 154 --v 7 --splits 4 --jmin 0	\{\(0, 153\): 6, \(0, 154\): 49, \(1, 154\): 50\}	census (the SAT/FIND path)
+P2b	0	@adapter	--self-test	SELF-TEST OK	adapter self-test: partition + emit->consume + engine smoke
+P3	1	pylib/mcover_search.py	6 872 --v 28 --splits 20 --jmin 1 --forest --max-covers 200	total=200\b	real branch: covers 200
+P3	1	pylib/mcover_search.py	6 872 --v 28 --splits 20 --jmin 1 --forest --max-covers 200	histogram K: \{8: 200\}	real branch: all K=8 (the forest law holds on the PC)
+P3	1	pylib/mcover_search.py	6 872 --v 28 --splits 20 --jmin 1 --forest --max-covers 200	walk nodes=29609908\b	real branch: nodes 29,609,908 -- a mismatch means the PC would search a DIFFERENT tree
+P3	1	pylib/mcover_search.py	6 872 --v 28 --splits 20 --jmin 1 --forest --max-covers 200	NO walk in the supply-tight	real branch: no walk in the first 200

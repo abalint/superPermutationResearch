@@ -1,0 +1,13 @@
+# qsb parity spec -- read by farm_env.ps1.  Columns (TAB separated):
+#   id  full  script  args  expect(regex)  desc
+#
+# *** THESE ROWS ARE IMPORT-CHAIN PARITY ONLY. ***  `--help` forces argparse to
+# build, which means the whole chain has already resolved farm-side:
+# the pylib bootstrap -> chain7 / dlxrun / p1a_assume -> certificate/gain1 in
+# extraDocs.  It is NOT the deep parity qsb_env.ps1 does (sample stream redrawn
+# on the PC, six pinned instances SHA-compared, verdicts and node counts
+# re-derived).  RUN qsb_env.ps1 BEFORE LAUNCH.
+P0	0	@adapter	--help	usage: qsbsweep\.py	adapter locates + execs the instrument (the -Mode drop path)
+P1	0	analysis/counting/s62/qsbsweep.py	--help	--time-limit TIME_LIMIT	instrument import chain resolves farm-side (pylib -> chain7/dlxrun/p1a_assume -> certificate)
+P1	0	analysis/counting/s62/qsbsweep.py	--help	--shard SHARD	speaks the supervisor's --shard contract
+P1	0	analysis/counting/s62/qsbsweep.py	--help	--shard-by \{unit,cell\}	the unit/cell sharding switch is present (unit is the launched shape)
