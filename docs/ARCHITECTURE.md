@@ -1,7 +1,10 @@
 # Architecture
 
 Code map for the `superperm` crate (phases 1–3). Math background lives in
-`docs/THEORY.md` — this file only covers what the code does and where to change it.
+`docs/THEORY.md`; the **normative data formats** live in
+`docs/CONTRACTS.md` (rollout JSONL, split profiles, covers-file v1, the farm
+STATUS heartbeat, and the twenty "ledger" shapes) — this file only covers
+what the code does and where to change it.
 Binary + library crate: `src/lib.rs` exports the modules, `src/main.rs` + `src/cli/`
 are the CLI.
 The Python training side lives in `ml/` (see its section below); the two halves talk
@@ -167,6 +170,12 @@ bitset ──→ no crate deps
   order exactly (exemplar caps are order-sensitive; the M2 pin reproduces).
   s27: profiles load from census files (`SplitProfile::from_file`,
   `--profile-file`, per-allocation data in `analysis/trackb/profiles/`);
+  since s64 P6 `--records-profile` loads the same way
+  (`SplitProfile::records_n6_loaded` → `profiles/a145_3_0_0_0.txt`, located
+  cwd-relative then by walking up from the executable), with the old
+  hard-coded table kept **only** as an out-of-repo fallback so the flag
+  keeps its never-fails-at-IO guarantee; the two are pinned equal by
+  `records_n6_constant_equals_committed_profile_file` (docs/CONTRACTS.md §2);
   `Grammar::replay(&[u32]) -> usize` is the public replay instrument behind
   the `grammar-check` subcommand (corpus-validated 22,062/22,062);
   `fresh_doors` = the s27 corpus law (heavy doors open untouched cycles
@@ -530,6 +539,62 @@ a clean checkout is green **with skips**, never with errors.
 - **`scripts/check.sh`** runs `cargo test --release` + the fast tier and
   exits non-zero on either failure (`--rust` / `--py` to run one side).
   Written for bash 3.2, the version the Mac ships.
+
+## `analysis/` and `out/` — the research code surface (s64 P6)
+
+The Rust crate is the engine; `analysis/` is the tracked research
+instrument surface around it; `out/` is frozen session history. The three
+have different rules, and confusing them is how the repo lost ~1,940 lines
+of engine-grade code to a gitignore (fixed by P1).
+
+### `analysis/` — tracked instruments, one directory per front
+
+| directory | tracked / files | what lives there |
+|---|---|---|
+| `analysis/counting/` | 50 / 87 | the census + novelty layer: the **M3 gate** (`m3_check.py` + the committed `*_canon_index.tsv` indexes — the only accepted novelty verdict), the n=6/n=7 corpus censuses (`upstream872_*.py`, `upstream5906_*.py`), the loop-ledger/theorem probes (`loop_ledger_probe.py`), and the rewrite-rule appliers that produced every published class (`i4a_apply.py`, `loopswap_apply.py`, `m4a_pair_anatomy.py`, `rbnd.py`). Sub-dirs `s49/ s51/ s58/ s62/` are session-scoped sweep instruments |
+| `analysis/cover7/` | 48 / 52 | the n=7 chain/cover front: `chain7.py` (instance builder — **promoted to `pylib/`**, this copy stays for frozen `out/` importers), the DLX/SAT drivers (`solve_dlx.py`, `sat_chain.py`, `kissat_chain.py`, `milp_chain.py`), the committed `cert*.json` certificates, the four census CSVs (CONTRACTS §5.2) and `REMOTE-FARM.md` |
+| `analysis/farm/` | 113 / 118 | everything that talks to the 28-core Windows PC. Three layers: the **generic supervisor stack** (`untargeted_super.ps1` + `_status`/`_abort`/`_alarmtest`, `pysweep_run.ps1`) which is unchanged and instrument-agnostic; the **s64 P5 template** `analysis/farm/template/` (`farm_ship.sh`, `farm_fetch.sh`, `farm_env.ps1`, `farmlayout.py`, `<tag>_adapter.py`, `configs/<tag>.conf`) — the way to add an instrument now; and the **frozen pre-P5 quartets** (`a0_*`, `qsb_*`, `mc28_*`, `s58_*`, `tc2*`, `fl*`, `*_shim.py`), kept tracked because session REPORTs cite them |
+| `analysis/trackb/` | 26 / 31 | Track B data + tools: `ledger_l0.csv` (CONTRACTS §5.1), `enumerate_l0.py`, `door_atlas.py` + `door_atlas_canonical.tsv`, **`profiles/a*.txt`** (the split-profile authority, CONTRACTS §2), `verify_identity.py`, `record_to_seed.py`, `alloc_neighbors.py` |
+| `analysis/trackc/` | 15 / 1,148 | the learned-DLX-ordering front. Almost everything here is gitignored **run corpora** (`runs/v2/farm/`, 6M pairs / 9M records / 53 chains) plus `census_sweep.sh` / `census_merge.py` and the `dlx7g` engine sources |
+| `analysis/kernelchain/` | 7 / 7 | the early n=6 kernel-chain enumeration (historical; superseded by the loop-cover frame) |
+| `analysis/kernelchain7/` | 15 / 15 | the n=7 kernel-chain/segment tools (`beam7.py`, `enum15.py`, `gates7.py`, `search7.py`) |
+
+Rules for `analysis/`:
+
+- **It is tracked.** If you write an instrument here, `git add` it in the
+  same commit. The four newest farm families were untracked until s64.
+- **Shared logic goes to `pylib/`, not here.** An instrument in `analysis/`
+  is a *driver*: CLI parsing, a sweep loop, printing. The reusable body
+  belongs in the package (see the `pylib/` section above), and the driver
+  carries exactly one `sys.path` line, the bootstrap.
+- **`analysis/*/sNN/` sub-dirs are session-scoped** and stay where they are
+  once the session closes; they are not a promotion path.
+
+### `out/` — frozen session history (gitignored, ~886 MB)
+
+One directory per session (`out/s42_ladder`, `out/s43` … `out/s64`) plus a
+few named studies (`out/fl1577_pc_study`, `out/grayzel_lake_build`,
+`out/i4a_s42_*`). Contents are that session's logs, ledgers, products and
+its `REPORT.md`.
+
+- **Nothing under `out/sNN/` may be modified** — `docs/REFACTOR-BRIEF.md` §4
+  and CLAUDE.md. JOURNAL entries and session REPORTs cite these paths and
+  their numbers; a "fix" here silently invalidates the record.
+- **It is gitignored**, which is a standing hazard: before s64 the engine-
+  grade instruments lived here and two of them were hard imports of tracked,
+  farm-launched code. P1/P1b promoted all of them into `pylib/` **by copy**;
+  the originals stay byte-untouched as frozen snapshots. New code imports
+  `pylib`; bugs are fixed in `pylib`, never in `out/`.
+- `out/s64/refactor/pins_before/` is the exception in *role*, not in rule:
+  it is the s64 refactor's byte-identical pin set (its `MANIFEST.md` carries
+  the timing normalizer every after-pin diff must use). Read it; don't
+  rewrite it.
+- The `tests_py/` fast tier is `skipif`-guarded on `out/` inputs, so a clean
+  checkout is green **with skips**. Nothing in the tracked build may
+  *require* `out/`.
+
+Where the data contracts these directories exchange are defined
+normatively: **`docs/CONTRACTS.md`**.
 
 ## `ml/` — Python training side
 

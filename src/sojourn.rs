@@ -94,12 +94,69 @@ pub struct SplitProfile {
     pub allowed: Vec<Vec<u8>>,
 }
 
+/// Locate a repo-relative data file without depending on the current
+/// working directory.
+///
+/// Tries `rel` as given first — that is exactly the `--profile-file`
+/// convention (a plain cwd-relative path) — then walks up from the
+/// running executable, so `target/release/superperm` finds the repo's
+/// committed data no matter where it is invoked from. Returns `None`
+/// when nothing matches; every caller must have a compiled-in fallback,
+/// because no subcommand may acquire a new file-IO failure mode.
+fn find_repo_file(rel: &str) -> Option<std::path::PathBuf> {
+    let direct = std::path::Path::new(rel);
+    if direct.is_file() {
+        return Some(direct.to_path_buf());
+    }
+    let exe = std::env::current_exe().ok()?;
+    let mut dir = exe.parent();
+    while let Some(d) = dir {
+        let cand = d.join(rel);
+        if cand.is_file() {
+            return Some(cand);
+        }
+        dir = d.parent();
+    }
+    None
+}
+
 impl SplitProfile {
-    /// Records' L1 class at n=6 (ITEM5 §1 table).
+    /// The committed census file that DEFINES the records allocation's
+    /// split profile — the single authority for `--records-profile`
+    /// (`docs/CONTRACTS.md` §2, the split-profile contract).
+    pub const RECORDS_N6_PROFILE: &'static str = "analysis/trackb/profiles/a145_3_0_0_0.txt";
+
+    /// Records' L1 class at n=6 (ITEM5 §1 table) — the **compiled-in
+    /// fallback** for [`Self::records_n6_loaded`], kept so that
+    /// `--records-profile` can never fail at file IO (its behaviour
+    /// guarantee since s22; see `docs/CONTRACTS.md` §2).
+    ///
+    /// This constant used to be the *only* definition, forked from the
+    /// census data it duplicates. The test
+    /// `records_n6_constant_equals_committed_profile_file` now pins it
+    /// equal to [`Self::RECORDS_N6_PROFILE`] as a SET of compositions;
+    /// the listing order differs and cannot matter, because every
+    /// consumer (`part_ok`, `min_more_parts`, `open_part_ok`) quantifies
+    /// over `allowed` with `any`/`min`.
     pub fn records_n6() -> Self {
         SplitProfile {
             allowed: vec![vec![6], vec![2, 4], vec![3, 3], vec![4, 2], vec![2, 2, 2]],
         }
+    }
+
+    /// What `--records-profile` resolves to: the committed profile file
+    /// if it can be found and parsed, else [`Self::records_n6`].
+    ///
+    /// The fallback is deliberate, not defensive sloppiness: before s64
+    /// P6 this flag read a compiled-in table and therefore *never*
+    /// touched the filesystem, so a strict load would hand every
+    /// out-of-repo invocation a brand-new way to fail. The `#[test]`
+    /// keeps the two definitions from drifting, which is the whole point
+    /// of the de-fork.
+    pub fn records_n6_loaded() -> Self {
+        find_repo_file(Self::RECORDS_N6_PROFILE)
+            .and_then(|p| Self::from_file(&p, 6).ok())
+            .unwrap_or_else(Self::records_n6)
     }
 
     /// Load an allowed-composition set from a profile file: one
@@ -952,6 +1009,36 @@ mod tests {
         // open-part extension
         assert!(p.open_part_ok(done2, 3)); // can still grow to 4
         assert!(!p.open_part_ok(done2, 5));
+    }
+
+    /// The de-fork pin (s64 P6, `docs/CONTRACTS.md` §2).
+    ///
+    /// `--records-profile` used to carry its own hard-coded copy of the
+    /// records allocation's composition set, forked from the committed
+    /// census file that defines the very same object. The flag now loads
+    /// the file, with the constant kept only as an out-of-repo fallback —
+    /// so the two must stay equal, and this test is what enforces it.
+    /// Equality is as a SET: every consumer of `allowed` quantifies with
+    /// `any`/`min`, so listing order is not observable.
+    #[test]
+    fn records_n6_constant_equals_committed_profile_file() {
+        let path = find_repo_file(SplitProfile::RECORDS_N6_PROFILE)
+            .expect("the committed records profile file must be in the repo");
+        let from_file = SplitProfile::from_file(&path, 6).expect("profile file must parse");
+        let mut a = SplitProfile::records_n6().allowed;
+        let mut b = from_file.allowed;
+        a.sort();
+        b.sort();
+        assert_eq!(
+            a,
+            b,
+            "the compiled-in records profile has drifted from {}",
+            SplitProfile::RECORDS_N6_PROFILE
+        );
+        // …and therefore the loaded profile is the constant, behaviourally.
+        let mut c = SplitProfile::records_n6_loaded().allowed;
+        c.sort();
+        assert_eq!(a, c);
     }
 
     /// Every counter the sojourn DFS maintains must equal a

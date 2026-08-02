@@ -129,8 +129,15 @@ pub fn load_model(path: &PathBuf, n: usize, allow_n_mismatch: bool) -> Model {
 }
 
 /// Resolve the split-profile CLI pair shared by the sojourn-grammar
-/// subcommands: `--records-profile` (the hard-coded n=6 constant) or
-/// `--profile-file` (per-allocation census data); clap forbids both.
+/// subcommands: `--records-profile` (the records allocation's committed
+/// census file, `SplitProfile::records_n6_loaded`) or `--profile-file`
+/// (any per-allocation census file); clap forbids both.
+///
+/// The two arms differ in failure mode ON PURPOSE (`docs/CONTRACTS.md`
+/// §2): `--profile-file` names a file the user chose, so a bad path is a
+/// hard error; `--records-profile` names no file at all, so it falls back
+/// to the compiled-in table rather than acquiring a file-IO failure it
+/// never had.
 pub fn load_profile(
     records_profile: bool,
     profile_file: Option<&PathBuf>,
@@ -142,7 +149,7 @@ pub fn load_profile(
             eprintln!("--profile-file {e}");
             std::process::exit(1);
         })),
-        None => records_profile.then(SplitProfile::records_n6),
+        None => records_profile.then(SplitProfile::records_n6_loaded),
     }
 }
 

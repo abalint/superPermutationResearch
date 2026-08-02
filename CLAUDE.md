@@ -158,7 +158,12 @@ planned learned value function.
    (block-reordering law, natural specimens, block-ATSP prototype) and the
    per-allocation M2 pass. ARCHITECTURE.md's "Track B implementation map"
    says where each task lands in the code.
-4. `docs/ARCHITECTURE.md` — code map: modules, data structures, extension points.
+4. `docs/ARCHITECTURE.md` — code map: modules, data structures, extension points,
+   and the `analysis/`+`out/` survey (s64 P6).
+4b. **`docs/CONTRACTS.md` — the NORMATIVE data formats** (s64 P6): rollout JSONL,
+   split profiles, covers-file v1, the farm STATUS heartbeat, and the twenty
+   incompatible "ledger" shapes. Each names its single authority-in-code. Read it
+   before writing anything that another program must parse.
 5. `docs/THEORY.md` — math framing; read §6 for facts not worth re-deriving.
 
 Current state in one line: **phase 3; Track B build IN PROGRESS — s22 landed
@@ -577,7 +582,8 @@ Always benchmark and search in `--release`; debug builds are ~50× slower in the
   pruning correctness and any future branch-and-bound depend on it.
 - Every produced string must pass the validator before being reported as a result.
 - Rollout JSONL schema changes must be backward compatible or version-bumped — trained
-  models depend on it.
+  models depend on it. **`docs/CONTRACTS.md` §1 states what that means mechanically**
+  (new fields need `#[serde(default)]`; removals/renames break every corpus).
 
 ## Conventions
 
