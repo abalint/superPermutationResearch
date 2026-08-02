@@ -443,6 +443,40 @@ but now points it at `repo\pylib` instead of `repo\out\s62\jtax`, and
 `mc28_ship.sh`/`mc28_env.ps1`/`mc28_fetch.sh` ship and hash the payload
 from `pylib/` to match.
 
+### `tests_py/` — the Python control suite (s64 P2)
+
+`pytest.ini` (rootdir config, `testpaths = tests_py`) + `tests_py/`.
+It **converts the repo's 31 hand-run control scripts into asserts and
+invents no oracle**: every expected value is a §6 pin from
+`out/s64/refactor/pins_before/MANIFEST.md`, or was derived by running the
+shipped code. Instruments are driven through their real CLIs with
+`subprocess` (`tests_py/conftest.py::run`), never imported and patched,
+so wrapping cannot change what is under test. `out/` is gitignored, so
+controls needing untracked inputs are wrapped in `conftest.needs(...)` —
+a clean checkout is green **with skips**, never with errors.
+
+- **fast tier** (`python3 -m pytest tests_py/`, ~60 s): the jtax pins
+  (`test_pins_jtax.py`), the M3 gate and the tracked oracles
+  (`test_controls_tracked.py`), the P1 merge units incl. the
+  canonicalizer/`*_canon_index.tsv` agreement (`test_pylib_units.py`),
+  the local-only s63 controls (`test_controls_out_local.py`), and the
+  **determinism guard** (`test_determinism.py`).
+- **slow tier** (`-m slow`, deselected by `addopts`): the s63 singleton
+  fixpoint — its fixture backs up `out/s63/chains/singleton_farm0.json`,
+  restores the original bytes and asserts the MANIFEST's sha1, because
+  `out/sNN` is frozen — and the 36,304,934-node rung-869 two-engine
+  parity pair.
+- **the determinism guard** runs each DFS engine twice under
+  `PYTHONHASHSEED=0` and `=1` and demands identical stdout (only
+  wall-clock tokens normalized). Python randomizes `str.__hash__` per
+  process, so set/dict iteration order over strings differs run to run:
+  that is exactly the s63 cutconvert bug, generalized. Since
+  REFACTOR-BRIEF §0 makes byte-identical replay the acceptance bar for
+  every stage, this guard is load-bearing for every other pin.
+- **`scripts/check.sh`** runs `cargo test --release` + the fast tier and
+  exits non-zero on either failure (`--rust` / `--py` to run one side).
+  Written for bash 3.2, the version the Mac ships.
+
 ## `ml/` — Python training side
 
 Pure numpy (sklearn only for the optional GBT diagnostic); talks to Rust only through

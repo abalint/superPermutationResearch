@@ -550,6 +550,18 @@ python3 pylib/cover_search.py 4 40 --jmin 0                     # was out/s62/jt
 python3 pylib/mcover_search.py 5 155 --v 6 --splits 0 --jmin 0 --prune legacy --no-mids
 python3 pylib/verify_master.py 5 <walk.txt> [<walk.txt> ...]
 
+# s64 P2 — the Python control suite (tests_py/, pytest.ini; ARCHITECTURE.md).
+# It WRAPS the existing control scripts; the asserted numbers are the §6 pins
+# from out/s64/refactor/pins_before/MANIFEST.md. A failure is a refactor bug —
+# fix the stage, never the pin (REFACTOR-BRIEF §0). Controls needing gitignored
+# out/ inputs are skipif-guarded, so a clean checkout is green-with-skips.
+scripts/check.sh                        # cargo test --release + fast pytest; nonzero on any failure
+python3 -m pytest tests_py/             # fast tier (~60 s): jtax pins, m3 gate, tracked oracles,
+                                        #   pylib units, PYTHONHASHSEED determinism guard
+python3 -m pytest tests_py/ -m slow     # heavy tier: s63 singleton fixpoint (backs up + restores
+                                        #   out/s63/chains/singleton_farm0.json), n=6 rung-869 parity
+python3 -m pytest tests_py/ -q -k determinism   # the s63 cutconvert guard on its own
+
 # training side (numpy only; see docs/ARCHITECTURE.md "ml/" section):
 python3 ml/fit_linear.py data/roll_n6_*.jsonl
 python3 ml/predict_check.py ml/models/linear_n6_boot1.json data/roll_n6_*.jsonl
