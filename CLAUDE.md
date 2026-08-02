@@ -8,10 +8,24 @@ planned learned value function.
 ## Fresh-agent reading order
 
 1. `docs/JOURNAL.md` (latest entry) — current state, last results, concrete next steps.
-   **Fresh agent: read `docs/HANDOFF-S63.md` right after it (supersedes
-   S62; if your session is the CODE REFACTOR — Andrew's queued next task —
-   your brief is `docs/REFACTOR-BRIEF.md` and you can skip the theory
-   stack. s63 headline: menu item 3 closed as a general negative — `j ≡ 0`
+   **Fresh agent: read `docs/HANDOFF-S64.md` right after it (supersedes
+   S63. s64 headline: the CODE REFACTOR landed in full — all six
+   REFACTOR-BRIEF stages, eight commits, every stage byte-identical
+   replay of the 25-pin baseline; `pylib/` is the canonical tracked
+   Python layer (out/ frozen), `tests_py/` + `scripts/check.sh` are the
+   gate (148 Rust / 83 fast pytest), `src/state.rs` unifies the
+   incremental counters (beam2 maintains all 14 — deficit/residual
+   scoring there UNLOCKED but not enabled), main.rs = 112 lines over 16
+   `src/cli/` modules, the farm harness is one template
+   (`analysis/farm/template/` + `pylib/farmstatus.py`, mc28 byte-parity
+   port, PC dry-run verified in approved scratch scope, farm idle), and
+   `docs/CONTRACTS.md` is normative for rollout JSONL / split-profile /
+   covers-file v1 / farm STATUS / the 20 ledger shapes;
+   `--records-profile` de-forked (file authority, proven-equal
+   fallback). The N_forest(28) emit was still running at s64 close
+   (>5.6M covers, no trailer); tonight's B/A/D/C launch call is
+   Andrew's — see HANDOFF-S64 menu. s63 headline it carries: menu item
+   3 closed as a general negative — `j ≡ 0`
    identically in the chain7 frame, so no j-rung can ever prune a chain
    instance (S(#0)=834/S(#24)=832, 0 of 223+130 chains reach S≥841; door
    law = a theorem there, 0/3,122 + 0/145,979; corollary `V=15 ⟺ 5905`,

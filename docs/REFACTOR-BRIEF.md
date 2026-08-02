@@ -1,5 +1,20 @@
 # REFACTOR BRIEF — clean architecture pass (prepared s63, 2026-08-02)
 
+> **STATUS (s64, 2026-08-02): EXECUTED IN FULL — all six stages landed,
+> every pin byte-identical.** Commits: P1 `0dc1fee`, P2 `a721ce6`,
+> P1b `19def32` (prefixlib/p1a_assume promotion — the clean-checkout
+> sim exposed a residual out/-import chain), P3 `fd786f2`, P4 `5af204c`,
+> P5 `0d1c57c` + `fcb17d7`, P6 `e861bd2`. See JOURNAL s64 for the full
+> reckoning and HANDOFF-S64 for carried state. Deviations from spec:
+> `verify_master` promoted beyond the §3.1 list (it is a §6 pin);
+> ValueEnum REJECTED in P4 (changes --help bytes; adapters kept
+> single-sited); P6 found TWENTY ledger shapes, not 3. Open remainders
+> are listed in JOURNAL s64 "next steps" (a0/qsb deep-parity ports, the
+> four live ledger divergences, external certificate/gain1 dependency).
+> §8's open questions were all answered by Andrew at session start:
+> pylib/ at repo root; promoted copies canonical; PC dry-run approved
+> (ran in scratch scope, farm restored idle).
+
 **Mission (Andrew, verbatim):** "code refactor focusing on clean architecture
 design that lets us continue to scale with reduced risks of new and
 regression bugs."
