@@ -50,9 +50,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # s64 P1 import-mechanics divergence: pylib/ sits directly under the repo
 # root, so REPO is one level up (the out/ original was three levels down).
 REPO = os.path.dirname(HERE)
+# s64 P1b: prefixlib is a promoted sibling; S59 kept as DATA path only
+# (positives.pkl is a regenerable out/ artifact, not code).
 S59 = os.path.join(REPO, "out", "s59", "prefix")
-sys.path.insert(0, S59)
-sys.path.insert(0, HERE)     # s64 P1: promoted chain7/dlxrun copies
+sys.path.insert(0, HERE)     # s64 P1: promoted chain7/dlxrun/prefixlib copies
 
 import prefixlib as L      # noqa: E402  (also fixes sys.path for the rest)
 import chain7              # noqa: E402

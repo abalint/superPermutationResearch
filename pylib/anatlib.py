@@ -55,8 +55,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # root, so REPO is one level up (the out/ original was three levels down).
 REPO = os.path.dirname(HERE)
 RETR = os.path.join(REPO, "out", "s60", "retrieval")
+# s64 P1b: prefixlib is a promoted sibling; PREFIX kept as DATA path only
+# (positives.pkl is a regenerable out/ artifact, not code).
 PREFIX = os.path.join(REPO, "out", "s59", "prefix")
-for _p in (RETR, PREFIX, HERE):   # s64 P1: HERE = promoted symlib/chain7
+for _p in (RETR, HERE):   # s64 P1: HERE = promoted symlib/chain7/prefixlib
     sys.path.insert(0, _p)
 
 import symlib as S            # noqa: E402  (the validated s60 machinery)

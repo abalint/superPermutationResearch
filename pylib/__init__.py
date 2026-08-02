@@ -54,14 +54,13 @@ EXTRA_DOCS_SCRIPTS = os.path.abspath(
     os.path.join(REPO_ROOT, "..", "extraDocs",
                  "superpermutation-examples", "scripts"))
 
-# Modules that s64 P1 did NOT promote (they are session-scoped state
-# holders, not reusable instruments) but that the promoted ones import.
-# Promote them in a later stage; until then they are reached through
-# `add_legacy_paths()` and nowhere else.
+# Homes of modules the promoted instruments still reach outside pylib/.
+# s64 P1b promoted prefixlib (out/s59) and p1a_assume (out/s56) into the
+# package, so the only remaining CODE dependency here is the external
+# certificate/gain1 pair; the out/ entries below are DATA homes
+# (controls.pkl, prune_all.json, positives.pkl — regenerable artifacts).
 LEGACY_MODULE_HOMES = (
-    os.path.join(REPO_ROOT, "out", "s59", "prefix"),    # prefixlib
-    os.path.join(REPO_ROOT, "out", "s56", "p1a"),       # p1a_assume
-    os.path.join(REPO_ROOT, "out", "s57", "proposer"),  # controls.pkl, prune_all.json
+    os.path.join(REPO_ROOT, "out", "s57", "proposer"),  # data: controls.pkl, prune_all.json
     EXTRA_DOCS_SCRIPTS,                                 # certificate, gain1
 )
 
@@ -93,10 +92,10 @@ def add_paths(*rel_dirs):
 def add_legacy_paths():
     """Reach the not-yet-promoted module homes (see LEGACY_MODULE_HOMES).
 
-    Call this before `import chain7` / `import p1a_assume` /
-    `import prefixlib`.  `chain7` itself is promoted, but it imports
-    `certificate` from the sibling `extraDocs` checkout, so n=7 code
-    needs this even for the promoted copy.
+    Call this before `import chain7` (or anything that pulls it in).
+    `chain7` itself is promoted, but it imports `certificate` from the
+    sibling `extraDocs` checkout, so n=7 code needs this even for the
+    promoted copy.  prefixlib/p1a_assume are promoted as of s64 P1b.
     """
     for p in LEGACY_MODULE_HOMES:
         _prepend(p)

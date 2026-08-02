@@ -33,6 +33,8 @@ imports of tracked, farm-launched code. That is what this package fixes.
 | `anatlib.py` | `out/s61/anatomy/anatlib.py` | s61 near-miss residual anatomy (exact hypergeometric null) |
 | `paircuts.py` | `analysis/counting/s58/paircuts.py` | s58 pairwise cut harvest (was tracked-adjacent but untracked) |
 | `chain7.py` | `analysis/cover7/chain7.py` | kernel-parameterized n=7 instance builder + certificate assembly |
+| `prefixlib.py` | `out/s59/prefix/prefixlib.py` | s59 walk-order prefix proposer core (s64 P1b; `cutlib`/`anatlib` import it) |
+| `p1a_assume.py` | `out/s56/p1a/p1a_assume.py` | s56 P1a assumption extraction + restricted DLX gate (s64 P1b; `prefixlib` imports it) |
 
 `verify_master.py` is one module beyond the brief's list: it is the
 gitignored engine-grade control for `cover_search`/`mcover_search`, it is
@@ -89,24 +91,28 @@ from pylib.walkio import first_visit_path, weight
 from pylib.canonical import canon_relabel_rev
 ```
 
-Not yet promoted, and therefore still reached through
-`pylib.add_legacy_paths()`: `prefixlib` (`out/s59/prefix`), `p1a_assume`
-(`out/s56/p1a`), and `certificate` / `gain1`, which live **outside this
-repo** in the sibling `../extraDocs/superpermutation-examples/scripts`
-checkout. That last one is a hard external dependency of the entire n=7
-stack (`chain7` imports `certificate`).
+Still reached through `pylib.add_legacy_paths()`: `certificate` /
+`gain1`, which live **outside this repo** in the sibling
+`../extraDocs/superpermutation-examples/scripts` checkout — a hard
+external dependency of the entire n=7 stack (`chain7` imports
+`certificate`). `prefixlib` and `p1a_assume` were promoted in s64 P1b
+(closing the last `rm -rf out/` code risk); the out/ homes remain listed
+only as DATA paths (`controls.pkl`, `prune_all.json`, `positives.pkl`
+are regenerable session artifacts, not code).
 
 ## Divergences from the frozen originals
 
 Import mechanics only — never instrument logic. All four are stated in
 the file's own provenance header:
 
-- `symlib.py`, `cutlib.py`, `anatlib.py`, `paircuts.py`: the originals
-  computed `REPO = abspath(HERE/../../..)` from three levels down.
-  `pylib/` sits one level under the repo root, so those lines became
+- `symlib.py`, `cutlib.py`, `anatlib.py`, `paircuts.py`, and (s64 P1b)
+  `prefixlib.py`, `p1a_assume.py`: the originals computed
+  `REPO = abspath(HERE/../../..)` from three levels down. `pylib/` sits
+  one level under the repo root, so those lines became
   `REPO = os.path.dirname(HERE)`, and `HERE` was added to each module's
-  own path list so the promoted `chain7`/`dlxrun`/`symlib` copies win
-  over the frozen ones.
+  own path list so the promoted `chain7`/`dlxrun`/`symlib`/`prefixlib`/
+  `p1a_assume` copies win over the frozen ones. `cutlib`/`anatlib` keep
+  `S59`/`PREFIX` as data-only paths (no longer on `sys.path`).
 
 Nothing else changed. `lib62`, `cover_search`, `mcover_search`,
 `verify_master`, `dlxrun` and `chain7` are byte-identical to their
