@@ -69,13 +69,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 
 # The s57 proposer supplies the pruned state; chain7 rebuilds the instance.
-for p in (os.path.join(REPO, "out", "s57", "proposer"),
-          os.path.join(REPO, "out", "s56", "p1a"),
-          os.path.join(REPO, "analysis", "cover7"),
-          os.path.join(REPO, "..", "extraDocs",
-                       "superpermutation-examples", "scripts")):
-    if os.path.isdir(p):
-        sys.path.insert(0, os.path.abspath(p))
+# s64: chain7/p1a_assume resolve to the canonical pylib copies.
+import pathlib; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+import pylib  # noqa: E402
+pylib.add_legacy_paths()  # certificate/gain1 (extraDocs) + out/s57 data home
 
 import chain7  # noqa: E402
 import p1a_assume as P  # noqa: E402

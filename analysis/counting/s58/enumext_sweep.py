@@ -48,12 +48,12 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
-for p in (os.path.join(REPO, "out", "s57", "express"),
-          os.path.join(REPO, "analysis", "cover7"),
-          os.path.join(REPO, "..", "extraDocs",
-                       "superpermutation-examples", "scripts")):
-    if os.path.isdir(p):
-        sys.path.insert(0, os.path.abspath(p))
+# s64: chain7 resolves to the canonical pylib copy; enum_ext still lives
+# in out/s57/express (session artifact, reached via add_paths).
+import pathlib; sys.path.insert(0, str(next(p for p in pathlib.Path(__file__).resolve().parents if (p / "pylib").is_dir())))  # noqa: E401,E402,E501  <- pylib bootstrap, the ONE sanctioned sys.path line (docs/ARCHITECTURE.md)
+import pylib  # noqa: E402
+pylib.add_legacy_paths()  # certificate/gain1 (extraDocs)
+pylib.add_paths("out/s57/express")  # enum_ext (session artifact, not promoted)
 
 import chain7  # noqa: E402
 import enum_ext as EX  # noqa: E402
